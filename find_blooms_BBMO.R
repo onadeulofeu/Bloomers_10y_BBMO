@@ -58,8 +58,6 @@ palette_class_assigned <- c('Gammaproteobacteria' = '#fcca46', 'Alphaproteobacte
 source('../../Bloomers/R/find_asv_with_anomalies.R')
 source('../../Bloomers/R/compute_bray_curtis_dissimilariy.R')
 
-
-
 # Prepare data----
 ## TREBALLO AMB LA TAULA DE L'ADRIÀ 10 YEARS BASE DE DADES COMPLETA
 ## Faig una taula per als filtres de 0.2 i de 3 amb totes les mostres sense filtrat asv>5% of all samples
@@ -77,7 +75,7 @@ bbmo_10y |>
   nsamples() #237 samples 
 
 bbmo_10y |>
-  ntaxa() #8052 but if we filter for those that are 0 during the whole datsaeet then we got 7849 ASVs
+  ntaxa() #8052 but if we filter for those that are 0 during the whole datsaeet then we got 7,849 ASVs
 
 ## separate datasets by ASV_tab, taxonomy and metadata
 asv_tab_bbmo_10y_l <- bbmo_10y@otu_table |>
@@ -102,7 +100,6 @@ colnames(asv_tab_bbmo_10y_l) <- c('asv_num', "sample_id", 'reads')
 colnames(tax_bbmo_10y) <- c("asv_num", "kingdom", "phylum", "class", "order", "family", "genus",
                             "species", "curated", "otu_corr","seq")
 
-
 colnames(m_bbmo_10y) <- c("sample_id", "project", "location", "code",             
                           "type", "samname", "fraction", "run",               
                           "date", "basics", "julian_day", "day_of_year",       
@@ -118,21 +115,25 @@ colnames(m_bbmo_10y) <- c("sample_id", "project", "location", "code",
 
 ## Divide metadata into FL and PA----
 m_02 <- m_bbmo_10y  |>
-  dplyr::filter(fraction == 0.2) |>
+  dplyr::filter(fraction == 0.2) 
+
+m_02 <- m_02 |>
   dplyr::mutate(sample_id_num = str_c(1:nrow(m_02)))
 
 m_3 <- m_bbmo_10y |>
-  dplyr::filter(fraction == 3.0) |>
+  dplyr::filter(fraction == 3.0)
+
+m_3 <- m_3 |>
   dplyr::mutate(sample_id_num = str_c(1:nrow(m_3)))
 
 # Calculate relative abundance----
-asv_tab_bbmo_10y_l_rel <- asv_tab_bbmo_10y_l |>
+asv_tab_10y_l_rel <- asv_tab_bbmo_10y_l |>
   calculate_rel_abund(group_cols = sample_id)
 
-asv_tab_10y_filt_3_rel <- asv_tab_bbmo_10y_l_rel %>%
+asv_tab_10y_3_rel <- asv_tab_10y_l_rel %>%
   dplyr::filter(sample_id %in% m_3$sample_id)
 
-asv_tab_10y_filt_02_rel <- asv_tab_bbmo_10y_l_rel %>%
+asv_tab_10y_02_rel <- asv_tab_10y_l_rel %>%
   dplyr::filter(sample_id %in% m_02$sample_id)
 
 ##Pivot into long format
@@ -163,57 +164,163 @@ asv_tab_10y_filt_02_pseudo <- asv_tab_10y_filt_02_rel |>
                         by_ = 'sample_id')
 
 
+
 # Calculate diversity parameters ----
 ## We calculate different diversity parameters to check if the blooming events detected have an effect on the community structure
 ## Community Evenness----
-### Maybe we need to rarefy or rarification because we have uneven sequencing effort.
-### we need original reads
-asv_tab_bbmo_10y_l |>
-  str()
+### We need to apply rarefaction because we have uneven sequencing effort, and this will affect community diversity analysis
+### Rarefaction (process that repeats the subsampling many times and tries to overcome the uneven sequencing effort bias)----
+library(vegan)
+library(EcolUtils)
 
-##I obtain NaN values... why? Too much 0?
-community_eveness_02 <- asv_tab_bbmo_10y_l |>
-  mutate(reads = as.numeric(reads)) |>
+#### transform asv_tab into wider format to go into vegan package
+asv_tab_bbmo_10y_w <- asv_tab_bbmo_10y_l |>
+  pivot_wider(names_from = 'asv_num', values_from = 'reads', values_fill = 0) |>
+  as.data.frame()
+
+rownames(asv_tab_bbmo_10y_w) <- asv_tab_bbmo_10y_w$sample_id
+
+asv_tab_bbmo_10y_w <- asv_tab_bbmo_10y_w[,-1]
+
+#### calculate the minimum read size of all samples to rarefy at that number
+min_n_seqs <- asv_tab_bbmo_10y_l |>
+  group_by(sample_id) |>
+  dplyr::summarize(n_seqs = sum(reads)) |>
+  dplyr::summarize(min = min(n_seqs)) |>
+  pull(min)
+ 
+##this function gives us a randomly rarefied community data
+# rrarefy(asv_tab_bbmo_10y_w, sample = min_n_seqs) |>
+#   as_tibble(rownames = 'sample_id') #just rarefying (one simgle subsampling)
+
+## we use rarefaction (which repeats the subsampling step many times)
+## perform this a 1000 times to get an empirical diversity values calculating the mean value for each timepoint.
+asv_tab_bbmo_10y_w_rar <- rrarefy.perm(asv_tab_bbmo_10y_w, 
+                                       sample = min_n_seqs, 
+                                       n = 1000, 
+                                       round.out = T)
+
+### without rarefaction---
+# asv_tab_bbmo_10y_l |> ### we need original reads
+#   str()
+# 
+# community_eveness_02 <- asv_tab_bbmo_10y_l |>
+#   mutate(reads = as.numeric(reads)) |>
+#   dplyr::filter(str_detect(sample_id, '_0.2_')) |>
+#   #dplyr::select(sample_id, reads, asv_num) |>
+#   as_tibble() |>
+#   group_by(sample_id) |>
+#   #ungroup() |>
+#   dplyr::reframe(community_eveness_result = community_evenness(abundances = reads, index = "Pielou"))
+# 
+# community_eveness_3 <- asv_tab_bbmo_10y_l |>
+#   mutate(reads = as.numeric(reads)) |>
+#   dplyr::filter(str_detect(sample_id, '_3_')) |>
+#   #dplyr::select(sample_id, reads, asv_num) |>
+#   as_tibble() |>
+#   group_by(sample_id) |>
+#   #ungroup() |>
+#   dplyr::reframe(community_eveness_result = community_evenness(abundances = reads, index = "Pielou"))
+# 
+# asv_tab_10y_filt_3_pseudo <- asv_tab_10y_filt_3_pseudo  |>
+#   dplyr::mutate(relative_abundance = as.numeric(relative_abundance))
+# 
+# asv_tab_10y_filt_02_pseudo <- asv_tab_10y_filt_02_pseudo  |>
+#   dplyr::mutate(relative_abundance = as.numeric(relative_abundance))
+
+## Rarefied dataset to calculate Community eveness----
+source('../../Bloomers/R/community_evenness.R')
+community_eveness_02 <- asv_tab_bbmo_10y_w_rar |>
+  as.data.frame() |>
+  rownames_to_column(var = 'sample_id') |>
+  pivot_longer(cols = starts_with('asv'), names_to = 'asv_num', values_to = 'reads_rar') |>
   dplyr::filter(str_detect(sample_id, '_0.2_')) |>
   #dplyr::select(sample_id, reads, asv_num) |>
   as_tibble() |>
   group_by(sample_id) |>
+  dplyr::mutate(reads_rar = as.numeric(reads_rar)) |>
   #ungroup() |>
-  dplyr::reframe(community_eveness_result = community_evenness(abundances = reads, index = "Pielou"))
+  dplyr::reframe(community_eveness_rar = community_evenness(abundances = reads_rar, index = 'Pielou'))
 
-community_eveness_3 <- asv_tab_bbmo_10y_l |>
-  mutate(reads = as.numeric(reads)) |>
+community_eveness_3 <- asv_tab_bbmo_10y_w_rar |>
+  as.data.frame() |>
+  rownames_to_column(var = 'sample_id') |>
+  pivot_longer(cols = starts_with('asv'), names_to = 'asv_num', values_to = 'reads_rar') |>
   dplyr::filter(str_detect(sample_id, '_3_')) |>
   #dplyr::select(sample_id, reads, asv_num) |>
   as_tibble() |>
   group_by(sample_id) |>
+  dplyr::mutate(reads_rar = as.numeric(reads_rar)) |>
   #ungroup() |>
-  dplyr::reframe(community_eveness_result = community_evenness(abundances = reads, index = "Pielou"))
+  dplyr::reframe(community_eveness_rar = community_evenness(abundances = reads_rar, index = 'Pielou'))
 
-asv_tab_10y_filt_3_pseudo <- asv_tab_10y_filt_3_pseudo  |>
-  dplyr::mutate(relative_abundance = as.numeric(relative_abundance))
-
-asv_tab_10y_filt_02_pseudo <- asv_tab_10y_filt_02_pseudo  |>
-  dplyr::mutate(relative_abundance = as.numeric(relative_abundance))
+###plot community eveness
+community_eveness_02 |>
+  bind_rows(community_eveness_3) |>
+  left_join(m_bbmo_10y, by = 'sample_id') |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  ggplot(aes(date, community_eveness_rar))+
+  geom_point()+
+  facet_grid(vars(fraction))+
+  scale_x_datetime()+
+  labs(x = 'Time', y = 'Community Eveness')+
+  geom_line()+
+  theme_bw()+
+  theme(panel.grid = element_blank(), strip.background = element_blank())
 
 ## Bray Curtis dissimilarity----
 ### 0 means the two sites have the same composition (that is they share all the species), and 1 means the two sites 
 ### do not share any species.
+source('../../Bloomers/R/compute_bray_curtis_dissimilariy.R') #we need to upload it since we updated the function but I didn't compile the package
+# 
+# bray_curtis_02 <- dissimilarity_matrix(data = asv_tab_10y_02_rel, 
+#                                            sample_id_col = sample_id,
+#                                            values_cols_prefix = 'BL')
+# 
+# bray_curtis_3 <- dissimilarity_matrix(data = asv_tab_10y_3_rel, 
+#                                           sample_id_col = sample_id,
+#                                           values_cols_prefix = 'BL')
 
-source('../../Bloomers/R/compute_bray_curtis_dissimilariy.R') #we need to upload it since we I updated the function but I didn't compile the package
+### We need the rarefied table transformed to relative abundances
+asv_tab_bbmo_10y_l_rel_rar <- asv_tab_bbmo_10y_w_rar |>
+  as.data.frame() |>
+  rownames_to_column(var = 'sample_id') |>
+  pivot_longer(cols = starts_with('asv'), values_to = 'reads', names_to = 'asv_num') |>
+  dplyr::mutate(reads = as.numeric(reads)) |>
+  calculate_rel_abund(group_cols = sample_id) 
 
-bray_curtis_02 <- dissimilarity_matrix(data = asv_tab_10y_filt_02_rel, 
+asv_tab_10y_3_rel_rar <- asv_tab_bbmo_10y_l_rel_rar |>
+    dplyr::filter(sample_id %in% m_3$sample_id)
+
+asv_tab_10y_filt_02_rel_rar <- asv_tab_bbmo_10y_l_rel_rar %>%
+  dplyr::filter(sample_id %in% m_02$sample_id)
+
+bray_curtis_02_rar <- dissimilarity_matrix(data = asv_tab_10y_filt_02_rel_rar, 
                                     sample_id_col = sample_id,
                                     values_cols_prefix = 'BL')
 
-
-bray_curtis_3 <- dissimilarity_matrix(data = asv_tab_10y_filt_3_rel, 
+bray_curtis_3_rar <- dissimilarity_matrix(data = asv_tab_10y_3_rel_rar, 
                                        sample_id_col = sample_id,
                                        values_cols_prefix = 'BL')
 
 ###plot bray curtis dissimilarity
-bray_curtis_02 |>
-  bind_rows(bray_curtis_3) |>
+#### compare rarified dataset with non-rarified dataset (NO CHANGES, WHY?)
+# bray_curtis_02 |>
+#   bind_rows(bray_curtis_3) |>
+#   dplyr::filter(bray_curtis_result != is.na(bray_curtis_result)) |>
+#   left_join(m_bbmo_10y, by = c('samples' = 'sample_id')) |>
+#   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+#   ggplot(aes(date, bray_curtis_result))+
+#   geom_point()+
+#   facet_grid(vars(fraction))+
+#   scale_x_datetime()+
+#   labs(x = 'Time', y = 'Bray Curtis Dissimilarity')+
+#   geom_line()+
+#   theme_bw()+
+#   theme(panel.grid = element_blank(), strip.background = element_blank())
+
+bray_curtis_02_rar |>
+  bind_rows(bray_curtis_3_rar) |>
   dplyr::filter(bray_curtis_result != is.na(bray_curtis_result)) |>
   left_join(m_bbmo_10y, by = c('samples' = 'sample_id')) |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
@@ -225,7 +332,6 @@ bray_curtis_02 |>
   geom_line()+
   theme_bw()+
   theme(panel.grid = element_blank(), strip.background = element_blank())
-
 
 # Discover anomalies----
 ## For each ASVs based on relative abundances and pseudoabundances-----
@@ -253,13 +359,12 @@ z_3 <- asv_tab_10y_filt_3_pseudo |>
     anomalies_ra = get_anomalies(time_lag = 3, negative = FALSE, cutoff = 1.96, na_rm = TRUE, values = relative_abundance, plotting = FALSE)[c(1,2,3)])
 
 ## At the level of community, we use the eveness result and bray curtis dissimilarity ----
-### sine I have NaNs values in eveness I don't calculate the anomalies for this parameter (to be done!)
-z_diversity <- bray_curtis_02 |>
-  dplyr::right_join(community_eveness, by = join_by("samples" == "sample_id")) |> 
+z_diversity <- bray_curtis_02_rar |>
+  dplyr::right_join(community_eveness_02, by = join_by("samples" == "sample_id")) |> 
   #ungroup() %>%
   #group_by(sample_id) %>%
-  dplyr::reframe(anomalies_bray = get_anomalies(time_lag = 4, values = bray_curtis_result, plotting = TRUE)[c(1,2,3)])# ,
-                 #anomalies_eveness = get_anomalies(time_lag = 4, values = community_eveness_result, plotting = TRUE)[c(1,2,3)])
+  dplyr::reframe(anomalies_bray = get_anomalies(time_lag = 3, values = bray_curtis_result, plotting = TRUE)[c(1,2,3)],# ),
+                 anomalies_eveness = get_anomalies(time_lag = 3, values = community_eveness_rar, plotting = TRUE)[c(1,2,3)])
 
 z_diversity %>%
   str()
@@ -326,6 +431,7 @@ asv_tab_all_perc_filt_02_long_filt |>
 
 ##highligh harbour restoration period
 harbour_restoration <-  asv_tab_all_perc_filt_3_long_filt |> 
+  group_by(sample_id) |>
   subset(date = between(date, '2010-03-01','2012-04-01')) |>
   dplyr::summarize(xmin=min(date),xmax=max(date))
 
@@ -342,8 +448,11 @@ asv_tab_all_perc_filt_3_long_filt |>
   ggplot(aes(date, abundance_value))+ #, color = 'Class' 
   scale_x_datetime()+
   #facet_wrap(vars(class), scales = 'free')+
-  geom_rect(aes(xmin = '2010-03-01 01::00:00', xmax = '2012-04-01 01::00:00', ymin = 0, ymax = Inf),
-            fill = '#D0CFC8', show.legend = FALSE, linejoin = NULL, color = NA, alpha = 0.02)+
+  # geom_rect(aes(xmin = '2010-03-01 01::00:00', xmax = '2012-04-01 01::00:00', ymin = 0, ymax = Inf),
+  #           fill = '#D0CFC8', show.legend = FALSE, linejoin = NULL, color = NA, alpha = 0.02)+
+  geom_rect(data = asv_tab_all_perc_filt_3_long_filt, mapping=aes(xmin = date, xmax = date, x=NULL, y=NULL,
+                                      ymin = -Inf, ymax = Inf, fill = '#D0CFC8'), alpha = 0.4)+
+  
   geom_line(aes(group = asv_num, color = class))+
   geom_point(aes(color = class))+
   scale_y_continuous(labels = percent_format())+
@@ -357,7 +466,6 @@ asv_tab_all_perc_filt_3_long_filt |>
         panel.grid.major = element_blank(),
         axis.ticks = element_blank(), legend.position = 'Bottom', axis.text.y = element_text(size = 12),
         axis.title.y = element_text(size = 14), strip.background = element_blank())
-
 
 ## Recover z-score for each ASV ----
 ### I want to highlight anomlies for each ASV to do so I recover z-scores for those ASVs that that have high z-scores
