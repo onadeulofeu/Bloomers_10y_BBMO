@@ -152,12 +152,12 @@ asv_tab_10y_02_rel <- asv_tab_10y_l_rel %>%
 m_bbmo_10y |>
   colnames()
 
-asv_tab_10y_filt_3_pseudo <- asv_tab_10y_filt_3_rel |>
+asv_tab_10y_3_pseudo <- asv_tab_10y_3_rel |>
 calculate_pseudoabund(abund_data = m_bbmo_10y, rel_abund = relative_abundance, 
                       total_abund = bacteria_joint, 
                       by_ = 'sample_id')
 
-asv_tab_10y_filt_02_pseudo <- asv_tab_10y_filt_02_rel |>
+asv_tab_10y_02_pseudo <- asv_tab_10y_02_rel |>
   calculate_pseudoabund(abund_data = m_bbmo_10y, 
                         rel_abund = relative_abundance, 
                         total_abund = bacteria_joint, 
@@ -333,14 +333,15 @@ bray_curtis_02_rar |>
   theme_bw()+
   theme(panel.grid = element_blank(), strip.background = element_blank())
 
+
 # Discover anomalies----
 ## For each ASVs based on relative abundances and pseudoabundances-----
-asv_tab_10y_filt_02_pseudo %$%
+asv_tab_10y_02_pseudo %$%
   sample_id |>
   unique() |>
   summary() #60 is half of the dataset
 
-z_02 <- asv_tab_10y_filt_02_pseudo |>
+z_02 <- asv_tab_10y_02_pseudo |>
   group_by(asv_num) |>
   dplyr::mutate(num_0 = sum(relative_abundance == 0)) |>
   dplyr::filter(num_0 < 60) |>
@@ -349,7 +350,7 @@ z_02 <- asv_tab_10y_filt_02_pseudo |>
   dplyr::reframe(anomalies_ab = get_anomalies(time_lag = 3, negative = FALSE, na_rm = TRUE, cutoff = 1,96, values = pseudoabundance, plotting = FALSE)[c(1,2,3)],
                  anomalies_ra = get_anomalies(time_lag = 3, negative = FALSE, cutoff = 1.96, na_rm = TRUE, values = relative_abundance, plotting = FALSE)[c(1,2,3)])
 
-z_3 <- asv_tab_10y_filt_3_pseudo |>
+z_3 <- asv_tab_10y_3_pseudo |>
   group_by(asv_num) |>
   dplyr::mutate(num_0 = sum(relative_abundance == 0)) |>
   dplyr::filter(num_0 < 60) |>  #filter those ASVs that are 0 more than 50% of the dataset
@@ -358,7 +359,7 @@ z_3 <- asv_tab_10y_filt_3_pseudo |>
   dplyr::reframe(anomalies_ab = get_anomalies(time_lag = 3, negative = FALSE, na_rm = TRUE, cutoff = 1,96, values = pseudoabundance, plotting = FALSE)[c(1,2,3)],
     anomalies_ra = get_anomalies(time_lag = 3, negative = FALSE, cutoff = 1.96, na_rm = TRUE, values = relative_abundance, plotting = FALSE)[c(1,2,3)])
 
-## At the level of community, we use the eveness result and bray curtis dissimilarity ----
+## At the level of community, we use the Eveness result and Bray Curtis dissimilarity ----
 z_diversity <- bray_curtis_02_rar |>
   dplyr::right_join(community_eveness_02, by = join_by("samples" == "sample_id")) |> 
   #ungroup() %>%
@@ -394,7 +395,7 @@ asv_anom_02 <- find_asv_with_anomalies(anomalies_result = z_02, anomaly_in1 = an
                                     logic1 = 'TRUE', logic2 = 'TRUE', 
                                     asv_col = asv_num)
 
-asv_tab_all_perc_filt_02_long_filt <-  asv_tab_10y_filt_02_pseudo |>
+asv_tab_all_perc_filt_02_long_filt <-  asv_tab_10y_02_pseudo |>
   group_by(asv_num) |>
   dplyr::filter(any(relative_abundance >=  0.1)) |> #estan en format 0-1
   pivot_longer(cols = c(pseudoabundance, relative_abundance), values_to = 'abundance_value', names_to = 'abundance_type') |>
@@ -404,7 +405,7 @@ asv_anom_3 <- find_asv_with_anomalies(anomalies_result = z_3, anomaly_in1 = anom
                                        logic1 = 'TRUE', logic2 = 'TRUE', 
                                        asv_col = asv_num)
 
-asv_tab_all_perc_filt_3_long_filt <-  asv_tab_10y_filt_3_pseudo |>
+asv_tab_all_perc_filt_3_long_filt <-  asv_tab_10y_3_pseudo |>
   group_by(asv_num) |>
   dplyr::filter(any(relative_abundance >=  0.1)) |> #estan en format 0-1
   pivot_longer(cols = c(pseudoabundance, relative_abundance), values_to = 'abundance_value', names_to = 'abundance_type') |>
@@ -414,7 +415,9 @@ asv_tab_all_perc_filt_3_long_filt <-  asv_tab_10y_filt_3_pseudo |>
 #   group_by(sample_id) |>
 #   dplyr::summarize(sum = sum(relative_abundance))
 
-asv_tab_all_perc_filt_3_long$relative_abundance |> 
+asv_tab_all_perc_3_long_filt |> 
+  dplyr::filter(abundance_type == 'relative_abundance') %$%
+  abundance_value |>
   range() #max is 0.56
   
 asv_tab_all_perc_filt_3_long_filt |>
@@ -450,8 +453,8 @@ asv_tab_all_perc_filt_3_long_filt |>
   #facet_wrap(vars(class), scales = 'free')+
   # geom_rect(aes(xmin = '2010-03-01 01::00:00', xmax = '2012-04-01 01::00:00', ymin = 0, ymax = Inf),
   #           fill = '#D0CFC8', show.legend = FALSE, linejoin = NULL, color = NA, alpha = 0.02)+
-  geom_rect(data = asv_tab_all_perc_filt_3_long_filt, mapping=aes(xmin = date, xmax = date, x=NULL, y=NULL,
-                                      ymin = -Inf, ymax = Inf, fill = '#D0CFC8'), alpha = 0.4)+
+  # geom_rect(data = asv_tab_all_perc_filt_3_long_filt, mapping=aes(xmin = date, xmax = date, x=NULL, y=NULL,
+  #                                     ymin = -Inf, ymax = Inf, fill = '#D0CFC8'), alpha = 0.4)+
   
   geom_line(aes(group = asv_num, color = class))+
   geom_point(aes(color = class))+
@@ -471,7 +474,7 @@ asv_tab_all_perc_filt_3_long_filt |>
 ### I want to highlight anomlies for each ASV to do so I recover z-scores for those ASVs that that have high z-scores
 ### at some point of the dataset. Easy to observe if those ASVs are having random anomalies or all of them happen at the same time
 
-z_scores_02 <- asv_tab_10y_filt_02_pseudo |>
+z_scores_02 <- asv_tab_10y_02_pseudo |>
   group_by(asv_num) |>
   dplyr::mutate(num_0 = sum(relative_abundance == 0)) |>
   #dplyr::filter(num_0 < 60) |> ##only anomalies for ASVs that are present in > 50% of the samples
@@ -486,7 +489,7 @@ z_scores_02 <- asv_tab_10y_filt_02_pseudo |>
   dplyr::mutate(sample_id_num = str_c(1:nrow(m_02))) |>
   left_join(m_02, by = 'sample_id_num')
 
-z_scores_3 <- asv_tab_10y_filt_3_pseudo |>
+z_scores_3 <- asv_tab_10y_3_pseudo |>
   group_by(asv_num) |>
   dplyr::mutate(num_0 = sum(relative_abundance == 0)) |>
   #dplyr::filter(num_0 < 60) |> ##only anomalies for ASVs that are present in > 50% of the samples
@@ -545,7 +548,7 @@ asv_anom_all <- x |>
   as_vector()
 
 ##recover all ASVs that presentend and anomaly in PA or FL
-asv_tab_all_perc_filt_3_long_filt <-  asv_tab_10y_filt_3_pseudo |>
+asv_tab_all_perc_3_long_filt <-  asv_tab_10y_3_pseudo |>
   group_by(asv_num) |>
   #dplyr::filter(any(relative_abundance >=  0.1)) |> #estan en format 0-1
   pivot_longer(cols = c(pseudoabundance, relative_abundance), values_to = 'abundance_value', names_to = 'abundance_type') |>
@@ -555,7 +558,7 @@ asv_tab_all_perc_filt_02_long_filt %$%
   asv_num |>
   unique()
 
-asv_tab_all_perc_filt_02_long_filt <- asv_tab_10y_filt_02_pseudo |>
+asv_tab_all_perc_02_long_filt <- asv_tab_10y_02_pseudo |>
   group_by(asv_num) |>
   #dplyr::filter(any(relative_abundance >=  0.1)) |> #estan en format 0-1
   pivot_longer(cols = c(pseudoabundance, relative_abundance), values_to = 'abundance_value', names_to = 'abundance_type') |>
@@ -607,7 +610,7 @@ asv_tab_z_scores_all |>
 ## Do blooming events synchronize in PA and FL? 
 ## Some ASVs prefer to bloom in one fraction than another? Is there a preference?
 ## plot by fractions
-asv_tab_all_perc_filt_all_long_filt |>
+asv_tab_all_perc_all_long_filt |>
   colnames()
 
 asv_tab_all_perc_filt_all_long_filt <-  asv_tab_all_perc_filt_02_long_filt |>
@@ -796,3 +799,118 @@ metadata_parada <- BBMO_parada_rel |>
   
 
   
+  
+## Testing CLR transformation and other transformations to calculate distances----
+
+group_count <- asv_tab_bbmo_10y_l |>
+    group_by(sample_id) |>
+    dplyr::summarize(n_seqs = sum(reads))
+  
+group_count$n_seqs |>
+  range()
+
+asv_tab_bbmo_10y_w <- asv_tab_bbmo_10y_l |>
+  pivot_wider(names_from = asv_num, values_from = reads, values_fill = 0) |>
+  as.data.frame()
+
+rownames(asv_tab_bbmo_10y_w) <- asv_tab_bbmo_10y_w$sample_id
+
+asv_tab_bbmo_10y_w <- asv_tab_bbmo_10y_w[,-1]
+
+norare_dist <- vegdist(asv_tab_bbmo_10y_w, 
+                       method = 'euclidean')
+
+rare_dist <- avgdist(asv_tab_bbmo_10y_w, 
+                     dmethod = 'euclidean', 
+                     sample = min(group_count$n_seqs))
+#geometric mean
+gm <- function(x){
+  exp(mean(log(x[x>0])))
+}
+x <- c(3,8,9,0)
+
+gm(x)
+
+#what happens with 0? Robust CLR removes 0 from the transformations
+asv_tab_bbmo_10y_rclr <- 
+  asv_tab_bbmo_10y_l |>
+  dplyr::mutate(reads = as.numeric(reads)) |>
+   group_by(sample_id) |>
+  #dplyr::mutate(gm = gm(reads))
+   dplyr::mutate(rclr = log(reads/gm(reads))) |>
+   ungroup() |>
+   select(-reads) |>
+   pivot_wider(names_from = asv_num, values_from = rclr, values_fill = 0) |>
+   as.data.frame()
+   
+rownames(asv_tab_bbmo_10y_rclr) <- asv_tab_bbmo_10y_rclr$sample_id
+asv_tab_bbmo_10y_rclr <- asv_tab_bbmo_10y_rclr[,-1]
+
+rclr_dist <- vegdist(asv_tab_bbmo_10y_rclr, method = 'euclidean')
+
+ #install.packages("zCompositions") 
+ 
+library(zCompositions) #helps to deal with 0 in the dataset
+
+ zclr_df <- cmultRepl(asv_tab_bbmo_10y_w, method = 'CZM', output = 'p-count') |>
+   as_tibble(rownames = "sample_id") %>%
+   pivot_longer(-samples_id) %>%
+   group_by(samples_id) %>%
+   mutate(zclr = log(value/gm(value))) %>%
+   ungroup() %>%
+   select(-value) %>%
+   pivot_wider(names_from=name, values_from=zclr, values_fill=0) %>%
+   column_to_rownames("samples")
+
+zclr_dist <- vegdist(zclr_df, method = 'euclidean')
+
+nonrare_tbl <- norare_dist |>
+  as.matrix() |>
+  as_tibble(rownames = 'sample_id') |>
+  pivot_longer(cols = -sample_id) |>
+  filter(name < sample_id)
+
+rare_tbl <- rare_dist |>
+  as.matrix() |>
+  as_tibble(rownames = 'sample_id') |>
+  pivot_longer(cols = -sample_id) |>
+  filter(name < sample_id)
+
+#rclr_dist
+zclr_tbl <- zclr_dist |>
+  as.matrix() |>
+  as_tibble(rownames = 'sample_id') |>
+  pivot_longer(cols = -sample_id) |>
+  filter(name < sample_id)
+
+
+ inner_join(nonrare_tbl, rare_tbl, by = c('sample_id', 'name')) |>
+   inner_join(zclr_tbl, by = c('sample_id', 'name')) |>
+   inner_join(group_count, by = 'sample_id') |>
+   inner_join(group_count, by = c('name' = 'sample_id')) |>
+   dplyr::mutate(diffs = abs(n_seqs.x - n_seqs.y)) |>
+   dplyr::select(sample_id, name, norare = value.x, rare=value.y, zclr=value, diffs) |>
+   dplyr::filter(str_detect(sample_id, '_0.2_') &
+                   str_detect(name, '_0.2_')) |>
+   pivot_longer(cols = c(norare, rare, zclr), names_to = 'method', values_to = 'dist') |>
+   ggplot(aes(x=diffs, y = dist))+
+   geom_point()+
+   facet_wrap(~method, scales = 'free_y')+
+   geom_smooth()
+
+ 
+ inner_join(nonrare_tbl, rare_tbl, by = c('sample_id', 'name')) |>
+   inner_join(zclr_tbl, by = c('sample_id', 'name')) |>
+   inner_join(group_count, by = 'sample_id') |>
+   inner_join(group_count, by = c('name' = 'sample_id')) |>
+   dplyr::mutate(diffs = abs(n_seqs.x - n_seqs.y)) |>
+   dplyr::select(sample_id, name, norare = value.x, rare=value.y, zclr=value, diffs) |>
+   dplyr::filter(str_detect(sample_id, '_3_') &
+                   str_detect(name, '_3_')) |>
+   pivot_longer(cols = c(norare, rare, zclr), names_to = 'method', values_to = 'dist') |>
+   ggplot(aes(x=diffs, y = dist))+
+   geom_point()+
+   facet_wrap(~method, scales = 'free_y')+
+   geom_smooth()
+
+ 
