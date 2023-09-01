@@ -8,7 +8,11 @@ library(magrittr)
 library(scales)
 library(phyloseq)
 library(speedyseq)
+library(vegan)
+library(EcolUtils) #rarefaction
 
+#palette seasons---
+palette_seasons_4 <- c("winter" = "#002562", 'spring' = "#519741", 'summer' = "#ffb900",'autumn' =  "#96220a")
 # palettes taxonomy assigned----
 palette_phylums_assigned <- c('Proteobacteria' = "#fcca46","Bacteroidota" = "#669bbc" , 'Actinobacteriota' = "#b0413e",
                               'Cyanobacteria' = "#009e73",'Crenarchaeota' = "#ffa737", 'Verrucomicrobiota' = "#cccccc",
@@ -126,6 +130,37 @@ m_3 <- m_bbmo_10y |>
 m_3 <- m_3 |>
   dplyr::mutate(sample_id_num = str_c(1:nrow(m_3)))
 
+##we lack of 3 samples in FL fraction which are:----
+# m_3 |>
+#   group_by(year) |>
+#   summarize(n = n()) |>
+#   dplyr::filter(n < 12)
+# ## in 2004 and 2005, 
+#  m_3 |>
+#   dplyr::filter(year %in% c('2004', '2005')) |>
+#    group_by(month) |>
+#    mutate(n = n()) |>
+#    dplyr::filter(n < 2) %$%
+#    date
+ 
+ ##[1] "2004-02-23" "2004-05-25" "2005-03-09" MISSING SAMPLES 
+ 
+ #check even sequencing----
+### there is no even sequencing for this dataset, therefore when we calculate diversity we should use a rarefied dataset
+ # bbmo_m <- m_02 |>
+ #   bind_rows(m_3)
+ # 
+ # bbmo_m |>
+ #   colnames()
+ # 
+ # asv_tab_bbmo_10y_l |>
+ #   group_by(sample_id) |>
+ #   dplyr::summarize(n_reads = sum(reads)) |>
+ #   inner_join(bbmo_m) |>
+ #   ggplot(aes(date, n_reads))+
+ #   geom_col()+
+ #   facet_grid(vars(fraction))
+
 # Calculate relative abundance----
 asv_tab_10y_l_rel <- asv_tab_bbmo_10y_l |>
   calculate_rel_abund(group_cols = sample_id)
@@ -148,9 +183,9 @@ asv_tab_10y_02_rel <- asv_tab_10y_l_rel %>%
 # colnames(asv_tab_all_perc_filt_3_long) <- c('sample_id', 'asv_num','relative_abundance')
   
 # Calculate pseudoabundances ----
-## This type of normalization makes more sense with the 0.2 fraction since citometry accounts mainly for this fraction of the biomass
-m_bbmo_10y |>
-  colnames()
+## This type of normalization makes more sense with the 0.2 fraction since cytometry accounts mainly for this fraction of the biomass
+# m_bbmo_10y |>
+#   colnames()
 
 asv_tab_10y_3_pseudo <- asv_tab_10y_3_rel |>
 calculate_pseudoabund(abund_data = m_bbmo_10y, rel_abund = relative_abundance, 
@@ -163,6 +198,160 @@ asv_tab_10y_02_pseudo <- asv_tab_10y_02_rel |>
                         total_abund = bacteria_joint, 
                         by_ = 'sample_id')
 
+# Transform data to CLR we use the zCompositions package which helps us to deal with 0 before applying this transformation.----
+## transform asv_tab into wider format to go into vegan package
+asv_tab_bbmo_10y_w <- asv_tab_bbmo_10y_l |>
+  pivot_wider(names_from = 'asv_num', values_from = 'reads', values_fill = 0) |>
+  as.data.frame()
+
+rownames(asv_tab_bbmo_10y_w) <- asv_tab_bbmo_10y_w$sample_id
+
+# asv_tab_bbmo_10y_w |>
+#   dim()
+
+asv_tab_bbmo_10y_w <- asv_tab_bbmo_10y_w[,-1]
+
+#geometric mean
+gm <- function(x){
+  exp(mean(log(x[x>0])))
+}
+
+##with this transformation I'm losing samples (due to too much 0 in some samples, z.warning set up t0 0.99 to keep all samples)
+### at 0.8 (default) I lose 30 samples which belonged to the years corresponding to harbour remodelation 
+zclr_df <- cmultRepl(asv_tab_bbmo_10y_w, method = 'CZM', output = 'p-count', z.warning = 0.99
+                     #adjust = 0.2,    t = 237, s = 7849
+                  ) |>
+  as_tibble(rownames = "sample_id") %>%
+  pivot_longer(-sample_id) %>%
+  group_by(sample_id) %>%
+  dplyr::mutate(zclr = log(value/gm(value))) %>%
+  ungroup() %>%
+  dplyr::select(-value) %>%
+  pivot_wider(names_from = name, values_from = zclr, values_fill = 0) %>%
+  column_to_rownames("sample_id")
+
+##we create two datasets one for FL and one for PA
+asv_tab_10y_02_zclr <- zclr_df |>
+  rownames_to_column(var = 'sample_id') |>
+  pivot_longer(cols = starts_with('asv'), names_to = 'asv_num', values_to = 'zclr') |>
+  dplyr::filter(str_detect(sample_id, '_0.2_'))
+
+asv_tab_10y_3_zclr <- zclr_df |>
+  rownames_to_column(var = 'sample_id') |>
+  pivot_longer(cols = starts_with('asv'), names_to = 'asv_num', values_to = 'zclr') |>
+  dplyr::filter(str_detect(sample_id, '_3_'))
+
+##dimesions are different from relative and pseudo dataset and zclr understand why
+### i have less ASVs in the zclr dataset specifically 5282 less
+#7849-2567
+
+asv_tab_10y_02_pseudo |>
+  group_by(asv_num) |>
+  summarize(n = n()) |>
+  dim() #7849
+
+asv_tab_10y_02_zclr  |>
+  group_by(asv_num) |>
+  summarize(n = n()) |>
+  dim() #2567
+
+asv_tab_10y_3_pseudo |>
+  group_by(asv_num) |>
+  summarize(n = n()) |>
+  dim() #7849
+
+asv_tab_10y_3_zclr  |>
+  group_by(asv_num) |>
+  summarize(n = n()) |>
+  dim() #2567
+
+##creation of a complete dataset with all the normalitzations performed (relative_abundances, pseudoabundances and zclr)----
+asv_tab_10y_02_pseudo_zclr <- asv_tab_10y_02_pseudo |>
+  left_join(asv_tab_10y_02_zclr, by = c('sample_id', 'asv_num')) |>
+  dplyr::mutate(zclr = case_when(is.na(zclr)~ 0,
+                                  !is.na(zclr) ~ zclr))
+
+asv_tab_10y_3_pseudo_zclr <- asv_tab_10y_3_pseudo |>
+  left_join(asv_tab_10y_3_zclr, by = c('sample_id', 'asv_num')) |>
+  dplyr::mutate(zclr = case_when(is.na(zclr)~ 0,
+                                 !is.na(zclr) ~ zclr))
+
+nrow(asv_tab_10y_02_pseudo_zclr) == nrow( asv_tab_10y_02_pseudo)
+nrow(asv_tab_10y_3_pseudo_zclr) == nrow(asv_tab_10y_3_pseudo)
+#if FALSE something is WRONG!
+
+#Do I have ASVs that only have one positive value?
+# Check columns with only 1 non-zero in the given data set.
+# checkNumZerosCol <- apply(asv_tab_bbmo_10y_w,2,function(x) sum(x==0))
+# cases <- which(checkNumZerosCol == (nrow(asv_tab_bbmo_10y_w) - 1)) 
+# length(cases) # 1797 columns are all zeros but one positive value
+# zcomp <- cmultRepl(asv_tab_bbmo_10y_w[,-cases]) # GBM imputation without them works
+## no és aquest el problema perquè em segueixen faltant mostres.
+
+#look for the lost samples why do they disappear? (to much 0)----
+# zclr_default <- cmultRepl(asv_tab_bbmo_10y_w, method = 'CZM', output = 'p-count'#, z.warning = 0.99
+#                      #adjust = 0.2,    t = 237, s = 7849
+# )
+# ## missing samples 3
+# samples <- asv_tab_10y_3_zclr$sample_id |>
+#   unique() |>
+#   as_tibble()
+# 
+# y <- asv_tab_bbmo_10y_w |>
+#   row.names() |>
+#   as_tibble() |>
+#   dplyr::filter(str_detect(value, '_3_'))
+# 
+# missing_samples_3 <- y |>
+#   dplyr::filter(!(value %in% samples$value))
+# 
+# ##missing samples 02 
+# y |>
+#   as_tibble() |>
+#   dplyr::filter(!(y %in% samples$value))
+# 
+# samples <- asv_tab_10y_02_zclr$sample_id |>
+#   unique() |>
+#   as_tibble()
+# 
+# y <- asv_tab_bbmo_10y_w |>
+#   row.names() |>
+#   as_tibble() |>
+#   dplyr::filter(str_detect(value, '_0.2_'))
+# 
+# missing_samples_02 <- y |>
+#   dplyr::filter(!(value %in% samples$value)) 
+# 
+# all_missing_samples <- missing_samples_02  |>
+#   bind_rows(missing_samples_3)
+# 
+# asv_tab_missing_samples <- asv_tab_bbmo_10y_w |>
+#   rownames_to_column( var= 'sample_id') |>
+#   dplyr::filter(sample_id %in% all_missing_samples$value) |>
+#   dplyr::select(-sample_id) |>
+#   rowSums() |>
+#   as_tibble()
+
+## number samples that disappeared when we apply the function cumltRepl with the default parameters
+# asv_tab_10y_02_zclr <- zclr_df |>
+#   rownames_to_column(var = 'sample_id') |>
+#   pivot_longer(cols = starts_with('asv'), names_to = 'asv_num', values_to = 'zclr') |>
+#   dplyr::filter(str_detect(sample_id, '_0.2_'))
+# 
+# asv_tab_10y_02_zclr |>
+#   group_by(sample_id) |>
+#   dplyr::summarize(n = n()) |>
+#   count() #115 
+# 
+# asv_tab_10y_3_zclr <- zclr_df |>
+#   rownames_to_column(var = 'sample_id') |>
+#   pivot_longer(cols = starts_with('asv'), names_to = 'asv_num', values_to = 'zclr') |>
+#   dplyr::filter(str_detect(sample_id, '_3_'))
+# 
+# asv_tab_10y_3_zclr |>
+#   group_by(sample_id) |>
+#   dplyr::summarize(n = n()) |>
+#   count() #87
 
 
 # Calculate diversity parameters ----
@@ -170,8 +359,7 @@ asv_tab_10y_02_pseudo <- asv_tab_10y_02_rel |>
 ## Community Evenness----
 ### We need to apply rarefaction because we have uneven sequencing effort, and this will affect community diversity analysis
 ### Rarefaction (process that repeats the subsampling many times and tries to overcome the uneven sequencing effort bias)----
-library(vegan)
-library(EcolUtils)
+
 
 #### transform asv_tab into wider format to go into vegan package
 asv_tab_bbmo_10y_w <- asv_tab_bbmo_10y_l |>
@@ -254,7 +442,7 @@ community_eveness_3 <- asv_tab_bbmo_10y_w_rar |>
   #ungroup() |>
   dplyr::reframe(community_eveness_rar = community_evenness(abundances = reads_rar, index = 'Pielou'))
 
-###plot community eveness
+###plot community evenness
 community_eveness_02 |>
   bind_rows(community_eveness_3) |>
   left_join(m_bbmo_10y, by = 'sample_id') |>
@@ -336,42 +524,65 @@ bray_curtis_02_rar |>
 
 # Discover anomalies----
 ## For each ASVs based on relative abundances and pseudoabundances-----
+### those ASVs that are present > 50% of the sampless
 asv_tab_10y_02_pseudo %$%
   sample_id |>
   unique() |>
   summary() #60 is half of the dataset
 
-z_02 <- asv_tab_10y_02_pseudo |>
-  group_by(asv_num) |>
-  dplyr::mutate(num_0 = sum(relative_abundance == 0)) |>
-  dplyr::filter(num_0 < 60) |>
-  #as_tibble() |>
-  group_by(asv_num) |>
-  dplyr::reframe(anomalies_ab = get_anomalies(time_lag = 3, negative = FALSE, na_rm = TRUE, cutoff = 1,96, values = pseudoabundance, plotting = FALSE)[c(1,2,3)],
-                 anomalies_ra = get_anomalies(time_lag = 3, negative = FALSE, cutoff = 1.96, na_rm = TRUE, values = relative_abundance, plotting = FALSE)[c(1,2,3)])
+asv_tab_10y_02_zclr |>
+  colnames()
 
-z_3 <- asv_tab_10y_3_pseudo |>
+##percentage of ASV present in the dataset that we want to subset by
+x <- 120*0.75
+
+z_02 <- asv_tab_10y_02_pseudo |>
+  inner_join(asv_tab_10y_02_zclr, by = c('sample_id', 'asv_num')) |> #asv_tab_10y_02_zclr vull afegir el zclr per calcular també les seves anomalies i veure si veiem el mateix
   group_by(asv_num) |>
   dplyr::mutate(num_0 = sum(relative_abundance == 0)) |>
-  dplyr::filter(num_0 < 60) |>  #filter those ASVs that are 0 more than 50% of the dataset
+  dplyr::filter(num_0 <= x) |>
   #as_tibble() |>
   group_by(asv_num) |>
-  dplyr::reframe(anomalies_ab = get_anomalies(time_lag = 3, negative = FALSE, na_rm = TRUE, cutoff = 1,96, values = pseudoabundance, plotting = FALSE)[c(1,2,3)],
-    anomalies_ra = get_anomalies(time_lag = 3, negative = FALSE, cutoff = 1.96, na_rm = TRUE, values = relative_abundance, plotting = FALSE)[c(1,2,3)])
+  dplyr::reframe(anomalies_ab = get_anomalies(time_lag = 2, negative = FALSE, na_rm = TRUE, cutoff = 1,96, values = pseudoabundance, plotting = FALSE)[c(1,2,3)],
+                 anomalies_ra = get_anomalies(time_lag = 2, negative = FALSE, cutoff = 1.96, na_rm = TRUE, values = relative_abundance, plotting = FALSE)[c(1,2,3)],
+                 anomalies_clr = get_anomalies(time_lag = 2, negative = FALSE, cutoff = 1.96, na_rm = TRUE, values = zclr, plotting = FALSE)[c(1,2,3)])
+
+asv_tab_10y_3_pseudo %$%
+  sample_id |>
+  unique() |>
+  summary() #
+
+x <- 117*0.75
+z_3 <- asv_tab_10y_3_pseudo |>
+  inner_join(asv_tab_10y_3_zclr, by = c('sample_id', 'asv_num')) |>
+  group_by(asv_num) |>
+  dplyr::mutate(num_0 = sum(relative_abundance == 0)) |>
+  dplyr::filter(num_0 <= x) |>  #filter those ASVs that are 0 more than 50% of the dataset
+  #as_tibble() |>
+  group_by(asv_num) |>
+  dplyr::reframe(anomalies_ab = get_anomalies(time_lag = 2, negative = FALSE, na_rm = TRUE, cutoff = 1,96, values = pseudoabundance, plotting = FALSE)[c(1,2,3)],
+    anomalies_ra = get_anomalies(time_lag = 2, negative = FALSE, cutoff = 1.96, na_rm = TRUE, values = relative_abundance, plotting = FALSE)[c(1,2,3)],
+    anomalies_clr = get_anomalies(time_lag = 2, negative = FALSE, cutoff = 1.96, na_rm = TRUE, values = zclr, plotting = FALSE)[c(1,2,3)])
 
 ## At the level of community, we use the Eveness result and Bray Curtis dissimilarity ----
 z_diversity <- bray_curtis_02_rar |>
   dplyr::right_join(community_eveness_02, by = join_by("samples" == "sample_id")) |> 
   #ungroup() %>%
   #group_by(sample_id) %>%
-  dplyr::reframe(anomalies_bray = get_anomalies(time_lag = 3, values = bray_curtis_result, plotting = TRUE)[c(1,2,3)],# ),
-                 anomalies_eveness = get_anomalies(time_lag = 3, values = community_eveness_rar, plotting = TRUE)[c(1,2,3)])
+  dplyr::reframe(anomalies_bray = get_anomalies(time_lag = 2, values = bray_curtis_result, plotting = TRUE)[c(1,2,3)],# ),
+                 anomalies_eveness = get_anomalies(time_lag = 2, values = community_eveness_rar, plotting = TRUE)[c(1,2,3)])
 
 z_diversity %>%
   str()
 
-# Filter the ASV_tab by only those ASVs that have an anomaly at some point of the dataset----
-#find_asv_with_anomalies <- function(anomalies_result, anomaly_in1, anomaly_in2, logic1 = TRUE, logic2 = TRUE, asv_col = asv_num) {
+# Filter the ASV_tab by only those ASVs that have an anomaly at some point of the dataset ----
+##function
+find_asv_with_anomalies <- function(anomalies_result, anomaly_in1, 
+                                    anomaly_in2, anomaly_in3 = NULL, 
+                                    logic1 = TRUE, 
+                                    logic2 = TRUE,
+                                    logic3 = NULL, 
+                                    asv_col = asv_num) {
   # if(is.list(anomalies_result) == FALSE){
   #   stop("Function stopped: anomalies_result needs to be a list form the get_anomalies function")
   # }
@@ -381,119 +592,117 @@ z_diversity %>%
   
   asv_potential_bloomers <-
     anomalies_result |>
-    dplyr::filter(if (!is.null(logic1)) {{anomaly_in1}} %in% logic1 
-                  else TRUE) |>
-    dplyr::filter(if (!is.null(logic2)) {{anomaly_in2}} %in% logic2 
-                  else TRUE) |>
+    dplyr::filter(if (!is.null(logic1)) {{anomaly_in1}} %in% logic1 else TRUE) |>
+    dplyr::filter(if (!is.null(logic2)) {{anomaly_in2}} %in% logic2 else TRUE) |>
+    dplyr::filter(if (!is.null(logic3)) {{anomaly_in3}} %in% logic3 else TRUE) |>
     dplyr::select({{asv_col}}) |>
     as_vector()
   
   return(asv_potential_bloomers)
-#}
+}
 
-asv_anom_02 <- find_asv_with_anomalies(anomalies_result = z_02, anomaly_in1 = anomalies_ab, anomaly_in2 = anomalies_ra, 
+asv_anom_02 <- find_asv_with_anomalies(anomalies_result = z_02, anomaly_in1 = anomalies_ra, 
+                                       anomaly_in2 = anomalies_ab,
+                                       anomaly_in3 = anomalies_clr, 
                                     logic1 = 'TRUE', logic2 = 'TRUE', 
+                                    logic3 = 'TRUE',
                                     asv_col = asv_num)
+##86 ASVs cumplint les 3 condicions i sense CLR també
 
-asv_tab_all_perc_filt_02_long_filt <-  asv_tab_10y_02_pseudo |>
+##no acabo d'entendre perquè torna un vector amb numero consecutiu d'ASVs...
+
+asv_anom_3 <- find_asv_with_anomalies(anomalies_result = z_3, anomaly_in1 = anomalies_ra, 
+                                      anomaly_in2 = anomalies_clr, 
+                                      anomaly_in3 = NULL, #anomalies_ab
+                                      logic1 = 'TRUE', logic2 = 'TRUE', 
+                                      logic3 = NULL, ##per 3 no és representatiu la pseudoabund
+                                      asv_col = asv_num)
+
+##46 ASVS
+## número d'ASVs comuns i unics a cada fracció
+asv_anom_3_tb <- asv_anom_3 |>
+  as_tibble()
+
+asv_anom_02_tb <- asv_anom_02 |>
+  as_tibble()
+
+asv_anom_3_tb |>
+  bind_rows(asv_anom_02_tb) |>
+  unique() ##96 totals >50% del dataset
+
+asv_anom_3_tb |>
+  anti_join(asv_anom_02_tb) #10 ASV only in 3
+
+asv_anom_02_tb |>
+  anti_join(asv_anom_3_tb) #40 ASVs only in 0.2
+
+asv_tab_10y_02_pseudo_zclr_bloo <-  asv_tab_10y_02_pseudo_zclr |>
   group_by(asv_num) |>
   dplyr::filter(any(relative_abundance >=  0.1)) |> #estan en format 0-1
-  pivot_longer(cols = c(pseudoabundance, relative_abundance), values_to = 'abundance_value', names_to = 'abundance_type') |>
-  filter(asv_num %in% asv_anom_02)
+  pivot_longer(cols = c(zclr, relative_abundance, pseudoabundance), values_to = 'abundance_value', names_to = 'abundance_type') |>
+  dplyr::filter(asv_num %in% asv_anom_02 |
+           asv_num %in% asv_anom_3) ##recover ASVs that presented anomalies in 02 or 3
 
-asv_anom_3 <- find_asv_with_anomalies(anomalies_result = z_3, anomaly_in1 = anomalies_ab, anomaly_in2 = anomalies_ra, 
-                                       logic1 = 'TRUE', logic2 = 'TRUE', 
-                                       asv_col = asv_num)
+asv_tab_10y_02_pseudo_zclr_bloo |>
+  group_by(asv_num) |>
+  dplyr::summarize(n = n()) |>
+  dplyr::summarize(n_num = n())
 
-asv_tab_all_perc_filt_3_long_filt <-  asv_tab_10y_3_pseudo |>
+asv_tab_10y_3_pseudo_zclr_bloo <-  asv_tab_10y_3_pseudo_zclr |>
   group_by(asv_num) |>
   dplyr::filter(any(relative_abundance >=  0.1)) |> #estan en format 0-1
-  pivot_longer(cols = c(pseudoabundance, relative_abundance), values_to = 'abundance_value', names_to = 'abundance_type') |>
-  filter(asv_num %in% asv_anom_3)
+  pivot_longer(cols = c(zclr, relative_abundance, pseudoabundance), values_to = 'abundance_value', names_to = 'abundance_type') |>
+  dplyr::filter(asv_num %in% asv_anom_3 |
+           asv_num %in% asv_anom_02) ##recover ASVs that presented anomalies in 02 or 3
+
+asv_tab_10y_3_pseudo_zclr_bloo |>
+  group_by(asv_num) |>
+  dplyr::summarize(n = n()) |>
+  dplyr::summarize(n_num = n())
+
+asv_tab_all_bloo <- asv_tab_10y_02_pseudo_zclr_bloo |>
+  bind_rows(asv_tab_10y_3_pseudo_zclr_bloo)
+
+asv_tab_all_bloo |>
+  group_by(asv_num) |>
+  dplyr::summarize(n = n()) |>
+  dplyr::summarize(n_num = n()) #17 ASVs
 
 # asv_tab_all_perc_filt_3_long_filt |>
 #   group_by(sample_id) |>
 #   dplyr::summarize(sum = sum(relative_abundance))
 
-asv_tab_all_perc_3_long_filt |> 
+asv_tab_all_bloo |> 
   dplyr::filter(abundance_type == 'relative_abundance') %$%
   abundance_value |>
-  range() #max is 0.56
-  
-asv_tab_all_perc_filt_3_long_filt |>
-  colnames()
-
-### since pseudoabundance is only useful for the 0.2 fraction we now only plot the relative abundance changes
-asv_tab_all_perc_filt_02_long_filt |>
-  bind_rows(asv_tab_all_perc_filt_3_long_filt) %$%
-  asv_num |>
-  unique() 
-
-asv_tab_all_perc_filt_02_long_filt |>
-  colnames()
-
-##highligh harbour restoration period
-harbour_restoration <-  asv_tab_all_perc_filt_3_long_filt |> 
-  group_by(sample_id) |>
-  subset(date = between(date, '2010-03-01','2012-04-01')) |>
-  dplyr::summarize(xmin=min(date),xmax=max(date))
-
-## color by class
-asv_tab_all_perc_filt_3_long_filt |>
-  bind_rows(asv_tab_all_perc_filt_02_long_filt) |>
-  #left_join(m_3, by = 'sample_id') |>
-  left_join(tax_bbmo_10y, by = 'asv_num') |>
-  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::filter(abundance_type != 'pseudoabundance') |>
-  #left_join(m_bbmo_10y, by = 'sample_id') |>
-  #left_join(tax, by = c('asv_num' = 'asv')) |>
-  #dplyr::filter(class != is.na(class)) |> ##Raro tenir NAs a Class i que no estiguin filtrats?
-  ggplot(aes(date, abundance_value))+ #, color = 'Class' 
-  scale_x_datetime()+
-  #facet_wrap(vars(class), scales = 'free')+
-  # geom_rect(aes(xmin = '2010-03-01 01::00:00', xmax = '2012-04-01 01::00:00', ymin = 0, ymax = Inf),
-  #           fill = '#D0CFC8', show.legend = FALSE, linejoin = NULL, color = NA, alpha = 0.02)+
-  # geom_rect(data = asv_tab_all_perc_filt_3_long_filt, mapping=aes(xmin = date, xmax = date, x=NULL, y=NULL,
-  #                                     ymin = -Inf, ymax = Inf, fill = '#D0CFC8'), alpha = 0.4)+
-  
-  geom_line(aes(group = asv_num, color = class))+
-  geom_point(aes(color = class))+
-  scale_y_continuous(labels = percent_format())+
-  labs(x = 'Time', y = 'Relative abundance (%)', color = 'Class')+
-  scale_color_manual(values = palette_class_assigned)+
-  facet_grid(vars(fraction), scales = 'free')+
-  #facet_grid(fraction~class)+
-  guides(fill = 'none')+
-  theme_bw()+
-  theme(axis.text.x = element_text(size = 5), panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank(),
-        axis.ticks = element_blank(), legend.position = 'Bottom', axis.text.y = element_text(size = 12),
-        axis.title.y = element_text(size = 14), strip.background = element_blank())
+  range() #max is 0.52
 
 ## Recover z-score for each ASV ----
-### I want to highlight anomlies for each ASV to do so I recover z-scores for those ASVs that that have high z-scores
+### I want to highlight anomalies for each ASV to do so I recover z-scores for those ASVs that that have high z-scores
 ### at some point of the dataset. Easy to observe if those ASVs are having random anomalies or all of them happen at the same time
-
-z_scores_02 <- asv_tab_10y_02_pseudo |>
+x <- 120*0.75
+z_scores_02 <- asv_tab_10y_02_pseudo_zclr |>
   group_by(asv_num) |>
   dplyr::mutate(num_0 = sum(relative_abundance == 0)) |>
-  #dplyr::filter(num_0 < 60) |> ##only anomalies for ASVs that are present in > 50% of the samples
-  dplyr::filter(num_0 < 30) |> ##only anomalies for ASVs that are present in > 25% of the samples
+  dplyr::filter(num_0 <= x) |> ##only anomalies for ASVs that are present in > 50% of the samples
+  #dplyr::filter(num_0 < 30) |> ##only anomalies for ASVs that are present in > 25% of the samples
   group_by(asv_num) |>
-  dplyr::reframe(z_score_ra = get_anomalies(time_lag = 3, negative = FALSE, cutoff = 1.96, 
-                                              na_rm = TRUE, values = relative_abundance, 
-                                              plotting = FALSE)[c(2)]) |>
+  dplyr::reframe(z_score_ra = get_anomalies(time_lag = 2, negative = FALSE, cutoff = 1.96, 
+                                            na_rm = TRUE, values = relative_abundance, 
+                                            plotting = FALSE)[c(2)]) |>
   as_tibble() |>
   unnest(cols = z_score_ra) |>
   group_by(asv_num) |>
   dplyr::mutate(sample_id_num = str_c(1:nrow(m_02))) |>
   left_join(m_02, by = 'sample_id_num')
 
-z_scores_3 <- asv_tab_10y_3_pseudo |>
+
+x <- 117*0.75
+z_scores_3 <- asv_tab_10y_3_pseudo_zclr |>
   group_by(asv_num) |>
   dplyr::mutate(num_0 = sum(relative_abundance == 0)) |>
-  #dplyr::filter(num_0 < 60) |> ##only anomalies for ASVs that are present in > 50% of the samples
-  dplyr::filter(num_0 < 30) |> ##only anomalies for ASVs that are present in > 25% of the samples
+  #dplyr::filter(num_0 < 58) |> ##only anomalies for ASVs that are present in > 50% of the samples
+  dplyr::filter(num_0 <= x) |> ##only anomalies for ASVs that are present in > 25% of the samples
   group_by(asv_num) |>
   dplyr::reframe(z_score_ra = get_anomalies(time_lag = 3, negative = FALSE, cutoff = 1.96, 
                                             na_rm = TRUE, values = relative_abundance, 
@@ -507,25 +716,42 @@ z_scores_3 <- asv_tab_10y_3_pseudo |>
 z_scores_all <- z_scores_02 |>
   bind_rows(z_scores_3)
 
-##shape anomaly
-asv_tab_all_perc_filt_all_long_filt |>
+##Dataset with all information ----
+asv_tab_all_bloo_z_tax <- asv_tab_all_bloo |>
   left_join(z_scores_all) |>
+  left_join(tax_bbmo_10y, by = 'asv_num') 
+  
+### since pseudoabundance is only useful for the 0.2 fraction we now only plot the relative abundance changes
+
+##highligh harbour restoration period (NO funciona encara)
+harbour_restoration <-  asv_tab_all_bloo |> 
+  group_by(sample_id) |>
+  subset(date = between(date, '2010-03-01','2012-04-01')) |>
+  dplyr::summarize(xmin=min(date),xmax=max(date))
+
+## color by class
+asv_tab_all_bloo |>
+  #left_join(m_3, by = 'sample_id') |>
   left_join(tax_bbmo_10y, by = 'asv_num') |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::filter(abundance_type != 'pseudoabundance') |>
-  #ungroup() |>
+  dplyr::filter(!abundance_type %in% c('pseudoabundance', 'zclr')) |>
   #left_join(m_bbmo_10y, by = 'sample_id') |>
   #left_join(tax, by = c('asv_num' = 'asv')) |>
   #dplyr::filter(class != is.na(class)) |> ##Raro tenir NAs a Class i que no estiguin filtrats?
-  ggplot(aes(date, abundance_value, shape = ifelse(z_score_ra > 1.96, '8', '19')))+ #, color = 'Class' 
+  ggplot(aes(date, abundance_value))+ #, color = 'Class' 
   scale_x_datetime()+
-  facet_wrap(vars(class), scales = 'free')+
+  #facet_wrap(vars(class), scales = 'free')+
+  # geom_rect(aes(xmin = '2010-03-01 01::00:00', xmax = '2012-04-01 01::00:00', ymin = 0, ymax = Inf),
+  #           fill = '#D0CFC8', show.legend = FALSE, linejoin = NULL, color = NA, alpha = 0.02)+
+  # geom_rect(data = asv_tab_all_perc_filt_3_long_filt, mapping=aes(xmin = date, xmax = date, x=NULL, y=NULL,
+  #                                     ymin = -Inf, ymax = Inf, fill = '#D0CFC8'), alpha = 0.4)+
   geom_line(aes(group = asv_num, color = class))+
   geom_point(aes(color = class))+
   scale_y_continuous(labels = percent_format())+
   labs(x = 'Time', y = 'Relative abundance (%)', color = 'Class')+
   scale_color_manual(values = palette_class_assigned)+
-  facet_grid(vars(fraction), scales = 'free')+
+  facet_grid(fraction~abundance_type, scales = 'free')+
+  #facet_grid(fraction~class)+
   guides(fill = 'none')+
   theme_bw()+
   theme(axis.text.x = element_text(size = 5), panel.grid.minor = element_blank(),
@@ -533,7 +759,110 @@ asv_tab_all_perc_filt_all_long_filt |>
         axis.ticks = element_blank(), legend.position = 'Bottom', axis.text.y = element_text(size = 12),
         axis.title.y = element_text(size = 14), strip.background = element_blank())
 
-##color anomaly
+asv_tab_all_bloo |>
+  #left_join(m_3, by = 'sample_id') |>
+  left_join(tax_bbmo_10y, by = 'asv_num') |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(!abundance_type %in% c('pseudoabundance', 'relative_abundance')) |>
+  #left_join(m_bbmo_10y, by = 'sample_id') |>
+  #left_join(tax, by = c('asv_num' = 'asv')) |>
+  #dplyr::filter(class != is.na(class)) |> ##Raro tenir NAs a Class i que no estiguin filtrats?
+  ggplot(aes(date, abundance_value))+ #, color = 'Class' 
+  scale_x_datetime()+
+  #facet_wrap(vars(class), scales = 'free')+
+  # geom_rect(aes(xmin = '2010-03-01 01::00:00', xmax = '2012-04-01 01::00:00', ymin = 0, ymax = Inf),
+  #           fill = '#D0CFC8', show.legend = FALSE, linejoin = NULL, color = NA, alpha = 0.02)+
+  # geom_rect(data = asv_tab_all_perc_filt_3_long_filt, mapping=aes(xmin = date, xmax = date, x=NULL, y=NULL,
+  #                                     ymin = -Inf, ymax = Inf, fill = '#D0CFC8'), alpha = 0.4)+
+  geom_line(aes(group = asv_num, color = class))+
+  geom_point(aes(color = class))+
+  #scale_y_continuous(labels = percent_format())+
+  labs(x = 'Time', y = 'z CLR', color = 'Class')+
+  scale_color_manual(values = palette_class_assigned)+
+  facet_grid(fraction~abundance_type~asv_num, scales = 'free')+
+  #facet_grid(fraction~class)+
+  guides(fill = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 5), panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        axis.ticks = element_blank(), legend.position = 'Bottom', axis.text.y = element_text(size = 12),
+        axis.title.y = element_text(size = 14), strip.background = element_blank())
+
+##shape anomaly
+asv_tab_all_bloo_z_tax |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(abundance_type != 'pseudoabundance') |>
+  dplyr::filter(abundance_type != 'zclr') |>
+  #ungroup() |>
+  #left_join(m_bbmo_10y, by = 'sample_id') |>
+  #left_join(tax, by = c('asv_num' = 'asv')) |>
+  #dplyr::filter(class != is.na(class)) |> ##Raro tenir NAs a Class i que no estiguin filtrats?
+  ggplot(aes(date, abundance_value, shape = ifelse(z_score_ra >= 1.96, '8', '19')))+ #, color = 'Class' 
+  scale_x_datetime()+
+  facet_wrap(vars(class), scales = 'free')+
+  geom_line(aes(group = fraction, color = class))+
+  geom_point(aes(color = class))+
+  scale_y_continuous(labels = percent_format())+
+  labs(x = 'Time', y = 'Relative abundance (%)', color = 'Class')+
+  scale_color_manual(values = palette_class_assigned)+
+  facet_grid(vars(asv_num), scales = 'free')+
+  guides(fill = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 5), panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        axis.ticks = element_blank(), legend.position = 'Bottom', axis.text.y = element_text(size = 12),
+        axis.title.y = element_text(size = 14), strip.background = element_blank())
+
+##plot zclr scores
+asv_tab_all_bloo_z_tax |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(abundance_type != 'pseudoabundance') |>
+  dplyr::filter(abundance_type != 'relative_abundance') |>
+  #ungroup() |>
+  #left_join(m_bbmo_10y, by = 'sample_id') |>
+  #left_join(tax, by = c('asv_num' = 'asv')) |>
+  #dplyr::filter(class != is.na(class)) |> ##Raro tenir NAs a Class i que no estiguin filtrats?
+  ggplot(aes(date, abundance_value, shape = ifelse(z_score_ra >= 1.96, '8', '19')))+ #, color = 'Class' 
+  scale_x_datetime()+
+  facet_wrap(vars(class), scales = 'free')+
+  geom_line(aes(group = fraction, color = class))+
+  geom_point(aes(color = class))+
+  ##geom_vline(xintercept = c('2006-01-01', '2005-01-01'))+ no va!!
+  #scale_y_continuous(labels = percent_format())+
+  labs(x = 'Time', y = 'CLR', color = 'Class')+
+  scale_color_manual(values = palette_class_assigned)+
+  facet_grid(vars(asv_num), scales = 'free')+
+  guides(fill = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 5), panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        axis.ticks = element_blank(), legend.position = 'Bottom', axis.text.y = element_text(size = 12),
+        axis.title.y = element_text(size = 14), strip.background = element_blank())
+
+##indentify those that are seasonal from those that are not seasonal
+asv_tab_all_bloo |>
+  colnames()
+
+asv_tab_all_bloo_z_tax$season <- asv_tab_all_bloo_z_tax$season |>
+  factor(levels = c('winter', 'spring', 'summer', 'autumn'))
+
+asv_tab_all_bloo_z_tax |>
+  dplyr::filter(abundance_type != 'pseudoabundance') |>
+  dplyr::filter(abundance_type != 'zclr') |>
+  ggplot(aes(day_of_year, abundance_value, color = season))+
+  geom_line(aes(group = year))+
+  geom_point(aes(color = season))+
+  scale_color_manual(values = palette_seasons_4)+
+  facet_grid(asv_num~fraction, scales = 'free')+
+  labs(x = 'Time', y = 'Relative abundance(%)', color = 'Season')+
+  scale_y_continuous(labels = percent_format())+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 5), panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        axis.ticks = element_blank(), legend.position = 'Bottom', axis.text.y = element_text(size = 12),
+        axis.title.y = element_text(size = 14), strip.background = element_blank())
+  
+##color anomaly----
 ### I would like to recover information from 0.2 and 3 for those ASVs that presented anomalies along the dataset.
 x <- asv_anom_3 |>
   as_tibble()
@@ -547,33 +876,11 @@ asv_anom_all <- x |>
   unique() |>
   as_vector()
 
-##recover all ASVs that presentend and anomaly in PA or FL
-asv_tab_all_perc_3_long_filt <-  asv_tab_10y_3_pseudo |>
-  group_by(asv_num) |>
-  #dplyr::filter(any(relative_abundance >=  0.1)) |> #estan en format 0-1
-  pivot_longer(cols = c(pseudoabundance, relative_abundance), values_to = 'abundance_value', names_to = 'abundance_type') |>
-  filter(asv_num %in% asv_anom_all)
-
-asv_tab_all_perc_filt_02_long_filt %$%
-  asv_num |>
-  unique()
-
-asv_tab_all_perc_02_long_filt <- asv_tab_10y_02_pseudo |>
-  group_by(asv_num) |>
-  #dplyr::filter(any(relative_abundance >=  0.1)) |> #estan en format 0-1
-  pivot_longer(cols = c(pseudoabundance, relative_abundance), values_to = 'abundance_value', names_to = 'abundance_type') |>
-  filter(asv_num %in% asv_anom_all)
-
-asv_tab_z_scores_all <- asv_tab_all_perc_filt_3_long_filt |>
-  bind_rows(asv_tab_all_perc_filt_02_long_filt) |>
+##plot those by anomaly presence colored in red
+asv_tab_all_bloo |>
   left_join(z_scores_all) |>
   left_join(tax_bbmo_10y, by = 'asv_num') |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::filter(abundance_type != 'pseudoabundance') |>
-  group_by(asv_num) |>
-  dplyr::filter(any(abundance_value >=  0.05)) #only blooms that arribe at least at 5% of the community
-
-asv_tab_z_scores_all |>
   mutate(z_score_ra_ed = case_when(is.na(z_score_ra) ~ 0,
                                    z_score_ra == 'NaN' ~ 0,
                                    z_score_ra == Inf ~ 0,
@@ -591,11 +898,11 @@ asv_tab_z_scores_all |>
   #facet_wrap(vars(class), scales = 'free')+
   geom_line(aes(group = asv_num), color = '#080808')+ #, color = '#3D3B3B'
   geom_point(alpha = 1)+ #aes(shape = class)
-  scale_y_continuous(labels = percent_format())+
+  #scale_y_continuous(labels = percent_format())+
   labs(x = 'Time', y = 'Relative abundance (%)', color = 'Anomaly')+ #, shpae = 'Class'
       scale_color_identity()+
   #scale_color_manual(values = if_else(asv_tab_z_scores_all$z_score_ra >= 1.96,  '#9F0011', '#080808', missing = '#080808'))+
-  facet_grid(vars(fraction), scales = 'free')+
+  facet_wrap(fraction~abundance_type, scales = 'free')+
   #facet_grid(fraction~class, scales = 'free')+
   guides(fill = 'none')+
   theme_bw()+
@@ -603,28 +910,215 @@ asv_tab_z_scores_all |>
         panel.grid.major = element_blank(),
         axis.ticks = element_blank(), legend.position = 'Bottom', axis.text.y = element_text(size = 12),
         axis.title.y = element_text(size = 14), strip.background = element_blank())
+
+##plot all month together (seasonal anomalies?)
+asv_tab_all_bloo |>
+  left_join(z_scores_all) |>
+  left_join(tax_bbmo_10y, by = 'asv_num') |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  mutate(z_score_ra_ed = case_when(is.na(z_score_ra) ~ 0,
+                                   z_score_ra == 'NaN' ~ 0,
+                                   z_score_ra == Inf ~ 0,
+                                   TRUE ~ z_score_ra)) |>
+  dplyr::mutate(anomaly_color = if_else(z_score_ra_ed >= 1.96,  '#9F0011', '#080808', missing = '#080808')) |>
+  dplyr::filter(z_score_ra_ed >= 1.96) |>
+  #ungroup() |>
+  #left_join(m_bbmo_10y, by = 'sample_id') |>
+  #left_join(tax, by = c('asv_num' = 'asv')) |>
+  #dplyr::filter(class != is.na(class)) |> ##Raro tenir NAs a Class i que no estiguin filtrats?
+  # ggplot(aes(date, abundance_value, color = ifelse(is.na(z_score_ra), "#080808", 
+  #            if_else(z_score_ra >= 1.96, '#9F0011', '#080808'))))+ #, color = 'Class' , shape = class 
+  #ggplot(aes(date, abundance_value, color = if_else(z_score_ra_ed >= 1.96,  '#9F0011', '#080808', missing = '#080808')))+
+  ggplot(aes(month, abundance_value))+  
+  geom_violin(aes(month, abundance_value))+
+  #scale_x_datetime()+
+  #facet_wrap(vars(class), scales = 'free')+
+  #geom_smooth(aes(month, abundance_value))+
+  #geom_line(aes(group = asv_num), color = '#080808')+ #, color = '#3D3B3B'
+  geom_point(aes(color = class), alpha = 1)+ #aes(shape = class)
+  #scale_y_continuous(labels = percent_format())+
+  labs(x = 'Month', y = 'Relative abundance (%)', color = 'Class')+ #, shpae = 'Class'
+  #scale_color_identity()+
+  scale_color_manual(values = palette_class_assigned)+
+  #scale_color_manual(values = if_else(asv_tab_z_scores_all$z_score_ra >= 1.96,  '#9F0011', '#080808', missing = '#080808'))+
+  facet_wrap(fraction~abundance_type, scales = 'free')+
+  #facet_grid(fraction~class, scales = 'free')+
+  #guides(fill = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 5), panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        axis.ticks = element_blank(), legend.position = 'bottom', axis.text.y = element_text(size = 12),
+        axis.title.y = element_text(size = 14), strip.background = element_blank())
+
+##plot all seasons together (seasonal anomalies?)
+asv_tab_all_bloo |>
+  left_join(z_scores_all) |>
+  left_join(tax_bbmo_10y, by = 'asv_num') |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  mutate(z_score_ra_ed = case_when(is.na(z_score_ra) ~ 0,
+                                   z_score_ra == 'NaN' ~ 0,
+                                   z_score_ra == Inf ~ 0,
+                                   TRUE ~ z_score_ra)) |>
+  dplyr::mutate(anomaly_color = if_else(z_score_ra_ed >= 1.96,  '#9F0011', '#080808', missing = '#080808')) |>
+  dplyr::filter(z_score_ra_ed >= 1.96) |>
+  #ungroup() |>
+  #left_join(m_bbmo_10y, by = 'sample_id') |>
+  #left_join(tax, by = c('asv_num' = 'asv')) |>
+  #dplyr::filter(class != is.na(class)) |> ##Raro tenir NAs a Class i que no estiguin filtrats?
+  # ggplot(aes(date, abundance_value, color = ifelse(is.na(z_score_ra), "#080808", 
+  #            if_else(z_score_ra >= 1.96, '#9F0011', '#080808'))))+ #, color = 'Class' , shape = class 
+  #ggplot(aes(date, abundance_value, color = if_else(z_score_ra_ed >= 1.96,  '#9F0011', '#080808', missing = '#080808')))+
+  ggplot(aes(season, abundance_value))+  
+  geom_violin(aes(season, abundance_value), draw_quantiles = T)+
+  #scale_x_datetime()+
+  #facet_wrap(vars(class), scales = 'free')+
+  #geom_smooth(aes(month, abundance_value))+
+  #geom_line(aes(group = asv_num), color = '#080808')+ #, color = '#3D3B3B'
+  geom_point(aes(color = class), alpha = 1)+ #aes(shape = class)
+  #scale_y_continuous(labels = percent_format())+
+  labs(x = 'Season', y = 'Relative abundance (%)', color = 'Class')+ #, shpae = 'Class'
+  #scale_color_identity()+
+  scale_color_manual(values = palette_class_assigned)+
+  #scale_color_manual(values = if_else(asv_tab_z_scores_all$z_score_ra >= 1.96,  '#9F0011', '#080808', missing = '#080808'))+
+  facet_wrap(fraction~abundance_type, scales = 'free')+
+  #facet_grid(fraction~class, scales = 'free')+
+  #guides(fill = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 5), panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        axis.ticks = element_blank(), legend.position = 'bottom', axis.text.y = element_text(size = 12),
+        axis.title.y = element_text(size = 14), strip.background = element_blank())
   
 #pivot_wider(id_cols = sample_id_num, values_from = anomalies_ra, names_from = asv_num)
+
+##ocurrence of this AVSs vs frequency of blooming events and magnitude----
+###calculate occurency
+nsamples_3 <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(fraction == '3') %$%
+  sample_id |>
+  unique() |>
+  length()
+
+occurence_perc_3 <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(fraction == '3' &
+                  !abundance_type %in% c('pseudoabundance', 'zclr')) |>
+  dplyr::filter(abundance_value > 0) |>
+  group_by(asv_num, sample_id) |>
+  summarize(n = n()) |>
+  group_by(asv_num) |>
+  summarize(occurence = sum(n)) |>
+  mutate(occurence_perc = occurence/nsamples_3,
+         fraction = '3')
+
+nsamples_02 <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(fraction == '0.2') %$%
+  sample_id |>
+  unique() |>
+  length()
+
+occurence_perc_02 <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(fraction == '0.2' &
+                  !abundance_type %in% c('pseudoabundance', 'zclr')) |>
+  dplyr::filter(abundance_value > 0) |>
+  group_by(asv_num, sample_id) |>
+  summarize(n = n()) |>
+  group_by(asv_num) |>
+  summarize(occurence = sum(n)) |>
+  mutate(occurence_perc = occurence/nsamples_02,
+         fraction = '0.2')
+
+occurence_perc <- occurence_perc_02 |>
+  bind_rows(occurence_perc_3)
+
+###calculate number of anomalies > 0.1% in the dataset
+#### we use number of total samples or number of presence of that ASV?
+anom_perc_3 <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(fraction == '3' &
+                  !abundance_type %in% c('pseudoabundance', 'zclr')) |>
+  dplyr::filter(abundance_value >= 0.1) |>
+  dplyr::mutate(z_score_ra_ed = case_when(is.na(z_score_ra) ~ 0,
+                                   z_score_ra == 'NaN' ~ 0,
+                                   z_score_ra == Inf ~ 0,
+                                   TRUE ~ z_score_ra)) |>
+  dplyr::mutate(anomaly = case_when(z_score_ra >= 1.96 ~ 1,
+                                          z_score_ra < 1.96 ~ 0)) |>
+  group_by(asv_num) |>
+  dplyr::summarize(n_anom = sum(anomaly)) |>
+  dplyr::mutate(anom_perc = n_anom/nsamples_3,
+                fraction = '3')
+
+anom_perc_02 <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(fraction == '0.2' &
+                  !abundance_type %in% c('pseudoabundance', 'zclr')) |>
+  dplyr::filter(abundance_value >= 0.1) |>
+  dplyr::mutate(z_score_ra_ed = case_when(is.na(z_score_ra) ~ 0,
+                                          z_score_ra == 'NaN' ~ 0,
+                                          z_score_ra == Inf ~ 0,
+                                          TRUE ~ z_score_ra)) |>
+  dplyr::mutate(anomaly = case_when(z_score_ra >= 1.96 ~ 1,
+                                    z_score_ra < 1.96 ~ 0)) |>
+  group_by(asv_num) |>
+  dplyr::summarize(n_anom = sum(anomaly)) |>
+  dplyr::mutate(anom_perc = n_anom/nsamples_02,
+                fraction = '0.2')
+
+anom_perc <- anom_perc_3 |>
+  bind_rows(anom_perc_02)
+
+###max relative abundance (canviar a max in a blooming envent???)
+max_rel_3 <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(fraction == '3' &
+                  !abundance_type %in% c('pseudoabundance', 'zclr')) |>
+  group_by(asv_num) |>
+  dplyr::summarize(max_rel = max(abundance_value)) |>
+  dplyr::mutate(fraction = '3')
+
+max_rel_02 <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(fraction == '0.2' &
+                  !abundance_type %in% c('pseudoabundance', 'zclr')) |>
+  group_by(asv_num) |>
+  dplyr::summarize(max_rel = max(abundance_value))|>
+  dplyr::mutate(fraction = '0.2')
+
+max_rel <- max_rel_3 |>
+  bind_rows(max_rel_02)
   
+###plot Occurence vs 
+bloom_occurrence_tax <- occurence_perc |>
+  left_join(anom_perc, by = c('asv_num','fraction')) |>
+  left_join(max_rel, by = c('asv_num','fraction')) |>
+  left_join(tax_bbmo_10y, by = 'asv_num') 
+
+occurence_perc |>
+ left_join(anom_perc, by = c('asv_num','fraction')) |>
+  left_join(max_rel, by = c('asv_num','fraction')) |>
+  left_join(tax_bbmo_10y, by = 'asv_num') |>
+  ggplot(aes(occurence_perc, anom_perc, color = class, size = max_rel*10, shape = fraction))+
+  geom_point()+
+  scale_color_manual(values = palette_class_assigned)+
+  labs(x = 'ASV Occurrence (%)', y = 'Anomaly (%)', color = 'Class')+
+  scale_x_continuous(labels = percent_format())+
+  scale_y_continuous(labels = percent_format())+
+  #facet_wrap(vars(asv_num))+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 14), panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        axis.ticks = element_blank(), legend.position = 'right', axis.text.y = element_text(size = 12),
+        axis.title.y = element_text(size = 14), strip.background = element_blank())
+  
+
 # Analysis of FL and PA blooming events ----
 ## Do blooming events synchronize in PA and FL? 
 ## Some ASVs prefer to bloom in one fraction than another? Is there a preference?
 ## plot by fractions
-asv_tab_all_perc_all_long_filt |>
-  colnames()
-
-asv_tab_all_perc_filt_all_long_filt <-  asv_tab_all_perc_filt_02_long_filt |>
-  bind_rows(asv_tab_all_perc_filt_3_long_filt) |>
-  as_tibble()
-
-asv_tab_all_perc_filt_all_long_filt$fraction <- asv_tab_all_perc_filt_all_long_filt$fraction  |> 
+asv_tab_all_bloo$fraction <- asv_tab_all_bloo$fraction  |> 
   factor(levels =  (c('0.2', '3')))
 
-asv_tab_all_perc_filt_all_long_filt |>
-  #left_join(, by = c('sample_id' = 'Code_ed')) |>
+asv_tab_all_bloo |>
+  left_join(z_scores_all) |>
   left_join(tax_bbmo_10y, by = 'asv_num') |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::filter(abundance_type != 'pseudoabundance') |>
+  dplyr::filter(!abundance_type %in% c('pseudoabundance', 'zclr')) |>
   #dplyr::filter(Class != is.na(Class)) |> ##Raro tenir NAs a Class i que no estiguin filtrats?
   ggplot(aes(date, abundance_value, color = 'fraction', group = 'fraction'))+
   scale_x_datetime()+
@@ -633,6 +1127,29 @@ asv_tab_all_perc_filt_all_long_filt |>
   geom_point(aes(color = fraction), size = 0.7)+
   scale_y_continuous(labels = percent_format())+
   labs(x = 'Time', y = 'Abundance', color = 'Fraction')+
+  #scale_color_manual(values = palette_class_assigned)+
+  facet_wrap(vars(asv_num), scales = 'free')+
+  guides(fill = 'none')+
+  scale_color_manual(values = c('#9056a9' , '#6FA956'))+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 5), panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        axis.ticks = element_blank(), legend.position = 'right', axis.text.y = element_text(size = 12),
+        axis.title.y = element_text(size = 14), strip.background = element_blank())
+
+asv_tab_all_bloo |>
+  left_join(z_scores_all) |>
+  left_join(tax_bbmo_10y, by = 'asv_num') |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(!abundance_type %in% c('pseudoabundance', 'relative_abundance')) |>
+  #dplyr::filter(Class != is.na(Class)) |> ##Raro tenir NAs a Class i que no estiguin filtrats?
+  ggplot(aes(date, abundance_value, color = 'fraction', group = 'fraction'))+
+  scale_x_datetime()+
+  #facet_grid(vars(Class), scales = 'free')+
+  geom_line(aes(group = fraction, color = fraction))+
+  geom_point(aes(color = fraction), size = 0.7)+
+  #scale_y_continuous(labels = percent_format())+
+  labs(x = 'Time', y = 'CLR', color = 'Fraction')+
   #scale_color_manual(values = palette_class_assigned)+
   facet_wrap(vars(asv_num), scales = 'free')+
   guides(fill = 'none')+
