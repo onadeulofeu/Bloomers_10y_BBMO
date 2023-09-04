@@ -11,9 +11,18 @@ library(speedyseq)
 library(vegan)
 library(EcolUtils) #rarefaction
 
-#palette seasons---
+#labels----
+labs_fraction <- as_labeller(c('0.2' = 'Free living (0.2 um)',
+                               '3' = 'Particle attached (3 um)'))
+
+labs_diversity <- as_labeller(c('community_eveness_rar' = 'Community Eveness', 
+                                'bray_curtis_result' = 'Bray-Curtis dissimilarity'))
+# palettes----
 palette_seasons_4 <- c("winter" = "#002562", 'spring' = "#519741", 'summer' = "#ffb900",'autumn' =  "#96220a")
-# palettes taxonomy assigned----
+
+palette_fraction <- c('0.2' = '#00808F', '3' = '#454545')
+
+## palettes taxonomy assigned----
 palette_phylums_assigned <- c('Proteobacteria' = "#fcca46","Bacteroidota" = "#669bbc" , 'Actinobacteriota' = "#b0413e",
                               'Cyanobacteria' = "#009e73",'Crenarchaeota' = "#ffa737", 'Verrucomicrobiota' = "#cccccc",
                               'Planctomycetota' = "#69267e", 'Acidobacteriota' = "#1f78b4",'Bdellovibrionota' = "#8c789d",
@@ -54,6 +63,37 @@ palette_class_assigned <- c('Gammaproteobacteria' = '#fcca46', 'Alphaproteobacte
                             'Synergistia' = '#ce7800', 'Abditibacteria' = '#87878b', 'Deferribacteres' = '#4dbaa9')
 
 
+palette_bloomers_tax_class <- c('Gammaproteobacteria' = '#FFA737', 'Alphaproteobacteria' = '#B0413E', 
+                                'Verrucomicrobiae' = '#005c69', 'Opitutae' =   '#fcca46',  'Phycisphaerae' =  '#e3a6ce',   
+                                 'Flavobacteriia' =  '#0051BF',  'Sphingobacteriia'  = '#69267E' ,
+                                'Cyanobacteria'  =  '#009F6A',  'Deltaproteobacteria' = '#000000')
+
+palette_bloomers_tax_order <- c('Thiotrichales' =      'SAR11_clade'=        'Rhodobacterales' =    
+                                  'Sphingomonadales' =   'Rickettsiales'=  
+ 'Rhizobiales' =       'Rhodospirillales' =  'Verrucomicrobiales' = 'Puniceicoccales' =
+   'Phycisphaerales' =  
+ 'Flavobacteriales' =   'Sphingobacteriales' = 'SubsectionI' =        'Bdellovibrionales' = 
+   'Oceanospirillales' =
+'Alteromonadales' =    'Vibrionales' =       'Enterobacteriales' = 'Cellvibrionales' =   
+  'Pseudomonadales' = )
+  
+palette_bloomers_tax_family <- c('Thiotrichaceae',  'Surface_2 ',       'Surface_1',          
+                                 'Rhodobacteraceae' ,   'Sphingomonadaceae',  
+                                 'Surface_2', 'Erythrobacteraceae',  'SAR116_clade'     ,   'Rhodobiaceae'   ,     'Rhodospirillaceae',
+                                 'Verrucomicrobiaceae',
+                                 'DEV007', 'Puniceicoccaceae',   
+                                 'Phycisphaeraceae' ,   'NS7_marine_group' ,   'NS9_marine_group' ,  
+                                 'Cryomorphaceae'  ,    'Saprospiraceae'   ,   'Flavobacteriaceae', 
+                                 'FamilyI'  ,           'Bacteriovoracaceae' ,
+                                 'Alcanivoracaceae',    'Alteromonadaceae',    'Vibrionaceae',   
+                                 'Enterobacteriaceae',  'Halieaceae', 
+                                 'Moraxellaceae',   'SAR86_clade')
+
+  bloo_taxonomy %$%
+  family_f |>
+  unique()
+  
+  
 # functions----
 #source('../Bloomers/R/community_evenness.R')
 #source('../Bloomers/R/get_anomalies.R') #la poso així perquè l'he actualizat i com que no he compilat el paquet potser no funciona actualitzada 
@@ -442,12 +482,14 @@ community_eveness_3 <- asv_tab_bbmo_10y_w_rar |>
   #ungroup() |>
   dplyr::reframe(community_eveness_rar = community_evenness(abundances = reads_rar, index = 'Pielou'))
 
-###plot community evenness
+### plot community evenness----
 community_eveness_02 |>
   bind_rows(community_eveness_3) |>
   left_join(m_bbmo_10y, by = 'sample_id') |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
   ggplot(aes(date, community_eveness_rar))+
+  geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
+                                                    ymin = -Inf, ymax = Inf), fill = '#94969E')+
   geom_point()+
   facet_grid(vars(fraction))+
   scale_x_datetime()+
@@ -491,7 +533,7 @@ bray_curtis_3_rar <- dissimilarity_matrix(data = asv_tab_10y_3_rel_rar,
                                        sample_id_col = sample_id,
                                        values_cols_prefix = 'BL')
 
-###plot bray curtis dissimilarity
+### plot bray curtis dissimilarity----
 #### compare rarified dataset with non-rarified dataset (NO CHANGES, WHY?)
 # bray_curtis_02 |>
 #   bind_rows(bray_curtis_3) |>
@@ -507,21 +549,88 @@ bray_curtis_3_rar <- dissimilarity_matrix(data = asv_tab_10y_3_rel_rar,
 #   theme_bw()+
 #   theme(panel.grid = element_blank(), strip.background = element_blank())
 
+m_bbmo_10y$fraction <- m_bbmo_10y$fraction |>
+  factor(levels = c('0.2', '3'))
+
+asv_tab_all_bloo_z_tax$season <- asv_tab_all_bloo_z_tax$season |>
+  factor(levels = c('winter', 'spring', 'summer', 'autumn'))
+
 bray_curtis_02_rar |>
   bind_rows(bray_curtis_3_rar) |>
   dplyr::filter(bray_curtis_result != is.na(bray_curtis_result)) |>
   left_join(m_bbmo_10y, by = c('samples' = 'sample_id')) |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
   ggplot(aes(date, bray_curtis_result))+
-  geom_point()+
-  facet_grid(vars(fraction))+
+  geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
+                                                    ymin = -Inf, ymax = Inf), fill = '#94969E', alpha = 0.6)+
+  geom_point(aes(shape = fraction, color = fraction))+
+  geom_line(aes(date, bray_curtis_result, group = fraction, color = fraction))+
+  #facet_grid(vars(fraction))+
+  scale_color_manual(values= palette_fraction, labels = labs_fraction)+
   scale_x_datetime()+
-  labs(x = 'Time', y = 'Bray Curtis Dissimilarity')+
-  geom_line()+
+  labs(x = 'Time', y = 'Bray Curtis Dissimilarity', color = 'Fraction')+
+  guides(shape = 'none')+
+  scale_y_continuous(limits = c(0.15, 1.0))+
   theme_bw()+
-  theme(panel.grid = element_blank(), strip.background = element_blank())
+  theme(panel.grid = element_blank(), strip.background = element_blank(), legend.position = 'bottom')
 
+### plot Bray-Curtis dissimilarity and Community Eveness together----
+community_eveness_all <- community_eveness_02 |>
+  bind_rows(community_eveness_3) 
 
+bray_curtis_rar_all <- bray_curtis_02_rar |> ##one sample less, the first one can't be compared with the previous
+  bind_rows(bray_curtis_3_rar)
+  
+community_eveness_all |> 
+  left_join(bray_curtis_rar_all, by = c('sample_id' = 'samples')) |>
+  dplyr::select(-row_index_2) |>
+  pivot_longer(cols = c('community_eveness_rar', 'bray_curtis_result'), names_to = 'diversity_index') |>
+  left_join(m_bbmo_10y, by = c('sample_id')) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  ggplot(aes(date, value))+
+  geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
+                                                    ymin = -Inf, ymax = Inf), fill = '#94969E', alpha = 0.6)+
+  geom_point(aes(shape = fraction, color = fraction))+
+  geom_line(aes(date, value, group = fraction, color = fraction))+
+  #facet_wrap(diversity_index~., labeller = labs_diversity)+
+  facet_grid(vars(diversity_index), labeller = labs_diversity)+
+  scale_color_manual(values= palette_fraction, labels = labs_fraction)+
+  scale_x_datetime(date_breaks = 'year', date_labels = '%Y')+
+  geom_vline(xintercept = as.numeric(as.Date("2005-01-01")), color = '#000000')+
+  labs(x = 'Time', y = 'Community diversity', color = 'Fraction')+
+  guides(shape = 'none')+
+  #scale_y_continuous(limits = c(0.15, 1.0))+
+  theme_bw()+
+  theme(panel.grid = element_blank(), strip.background = element_blank(), legend.position = 'bottom')
+
+###axis x day of the year
+m_bbmo_10y |>
+  colnames()
+
+community_eveness_all |> 
+  left_join(bray_curtis_rar_all, by = c('sample_id' = 'samples')) |>
+  dplyr::select(-row_index_2) |>
+  pivot_longer(cols = c('community_eveness_rar', 'bray_curtis_result'), names_to = 'diversity_index') |>
+  left_join(m_bbmo_10y, by = c('sample_id')) |>
+  #dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  ggplot(aes(day_of_year, value))+
+  # geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
+  #                                                   ymin = -Inf, ymax = Inf), fill = '#94969E', alpha = 0.6)+
+  geom_point(aes(shape = fraction, color = fraction))+
+  #geom_line(aes(day, value, group = fraction, color = fraction))+
+  #facet_wrap(diversity_index~., labeller = labs_diversity)+
+  facet_grid(diversity_index~fraction)+
+  scale_color_manual(values= palette_fraction)+
+  geom_violin(aes(group = month), alpha = 0.5)+
+  #scale_x_datetime(date_breaks = 'year', date_labels = '%Y')+
+  #geom_vline(xintercept = as.numeric(as.Date("2005-01-01")), color = '#000000')+
+  labs(x = 'Time', y = 'Community diversity', color = 'Fraction')+
+  guides(shape = 'none')+
+  #scale_y_continuous(limits = c(0.15, 1.0))+
+  theme_bw()+
+  theme(panel.grid = element_blank(), strip.background = element_blank(), legend.position = 'bottom')
+
+  
 # Discover anomalies----
 ## For each ASVs based on relative abundances and pseudoabundances-----
 ### those ASVs that are present > 50% of the sampless
@@ -533,16 +642,18 @@ asv_tab_10y_02_pseudo %$%
 asv_tab_10y_02_zclr |>
   colnames()
 
+###I filter by relativeabundance > 10% at some point so that the computer can compute this easily
 ##percentage of ASV present in the dataset that we want to subset by
 x <- 120*0.75
 
 z_02 <- asv_tab_10y_02_pseudo |>
   inner_join(asv_tab_10y_02_zclr, by = c('sample_id', 'asv_num')) |> #asv_tab_10y_02_zclr vull afegir el zclr per calcular també les seves anomalies i veure si veiem el mateix
   group_by(asv_num) |>
-  dplyr::mutate(num_0 = sum(relative_abundance == 0)) |>
-  dplyr::filter(num_0 <= x) |>
+  #dplyr::mutate(num_0 = sum(relative_abundance == 0)) |>
+  #dplyr::filter(num_0 <= x) |>
   #as_tibble() |>
-  group_by(asv_num) |>
+  dplyr::filter(any(relative_abundance >=  0.1)) |> #estan en format 0-1
+  #group_by(asv_num) |>
   dplyr::reframe(anomalies_ab = get_anomalies(time_lag = 2, negative = FALSE, na_rm = TRUE, cutoff = 1,96, values = pseudoabundance, plotting = FALSE)[c(1,2,3)],
                  anomalies_ra = get_anomalies(time_lag = 2, negative = FALSE, cutoff = 1.96, na_rm = TRUE, values = relative_abundance, plotting = FALSE)[c(1,2,3)],
                  anomalies_clr = get_anomalies(time_lag = 2, negative = FALSE, cutoff = 1.96, na_rm = TRUE, values = zclr, plotting = FALSE)[c(1,2,3)])
@@ -556,10 +667,11 @@ x <- 117*0.75
 z_3 <- asv_tab_10y_3_pseudo |>
   inner_join(asv_tab_10y_3_zclr, by = c('sample_id', 'asv_num')) |>
   group_by(asv_num) |>
-  dplyr::mutate(num_0 = sum(relative_abundance == 0)) |>
-  dplyr::filter(num_0 <= x) |>  #filter those ASVs that are 0 more than 50% of the dataset
+  # dplyr::mutate(num_0 = sum(relative_abundance == 0)) |>
+  # dplyr::filter(num_0 <= x) |>  #filter those ASVs that are 0 more than 50% of the dataset
   #as_tibble() |>
-  group_by(asv_num) |>
+  #group_by(asv_num) |>
+  dplyr::filter(any(relative_abundance >=  0.1)) |> #estan en format 0-1
   dplyr::reframe(anomalies_ab = get_anomalies(time_lag = 2, negative = FALSE, na_rm = TRUE, cutoff = 1,96, values = pseudoabundance, plotting = FALSE)[c(1,2,3)],
     anomalies_ra = get_anomalies(time_lag = 2, negative = FALSE, cutoff = 1.96, na_rm = TRUE, values = relative_abundance, plotting = FALSE)[c(1,2,3)],
     anomalies_clr = get_anomalies(time_lag = 2, negative = FALSE, cutoff = 1.96, na_rm = TRUE, values = zclr, plotting = FALSE)[c(1,2,3)])
@@ -637,8 +749,8 @@ asv_anom_02_tb |>
   anti_join(asv_anom_3_tb) #40 ASVs only in 0.2
 
 asv_tab_10y_02_pseudo_zclr_bloo <-  asv_tab_10y_02_pseudo_zclr |>
-  group_by(asv_num) |>
-  dplyr::filter(any(relative_abundance >=  0.1)) |> #estan en format 0-1
+  #group_by(asv_num) |>
+  #dplyr::filter(any(relative_abundance >=  0.1)) |> #estan en format 0-1
   pivot_longer(cols = c(zclr, relative_abundance, pseudoabundance), values_to = 'abundance_value', names_to = 'abundance_type') |>
   dplyr::filter(asv_num %in% asv_anom_02 |
            asv_num %in% asv_anom_3) ##recover ASVs that presented anomalies in 02 or 3
@@ -675,7 +787,44 @@ asv_tab_all_bloo |>
 asv_tab_all_bloo |> 
   dplyr::filter(abundance_type == 'relative_abundance') %$%
   abundance_value |>
-  range() #max is 0.52
+  range() #max is 0.56
+
+## Recover z_scores of diversity----
+z_scores_div_02_bray <- bray_curtis_02_rar |>
+  dplyr::filter(bray_curtis_result != is.na(bray_curtis_result)) |>
+  dplyr::reframe(z_score_bray = get_anomalies(time_lag = 2, values = bray_curtis_result, plotting = FALSE)[c(2)]) |>
+  as_tibble() |>
+  unnest(cols = z_score_bray) |>
+  dplyr::mutate(sample_id_num = str_c(2:nrow(m_02))) |>
+  left_join(m_02, by = 'sample_id_num')
+
+z_scores_div_02_ev <- community_eveness_02 |>
+  dplyr::reframe(z_score_ev = get_anomalies(time_lag = 2, values = community_eveness_rar, plotting = FALSE)[c(2)]) |>
+  as_tibble() |>
+  unnest(cols = z_score_ev) |>
+  dplyr::mutate(sample_id_num = str_c(1:nrow(m_02))) |>
+  left_join(m_02, by = 'sample_id_num')
+
+z_scores_div_3_bray <- bray_curtis_3_rar |>
+  dplyr::filter(bray_curtis_result != is.na(bray_curtis_result)) |>
+  dplyr::reframe(z_score_bray = get_anomalies(time_lag = 2, values = bray_curtis_result, plotting = FALSE)[c(2)]) |>
+  as_tibble() |>
+  unnest(cols = z_score_bray) |>
+  dplyr::mutate(sample_id_num = str_c(2:nrow(m_3))) |>
+  left_join(m_3, by = 'sample_id_num')
+
+z_scores_div_3_ev <- community_eveness_3 |>
+  dplyr::reframe(z_score_ev = get_anomalies(time_lag = 2, values = community_eveness_rar, plotting = FALSE)[c(2)]) |>
+  as_tibble() |>
+  unnest(cols = z_score_ev) |>
+  dplyr::mutate(sample_id_num = str_c(1:nrow(m_3))) |>
+  left_join(m_3, by = 'sample_id_num')
+
+z_scores_bray <- z_scores_div_02_bray |>
+  bind_rows(z_scores_div_3_bray)
+
+z_scores_ev <- z_scores_div_02_ev |>
+  bind_rows(z_scores_div_3_ev)
 
 ## Recover z-score for each ASV ----
 ### I want to highlight anomalies for each ASV to do so I recover z-scores for those ASVs that that have high z-scores
@@ -684,7 +833,7 @@ x <- 120*0.75
 z_scores_02 <- asv_tab_10y_02_pseudo_zclr |>
   group_by(asv_num) |>
   dplyr::mutate(num_0 = sum(relative_abundance == 0)) |>
-  dplyr::filter(num_0 <= x) |> ##only anomalies for ASVs that are present in > 50% of the samples
+  #dplyr::filter(num_0 <= x) |> ##only anomalies for ASVs that are present in > 50% of the samples
   #dplyr::filter(num_0 < 30) |> ##only anomalies for ASVs that are present in > 25% of the samples
   group_by(asv_num) |>
   dplyr::reframe(z_score_ra = get_anomalies(time_lag = 2, negative = FALSE, cutoff = 1.96, 
@@ -696,13 +845,12 @@ z_scores_02 <- asv_tab_10y_02_pseudo_zclr |>
   dplyr::mutate(sample_id_num = str_c(1:nrow(m_02))) |>
   left_join(m_02, by = 'sample_id_num')
 
-
-x <- 117*0.75
+x <- 117*0.75 #number of 0s that we accept in the dataset to filter it by to calculate anomalies
 z_scores_3 <- asv_tab_10y_3_pseudo_zclr |>
   group_by(asv_num) |>
   dplyr::mutate(num_0 = sum(relative_abundance == 0)) |>
   #dplyr::filter(num_0 < 58) |> ##only anomalies for ASVs that are present in > 50% of the samples
-  dplyr::filter(num_0 <= x) |> ##only anomalies for ASVs that are present in > 25% of the samples
+  #dplyr::filter(num_0 <= x) |> ##only anomalies for ASVs that are present in > 25% of the samples
   group_by(asv_num) |>
   dplyr::reframe(z_score_ra = get_anomalies(time_lag = 3, negative = FALSE, cutoff = 1.96, 
                                             na_rm = TRUE, values = relative_abundance, 
@@ -723,41 +871,166 @@ asv_tab_all_bloo_z_tax <- asv_tab_all_bloo |>
   
 ### since pseudoabundance is only useful for the 0.2 fraction we now only plot the relative abundance changes
 
-##highligh harbour restoration period (NO funciona encara)
-harbour_restoration <-  asv_tab_all_bloo |> 
-  group_by(sample_id) |>
-  subset(date = between(date, '2010-03-01','2012-04-01')) |>
-  dplyr::summarize(xmin=min(date),xmax=max(date))
+##highligh harbour restoration period 
+### The remodelation of the Blanes harbour strated on 24th March 2010 and finished on the 9th of june 2012
+harbour_restoration <- tibble(xmin = '2010-03-24', xmax = '2012-06-09') |>
+  dplyr::mutate(date_min = as.POSIXct(xmin, format = "%Y-%m-%d"),
+                date_max = (as.POSIXct(xmax, format = "%Y-%m-%d")))
 
-## color by class
-asv_tab_all_bloo |>
-  #left_join(m_3, by = 'sample_id') |>
-  left_join(tax_bbmo_10y, by = 'asv_num') |>
+## Plot Eveness and Bray Curtis anomalies----
+### crec que no té sentit perquè ja ens indica un canvi en la comunitat almenys la Bray-Curtis dissimilarity
+bray_curtis_02_rar |>
+  bind_rows(bray_curtis_3_rar) |>
+  left_join(m_bbmo_10y, by = c('samples' = 'sample_id')) |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  ggplot(aes(date, bray_curtis_result))+
+  geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
+                                                    ymin = -Inf, ymax = Inf), fill = '#94969E', alpha = 0.6)+
+  geom_point(aes(shape = fraction, color = fraction))+
+  geom_line(aes(date, bray_curtis_result, group = fraction, color = fraction))+
+  #facet_grid(vars(fraction))+
+  scale_color_manual(values = palette_fraction, labels = labs_fraction)+
+  scale_x_datetime()+
+  labs(x = 'Time', y = 'Bray Curtis Dissimilarity', color = 'Fraction')+
+  guides(shape = 'none')+
+  scale_y_continuous(limits = c(0.15, 1.0))+
+  theme_bw()+
+  theme(panel.grid = element_blank(), strip.background = element_blank(), legend.position = 'bottom')
+
+z_scores_bray <- z_scores_div_02_bray |>
+  bind_rows(z_scores_div_3_bray)
+
+z_scores_ev <- z_scores_div_02_ev |>
+  bind_rows(z_scores_div_3_ev)
+
+m_bbmo_10y$fraction <- m_bbmo_10y$fraction |>
+  factor(levels = c('0.2', '3'))
+
+asv_tab_all_bloo_z_tax$season <- asv_tab_all_bloo_z_tax$season |>
+  factor(levels = c('winter', 'spring', 'summer', 'autumn'))
+
+ bray_curtis_02_rar |>
+  bind_rows(bray_curtis_3_rar) |>
+  dplyr::filter(bray_curtis_result != is.na(bray_curtis_result)) |>
+  left_join(m_bbmo_10y, by = c('samples' = 'sample_id')) |>
+  left_join(z_scores_bray) |>
+  dplyr::mutate(z_scores_bray = case_when(is.na(z_score_bray) ~ 0,
+                                   z_score_bray == 'NaN' ~ 0,
+                                   z_score_bray == Inf ~ 0,
+                                   TRUE ~ z_score_bray)) |>
+  dplyr::mutate(anomaly_color = if_else(abs(z_score_bray) >= 1.96,  '#9F0011', '#080808', missing = '#080808')) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  ggplot(aes(date, bray_curtis_result))+
+  geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
+                                                    ymin = -Inf, ymax = Inf), fill = '#94969E', alpha = 0.6)+
+  geom_line(aes(date, bray_curtis_result, group = fraction))+
+   geom_point(aes(shape = fraction, color = anomaly_color))+
+  facet_grid(vars(fraction))+
+  scale_color_identity()+
+  #scale_shape_manual(labels = labs_fraction)+
+  scale_x_datetime()+
+  labs(x = 'Time', y = 'Bray Curtis Dissimilarity', color = 'Fraction')+
+  guides(shape = 'none')+
+  scale_y_continuous(limits = c(0.15, 1.0))+
+  theme_bw()+
+  theme(panel.grid = element_blank(), strip.background = element_blank(), legend.position = 'bottom')
+
+## Plot ASV color by class----
+asv_tab_all_bloo_z_tax %$%
+  class |>
+  unique()
+
+asv_tab_all_bloo_z_tax %$%
+  order |>
+  unique()
+
+bloo_taxonomy <- asv_tab_all_bloo_z_tax %>%
+  dplyr::select(phylum_f, class_f, order_f, family_f, asv_num_f) |>
+  unique()
+
+asv_tab_all_bloo_z_tax |>
+  colnames()
+
+##reorder taxonomy as factors 
+asv_tab_all_bloo_z_tax <- asv_tab_all_bloo_z_tax |>
+  dplyr::mutate(phylum_f = as_factor(phylum),
+         family_f = as_factor(family),
+         order_f = as_factor(order),
+         class_f = as_factor(class),
+         asv_num_f = as_factor(asv_num))
+
+asv_tab_all_bloo_z_tax$class_f <-  factor(asv_tab_all_bloo_z_tax$class_f, 
+                                            levels=unique(asv_tab_all_bloo_z_tax$class_f[order(asv_tab_all_bloo_z_tax$phylum_f)]), 
+                                            ordered=TRUE)
+
+asv_tab_all_bloo_z_tax$order_f <-  factor(asv_tab_all_bloo_z_tax$order_f, 
+                                            levels=unique(asv_tab_all_bloo_z_tax$order_f[order(asv_tab_all_bloo_z_tax$phylum_f,
+                                                                                                 asv_tab_all_bloo_z_tax$class_f)]), 
+                                            ordered=TRUE)
+
+asv_tab_all_bloo_z_tax$family_f <-  factor(asv_tab_all_bloo_z_tax$family_f, 
+                                             levels=unique(asv_tab_all_bloo_z_tax$family_f[order(asv_tab_all_bloo_z_tax$phylum_f,
+                                                                                                   asv_tab_all_bloo_z_tax$class_f,
+                                                                                                   asv_tab_all_bloo_z_tax$order_f)]), 
+                                             ordered=TRUE)
+
+
+asv_tab_all_bloo_z_tax$asv_num_f <-  factor(asv_tab_all_bloo_z_tax$asv_num_f, 
+                                              levels=unique(asv_tab_all_bloo_z_tax$asv_num_f[order(asv_tab_all_bloo_z_tax$phylum_f,
+                                                                                                     asv_tab_all_bloo_z_tax$class_f,
+                                                                                                     asv_tab_all_bloo_z_tax$order_f,
+                                                                                                     asv_tab_all_bloo_z_tax$family_f)]), 
+                                              ordered=TRUE)
+
+asv_tab_all_bloo_z_tax |>
+  #left_join(m_3, by = 'sample_id') |>
+  #left_join(tax_bbmo_10y, by = 'asv_num') |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d")),
+                family_asv_num = as.factor(paste0(family_f, '.', asv_num_f))) |>
   dplyr::filter(!abundance_type %in% c('pseudoabundance', 'zclr')) |>
   #left_join(m_bbmo_10y, by = 'sample_id') |>
   #left_join(tax, by = c('asv_num' = 'asv')) |>
   #dplyr::filter(class != is.na(class)) |> ##Raro tenir NAs a Class i que no estiguin filtrats?
-  ggplot(aes(date, abundance_value))+ #, color = 'Class' 
+  ggplot(aes(date, abundance_value, shape = 'fraction'))+ #, color = 'Class' 
+  #geom_vline(xintercept = c('2004-03-01'))+
   scale_x_datetime()+
   #facet_wrap(vars(class), scales = 'free')+
   # geom_rect(aes(xmin = '2010-03-01 01::00:00', xmax = '2012-04-01 01::00:00', ymin = 0, ymax = Inf),
   #           fill = '#D0CFC8', show.legend = FALSE, linejoin = NULL, color = NA, alpha = 0.02)+
-  # geom_rect(data = asv_tab_all_perc_filt_3_long_filt, mapping=aes(xmin = date, xmax = date, x=NULL, y=NULL,
-  #                                     ymin = -Inf, ymax = Inf, fill = '#D0CFC8'), alpha = 0.4)+
-  geom_line(aes(group = asv_num, color = class))+
-  geom_point(aes(color = class))+
+  geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
+                                      ymin = -Inf, ymax = Inf), fill = '#94969E')+ #, alpha = 0.4
+  geom_line(aes(group = 'fraction', color = class))+
+  geom_point(aes(color = class, shape = 'fraction'), size = 0.5)+
   scale_y_continuous(labels = percent_format())+
-  labs(x = 'Time', y = 'Relative abundance (%)', color = 'Class')+
-  scale_color_manual(values = palette_class_assigned)+
-  facet_grid(fraction~abundance_type, scales = 'free')+
-  #facet_grid(fraction~class)+
-  guides(fill = 'none')+
+  labs(x = 'Time', y = 'Relative abundance (%)', color = 'Class', shape = 'Fraction')+
+  scale_color_manual(values = palette_bloomers_tax_class)+
+  #facet_grid(fraction~abundance_type, scales = 'free')+
+  #facet_grid(asv_num~fraction)+
+  facet_wrap(vars(family_asv_num), scales = 'free', ncol = 5)+
+  #guides(fill = 'none')+
   theme_bw()+
   theme(axis.text.x = element_text(size = 5), panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank(),
-        axis.ticks = element_blank(), legend.position = 'Bottom', axis.text.y = element_text(size = 12),
-        axis.title.y = element_text(size = 14), strip.background = element_blank())
+        panel.grid.major = element_blank(), strip.text = element_text(size = 5),
+        axis.ticks = element_blank(), legend.position = 'right', axis.text.y = element_text(size = 5),
+        axis.title.y = element_text(size = 5), strip.background = element_blank())
+
+##abundance changes over the dataset----
+asv_tab_all_bloo_z_tax |>
+  colnames()
+
+asv_tab_all_bloo_z_tax |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  ggplot(aes(date, bacteria_joint))+
+  scale_x_datetime()+
+  scale_y_continuous(labels = scales::scientific)+#, breaks = c(5e+00, 1e+01), limits = c(2e+00, 1.25e+01)
+  geom_point()+
+  geom_line()+
+  labs(x = 'Time', y = 'Prokaryotic Abundance (cells/mL)', color = 'Class', shape = 'Fraction')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 5), panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(), strip.text = element_text(size = 5),
+        axis.ticks = element_blank(), legend.position = 'right', axis.text.y = element_text(size = 5),
+        axis.title.y = element_text(size = 5), strip.background = element_blank())
 
 asv_tab_all_bloo |>
   #left_join(m_3, by = 'sample_id') |>
@@ -788,7 +1061,7 @@ asv_tab_all_bloo |>
         axis.ticks = element_blank(), legend.position = 'Bottom', axis.text.y = element_text(size = 12),
         axis.title.y = element_text(size = 14), strip.background = element_blank())
 
-##shape anomaly
+###shape anomaly----
 asv_tab_all_bloo_z_tax |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
   dplyr::filter(abundance_type != 'pseudoabundance') |>
@@ -813,7 +1086,7 @@ asv_tab_all_bloo_z_tax |>
         axis.ticks = element_blank(), legend.position = 'Bottom', axis.text.y = element_text(size = 12),
         axis.title.y = element_text(size = 14), strip.background = element_blank())
 
-##plot zclr scores
+###plot zclr scores----
 asv_tab_all_bloo_z_tax |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
   dplyr::filter(abundance_type != 'pseudoabundance') |>
@@ -839,7 +1112,7 @@ asv_tab_all_bloo_z_tax |>
         axis.ticks = element_blank(), legend.position = 'Bottom', axis.text.y = element_text(size = 12),
         axis.title.y = element_text(size = 14), strip.background = element_blank())
 
-##indentify those that are seasonal from those that are not seasonal
+### Identify those that are seasonal from those that are not seasonal----
 asv_tab_all_bloo |>
   colnames()
 
@@ -876,7 +1149,7 @@ asv_anom_all <- x |>
   unique() |>
   as_vector()
 
-##plot those by anomaly presence colored in red
+###plot those by anomaly presence colored in red----
 asv_tab_all_bloo |>
   left_join(z_scores_all) |>
   left_join(tax_bbmo_10y, by = 'asv_num') |>
@@ -900,7 +1173,7 @@ asv_tab_all_bloo |>
   geom_point(alpha = 1)+ #aes(shape = class)
   #scale_y_continuous(labels = percent_format())+
   labs(x = 'Time', y = 'Relative abundance (%)', color = 'Anomaly')+ #, shpae = 'Class'
-      scale_color_identity()+
+  scale_color_identity()+
   #scale_color_manual(values = if_else(asv_tab_z_scores_all$z_score_ra >= 1.96,  '#9F0011', '#080808', missing = '#080808'))+
   facet_wrap(fraction~abundance_type, scales = 'free')+
   #facet_grid(fraction~class, scales = 'free')+
@@ -1089,14 +1362,25 @@ bloom_occurrence_tax <- occurence_perc |>
   left_join(max_rel, by = c('asv_num','fraction')) |>
   left_join(tax_bbmo_10y, by = 'asv_num') 
 
-occurence_perc |>
+occurence_perc_tax <-occurence_perc  |>
  left_join(anom_perc, by = c('asv_num','fraction')) |>
   left_join(max_rel, by = c('asv_num','fraction')) |>
-  left_join(tax_bbmo_10y, by = 'asv_num') |>
-  ggplot(aes(occurence_perc, anom_perc, color = class, size = max_rel*10, shape = fraction))+
+  left_join(tax_bbmo_10y, by = 'asv_num')
+
+occurence_perc_tax |>
+  colnames()
+
+occurence_perc_tax %$%
+  unique(genus)
+
+occurence_perc_tax %$%
+  unique(family)
+
+occurence_perc_tax |>
+  ggplot(aes(occurence_perc, anom_perc, color = class, size = max_rel*100, shape = fraction))+
   geom_point()+
   scale_color_manual(values = palette_class_assigned)+
-  labs(x = 'ASV Occurrence (%)', y = 'Anomaly (%)', color = 'Class')+
+  labs(x = 'ASV Occurrence (%)', y = 'Anomaly (%)', color = 'Class', size = 'Max relative\nabundance (%)')+
   scale_x_continuous(labels = percent_format())+
   scale_y_continuous(labels = percent_format())+
   #facet_wrap(vars(asv_num))+
@@ -1105,7 +1389,6 @@ occurence_perc |>
         panel.grid.major = element_blank(),
         axis.ticks = element_blank(), legend.position = 'right', axis.text.y = element_text(size = 12),
         axis.title.y = element_text(size = 14), strip.background = element_blank())
-  
 
 # Analysis of FL and PA blooming events ----
 ## Do blooming events synchronize in PA and FL? 
