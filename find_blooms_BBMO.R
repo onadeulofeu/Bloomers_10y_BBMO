@@ -27,7 +27,7 @@ palette_fraction <- c('0.2' = '#00808F', '3' = '#454545')
 
 ## palettes taxonomy assigned----
 palette_phylums_assigned <- c('Proteobacteria' = "#fcca46","Bacteroidota" = "#669bbc" , 'Actinobacteriota' = "#b0413e",
-                              'Cyanobacteria' = "#009e73",'Crenarchaeota' = "#ffa737", 'Verrucomicrobiota' = "#cccccc",
+                              'Cyanobacteria' = "#009e73",'Crenarchaeota' = "#ffa737", 'Verrucomicrobiota' = "#0051BF",
                               'Planctomycetota' = "#69267e", 'Acidobacteriota' = "#1f78b4",'Bdellovibrionota' = "#8c789d",
                               'Firmicutes' = "#637b88", 'Myxococcota'= "#003029", 'Nitrospinota'= "#e3a6ce",
                               'Campilobacterota' = "#002960", 'Deinococcota'= "#ba9864",'Fusobacteriota' ="#fb9a99",
@@ -36,6 +36,9 @@ palette_phylums_assigned <- c('Proteobacteria' = "#fcca46","Bacteroidota" = "#66
                               'Calditrichota' = "#8a007a", 'Halobacterota' = "#b79c64", 'Nitrospirota' = "#41815f",
                               'Dependentiae' = "#5b95e5", 'Patescibacteria' = "#33af9c",'Cloacimonadota' = "#fbed5c",
                               'Synergistota' = "#ce7800", 'Abditibacteriota' = "#87878b", 'Deferribacterota' = "#4dbaa9")
+
+palette_phylums_assigned_bloo <- c('Proteobacteria' = "#fcca46", 'Cyanobacteria' = "#009e73", 'Verrucomicrobiota' = "#cccccc",
+                                   'Verrucomicrobiota' = "#0051BF", "Bacteroidetes" = "#669bbc")
 
 palette_class_assigned <- c('Gammaproteobacteria' = '#fcca46', 'Alphaproteobacteria' = '#d95726', 'Zetaproteobacteria' = '#EBCD92',
                             'Bacteroidia' = '#669BBC','Rhodothermia' =  '#00425E',
@@ -66,10 +69,40 @@ palette_class_assigned <- c('Gammaproteobacteria' = '#fcca46', 'Alphaproteobacte
                             'Synergistia' = '#ce7800', 'Abditibacteria' = '#87878b', 'Deferribacteres' = '#4dbaa9')
 
 
-palette_bloomers_tax_class <- c('Gammaproteobacteria' = '#FFA737', 'Alphaproteobacteria' = '#B0413E', 
+palette_class_assigned_bloo <- c('Gammaproteobacteria' = '#FFA737', 'Alphaproteobacteria' = '#B0413E', 
                                 'Verrucomicrobiae' = '#005c69', 'Opitutae' =   '#fcca46',  'Phycisphaerae' =  '#e3a6ce',   
                                  'Flavobacteriia' =  '#0051BF',  'Sphingobacteriia'  = '#69267E' ,
                                 'Cyanobacteria'  =  '#009F6A',  'Deltaproteobacteria' = '#000000')
+
+bloomers_tax |>
+  dplyr::filter(taxonomy_rank == 'sum_f') |>
+  left_join(tax_bbmo_10y, by = c('taxonomy' = 'family')) |>
+  distinct(taxonomy, order) |>
+
+palette_order_assigned_bloo <- c('Thiotrichales' = '#FFA737', 'SAR11_clade' = '#B0413E', 'Rhodobacterales' = '#C55E5C',
+                                   'Sphingomonadales' = '#8C000A', 'Rickettsiales' = '#5A0000',
+                                 'Rhizobiales' = '#682624', 'Rhodospirillales' = '#FFA197',
+                                 'Verrucomicrobiales' = '#005c69', 'Puniceicoccales' =   '#fcca46',  'Phycisphaerales' =  '#e3a6ce',   
+                                 ' Flavobacteriales' =  '#0051BF',  'Sphingobacteriales'  = '#69267E' ,
+                                 'SubsectionI'  =  '#009F6A',  'Bdellovibrionales' = '#000000',
+                                 'Oceanospirillales' = '#DA6D00',
+                                   'Alteromonadales' = '#A63B00',
+                                   'Vibrionales'= '#F2AC5D', 
+                                   'Enterobacteriales' = '#FFA200',
+                                   'Cellvibrionales' = '#F35900', 
+                                   'Pseudomonadales' = '#FF8E00')
+
+palette_family_assigned_bloo <- c('Thiotrichaceae' = '#FFA737', 'Surface_2' = '#B0413E', 'Surface_1'= '#CD7F78', 
+                                  'Rhodobacteraceae' = '#C55E5C', 'Sphingomonadaceae' = '#8C000A', 'Erythrobacteraceae' = '#690000',
+                                  'SAR116_clade' = '#5A0000',
+                                  'Rhodobiaceae' = '#682624',
+                                  'Rhodospirillaceae'= '#FFA197',
+                                  'Verrucomicrobiaceae' = '#005c69',
+                                  )
+
+palette_genus_assigned_bloo <- c()
+
+all_tax_bloomers <- c()
 # 
 # palette_bloomers_tax_order <- c('Thiotrichales' =      'SAR11_clade'=        'Rhodobacterales' =
 #                                   'Sphingomonadales' =   'Rickettsiales'=
@@ -741,9 +774,10 @@ asv_anom_3_tb <- asv_anom_3 |>
 asv_anom_02_tb <- asv_anom_02 |>
   as_tibble()
 
-asv_anom_3_tb |>
+common_bloomers_tax <- asv_anom_3_tb |>
   bind_rows(asv_anom_02_tb) |>
-  unique() ##96 totals >50% del dataset
+  unique() |> ##96 totals >50% del dataset
+  left_join(tax_bbmo_10y, by = c('value' = 'asv_num'))
 
 asv_anom_3_tb |>
   anti_join(asv_anom_02_tb) #10 ASV only in 3
@@ -864,32 +898,248 @@ z_scores_3 <- asv_tab_10y_3_pseudo_zclr |>
   dplyr::mutate(sample_id_num = str_c(1:nrow(m_3))) |>
   left_join(m_3, by = 'sample_id_num') 
 
-# asv27<- z_scores_3 |>
-#   dplyr::filter(asv_num == 'asv27') |>
-#   dplyr::filter(z_score_ra > 1.96)
-# 
-# z_scores_all <- z_scores_02 |>
-#   bind_rows(z_scores_3)
-
 ##Why do I have inf values when I assess z-scores?
-###understand why do we have zscores near infinite
+###understand why do we have zscores near infinite (it is because we have enormous changes of relative abundance comming from 0 values)
+ z_scores_02 |>
+  dplyr::filter(z_score_ra ==  'Inf') |>
+  dplyr::filter(z_score_ra >= 1.96) #check that filtering by z_score is detecting infinitive values as a number
+
 z_score_infinite <- asv_tab_all_bloo_z_tax |>
   dplyr::select(z_score_ra, asv_num, sample_id, abundance_type, abundance_value) |>
-  dplyr::filter(abundance_type == 'relative_abundance') |>
-  dplyr::filter(z_score_ra == is.infinite(z_score_ra)) 
-z_scores_all |>
-  colnames()
-
-z_score_infinite <- z_scores_all |>
- # dplyr::select(z_score_ra, asv_num, sample_id, abundance_type, abundance_value) |>
   #dplyr::filter(abundance_type == 'relative_abundance') |>
   dplyr::filter(z_score_ra == is.infinite(z_score_ra)) 
 
-##Dataset with all information ----
+z_scores_all |>
+  colnames()
+
+asv_tab_all_bloo_z_tax |>
+  colnames()
+
+asv_tab_all_bloo_z_tax |>
+  dplyr::filter(asv_num == 'asv38') |>
+  dplyr::filter(abundance_type == 'relative_abundance') |>
+  dplyr::select(z_score_ra, date, asv_num, abundance_value, location, fraction) |>
+  dplyr::mutate(infinit_color = if_else(z_score_ra == 'Inf',  '#9F0011', '#080808', missing = '#080808')) |>
+  ggplot(aes(date, abundance_value, color = infinit_color))+
+  scale_color_identity()+
+  geom_line(aes(date, abundance_value, group = location))+
+  geom_point(aes(color = infinit_color))+
+  facet_wrap(vars(fraction))+
+  theme_bw()+
+  theme(legend.position = 'rigth')
+
+asv_tab_all_bloo_z_tax |>
+  dplyr::filter(asv_num == 'asv1') |>
+  dplyr::filter(abundance_type == 'relative_abundance') |>
+  dplyr::select(z_score_ra, date, asv_num, abundance_value, location, fraction) |>
+  dplyr::mutate(infinit_color = if_else(z_score_ra == 'Inf',  '#9F0011', '#080808', missing = '#080808')) |>
+  ggplot(aes(date, abundance_value, color = infinit_color))+
+  scale_color_identity()+
+  geom_line(aes(date, abundance_value, group = location))+
+  geom_point(aes(color = infinit_color))+
+  facet_wrap(vars(fraction))+
+  theme_bw()+
+  theme(legend.position = 'rigth')
+  
+# Dataset with all information ----
 asv_tab_all_bloo_z_tax <- asv_tab_all_bloo |>
   left_join(z_scores_all) |>
   left_join(tax_bbmo_10y, by = 'asv_num') 
+
+### Bloomers taxonomy exploration----
+
+#### try to create a hierarchical piechart 
+
+ <- asv_tab_all_bloo_z_tax |>
+  dplyr::select(asv_num, phylum, class, order, family, genus) |>
+  distinct() |>
+  group_by(phylum, class, order, family, genus) |>
+  dplyr::mutate(genus = case_when(genus = is.na(genus) ~ 'unclassified',
+                                  genus != is.na(genus) ~ genus)) |>
+  dplyr::summarize(n_bloom = n()) |>
+  ungroup() |>
+  dplyr::mutate(bloom_perc_genus = n_bloom/sum(n_bloom)) |>
+  group_by(phylum, class, order, family, genus) |>
+  mutate(sum_f = sum(bloom_perc_genus)) |>
   
+  group_by(phylum, class, order, family) |>
+  dplyr::mutate(n_bloom = n()) |>
+  ungroup() |>
+  dplyr::mutate(bloom_perc_family = n_bloom/sum(n_bloom)) |>
+  group_by(phylum, class, order, family) |>
+  mutate(sum_f = sum(bloom_perc_family)) |>
+  
+  group_by(phylum, class, order) |>
+  dplyr::mutate(n_bloom = n()) |>
+  ungroup() |>
+  dplyr::mutate(bloom_perc_order = n_bloom/sum(n_bloom)) |>
+  group_by(phylum, class, order) |>
+  mutate(sum_o = sum(bloom_perc_order)) |>
+  
+  group_by(phylum, class) |>
+  dplyr::mutate(n_bloom = n()) |>
+  ungroup() |>
+  dplyr::mutate(bloom_perc_class = n_bloom/sum(n_bloom)) |>
+  group_by(phylum, class) |>
+  mutate(sum_c = sum(bloom_perc_class)) |>
+  
+  group_by(phylum) |>
+  dplyr::mutate(n_bloom = n()) |>
+  ungroup() |>
+  dplyr::mutate(bloom_perc_phylum = n_bloom/sum(n_bloom)) |>
+  group_by(phylum) |>
+  mutate(sum_p = sum(bloom_perc_phylum)) |>
+  pivot_longer(cols = starts_with('sum'), names_to = 'taxonomy_rank', values_to = 'percentage')
+
+bloomers_tax$taxonomy_rank <- bloomers_tax$taxonomy_rank |> 
+  factor(levels = c('bloom_perc_phylum', 'bloom_perc_class', 'bloom_perc_order', 'bloom_perc_family', 'bloom_perc_genus'))
+
+bloomers_tax$taxonomy_rank <- bloomers_tax$taxonomy_rank |> 
+  factor(levels = c('sum_p', 'sum_c', 'sum_o', 'sum_f', 'sum_g'))
+
+bloomers_tax_rank <- function(data){
+    data_ed <- data |>
+      dplyr::select(asv_num, phylum, class, order, family, genus) |>
+      distinct() |>
+      dplyr::mutate(genus = case_when(genus = is.na(genus) ~ 'unclassified',
+                                      genus != is.na(genus) ~ genus))
+    
+    bloom_g <- data_ed |>
+    group_by(phylum, class, order, family, genus) |>
+      dplyr::summarize(n_bloom = n()) |>
+      ungroup() |>
+      dplyr::mutate(bloom_perc_genus = n_bloom/sum(n_bloom)) |>
+      group_by(phylum, class, order, family, genus) |>
+      mutate(sum_g = sum(bloom_perc_genus)) |>
+      pivot_longer(cols = starts_with('sum'), names_to = 'taxonomy_rank', values_to = 'percentage') |>
+      dplyr::select(genus, taxonomy_rank, percentage) |>
+      ungroup() |>
+      distinct(genus, family, taxonomy_rank, percentage) |>
+      rename( taxonomy = genus) |>
+      dplyr::select(-family)
+    
+    bloom_f <- data_ed |>
+      group_by(phylum, class, order, family) |>
+      dplyr::mutate(n_bloom = n()) |>
+      ungroup() |>
+      dplyr::mutate(bloom_perc_family = n_bloom/sum(n_bloom)) |>
+      group_by(phylum, class, order, family) |>
+      mutate(sum_f = sum(bloom_perc_family)) |>
+      pivot_longer(cols = starts_with('sum'), names_to = 'taxonomy_rank', values_to = 'percentage') |>
+      ungroup() |>
+      dplyr::select(family, taxonomy_rank, percentage) |>
+      distinct(family, taxonomy_rank, percentage) |>
+      rename( taxonomy = family)
+    
+   bloom_o <-data_ed |>
+      group_by(phylum, class, order) |>
+      dplyr::mutate(n_bloom = n()) |>
+      ungroup() |>
+      dplyr::mutate(bloom_perc_order = n_bloom/sum(n_bloom)) |>
+      group_by(phylum, class, order) |>
+      mutate(sum_o = sum(bloom_perc_order)) |>
+     pivot_longer(cols = starts_with('sum'), names_to = 'taxonomy_rank', values_to = 'percentage') |>
+     ungroup() |>
+     dplyr::select(order, taxonomy_rank, percentage) |>
+     distinct(order, taxonomy_rank, percentage) |>
+     rename( taxonomy = order)
+   
+   bloom_c <- data_ed |>
+      group_by(phylum, class) |>
+      dplyr::mutate(n_bloom = n()) |>
+      ungroup() |>
+      dplyr::mutate(bloom_perc_class = n_bloom/sum(n_bloom)) |>
+      group_by(phylum, class) |>
+      mutate(sum_c = sum(bloom_perc_class)) |>
+     pivot_longer(cols = starts_with('sum'), names_to = 'taxonomy_rank', values_to = 'percentage') |>
+     ungroup() |>
+     dplyr::select(class, taxonomy_rank, percentage) |>
+     distinct(class, taxonomy_rank, percentage)|>
+     rename( taxonomy = class)
+      
+     bloom_p <- data_ed |>
+      group_by(phylum) |>
+      dplyr::mutate(n_bloom = n()) |>
+      ungroup() |>
+      dplyr::mutate(bloom_perc_phylum = n_bloom/sum(n_bloom)) |>
+      group_by(phylum) |>
+       mutate(sum_p = sum(bloom_perc_phylum)) |>
+       pivot_longer(cols = starts_with('sum'), names_to = 'taxonomy_rank', values_to = 'percentage') |>
+       ungroup() |>
+       dplyr::select(phylum, taxonomy_rank, percentage) |>
+       distinct(phylum, taxonomy_rank, percentage) |>
+       rename( taxonomy = phylum)
+
+   bloomers_tax_data <- bloom_p |>
+     bind_rows(bloom_c) |>
+     bind_rows(bloom_o) |>
+     bind_rows(bloom_f) |>
+     bind_rows(bloom_g)
+   
+   return(bloomers_tax_data)
+
+}
+
+bloomers_tax <- asv_tab_all_bloo_z_tax |>
+  bloomers_tax_rank()
+
+data_ed <- asv_tab_all_bloo_z_tax |>
+  dplyr::select(asv_num, phylum, class, order, family, genus) |>
+  distinct() |>
+  dplyr::mutate(genus = case_when(genus = is.na(genus) ~ 'unclassified',
+                                  genus != is.na(genus) ~ genus))
+
+
+bloom_g <- data_ed  |>
+  group_by(phylum, class, order, family, genus) |>
+  dplyr::summarize(n_bloom = n()) |>
+  ungroup() |>
+  dplyr::mutate(bloom_perc_genus = n_bloom/sum(n_bloom)) |>
+  group_by(phylum, class, order, family, genus) |>
+  mutate(sum_g = sum(bloom_perc_genus)) |>
+  pivot_longer(cols = starts_with('sum'), names_to = 'taxonomy_rank', values_to = 'percentage') |>
+  dplyr::select(genus, taxonomy_rank, percentage) |>
+  ungroup() |>
+  distinct(genus, family, taxonomy_rank, percentage) |>
+  rename( taxonomy = genus) |>
+  dplyr::select(-family)
+
+bloom_g |>
+  group_by(taxonomy_rank) |>
+  summarize(n = sum(percentage))
+
+bloom_c |>
+  bind_rows(bloom_p)
+
+tax_bbmo_10y |>
+  head()
+
+tax_bbmo_10y |>
+  dplyr::select(-c(asv_num, otu_corr, seq)) |>
+  pivot_longer(cols = )
+
+bloomers_tax |>
+  dplyr::filter(taxonomy_rank == 'sum_p')
+
+bloomers_tax |>
+  #dplyr::filter(taxonomy_rank == 'bloom_perc_phylum') |>
+  # group_by(phylum) |>
+  # dplyr::mutate(sum = if_else(taxonomy_rank == 'bloom_perc_phylum',  sum(percentage), '0', missing = NULL)) |>
+  #distinct() |>
+ # dplyr::select(-n_bloom) |>
+  #dplyr::mutate(tax_combined = paste(phylum, class, order, family, genus)) |> 
+  #distinct(tax_combined,  percentage, taxonomy_rank) |>
+  ggplot(aes(y = taxonomy_rank, x = percentage, fill = taxonomy))+
+ # scale_fill_manual(values = paired_12_12)+ #values = palette_phylums_assigned
+  labs(x='% of potential bloomers', 'Taxonomy rank')+
+  coord_polar()+
+  geom_col()+
+  #scale_y_continuous(expand=c(0, 0)) +
+  theme_bw()
+
+paired_12_12 <- c("#a6cee3","#1f78b4","#b2df8a","#33a02c","#fb9a99","#e31a1c","#fdbf6f","#ff7f00","#cab2d6","#6a3d9a","#ffff99","#b15928",
+                  "#8dd3c7","#ffffb3","#bebada","#fb8072","#80b1d3","#fdb462","#b3de69","#fccde5","#d9d9d9","#bc80bd","#ccebc5","#ffed6f")
+
 ### since pseudoabundance is only useful for the 0.2 fraction we now only plot the relative abundance changes
 
 ##highligh harbour restoration period ----
@@ -937,7 +1187,7 @@ asv_tab_all_bloo_z_tax$season <- asv_tab_all_bloo_z_tax$season |>
   left_join(z_scores_bray) |>
   dplyr::mutate(z_scores_bray = case_when(is.na(z_score_bray) ~ 0,
                                    z_score_bray == 'NaN' ~ 0,
-                                   z_score_bray == Inf ~ 0,
+                                   z_score_bray == Inf ~ 10000,
                                    TRUE ~ z_score_bray)) |>
   dplyr::mutate(anomaly_color = if_else(abs(z_score_bray) >= 1.96,  '#9F0011', '#080808', missing = '#080808')) |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
@@ -1608,9 +1858,9 @@ anom_perc_02 <- asv_tab_all_bloo_z_tax |>
                                           TRUE ~ z_score_ra)) |>
   dplyr::mutate(anomaly = case_when(z_score_ra >= 1.96 ~ 1,
                                     z_score_ra < 1.96 ~ 0)) |>
-  group_by( year) |>
+  group_by(year, month) |>
   dplyr::summarize(n_anom = sum(anomaly)) |>
-  dplyr::mutate(anom_perc = n_anom/12,
+  dplyr::mutate(#anom_perc = n_anom/12,
                 fraction = '0.2')
 
 anom_perc_3 <- asv_tab_all_bloo_z_tax |>
@@ -1624,18 +1874,20 @@ anom_perc_3 <- asv_tab_all_bloo_z_tax |>
                                           TRUE ~ z_score_ra)) |>
   dplyr::mutate(anomaly = case_when(z_score_ra >= 1.96 ~ 1,
                                     z_score_ra < 1.96 ~ 0)) |>
-  group_by(year) |>
+  group_by(year, month) |>
   dplyr::summarize(n_anom = sum(anomaly)) |>
-  dplyr::mutate(anom_perc = n_anom/12,
+  dplyr::mutate(#anom_perc = n_anom/12,
                 fraction = '3')
 
 anom_perc_02 |>
   bind_rows(anom_perc_3) |>
-  ggplot(aes(year, anom_perc, shape = fraction))+
-  geom_point()+
-  geom_line()+
-  #facet_wrap(vars(asv_num))+
-  scale_y_continuous(labels = percent_format())+
+  ggplot(aes(month, n_anom, shape = fraction))+
+ # geom_point()+
+  geom_col()+
+  #geom_line()+
+  geom_smooth(method= 'loess')+
+  facet_grid(fraction~year)+
+  #scale_y_continuous(labels = percent_format())+
   theme_bw()
 
 ###max relative abundance (in a blooming event)
