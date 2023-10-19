@@ -1374,12 +1374,12 @@ asv_tab_all_bloo_z_tax |>
   geom_line(data = community_eveness_all_m, aes(date, community_eveness_rar), color = '#2D2A2B')+
   geom_point(data = community_eveness_all_m |>
                dplyr::filter(anomaly_color == '#9F0011'),  
-             aes(date, community_eveness_rar, color = anomaly_color))+ #mirar de posar punts només a les anomalies
-  scale_y_continuous(labels = percent_format(), expand = c(0,0), limits = c(0,0.88))+
+             aes(date, community_eveness_rar, color = anomaly_color))+
+  scale_y_continuous(labels = percent_format(), expand = c(0,0), limits = c(0,0.88), sec.axis = (~.))+
   scale_color_identity()+
   scale_fill_manual(values = palette_class_assigned_bloo)+
   labs(x = 'Time', y = 'Relative abundance (%)', fill = 'Family')+
-  facet_grid(vars(fraction), scales = 'free_y')+
+  facet_grid(vars(fraction), scales = 'free_y', switch = 'y', labeller = )+
   guides(fill = guide_legend(ncol = 4, size = 10,
                               override.aes = aes(label = '')))+
   theme_bw()+
