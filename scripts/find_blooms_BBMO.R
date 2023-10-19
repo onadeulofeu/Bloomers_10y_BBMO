@@ -309,6 +309,7 @@ gm <- function(x){
 
 ##with this transformation I'm losing samples (due to too much 0 in some samples, z.warning set up to 0.99 to keep all samples)
 ### at 0.8 (default) I lose 30 samples which belonged to the years corresponding to harbour remodelation 
+### I don't lose samples but I lose ASVs.
 zclr_df <- cmultRepl(asv_tab_bbmo_10y_w, method = 'CZM', output = 'p-count', z.warning = 0.99
                      #adjust = 0.2,    t = 237, s = 7849
                   ) |>
@@ -332,7 +333,7 @@ asv_tab_10y_3_zclr <- zclr_df |>
   pivot_longer(cols = starts_with('asv'), names_to = 'asv_num', values_to = 'zclr') |>
   dplyr::filter(str_detect(sample_id, '_3_'))
 
-##dimesions are different from relative and pseudo dataset and zclr understand why
+##dimensions are different from relative and pseudo dataset and zclr understand why----
 ### i have less ASVs in the zclr dataset specifically 5282 less
 #7849-2567
 
@@ -378,7 +379,6 @@ nrow(asv_tab_10y_3_pseudo_zclr) == nrow(asv_tab_10y_3_pseudo)
 # length(cases) # 1797 columns are all zeros but one positive value
 # zcomp <- cmultRepl(asv_tab_bbmo_10y_w[,-cases]) # GBM imputation without them works
 ## no és aquest el problema perquè em segueixen faltant mostres.
-
 #look for the lost samples why do they disappear? (to much 0)----
 # zclr_default <- cmultRepl(asv_tab_bbmo_10y_w, method = 'CZM', output = 'p-count'#, z.warning = 0.99
 #                      #adjust = 0.2,    t = 237, s = 7849
@@ -443,7 +443,6 @@ nrow(asv_tab_10y_3_pseudo_zclr) == nrow(asv_tab_10y_3_pseudo)
 #   group_by(sample_id) |>
 #   dplyr::summarize(n = n()) |>
 #   count() #87
-
 
 # Calculate diversity parameters ----
 ## We calculate different diversity parameters to check if the blooming events detected have an effect on the community structure
@@ -686,7 +685,7 @@ community_eveness_all |>
   
 
 # Discover anomalies----
-## For each ASVs based on relative abundances and pseudoabundances-----
+## For each ASVs based on relative abundances and pseudoabundances -----
 ### those ASVs that are present > 50% of the sampless
 asv_tab_10y_02_pseudo %$%
   sample_id |>
@@ -696,7 +695,7 @@ asv_tab_10y_02_pseudo %$%
 asv_tab_10y_02_zclr |>
   colnames()
 
-###I filter by relativeabundance > 10% at some point so that the computer can compute this easily
+### I filter by relative abundance > 10% at some point so that the computer can compute this easily
 
 x <- 120*0.75 ##percentage of ASV present in the dataset that we want to subset by (occurrence)
 
@@ -715,7 +714,20 @@ z_02 <- asv_tab_10y_02_pseudo |>
 asv_tab_10y_3_pseudo %$%
   sample_id |>
   unique() |>
-  summary() #
+  summary() 
+
+##check if I'm finding the correct number of potential bloomers ASVs----
+ n_bloomers_02 <-  asv_tab_10y_02_pseudo |>
+  inner_join(asv_tab_10y_02_zclr, by = c('sample_id', 'asv_num')) |> #asv_tab_10y_02_zclr vull afegir el zclr per calcular també les seves anomalies i veure si veiem el mateix
+  group_by(asv_num) |>
+  #dplyr::mutate(num_0 = sum(relative_abundance == 0)) |>
+  #dplyr::filter(num_0 <= x) |>
+  #as_tibble() |>
+  dplyr::filter(any(relative_abundance >=  0.1)) |>
+  dplyr::filter(zclr >= 1.96) |>
+  dplyr::distinct(asv_num) |>
+  dplyr::summarize(n = n()) |>
+  dplyr::summarize(sum = sum(n))
 
 x <- 117*0.75  ##percentage of ASV present in the dataset that we want to subset by (occurrence)
 z_3 <- asv_tab_10y_3_pseudo |>
@@ -729,6 +741,16 @@ z_3 <- asv_tab_10y_3_pseudo |>
   dplyr::reframe(anomalies_ps = get_anomalies(time_lag = 2, negative = FALSE, na_rm = TRUE, cutoff = 1,96, values = pseudoabundance, plotting = FALSE)[c(1,2,3)],
     anomalies_ra = get_anomalies(time_lag = 2, negative = FALSE, cutoff = 1.96, na_rm = TRUE, values = relative_abundance, plotting = FALSE)[c(1,2,3)],
     anomalies_clr = get_anomalies(time_lag = 2, negative = FALSE, cutoff = 1.96, na_rm = TRUE, values = zclr, plotting = FALSE)[c(1,2,3)])
+
+asv_tab_10y_3_pseudo |>
+  inner_join(asv_tab_10y_3_zclr, by = c('sample_id', 'asv_num')) |> #asv_tab_10y_02_zclr vull afegir el zclr per calcular també les seves anomalies i veure si veiem el mateix
+  group_by(asv_num) |>
+  #dplyr::mutate(num_0 = sum(relative_abundance == 0)) |>
+  #dplyr::filter(num_0 <= x) |>
+  #as_tibble() |>
+  dplyr::filter(any(relative_abundance >=  0.1)) |>
+  dplyr::filter(zclr >= 1.96) |>
+  dplyr::distinct(asv_num) 
 
 ## At the level of community, we use the Eveness result and Bray Curtis dissimilarity ----
 z_diversity <- bray_curtis_02_rar |>
@@ -1360,34 +1382,57 @@ community_eveness_all_m %$%
   anomaly_color |>
   unique()
 
-asv_tab_all_bloo_z_tax |>
+asv_tab_all_bloo_z_tax|>
+  dplyr::filter(abundance_type == 'relative_abundance') %$%
+  max(abundance_value)
+
+#library(ggstream) #to smoothen areas but maybe here we don't want this effect
+
+community_eveness_all_m %$%
+  min(date)
+
+# booming_events_ev_BBMO10Y <-
+  asv_tab_all_bloo_z_tax |>
   dplyr::filter(abundance_type == 'relative_abundance') |>
   #dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
   ggplot(aes(date, abundance_value))+
-  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', 
-                   limits = c(min(asv_tab_all_bloo_z_tax$date), max(asv_tab_all_bloo_z_tax$date
-                   )))+
+  #geom_segment(aes(x = '2005-01-01', y = 0, xend = '2005-01-02', yend =0.57),color="black")+
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0)
+                   #limits = c(min(asv_tab_all_bloo_z_tax$date), max(asv_tab_all_bloo_z_tax$date),
+                              #limits = c(as.POSIXct(2004-01-26, origin = '2004-01-26'), as.POSIXct(2014-01-01, origin = '2014-01-01'))
+                   )+
   geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
-                                                    ymin = -Inf, ymax = Inf), fill = '#C7C7C7')+
-  geom_area(aes(fill = class_f))+
+                                                    ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.8)+
+
+  #geom_stream(aes(fill = class_f, group = class_f), type = "ridge", bw=1)+
+  geom_area(aes(fill = class_f, group = class_f))+
   #geom_line(data = bray_curtis_rar_all_m, aes(date, bray_curtis_result))+
-  geom_line(data = community_eveness_all_m, aes(date, community_eveness_rar), color = '#2D2A2B')+
+  geom_line(data = community_eveness_all_m, aes(date, community_eveness_rar/1.6), color = '#2D2A2B', alpha = 0.8)+
   geom_point(data = community_eveness_all_m |>
                dplyr::filter(anomaly_color == '#9F0011'),  
-             aes(date, community_eveness_rar, color = anomaly_color))+
-  scale_y_continuous(labels = percent_format(), expand = c(0,0), limits = c(0,0.88), sec.axis = (~.))+
+             aes(date, community_eveness_rar/1.6, color = anomaly_color, alpha = 0.8))+
+  scale_y_continuous(labels = percent_format(), expand = c(0,0), limits = c(0,0.57), 
+                     sec.axis = sec_axis(~.* 1.6 , name = 'Community Evenness'))+
   scale_color_identity()+
   scale_fill_manual(values = palette_class_assigned_bloo)+
   labs(x = 'Time', y = 'Relative abundance (%)', fill = 'Family')+
-  facet_grid(vars(fraction), scales = 'free_y', switch = 'y', labeller = )+
+  facet_wrap(vars(fraction), dir = 'v', scales = 'free_y',  labeller = labs_fraction)+
   guides(fill = guide_legend(ncol = 4, size = 10,
-                              override.aes = aes(label = '')))+
+                              override.aes = aes(label = '')),
+         alpha = 'none')+
   theme_bw()+
   theme(axis.text.x = element_text(size = 7), panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank(), strip.text = element_text(size = 10),
+        panel.grid.major = element_blank(), strip.text = element_text(size = 7),
         legend.position = 'bottom', axis.text.y = element_text(size = 8),
         axis.title = element_text(size = 8), strip.background = element_blank(), 
-        legend.text = element_text(size = 7), legend.title = element_text(size = 10))
+        legend.text = element_text(size = 7), legend.title = element_text(size = 8), strip.placement = 'outside')
+
+# ggsave('booming_events_ev_BBMO10Y.pdf', booming_events_ev_BBMO10Y,
+#        path = "../results/figures/",
+#        width = 180,
+#        height = 160,
+#        units = 'mm')
+
   
 ##plots example for PhD committee----
 asv11_bbmo <- asv_tab_all_bloo_z_tax |>
@@ -2281,8 +2326,6 @@ metadata_parada <- BBMO_parada_rel |>
 
   
   
-  
-## Idea of plot with all blooms plotted cumulatively with geom_area, find events of blooming events that affected the whole community-----
   
 ## Testing CLR transformation and other transformations to calculate distances----
 
