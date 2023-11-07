@@ -69,7 +69,8 @@ bbmo_env <- asv_tab_all_bloo_z_tax |>
   dplyr::select(-sample_id) |>
   dplyr::mutate_if( is.character, as.numeric) |>
   bind_cols(sample_id) |>
-  distinct(...28,
+  rename(sample_id = '...28') |>
+  distinct(sample_id,
            day_length,
            #sampling_time
            temperature,
@@ -112,7 +113,7 @@ bbmo_env <- asv_tab_all_bloo_z_tax |>
 ##normalization of environmental data using z-scores
 ## I created a function for this purpose 
 calculate_z_score <- function(data, col, col_name = NULL,  group = NULL) { #,
- browser()  # Insert this line to pause execution and enter the interactive debugging mode
+ #browser()  # Insert this line to pause execution and enter the interactive debugging mode
   stopifnot(is.numeric(data[[col]])) 
 
   col_name <- ifelse(!is.null(col_name), paste0("z_score_", col_name), 'z_score')
@@ -129,7 +130,24 @@ calculate_z_score <- function(data, col, col_name = NULL,  group = NULL) { #,
   return(data)
 }
 
-calculate_z_score(bbmo_env, col = "day_length", col_name = 'day_length', group = NULL) ## this function works
+calculate_z_score <- function(data, col, col_name = NULL, group = NULL) {
+  stopifnot(is.numeric(data[[col]]))
+            
+            col_name <- ifelse(!is.null(col_name), paste0("z_score_", col_name), 'z_score')
+            
+            if (!is.null(group)) {
+              data <- data %>%
+                group_by({{group}}) %>%
+                mutate(!!col_name := (!!col - mean(!!col, na.rm = TRUE)) / sd(!!col, na.rm = TRUE))
+            } else {
+              data <- data %>%
+                mutate(!!col_name := (!!col - mean(!!col, na.rm = TRUE)) / sd(!!col, na.rm = TRUE))
+            }
+            
+            return(data)
+}
+
+calculate_z_score(bbmo_env, col = bbmo_env$day_length, col_name = 'day_length', group = NULL)
 
 #bbmo_env_z <- 
   bbmo_env |>
@@ -152,9 +170,45 @@ calculate_z_score(bbmo_env, col = "day_length", col_name = 'day_length', group =
                          HNA,   prochlorococcus_FC,
                          Peuk1,   Peuk2,                 
                          bacteria_joint, synechococcus), values_to = 'env_values', names_to = 'environmental_variable') |>
-    dplyr::mutate(environmental_variable = as.numeric(environmental_variable)) |>
-  calculate_z_score(col = 'env_values', group = environmental_variable, col_name = 'env_variable') 
+    dplyr::filter(!is.na(env_values)) |>
+    dplyr::mutate(env_values = as.numeric(env_values)) |>
+  calculate_z_score(col = 'env_values', col_name = 'environmental_variable', group = NULL) 
   #pivot_wider(id_cols = )
+  
+  dplyr::filter(!is.na(env_values)) |>
+    dplyr::mutate(env_values = as.numeric(env_values)) |>
+    calculate_z_score(col = 'env_values', col_name = 'environmental_variable', group = NULL) 
+  
+## calculate z-scores without using a function---- 
+  bbmo_env_zscore  <- bbmo_env |>
+    as_tibble() |>
+    pivot_longer(cols = c(day_length,
+                           #sampling_time
+                           temperature,
+                           secchi,
+                           salinity,
+                           chla_total,
+                           chla_3um,
+                           PO4,
+                           NH4, NO2, NO3,
+                           Si, BP_FC1.55,
+                           PNF_Micro, PNF2_5um_Micro,
+                           PNF_5um_Micro, 
+                           dryptomonas, micromonas,
+                           HNF_Micro, HNF2_5um_Micro,   
+                           HNF_5um_Micro ,  LNA,              
+                           HNA,   prochlorococcus_FC,
+                           Peuk1,   Peuk2,                 
+                           bacteria_joint, synechococcus), values_to = 'env_values', names_to = 'environmental_variable') |>
+    group_by(environmental_variable) |>
+    dplyr::filter(!is.na(env_values)) |>
+    dplyr::mutate(sd = sd(env_values),
+                  mean = mean(env_values)) |>
+    dplyr::mutate(z_score = ((env_values - mean(env_values))/ sd(env_values)))
+    
+    bbmo_env_zscore_w <-   bbmo_env_zscore |>
+      dplyr::select(sample_id, environmental_variable, z_score) |>
+      pivot_wider(id_cols = sample_id, names_from = environmental_variable, values_from = z_score)
 
 # bbmo_env_l |>
 #  # group_by(enviornmental_variable) |>
@@ -170,7 +224,6 @@ calculate_z_score(bbmo_env, col = "day_length", col_name = 'day_length', group =
 # 
 #   calculate_z_score(bbmo_env, col = day_length)
 
-
 ##calculate distance matrices
   abund_dist_02 <- asv_tab_rar |>
     dplyr::filter(str_detect(X, '0.2')) |>
@@ -183,11 +236,20 @@ calculate_z_score(bbmo_env, col = "day_length", col_name = 'day_length', group =
     vegdist(method = 'bray')
 
 bbmo_env_02_dist <- bbmo_env |>
-  dplyr::filter(str_detect(...28, '0.2')) |>
+  dplyr::filter(str_detect(sample_id, '0.2')) |>
   dist(method = 'euclidean')
 
 bbmo_env_3_dist <- bbmo_env |>
   dplyr::filter(str_detect(...28, '3')) |>
+  dist(method = 'euclidean')
+
+## here we use environmental data normalized using z_scores
+bbmo_envz_02_dist<- bbmo_env_zscore_w |>
+  dplyr::filter(str_detect(sample_id, '0.2')) |>
+  dist(method = 'euclidean')
+
+bbmo_envz_3_dist <- bbmo_env_zscore_w |>
+  dplyr::filter(str_detect(sample_id, '3')) |>
   dist(method = 'euclidean')
 
 #Mantel test----
@@ -200,6 +262,11 @@ abund_dist_02 |>
   class()
 
 abund_env_02 <- mantel(abund_dist_02, bbmo_env_02_dist,
+                       method = 'spearman', permutations = 9999,
+                       na.rm = TRUE)
+
+#with env data normalized with z_scores
+abund_envz_02 <- mantel(abund_dist_02, bbmo_envz_02_dist,
                        method = 'spearman', permutations = 9999,
                        na.rm = TRUE)
 
@@ -246,7 +313,7 @@ qcorrplot(correlate(bbmo_env))
 
 
 ##visualization of correlation matrix
-corr_bloo_02 <- cor(abund_dist_02_bloo, bbmo_env_02_dist)
+corr_bloo_02 <- cor(abund_dist_02_bloo, bbmo_envz_02_dist)
 
 ggcorrplot::ggcorrplot(as.matrix(corr_bloo_02))
 ggcorrplot::ggcorrplot(as.matrix(abund_dist_02))
@@ -254,12 +321,18 @@ ggcorrplot::ggcorrplot(as.matrix(abund_dist_3))
 ggcorrplot::ggcorrplot(as.matrix(bbmo_env_02_dist))
 ggcorrplot::ggcorrplot(as.matrix(bbmo_env_3_dist))
 
+ggcorrplot::ggcorrplot(as.matrix(bbmo_envz_02_dist))
+ggcorrplot::ggcorrplot(as.matrix(bbmo_envz_3_dist))
+
 ##
 rda1 <- rda(abund_dist_02, bbmo_env3)
 
 ## Mantel correlogram
 ## This function comptues a multivariate Mantel correlogram.
 mantel.correlog(abund_dist_02, bbmo_env_02_dist,
+                nperm = 9999)
+
+mantel.correlog(abund_dist_02, bbmo_envz_02_dist,
                 nperm = 9999)
 
 |>
@@ -358,7 +431,6 @@ asv_tab_all_bloo_z_tax |>
   scale_color_manual(values = palette_family_assigned_bloo)+
   theme_bw()
 
-
 asv_tab_all_bloo_z_tax |>
   dplyr::filter(#asv_num == 'asv179' &
     fraction == 3 &
@@ -394,6 +466,87 @@ asv_tab_all_bloo_z_tax |>
     fraction == 3 &
       abundance_type == 'relative_abundance') |>
   ggplot(aes(dryptomonas, abundance_value, group = asv_num, color = family))+
+  geom_point()+
+  geom_smooth(aes(group = asv_num), se = F)+
+  scale_color_manual(values = palette_family_assigned_bloo)+
+  theme_bw()
+
+## try the same plots but with z_scores
+asv_tab_all_bloo_z_tax |>
+  colnames()
+
+asv_tab_all_bloo_z_tax |>
+  dplyr::filter(#asv_num == 'asv179' &
+    fraction == 3 &
+      abundance_type == 'relative_abundance') |>
+  left_join(bbmo_env_zscore_w, suffix = c('no_norm', '_z_norm'), by = c('sample_id')) |>
+  ggplot(aes(dryptomonas_z_norm, abundance_value, group = asv_num, color = family))+
+  geom_point()+
+  geom_smooth(aes(group = asv_num), se = F)+
+  scale_color_manual(values = palette_family_assigned_bloo)+
+  theme_bw()
+
+asv_tab_all_bloo_z_tax |>
+  dplyr::filter(#asv_num == 'asv179' &
+    fraction == 3 &
+      abundance_type == 'relative_abundance') |>
+  left_join(bbmo_env_zscore_w, suffix = c('no_norm', '_z_norm'), by = c('sample_id')) |>
+  ggplot(aes(temperature_z_norm, abundance_value, group = asv_num, color = family))+
+  geom_point()+
+  geom_smooth(aes(group = asv_num), se = F)+
+  scale_color_manual(values = palette_family_assigned_bloo)+
+  theme_bw()
+
+asv_tab_all_bloo_z_tax |>
+  dplyr::filter(#asv_num == 'asv179' &
+    fraction == 3 &
+      abundance_type == 'relative_abundance') |>
+  left_join(bbmo_env_zscore_w, suffix = c('no_norm', '_z_norm'), by = c('sample_id')) |>
+  ggplot(aes(day_length_z_norm, abundance_value, group = asv_num, color = family))+
+  geom_point()+
+  geom_smooth(aes(group = asv_num), se = F)+
+  scale_color_manual(values = palette_family_assigned_bloo)+
+  theme_bw()
+
+asv_tab_all_bloo_z_tax |>
+  dplyr::filter(#asv_num == 'asv179' &
+    fraction == 3 &
+      abundance_type == 'relative_abundance') |>
+  left_join(bbmo_env_zscore_w, suffix = c('no_norm', '_z_norm'), by = c('sample_id')) |>
+  ggplot(aes(secchi_z_norm, abundance_value, group = asv_num, color = family))+
+  geom_point()+
+  geom_smooth(aes(group = asv_num), se = F)+
+  scale_color_manual(values = palette_family_assigned_bloo)+
+  theme_bw()
+
+asv_tab_all_bloo_z_tax |>
+  dplyr::filter(#asv_num == 'asv179' &
+    fraction == 3 &
+      abundance_type == 'relative_abundance') |>
+  left_join(bbmo_env_zscore_w, suffix = c('no_norm', '_z_norm'), by = c('sample_id')) |>
+  ggplot(aes(salinity_z_norm, abundance_value, group = asv_num, color = family))+
+  geom_point()+
+  geom_smooth(aes(group = asv_num), se = F)+
+  scale_color_manual(values = palette_family_assigned_bloo)+
+  theme_bw()
+
+asv_tab_all_bloo_z_tax |>
+  dplyr::filter(#asv_num == 'asv179' &
+    fraction == 3 &
+      abundance_type == 'relative_abundance') |>
+  left_join(bbmo_env_zscore_w, suffix = c('no_norm', '_z_norm'), by = c('sample_id')) |>
+  ggplot(aes(chla_total_z_norm, abundance_value, group = asv_num, color = family))+
+  geom_point()+
+  geom_smooth(aes(group = asv_num), se = F)+
+  scale_color_manual(values = palette_family_assigned_bloo)+
+  theme_bw()
+
+asv_tab_all_bloo_z_tax |>
+  dplyr::filter(#asv_num == 'asv179' &
+    fraction == 3 &
+      abundance_type == 'relative_abundance') |>
+  left_join(bbmo_env_zscore_w, suffix = c('no_norm', '_z_norm'), by = c('sample_id')) |>
+  ggplot(aes(PO4_z_norm, abundance_value, group = asv_num, color = family))+
   geom_point()+
   geom_smooth(aes(group = asv_num), se = F)+
   scale_color_manual(values = palette_family_assigned_bloo)+

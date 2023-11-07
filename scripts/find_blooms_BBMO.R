@@ -34,6 +34,11 @@ palette_fraction <- c('0.2' = '#00808F', '3' = '#454545')
 
 ## palettes taxonomy assigned----
 ### they need to be updated to the new taxonomy
+
+# asv_tab_all_bloo_z_tax %$%
+#   domain |>
+#   unique()
+
 palette_phylums_assigned <- c('Proteobacteria' = "#fcca46","Bacteroidota" = "#669bbc" , 'Actinobacteriota' = "#b0413e",
                               'Cyanobacteria' = "#009e73",'Crenarchaeota' = "#ffa737", 'Verrucomicrobiota' = "#0051BF",
                               'Planctomycetota' = "#69267e", 'Acidobacteriota' = "#1f78b4",'Bdellovibrionota' = "#8c789d",
@@ -44,9 +49,20 @@ palette_phylums_assigned <- c('Proteobacteria' = "#fcca46","Bacteroidota" = "#66
                               'Calditrichota' = "#8a007a", 'Halobacterota' = "#b79c64", 'Nitrospirota' = "#41815f",
                               'Dependentiae' = "#5b95e5", 'Patescibacteria' = "#33af9c",'Cloacimonadota' = "#fbed5c",
                               'Synergistota' = "#ce7800", 'Abditibacteriota' = "#87878b", 'Deferribacterota' = "#4dbaa9")
+asv_tab_all_bloo_z_tax %$%
+  phylum |>
+  unique()
 
-palette_phylums_assigned_bloo <- c('Proteobacteria' = "#fcca46", 'Cyanobacteria' = "#009e73", 'Verrucomicrobiota' = "#cccccc",
-                                   'Verrucomicrobiota' = "#0051BF", "Bacteroidetes" = "#669bbc")
+asv_tab_all_bloo_z_tax |> 
+  dplyr::filter(is.na(phylum))
+
+asv_tab_all_bloo_z_tax |> 
+  dplyr::filter(is.na(domain)) |>
+  distinct(asv_num)
+
+palette_phylums_assigned_bloo <- c('Proteobacteria' = "#fcca46", 'Cyanobacteria' = "#009e73",
+                                   'Verrucomicrobiota' = "#0051BF", "Bacteroidota" = "#669bbc", 'Planctomycetota' = "#69267e",
+                                   'Bdellovibrionota' = "#8c789d", NA == "#000000")
 
 palette_class_assigned <- c('Gammaproteobacteria' = '#fcca46', 'Alphaproteobacteria' = '#d95726', 'Zetaproteobacteria' = '#EBCD92',
                             'Bacteroidia' = '#669BBC','Rhodothermia' =  '#00425E',
@@ -75,69 +91,59 @@ palette_class_assigned <- c('Gammaproteobacteria' = '#fcca46', 'Alphaproteobacte
                             'Calditrichia'  = '#8a007a', 'Halobacteria' = '#b79c64', 'Nitrospiria' = '#41815f',
                             'Babeliae' = '#5b95e5', 'Saccharimonadia' = '#33af9c', 'Cloacimonadia' = '#fbed5c',
                             'Synergistia' = '#ce7800', 'Abditibacteria' = '#87878b', 'Deferribacteres' = '#4dbaa9')
-
+# asv_tab_all_bloo_z_tax %$%
+#   class |>
+#   unique()
 
 palette_class_assigned_bloo <- c('Gammaproteobacteria' = '#FFA737', 'Alphaproteobacteria' = '#B0413E', 
-                                'Verrucomicrobiae' = '#005c69', 'Opitutae' =   '#fcca46',  'Phycisphaerae' =  '#e3a6ce',   
-                                 'Flavobacteriia' =  '#0051BF',  'Sphingobacteriia'  = '#69267E' ,
-                                'Cyanobacteria'  =  '#009F6A',  'Deltaproteobacteria' = '#000000')
+                                 'Bacteroidia' = '#0051BF', 'Cyanobacteria'  =  '#009F6A',  
+                                'Verrucomicrobiae' = '#005c69', 'Phycisphaerae' =  '#e3a6ce',   
+                                'Bdellovibrionia' = '#8C789D', NA == "#000000")
 
-bloomers_tax |>
-  dplyr::filter(taxonomy_rank == 'sum_f') |>
-  left_join(tax_bbmo_10y, by = c('taxonomy' = 'family')) |>
-  distinct(taxonomy, order) |>
+# bloomers_tax |>
+#   dplyr::filter(taxonomy_rank == 'sum_f') |>
+#   left_join(tax_bbmo_10y, by = c('taxonomy' = 'family')) |>
+#   distinct(taxonomy, order)
 
-palette_order_assigned_bloo <- c('Thiotrichales' = '#FFA737', 'SAR11_clade' = '#B0413E', 'Rhodobacterales' = '#C55E5C',
-                                   'Sphingomonadales' = '#8C000A', 'Rickettsiales' = '#5A0000',
-                                 'Rhizobiales' = '#682624', 'Rhodospirillales' = '#FFA197',
-                                 'Verrucomicrobiales' = '#005c69', 'Puniceicoccales' =   '#fcca46',  'Phycisphaerales' =  '#e3a6ce',   
-                                 ' Flavobacteriales' =  '#0051BF',  'Sphingobacteriales'  = '#69267E' ,
-                                 'SubsectionI'  =  '#009F6A',  'Bdellovibrionales' = '#000000',
-                                 'Oceanospirillales' = '#DA6D00',
-                                   'Alteromonadales' = '#A63B00',
-                                   'Vibrionales'= '#F2AC5D', 
-                                   'Enterobacteriales' = '#FFA200',
-                                   'Cellvibrionales' = '#F35900', 
-                                   'Pseudomonadales' = '#FF8E00')
-
-palette_family_assigned_bloo <- c('Thiotrichaceae' = '#FFA737', 'Surface_2' = '#B0413E', 'Surface_1'= '#CD7F78', 
-                                  'Rhodobacteraceae' = '#C55E5C', 'Sphingomonadaceae' = '#8C000A', 'Erythrobacteraceae' = '#690000',
-                                  'SAR116_clade' = '#5A0000',
-                                  'Rhodobiaceae' = '#682624',
-                                  'Rhodospirillaceae'= '#FFA197',
-                                  'Verrucomicrobiaceae' = '#005c69'
-                                  )
-
-palette_genus_assigned_bloo <- c()
-
-all_tax_bloomers <- c()
-# 
-# palette_bloomers_tax_order <- c('Thiotrichales' =      'SAR11_clade'=        'Rhodobacterales' =
-#                                   'Sphingomonadales' =   'Rickettsiales'=
-#  'Rhizobiales' =       'Rhodospirillales' =  'Verrucomicrobiales' = 'Puniceicoccales' =
-#    'Phycisphaerales' =
-#  'Flavobacteriales' =   'Sphingobacteriales' = 'SubsectionI' =        'Bdellovibrionales' =
-#    'Oceanospirillales' =
-# 'Alteromonadales' =    'Vibrionales' =       'Enterobacteriales' = 'Cellvibrionales' =
-#   'Pseudomonadales' = )
-# 
-# palette_bloomers_tax_family <- c('Thiotrichaceae',  'Surface_2 ',       'Surface_1',
-#                                  'Rhodobacteraceae' ,   'Sphingomonadaceae',
-#                                  'Surface_2', 'Erythrobacteraceae',  'SAR116_clade'     ,   'Rhodobiaceae'   ,     'Rhodospirillaceae',
-#                                  'Verrucomicrobiaceae',
-#                                  'DEV007', 'Puniceicoccaceae',
-#                                  'Phycisphaeraceae' ,   'NS7_marine_group' ,   'NS9_marine_group' ,
-#                                  'Cryomorphaceae'  ,    'Saprospiraceae'   ,   'Flavobacteriaceae',
-#                                  'FamilyI'  ,           'Bacteriovoracaceae' ,
-#                                  'Alcanivoracaceae',    'Alteromonadaceae',    'Vibrionaceae',
-#                                  'Enterobacteriaceae',  'Halieaceae',
-#                                  'Moraxellaceae',   'SAR86_clade')
-# 
-#   bloo_taxonomy %$%
-#   family_f |>
+# asv_tab_all_bloo_z_tax$order |>
 #   unique()
-# 
+  
+ # asv_tab_all_bloo_z_tax |>
+ #  dplyr::filter(order == 'Synechococcales') |>
+ #  dplyr::select(class) |>
+ #  distinct()
 
+ palette_order_assigned_bloo <-  c( NA ==  "#000000", "SAR11 clade" =  '#B0413E',  "Rhodobacterales" = '#C55E5C',
+                                    "Sphingomonadales"  = '#8C000A', "Puniceispirillales" = '#fcca46', 
+                                    "Rhodospirillales"  = '#FFA197',  "Verrucomicrobiales"= '#005c69', "Opitutales"   =   '#74B9C8',    
+                                    "Phycisphaerales"  = '#e3a6ce',  "Flavobacteriales"   =  '#0051BF', "Synechococcales"  = '#009F6A', 
+                                    "Bacteriovoracales" = '#8C789D',
+                                    "Oceanospirillales" =  '#A05C00',
+                                    "Alteromonadales" =  '#A63B00',  "Vibrionales" = '#F2AC5D', "Enterobacterales" = '#FFA200',
+                                    "Cellvibrionales"   = '#F35900',  "Pseudomonadales"  = '#FF8E00', "SAR86 clade" = '#FFBF45')
+  
+# asv_tab_all_bloo_z_tax$family |>
+  # unique()
+
+# asv_tab_all_bloo_z_tax |>
+#   dplyr::filter(family == 'Moraxellaceae') |>
+#   dplyr::select(order) |>
+#   distinct()
+
+palette_family_assigned_bloo <- c("Clade II" = '#B0413E',  "Clade I" = '#CD7F78', "Rhodobacteraceae" = '#C55E5C',
+                                  "Sphingomonadaceae"   = '#8C000A',  "SAR116 clade"  ='#D3BF27', 
+                                  "AEGEAN-169 marine group" =  '#690000', "Rubritaleaceae"  =  '#005c69',       
+                                  "DEV007" = '#74B9C8',  "Puniceicoccaceae"   = '#fcca46',     
+                                  "Phycisphaeraceae"   = '#e3a6ce', "NS7 marine group" =  '#92ABFF',
+                                  "NS9 marine group"  =  '#3B52A3',        
+                                  "Flavobacteriaceae"   =  '#0051BF',      "Cyanobiaceae"  = '#009F6A',          
+                                  "Bacteriovoracaceae" =  '#8C789D',  "Alcanivoracaceae1"  =  '#A05C00',
+                                  "Marinobacteraceae" =  '#DE6931',    
+                                  "Vibrionaceae"      = '#F2AC5D',        "Yersiniaceae"  = '#FFA200',           
+                                  "Alteromonadaceae"   =  '#A63B00',      "Halieaceae" = '#F35900',
+                                  "Moraxellaceae"  =  '#FF8E00', 
+                                  NA == "#000000" )  
+                
 # functions----
 #source('../Bloomers/R/community_evenness.R')
 #source('../Bloomers/R/get_anomalies.R') #la poso així perquè l'he actualizat i com que no he compilat el paquet potser no funciona actualitzada 
@@ -169,7 +175,7 @@ bbmo_10y |>
 asv_tab_bbmo_10y_l <- bbmo_10y@otu_table |>
   as_tibble()
 
-tax_bbmo_10y <- bbmo_10y@tax_table |> 
+tax_bbmo_10y_old <- bbmo_10y@tax_table |> 
   #mutate_tax_table(asv_num = str_c( 'asv' , 1:ncol(bbmo_10y@otu_table))) |> #ja té uns nº d'OTUs
   as_tibble()
 
@@ -180,12 +186,12 @@ m_bbmo_10y <- bbmo_10y@sam_data |>
 asv_tab_bbmo_10y_l |>
   colnames()
 
-tax_bbmo_10y |>
+tax_bbmo_10y_old |>
   colnames()
 
 colnames(asv_tab_bbmo_10y_l) <- c('asv_num', "sample_id", 'reads')
 
-colnames(tax_bbmo_10y) <- c("asv_num", "kingdom", "phylum", "class", "order", "family", "genus",
+colnames(tax_bbmo_10y_old) <- c("asv_num", "kingdom", "phylum", "class", "order", "family", "genus",
                             "species", "curated", "otu_corr","seq")
 
 colnames(m_bbmo_10y) <- c("sample_id", "project", "location", "code",             
@@ -200,6 +206,14 @@ colnames(m_bbmo_10y) <- c("sample_id", "project", "location", "code",
                           "HNA", "prochlorococcus_FC", "Peuk1",  "Peuk2",          
                           "year", "month", "day", "season",            
                           "bacteria_joint", "synechococcus", "depth", "name_complete")
+
+#new taxonomy created with the database SILVA 138
+new_tax <-  readRDS('03_tax_assignation/devotes_all_tax_assignation.rds') |>
+  as_tibble(rownames = 'sequence')
+
+tax_bbmo_10y_new <- tax_bbmo_10y_old |>
+  dplyr::select(asv_num, seq) |>
+  left_join(new_tax, by = c('seq' = 'sequence'))
 
 ##create a fasta file with ASV sequences to update the taxonomy----
 # tax_bbmo_10y |>
@@ -513,6 +527,7 @@ asv_tab_bbmo_10y_w_rar <- read.csv2('asv_tab_bbmo_10y_w_rar.csv') |>
 
 ## Rarefied dataset to calculate Community eveness----
 source('../../../Bloomers/R/community_evenness.R')
+
 community_eveness_02 <- asv_tab_bbmo_10y_w_rar |>
   #as.data.frame() |>
   #tibble::rownames_to_column(var = 'sample_id') |>
@@ -682,8 +697,6 @@ community_eveness_all |>
   theme_bw()+
   theme(panel.grid = element_blank(), strip.background = element_blank(), legend.position = 'bottom')
 
-  
-
 # Discover anomalies----
 ## For each ASVs based on relative abundances and pseudoabundances -----
 ### those ASVs that are present > 50% of the sampless
@@ -727,7 +740,41 @@ asv_tab_10y_3_pseudo %$%
   dplyr::filter(zclr >= 1.96) |>
   dplyr::distinct(asv_num) |>
   dplyr::summarize(n = n()) |>
+  dplyr::summarize(sum = sum(n))f
+
+bloo_02 <- asv_tab_10y_02_pseudo |>
+  inner_join(asv_tab_10y_02_zclr, by = c('sample_id', 'asv_num')) |> #asv_tab_10y_02_zclr vull afegir el zclr per calcular també les seves anomalies i veure si veiem el mateix
+  group_by(asv_num) |>
+  #dplyr::mutate(num_0 = sum(relative_abundance == 0)) |>
+  #dplyr::filter(num_0 <= x) |>
+  #as_tibble() |>
+  dplyr::filter(any(relative_abundance >=  0.1)) |>
+  dplyr::filter(zclr >= 1.96) |>
+  dplyr::distinct(asv_num) |>
+  as_vector()
+
+n_bloomers_3 <-  asv_tab_10y_3_pseudo |>
+  inner_join(asv_tab_10y_3_zclr, by = c('sample_id', 'asv_num')) |> #asv_tab_10y_02_zclr vull afegir el zclr per calcular també les seves anomalies i veure si veiem el mateix
+  group_by(asv_num) |>
+  #dplyr::mutate(num_0 = sum(relative_abundance == 0)) |>
+  #dplyr::filter(num_0 <= x) |>
+  #as_tibble() |>
+  dplyr::filter(any(relative_abundance >=  0.1)) |>
+  dplyr::filter(zclr >= 1.96) |>
+  dplyr::distinct(asv_num) |>
+  dplyr::summarize(n = n()) |>
   dplyr::summarize(sum = sum(n))
+
+bloo_3 <- asv_tab_10y_3_pseudo |>
+  inner_join(asv_tab_10y_3_zclr, by = c('sample_id', 'asv_num')) |> #asv_tab_10y_02_zclr vull afegir el zclr per calcular també les seves anomalies i veure si veiem el mateix
+  group_by(asv_num) |>
+  #dplyr::mutate(num_0 = sum(relative_abundance == 0)) |>
+  #dplyr::filter(num_0 <= x) |>
+  #as_tibble() |>
+  dplyr::filter(any(relative_abundance >=  0.1)) |>
+  dplyr::filter(zclr >= 1.96) |>
+  dplyr::distinct(asv_num) |>
+  as_vector()
 
 x <- 117*0.75  ##percentage of ASV present in the dataset that we want to subset by (occurrence)
 z_3 <- asv_tab_10y_3_pseudo |>
@@ -965,15 +1012,19 @@ z_scores_all |>
 # Dataset with all information ----
 asv_tab_all_bloo_z_tax <- asv_tab_all_bloo |>
   left_join(z_scores_all) |> 
-  left_join(tax_bbmo_10y, by = 'asv_num') 
+  left_join(tax_bbmo_10y_new, by = 'asv_num') 
 
-## write.csv2(asv_tab_all_bloo_z_tax, 'asv_tab_all_bloo_z_tax.csv')
+##write.csv2(asv_tab_all_bloo_z_tax, 'asv_tab_all_bloo_z_tax_new.csv')
 asv_tab_all_bloo_z_tax |>
   distinct(asv_num) |>
   dim()
 
 asv_tab_all_bloo_z_tax |>
   colnames()
+
+##UPLOAD BLOOMERS DATA-----
+asv_tab_all_bloo_z_tax_old <- read.csv2('asv_tab_all_bloo_z_tax.csv')
+asv_tab_all_bloo_z_tax <- read.csv2('asv_tab_all_bloo_z_tax_new.csv')
 
 asv_tab_all_bloo_z_tax |>
   dplyr::filter(asv_num == 'asv38') |>
@@ -1203,7 +1254,7 @@ paired_12_12 <- c("#a6cee3","#1f78b4","#b2df8a","#33a02c","#fb9a99","#e31a1c","#
 ### since pseudoabundance is only useful for the 0.2 fraction we now only plot the relative abundance changes
 
 ## Plot Eveness and Bray Curtis anomalies----
-### crec que no té sentit perquè ja ens indica un canvi en la comunitat almenys la Bray-Curtis dissimilarity
+### crec que no té sentit perquè ja ens indica un canvi en la comunitat al menys la Bray-Curtis dissimilarity
 bray_curtis_02_rar |>
   bind_rows(bray_curtis_3_rar) |>
   left_join(m_bbmo_10y, by = c('samples' = 'sample_id')) |>
@@ -1386,54 +1437,211 @@ asv_tab_all_bloo_z_tax|>
   dplyr::filter(abundance_type == 'relative_abundance') %$%
   max(abundance_value)
 
-#library(ggstream) #to smoothen areas but maybe here we don't want this effect
-
 community_eveness_all_m %$%
   min(date)
 
-# booming_events_ev_BBMO10Y <-
-  asv_tab_all_bloo_z_tax |>
+asv_tab_all_bloo_z_tax  |>
+  dplyr::filter(abundance_type == 'relative_abundance') %$%
+  class_f |>
+  unique()
+
+# asv_tab_all_bloo_z_tax |>
+#   dplyr::filter(class == is.na(class))
+
+ #booming_events_ev_BBMO10Y <-
+  # asv_tab_all_bloo_z_tax |>
+  # dplyr::filter(abundance_type == 'relative_abundance') |>
+  #   # group_by(date) |>
+  #   # dplyr::mutate(max_abund = sum(abundance_value)) |>
+  #   # ungroup() |>
+  # #dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  # ggplot(aes(date, abundance_value))+
+  #   #geom_line(aes(date, max_abund))+
+  # #geom_segment(aes(x = '2005-01-01', y = 0, xend = '2005-01-02', yend =0.57),color="black")+
+  # scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0)
+  #                  #limits = c(min(asv_tab_all_bloo_z_tax$date), max(asv_tab_all_bloo_z_tax$date),
+  #                             #limits = c(as.POSIXct(2004-01-26, origin = '2004-01-26'), as.POSIXct(2014-01-01, origin = '2014-01-01'))
+  #                  )+
+  # geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
+  #                                                   ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
+  # 
+  # #geom_stream(aes(fill = class_f, group = class_f), type = "ridge", bw=1)+
+  # geom_area(aes(fill = class_f, group = class_f), alpha = 0.8,  position='stack')+
+  # #geom_line(data = bray_curtis_rar_all_m, aes(date, bray_curtis_result))+
+  # geom_line(data = community_eveness_all_m, aes(date, community_eveness_rar/1.6), color = '#2D2A2B', alpha = 0.8)+
+  # geom_point(data = community_eveness_all_m |>
+  #              dplyr::filter(anomaly_color == '#9F0011'),  
+  #            aes(date, community_eveness_rar/1.6, color = anomaly_color, alpha = 0.8))+
+  # scale_y_continuous(labels = percent_format(), expand = c(0,0), limits = c(0,0.57), 
+  #                    sec.axis = sec_axis(~.* 1.6 , name = 'Community Evenness'))+
+  # scale_color_identity()+
+  # scale_fill_manual(values = palette_class_assigned_bloo, na.value = "#000000")+
+  # labs(x = 'Time', y = 'Relative abundance (%)', fill = 'Family')+
+  # facet_wrap(vars(fraction), dir = 'v', scales = 'free_y',  labeller = labs_fraction)+
+  #   #facet_wrap(fraction~phylum_f, dir = 'v', scales = 'free_y',  labeller = labs_fraction)+
+  # guides(fill = guide_legend(ncol = 6, size = 10,
+  #                             override.aes = aes(label = '')),
+  #        alpha = 'none')+
+  # theme_bw()+
+  # theme(axis.text.x = element_text(size = 7), panel.grid.minor = element_blank(),
+  #       panel.grid.major = element_blank(), strip.text = element_text(size = 7),
+  #       legend.position = 'bottom', axis.text.y = element_text(size = 8),
+  #       axis.title = element_text(size = 8), strip.background = element_blank(), 
+  #       legend.text = element_text(size = 7), legend.title = element_text(size = 8), strip.placement = 'outside')
+
+# ggsave('booming_events_ev_BBMO10Y_new_tax.pdf', booming_events_ev_BBMO10Y,
+#        path = "../results/figures/",
+#        width = 180,
+#        height = 160,
+#        units = 'mm')
+#### plot a non overlaping area ----
+asv_tab_all_bloo_z_tax |>
   dplyr::filter(abundance_type == 'relative_abundance') |>
+  group_by(date, fraction) |>
+  dplyr::mutate(max_abund = sum(abundance_value)) |>
+  ungroup() |>
+  group_by(date, fraction, class_f) |>
+  dplyr::mutate(abund_class = sum(abundance_value)) |>
   #dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  ggplot(aes(date, abundance_value))+
+  ggplot(aes(date, max_abund))+
+  #geom_line(aes(date, max_abund))+
   #geom_segment(aes(x = '2005-01-01', y = 0, xend = '2005-01-02', yend =0.57),color="black")+
   scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0)
                    #limits = c(min(asv_tab_all_bloo_z_tax$date), max(asv_tab_all_bloo_z_tax$date),
-                              #limits = c(as.POSIXct(2004-01-26, origin = '2004-01-26'), as.POSIXct(2014-01-01, origin = '2014-01-01'))
-                   )+
+                   #limits = c(as.POSIXct(2004-01-26, origin = '2004-01-26'), as.POSIXct(2014-01-01, origin = '2014-01-01'))
+  )+
   geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
-                                                    ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.8)+
-
+                                                    ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
+  
   #geom_stream(aes(fill = class_f, group = class_f), type = "ridge", bw=1)+
-  geom_area(aes(fill = class_f, group = class_f))+
+  geom_area(aes(date, abund_class, fill = class_f, group = class_f), alpha = 0.8,  position='stack')+
   #geom_line(data = bray_curtis_rar_all_m, aes(date, bray_curtis_result))+
   geom_line(data = community_eveness_all_m, aes(date, community_eveness_rar/1.6), color = '#2D2A2B', alpha = 0.8)+
   geom_point(data = community_eveness_all_m |>
                dplyr::filter(anomaly_color == '#9F0011'),  
              aes(date, community_eveness_rar/1.6, color = anomaly_color, alpha = 0.8))+
-  scale_y_continuous(labels = percent_format(), expand = c(0,0), limits = c(0,0.57), 
-                     sec.axis = sec_axis(~.* 1.6 , name = 'Community Evenness'))+
+  scale_y_continuous(labels = percent_format(), expand = c(0,0), limits = c(0,1),
+                     sec.axis = sec_axis(~.* 1 , name = 'Community Evenness'))+
   scale_color_identity()+
-  scale_fill_manual(values = palette_class_assigned_bloo)+
+  scale_fill_manual(values = palette_class_assigned_bloo, na.value = "#000000")+
   labs(x = 'Time', y = 'Relative abundance (%)', fill = 'Family')+
   facet_wrap(vars(fraction), dir = 'v', scales = 'free_y',  labeller = labs_fraction)+
-  guides(fill = guide_legend(ncol = 4, size = 10,
-                              override.aes = aes(label = '')),
+  #facet_wrap(fraction~phylum_f, dir = 'v', scales = 'free_y',  labeller = labs_fraction)+
+  guides(fill = guide_legend(ncol = 6, size = 10,
+                             override.aes = aes(label = '')),
          alpha = 'none')+
   theme_bw()+
   theme(axis.text.x = element_text(size = 7), panel.grid.minor = element_blank(),
         panel.grid.major = element_blank(), strip.text = element_text(size = 7),
         legend.position = 'bottom', axis.text.y = element_text(size = 8),
         axis.title = element_text(size = 8), strip.background = element_blank(), 
-        legend.text = element_text(size = 7), legend.title = element_text(size = 8), strip.placement = 'outside')
+        legend.text = element_text(size = 7), legend.title = element_text(size = 8), strip.placement = 'outside')  
 
-# ggsave('booming_events_ev_BBMO10Y.pdf', booming_events_ev_BBMO10Y,
-#        path = "../results/figures/",
-#        width = 180,
-#        height = 160,
-#        units = 'mm')
-
+##color by order
+asv_tab_all_bloo_z_tax |>
+  dplyr::filter(abundance_type == 'relative_abundance') |>
+  group_by(date, fraction) |>
+  dplyr::mutate(max_abund = sum(abundance_value)) |>
+  ungroup() |>
+  group_by(date, fraction, order_f) |>
+  dplyr::mutate(abund_order = sum(abundance_value)) |>
+  ungroup() |>
+  #dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  ggplot(aes(date, max_abund))+
+  #geom_line(aes(date, max_abund))+
+  #geom_segment(aes(x = '2005-01-01', y = 0, xend = '2005-01-02', yend =0.57),color="black")+
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0)
+                   #limits = c(min(asv_tab_all_bloo_z_tax$date), max(asv_tab_all_bloo_z_tax$date),
+                   #limits = c(as.POSIXct(2004-01-26, origin = '2004-01-26'), as.POSIXct(2014-01-01, origin = '2014-01-01'))
+  )+
+  geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
+                                                    ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
   
+  #geom_stream(aes(fill = class_f, group = class_f), type = "ridge", bw=1)+
+  geom_area(aes(date, abund_order, fill = order_f, group = order_f), alpha = 0.8,  position='stack')+
+  #geom_line(data = bray_curtis_rar_all_m, aes(date, bray_curtis_result))+
+  geom_line(data = community_eveness_all_m, aes(date, community_eveness_rar/1.6), color = '#2D2A2B', alpha = 0.8)+
+  geom_point(data = community_eveness_all_m |>
+               dplyr::filter(anomaly_color == '#9F0011'),  
+             aes(date, community_eveness_rar/1.6, color = anomaly_color, alpha = 0.8))+
+  scale_y_continuous(labels = percent_format(), expand = c(0,0), limits = c(0,1),
+                     sec.axis = sec_axis(~.* 1 , name = 'Community Evenness'))+
+  scale_color_identity()+
+  scale_fill_manual(values = palette_order_assigned_bloo, na.value = "#000000")+
+  labs(x = 'Time', y = 'Relative abundance (%)', fill = 'Family')+
+  facet_wrap(vars(fraction), dir = 'v', scales = 'free_y',  labeller = labs_fraction)+
+  #facet_wrap(fraction~phylum_f, dir = 'v', scales = 'free_y',  labeller = labs_fraction)+
+  guides(fill = guide_legend(ncol = 6, size = 10,
+                             override.aes = aes(label = '')),
+         alpha = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 7), panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(), strip.text = element_text(size = 7),
+        legend.position = 'bottom', axis.text.y = element_text(size = 8),
+        axis.title = element_text(size = 8), strip.background = element_blank(), 
+        legend.text = element_text(size = 7), legend.title = element_text(size = 8), strip.placement = 'outside')  
+
+#### Another idea with the same time of plot is to plot only blooming events just to observe the events only not their dynamics over the years----
+##color by order
+asv_tab_all_bloo_z_tax |>
+  colnames()
+
+## I select only abundances for the anomalies of each ASV NOT the entire dataset for each ASVs that have an anomaly over the hole timeline.
+asv_tab_all_bloo_z_tax %$%
+  abundance_type |>
+  unique()
+
+asv_tab_all_bloo_z_tax_relabund <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(abundance_type == 'relative_abundance')
+
+ asv_tab_all_bloo_z_tax |>
+  dplyr::filter(abundance_type == 'zclr' & 
+                 abundance_value >= 1.96) |>
+  group_by(asv_num, date) |>
+  distinct(asv_num, date) |>
+   left_join(asv_tab_all_bloo_z_tax_relabund, by = c('asv_num', 'date'))|>
+  group_by(date, fraction) |>
+  dplyr::mutate(max_abund = sum(abundance_value)) |>
+  ungroup() |>
+  group_by(date, fraction, order_f) |>
+  dplyr::mutate(abund_order = sum(abundance_value)) |>
+  ungroup() |>
+  #dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  ggplot(aes(date, max_abund))+
+  #geom_line(aes(date, max_abund))+
+  #geom_segment(aes(x = '2005-01-01', y = 0, xend = '2005-01-02', yend =0.57),color="black")+
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0)
+                   #limits = c(min(asv_tab_all_bloo_z_tax$date), max(asv_tab_all_bloo_z_tax$date),
+                   #limits = c(as.POSIXct(2004-01-26, origin = '2004-01-26'), as.POSIXct(2014-01-01, origin = '2014-01-01'))
+  )+
+  geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
+                                                    ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
+  
+  #geom_stream(aes(fill = class_f, group = class_f), type = "ridge", bw=1)+
+  geom_area(aes(date, abund_order, fill = order_f, group = order_f), alpha = 0.8,  position='stack')+
+  #geom_line(data = bray_curtis_rar_all_m, aes(date, bray_curtis_result))+
+  geom_line(data = community_eveness_all_m, aes(date, community_eveness_rar/1.6), color = '#2D2A2B', alpha = 0.8)+
+  geom_point(data = community_eveness_all_m |>
+               dplyr::filter(anomaly_color == '#9F0011'),  
+             aes(date, community_eveness_rar/1.6, color = anomaly_color, alpha = 0.8))+
+  scale_y_continuous(labels = percent_format(), expand = c(0,0), limits = c(0,1),
+                     sec.axis = sec_axis(~.* 1 , name = 'Community Evenness'))+
+  scale_color_identity()+
+  scale_fill_manual(values = palette_order_assigned_bloo, na.value = "#000000")+
+  labs(x = 'Time', y = 'Relative abundance (%)', fill = 'Family')+
+  facet_wrap(vars(fraction), dir = 'v', scales = 'free_y',  labeller = labs_fraction)+
+  #facet_wrap(fraction~phylum_f, dir = 'v', scales = 'free_y',  labeller = labs_fraction)+
+  guides(fill = guide_legend(ncol = 6, size = 10,
+                             override.aes = aes(label = '')),
+         alpha = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 7), panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(), strip.text = element_text(size = 7),
+        legend.position = 'bottom', axis.text.y = element_text(size = 8),
+        axis.title = element_text(size = 8), strip.background = element_blank(), 
+        legend.text = element_text(size = 7), legend.title = element_text(size = 8), strip.placement = 'outside')  
+
+
 ##plots example for PhD committee----
 asv11_bbmo <- asv_tab_all_bloo_z_tax |>
   dplyr::filter(asv_num %in% c('asv11')) |>
@@ -1827,16 +2035,21 @@ asv_tab_all_bloo |>
         axis.title.y = element_text(size = 14), strip.background = element_blank())
 
 ##plot all month together (seasonal anomalies?)
-asv_tab_all_bloo |>
-  left_join(z_scores_all) |>
-  left_join(tax_bbmo_10y, by = 'asv_num') |>
-  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  mutate(z_score_ra_ed = case_when(is.na(z_score_ra) ~ 0,
-                                   z_score_ra == 'NaN' ~ 0,
-                                   z_score_ra == Inf ~ 0,
-                                   TRUE ~ z_score_ra)) |>
-  dplyr::mutate(anomaly_color = if_else(z_score_ra_ed >= 1.96,  '#9F0011', '#080808', missing = '#080808')) |>
-  dplyr::filter(z_score_ra_ed >= 1.96) |>
+# asv_tab_all_bloo |>
+#   left_join(z_scores_all) |>
+#   left_join(tax_bbmo_10y, by = 'asv_num') |>
+
+asv_tab_all_bloo_z_tax |>
+  colnames()
+
+asv_tab_all_bloo_z_tax |>
+  #dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  # mutate(z_score_ra_ed = case_when(is.na(z_score_ra) ~ 0,
+  #                                  z_score_ra == 'NaN' ~ 0,
+  #                                  z_score_ra == Inf ~ 0,
+  #                                  TRUE ~ z_score_ra)) |>
+  # dplyr::mutate(anomaly_color = if_else(z_score_ra_ed >= 1.96,  '#9F0011', '#080808', missing = '#080808')) |>
+  #dplyr::filter(z_score >= 1.96) |>
   #ungroup() |>
   #left_join(m_bbmo_10y, by = 'sample_id') |>
   #left_join(tax, by = c('asv_num' = 'asv')) |>
@@ -1844,8 +2057,9 @@ asv_tab_all_bloo |>
   # ggplot(aes(date, abundance_value, color = ifelse(is.na(z_score_ra), "#080808", 
   #            if_else(z_score_ra >= 1.96, '#9F0011', '#080808'))))+ #, color = 'Class' , shape = class 
   #ggplot(aes(date, abundance_value, color = if_else(z_score_ra_ed >= 1.96,  '#9F0011', '#080808', missing = '#080808')))+
-  ggplot(aes(month, abundance_value))+  
-  geom_violin(aes(month, abundance_value))+
+  dplyr::filter(abundance_type == 'relative_abundance') |>
+  ggplot(aes(season, abundance_value))+  
+  geom_violin(aes(season, abundance_value, group = season), position_jitter(width = 0,3) )+
   #scale_x_datetime()+
   #facet_wrap(vars(class), scales = 'free')+
   #geom_smooth(aes(month, abundance_value))+
@@ -1854,9 +2068,9 @@ asv_tab_all_bloo |>
   #scale_y_continuous(labels = percent_format())+
   labs(x = 'Month', y = 'Relative abundance (%)', color = 'Class')+ #, shpae = 'Class'
   #scale_color_identity()+
-  scale_color_manual(values = palette_class_assigned)+
+  scale_color_manual(values = palette_class_assigned_bloo)+
   #scale_color_manual(values = if_else(asv_tab_z_scores_all$z_score_ra >= 1.96,  '#9F0011', '#080808', missing = '#080808'))+
-  facet_wrap(fraction~abundance_type, scales = 'free')+
+  #facet_wrap(fraction~abundance_type, scales = 'free')+
   #facet_grid(fraction~class, scales = 'free')+
   #guides(fill = 'none')+
   theme_bw()+
@@ -1866,16 +2080,16 @@ asv_tab_all_bloo |>
         axis.title.y = element_text(size = 14), strip.background = element_blank())
 
 ##plot all seasons together (seasonal anomalies?)
-asv_tab_all_bloo |>
-  left_join(z_scores_all) |>
-  left_join(tax_bbmo_10y, by = 'asv_num') |>
-  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  mutate(z_score_ra_ed = case_when(is.na(z_score_ra) ~ 0,
-                                   z_score_ra == 'NaN' ~ 0,
-                                   z_score_ra == Inf ~ 0,
-                                   TRUE ~ z_score_ra)) |>
-  dplyr::mutate(anomaly_color = if_else(z_score_ra_ed >= 1.96,  '#9F0011', '#080808', missing = '#080808')) |>
-  dplyr::filter(z_score_ra_ed >= 1.96) |>
+asv_tab_all_bloo_z_tax |>
+  # left_join(z_scores_all) |>
+  # left_join(tax_bbmo_10y_new, by = 'asv_num') |>
+  # dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  # mutate(z_score_ra_ed = case_when(is.na(z_score_ra) ~ 0,
+  #                                  z_score_ra == 'NaN' ~ 0,
+  #                                  z_score_ra == Inf ~ 0,
+  #                                  TRUE ~ z_score_ra)) |>
+  # dplyr::mutate(anomaly_color = if_else(z_score_ra_ed >= 1.96,  '#9F0011', '#080808', missing = '#080808')) |>
+  #dplyr::filter(z_score_ra_ed >= 1.96) |>
   #ungroup() |>
   #left_join(m_bbmo_10y, by = 'sample_id') |>
   #left_join(tax, by = c('asv_num' = 'asv')) |>
@@ -1906,8 +2120,8 @@ asv_tab_all_bloo |>
   
 #pivot_wider(id_cols = sample_id_num, values_from = anomalies_ra, names_from = asv_num)
 
-##Ocurrence of this AVSs vs frequency of blooming events and magnitude of the events --------
-###calculate occurency
+## Occurrence of this AVSs vs frequency of blooming events and magnitude of the events --------
+###calculate occurrency
 nsamples_3 <- asv_tab_all_bloo_z_tax |>
   dplyr::filter(fraction == '3') %$%
   sample_id |>
@@ -1982,7 +2196,52 @@ anom_perc_02 <- asv_tab_all_bloo_z_tax |>
 anom_perc <- anom_perc_3 |>
   bind_rows(anom_perc_02)
 
-##per year (explore the % of blooming events per tax)----
+anom_perc <- anom_perc |>
+  left_join(tax_bbmo_10y_old) |>
+  dplyr::mutate(phylum_f = as_factor(phylum),
+                family_f = as_factor(family),
+                order_f = as_factor(order),
+                class_f = as_factor(class),
+                asv_num_f = as_factor(asv_num))
+
+anom_perc$class_f <-  factor(anom_perc$class_f, 
+                                          levels=unique(anom_perc$class_f[order(anom_perc$phylum_f)]), 
+                                          ordered=TRUE)
+
+anom_perc$order_f <-  factor(anom_perc$order_f, 
+                                          levels=unique(anom_perc$order_f[order(anom_perc$phylum_f,
+                                                                                             anom_perc$class_f)]), 
+                                          ordered=TRUE)
+
+anom_perc$family_f <-  factor(anom_perc$family_f, 
+                                           levels=unique(anom_perc$family_f[order(anom_perc$phylum_f,
+                                                                                               anom_perc$class_f,
+                                                                                               anom_perc$order_f)]), 
+                                           ordered=TRUE)
+
+
+anom_perc$asv_num_f <-  factor(anom_perc$asv_num_f, 
+                                            levels=unique(anom_perc$asv_num_f[order(anom_perc$phylum_f,
+                                                                                                 anom_perc$class_f,
+                                                                                                 anom_perc$order_f,
+                                                                                                 anom_perc$family_f)]), 
+                                            ordered=TRUE)
+
+anom_perc |>
+  ggplot(aes(interaction(family_f, asv_num_f), anom_perc, fill = order_f))+
+  geom_col()+
+  facet_wrap(vars(fraction), nrow = 1)+
+  scale_fill_manual(values = palette_order_assigned_bloo)+
+  coord_flip()+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 90))
+
+## per year (explore the % of blooming events per tax)----
+asv_tab_all_bloo_z_tax |>
+  colnames()
+
+asv_tab_all_bloo_z_tax$month
+  
 anom_perc_02 <- asv_tab_all_bloo_z_tax |>
   dplyr::filter(fraction == '0.2' &
                   !abundance_type %in% c('pseudoabundance', 'zclr')) |>
@@ -2017,12 +2276,15 @@ anom_perc_3 <- asv_tab_all_bloo_z_tax |>
 
 anom_perc_02 |>
   bind_rows(anom_perc_3) |>
-  ggplot(aes(month, n_anom, shape = fraction))+
- # geom_point()+
-  geom_col()+
+  group_by(month, year, fraction) |>
+  dplyr::summarize(n_anom_month = sum(n_anom)) |>
+  ggplot(aes(month, n_anom_month, shape = fraction, group = month))+
+ geom_point()+
+  #geom_violin()+
   #geom_line()+
-  geom_smooth(method= 'loess')+
+  #geom_line(group = 'fraction')+
   facet_grid(fraction~year)+
+  #facet_grid(fraction~year)+
   #scale_y_continuous(labels = percent_format())+
   theme_bw()
 
@@ -2053,26 +2315,26 @@ max_rel <- max_rel_3 |>
 bloom_occurrence_tax <- occurence_perc |>
   left_join(anom_perc, by = c('asv_num','fraction')) |>
   left_join(max_rel, by = c('asv_num','fraction')) |>
-  left_join(tax_bbmo_10y, by = 'asv_num') 
+  left_join(tax_bbmo_10y_new, by = 'asv_num') 
 
 occurrence_perc_tax <-occurence_perc  |>
  left_join(anom_perc, by = c('asv_num','fraction')) |>
   left_join(max_rel, by = c('asv_num','fraction')) |>
-  left_join(tax_bbmo_10y, by = 'asv_num')
+  left_join(tax_bbmo_10y_new, by = 'asv_num')
 
-occurence_perc_tax |>
+occurrence_perc_tax |>
   colnames()
 
-occurence_perc_tax %$%
+occurrence_perc_tax %$%
   unique(genus)
 
-occurence_perc_tax %$%
+occurrence_perc_tax %$%
   unique(family)
 
 occurrence_perc_tax |>
   ggplot(aes(occurence_perc, anom_perc, color = class, size = max_rel*100, shape = fraction))+
   geom_point()+
-  scale_color_manual(values = palette_class_assigned)+
+  scale_color_manual(values = palette_class_assigned_bloo)+
   labs(x = 'ASV occurrence (%)', y = 'Anomaly (%)', color = 'Class', size = 'Max relative\nabundance (%)\nin a blooming event')+
   scale_x_continuous(labels = percent_format())+
   scale_y_continuous(labels = percent_format())+
@@ -2175,6 +2437,7 @@ asv_tab_all_bloo |>
 #        width = 230,
 #        height = 180,
 #        units = 'mm')
+
 
 
 # Analysis with years sequenced with Parada primers (2014-2015) -----
@@ -2440,4 +2703,6 @@ zclr_tbl <- zclr_dist |>
    facet_wrap(~method, scales = 'free_y')+
    geom_smooth()
 
+ 
+ 
  
