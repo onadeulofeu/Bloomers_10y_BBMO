@@ -28,11 +28,11 @@ library(vegan)
 library(tidyverse)
 library(ggplot2)
 
-asv_tab_all_bloo_z_tax <- read.csv2('asv_tab_all_bloo_z_tax_new.csv')
-asv_tab_rar <- read.csv2('asv_tab_bbmo_10y_w_rar.csv') |>
+asv_tab_all_bloo_z_tax <- read.csv2('data/asv_tab_all_bloo_z_tax_new.csv')
+asv_tab_rar <- read.csv2('data/asv_tab_bbmo_10y_w_rar.csv') |>
   as_tibble()
 
-#I create two different datasets one for ASVs and the other for the community
+#I create two different datasets one for ASVs and the other for the community------
 asv_tab_rar |>
   colnames()
 
@@ -89,67 +89,75 @@ bbmo_env <- asv_tab_all_bloo_z_tax |>
            HNA,   prochlorococcus_FC,
            Peuk1,   Peuk2,                 
            bacteria_joint, synechococcus)
-#' #|>
-#'   pivot_longer(cols = c('day_length',
-#'                         #'sampling_time',
-#'                         'temperature',
-#'                         'secchi',
-#'                         'salinity',
-#'                         'chla_total',
-#'                         'chla_3um',
-#'                         'PO4',
-#'                        'NH4', 'NO2', 'NO3',
-#'                         'Si', 'BP_FC1.55',
-#'                         'PNF_Micro', 'PNF2_5um_Micro',
-#'                         'PNF_5um_Micro', 
-#'                         'dryptomonas', 'micromonas',
-#'                         'HNF_Micro', 'HNF2_5um_Micro',   
-#'                         'HNF_5um_Micro' ,  'LNA',              
-#'                         'HNA',   'prochlorococcus_FC',
-#'                         'Peuk1',  'Peuk2',                 
-#'                         'bacteria_joint', 'synechococcus'), 
-#'                values_to = 'values', names_to = 'env_variable')
+
+bbmo_env_02 <- bbmo_env |>
+  dplyr::filter(str_detect(sample_id, '0.2'))
+
+bbmo_env_3 <- bbmo_env |>
+  dplyr::filter(str_detect(sample_id, '3_'))
 
 ##normalization of environmental data using z-scores
-## I created a function for this purpose 
-calculate_z_score <- function(data, col, col_name = NULL,  group = NULL) { #,
- #browser()  # Insert this line to pause execution and enter the interactive debugging mode
-  stopifnot(is.numeric(data[[col]])) 
 
-  col_name <- ifelse(!is.null(col_name), paste0("z_score_", col_name), 'z_score')
+class(bbmo_env_sim$day_length)
+sum(is.na(bbmo_env_sim$day_length))
+
+bbmo_env_sim <- bbmo_env |>
+  dplyr::select(sample_id, day_length) |>
+  dplyr::filter(!is.na(day_length)) |>
+  dplyr::mutate(day_length = as.numeric(day_length)) |>
+  ungroup()
+
+## I created a function for this purpose 
+# calculate_z_score <- function(data, col, name = NULL, group = NULL) {
+#   stopifnot(is.numeric(data[[col]]))
+#   
+#   # Check for NAs in the specified column
+#   if (anyNA(data[[col]])) {
+#     warning("The specified column contains NA values.")
+#   }
+#   
+#   col_name <- ifelse(!is.null(name), paste0("z_score_", name), 'z_score')
+#   
+#   if (!is.null(group)) {
+#     data <- data |>
+#       dplyr::group_by({{group}}) |>
+#       dplyr::mutate(!!col_name := (!!{{col}} - base::mean(!!{{col}}, na.rm = TRUE)) / base::sd(!!{{col}}, na.rm = TRUE))
+#   } else {
+#     data <- data |>
+#       dplyr::mutate(!!col_name := (!!{{col}} - base::mean(!!{{col}}, na.rm = TRUE)) / base::sd(!!{{col}}, na.rm = TRUE))
+#   }
+#   
+#   return(data)
+# }
+
+calculate_z_score <- function(data, col, name = NULL, group = NULL) {
+  stopifnot(is.numeric(data[[col]]))
+  
+  # Check for NAs in the specified column
+  if (anyNA(data[[col]])) {
+    warning("The specified column contains NA values.")
+  }
+  
+  col_name <- ifelse(!is.null(name), paste0("z_score_", name), 'z_score')
   
   if (!is.null(group)) {
-    data <- data %>%
-      group_by({{group}}) %>%
-      mutate({{col_name}} := ({{col}} - mean({{col}}, na.rm = TRUE)) / sd({{col}}, na.rm = TRUE))
+    data <- data |>
+      dplyr::group_by(!!sym(group)) |>
+      dplyr::mutate(!!col_name := (!!sym(col) - base::mean(!!sym(col), na.rm = TRUE)) / stats::sd(!!sym(col), na.rm = TRUE))
   } else {
-    data <- data %>%
-      mutate({{col_name}} := ({{col}} - mean({{col}}, na.rm = TRUE)) / sd({{col}}, na.rm = TRUE))
+    data <- data |>
+      dplyr::mutate(!!col_name := (!!sym(col) - base::mean(!!sym(col), na.rm = TRUE)) / stats::sd(!!sym(col), na.rm = TRUE))
   }
   
   return(data)
 }
 
-calculate_z_score <- function(data, col, col_name = NULL, group = NULL) {
-  stopifnot(is.numeric(data[[col]]))
-            
-            col_name <- ifelse(!is.null(col_name), paste0("z_score_", col_name), 'z_score')
-            
-            if (!is.null(group)) {
-              data <- data %>%
-                group_by({{group}}) %>%
-                mutate(!!col_name := (!!col - mean(!!col, na.rm = TRUE)) / sd(!!col, na.rm = TRUE))
-            } else {
-              data <- data %>%
-                mutate(!!col_name := (!!col - mean(!!col, na.rm = TRUE)) / sd(!!col, na.rm = TRUE))
-            }
-            
-            return(data)
-}
+calculate_z_score(bbmo_env_sim, col = 'day_length', name = 'day_length', group = NULL)
 
-calculate_z_score(bbmo_env, col = bbmo_env$day_length, col_name = 'day_length', group = NULL)
+bbmo_env_sim |>
+  glimpse()
 
-#bbmo_env_z <- 
+bbmo_env_z <- 
   bbmo_env |>
   as_tibble() |>
   pivot_longer(cols = c( day_length,
@@ -172,44 +180,75 @@ calculate_z_score(bbmo_env, col = bbmo_env$day_length, col_name = 'day_length', 
                          bacteria_joint, synechococcus), values_to = 'env_values', names_to = 'environmental_variable') |>
     dplyr::filter(!is.na(env_values)) |>
     dplyr::mutate(env_values = as.numeric(env_values)) |>
-  calculate_z_score(col = 'env_values', col_name = 'environmental_variable', group = NULL) 
+  calculate_z_score(col = 'env_values', name = 'environmental_variable', group = NULL) 
   #pivot_wider(id_cols = )
   
-  dplyr::filter(!is.na(env_values)) |>
-    dplyr::mutate(env_values = as.numeric(env_values)) |>
-    calculate_z_score(col = 'env_values', col_name = 'environmental_variable', group = NULL) 
+bbmo_env_z$samples_id |>
+  unique()
   
-## calculate z-scores without using a function---- 
-  bbmo_env_zscore  <- bbmo_env |>
-    as_tibble() |>
-    pivot_longer(cols = c(day_length,
-                           #sampling_time
-                           temperature,
-                           secchi,
-                           salinity,
-                           chla_total,
-                           chla_3um,
-                           PO4,
-                           NH4, NO2, NO3,
-                           Si, BP_FC1.55,
-                           PNF_Micro, PNF2_5um_Micro,
-                           PNF_5um_Micro, 
-                           dryptomonas, micromonas,
-                           HNF_Micro, HNF2_5um_Micro,   
-                           HNF_5um_Micro ,  LNA,              
-                           HNA,   prochlorococcus_FC,
-                           Peuk1,   Peuk2,                 
-                           bacteria_joint, synechococcus), values_to = 'env_values', names_to = 'environmental_variable') |>
-    group_by(environmental_variable) |>
-    dplyr::filter(!is.na(env_values)) |>
-    dplyr::mutate(sd = sd(env_values),
-                  mean = mean(env_values)) |>
-    dplyr::mutate(z_score = ((env_values - mean(env_values))/ sd(env_values)))
-    
-    bbmo_env_zscore_w <-   bbmo_env_zscore |>
+# ## calculate z-scores without using a function---- 
+#   bbmo_env_zscore_02  <- bbmo_env_02 |>
+#     as_tibble() |>
+#     pivot_longer(cols = c(day_length,
+#                            #sampling_time
+#                            temperature,
+#                            secchi,
+#                            salinity,
+#                            chla_total,
+#                            chla_3um,
+#                            PO4,
+#                            NH4, NO2, NO3,
+#                            Si, BP_FC1.55,
+#                            PNF_Micro, PNF2_5um_Micro,
+#                            PNF_5um_Micro, 
+#                            dryptomonas, micromonas,
+#                            HNF_Micro, HNF2_5um_Micro,   
+#                            HNF_5um_Micro ,  LNA,              
+#                            HNA,   prochlorococcus_FC,
+#                            Peuk1,   Peuk2,                 
+#                            bacteria_joint, synechococcus), values_to = 'env_values', names_to = 'environmental_variable') |>
+#     #group_by(environmental_variable) |>
+#     dplyr::filter(!is.na(env_values)) |>
+#     calculate_z_score(col = 'env_values', name = 'environmental_variable', group = 'environmental_variable') 
+#     
+#     # dplyr::mutate(sd = sd(env_values),
+#     #               mean = mean(env_values)) |>
+#     # dplyr::mutate(z_score = ((env_values - mean(env_values))/ sd(env_values))) |>
+#     # ungroup()
+#   
+#   bbmo_env_zscore_3  <- bbmo_env_3 |>
+#     as_tibble() |>
+#     pivot_longer(cols = c(day_length,
+#                           #sampling_time
+#                           temperature,
+#                           secchi,
+#                           salinity,
+#                           chla_total,
+#                           chla_3um,
+#                           PO4,
+#                           NH4, NO2, NO3,
+#                           Si, BP_FC1.55,
+#                           PNF_Micro, PNF2_5um_Micro,
+#                           PNF_5um_Micro, 
+#                           dryptomonas, micromonas,
+#                           HNF_Micro, HNF2_5um_Micro,   
+#                           HNF_5um_Micro ,  LNA,              
+#                           HNA,   prochlorococcus_FC,
+#                           Peuk1,   Peuk2,                 
+#                           bacteria_joint, synechococcus), values_to = 'env_values', names_to = 'environmental_variable') |>
+#     group_by(environmental_variable) |>
+#     dplyr::filter(!is.na(env_values)) |>
+#     dplyr::mutate(sd = sd(env_values),
+#                   mean = mean(env_values)) |>
+#     dplyr::mutate(z_score = ((env_values - mean(env_values))/ sd(env_values))) |>
+#     ungroup()
+#     
+    bbmo_env_zscore_w <-   bbmo_env_zscore_02 |>
+      ungroup() |>
+      bind_rows(bbmo_env_zscore_3) |>
       dplyr::select(sample_id, environmental_variable, z_score) |>
       pivot_wider(id_cols = sample_id, names_from = environmental_variable, values_from = z_score)
-
+    
 # bbmo_env_l |>
 #  # group_by(enviornmental_variable) |>
 #   calculate_z_score(col = 'env_values', group = 'enviornmental_variable')
@@ -223,6 +262,21 @@ calculate_z_score(bbmo_env, col = bbmo_env$day_length, col_name = 'day_length', 
 #   glimpse()
 # 
 #   calculate_z_score(bbmo_env, col = day_length)
+  
+## plot environmental variables normalized by z-scores-----
+  bbmo_env_z |>
+    left_join(m_bbmo_10y) |>
+    dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+    ggplot(aes(date, z_score_environmental_variable))+
+    geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
+                                                      ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
+    geom_point()+
+    geom_line()+
+    labs(x = 'Time', y = 'z-scores')+
+    facet_wrap(vars(environmental_variable), scales = 'free_y')+
+    scale_y_continuous()+
+    theme_bw()+
+    theme(panel.grid.minor.y = element_blank())
 
 ##calculate distance matrices
   abund_dist_02 <- asv_tab_rar |>
@@ -562,3 +616,8 @@ multipatt(asv_tab_rar)
 ## multicorrelation
 library(psych)
 pairs.panels(bbmo_env[2:13], method = 'pearson')
+
+library(ggcorrplot)
+cor_pmat(asv_tab_rar)
+
+ggcorr(asv_tab_rar, method = c("everything", "pearson")) 
