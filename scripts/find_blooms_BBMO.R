@@ -118,7 +118,8 @@ asv_tab_all_bloo_z_tax |>
   dplyr::filter(order_f %in% c('Rhizobiales', 'Chitinophagales')) |>
   distinct()
 
- palette_order_assigned_bloo <-  c( "SAR11 clade" =  '#B0413E',  "Rhodobacterales" = '#C55E5C',
+ palette_order_assigned_bloo <-  c( 'Thiotrichales' = '#5E5B5B',
+   "SAR11 clade" =  '#B0413E',  "Rhodobacterales" = '#C55E5C',
                                     "Sphingomonadales"  = '#8C000A', "Puniceispirillales" = '#fcca46', 
                                     "Rhodospirillales"  = '#FFA197',  "Verrucomicrobiales"= '#005c69', "Opitutales"   =   '#74B9C8',    
                                     "Phycisphaerales"  = '#e3a6ce',  "Flavobacteriales"   =  '#0051BF', "Synechococcales"  = '#009F6A', 
@@ -126,27 +127,31 @@ asv_tab_all_bloo_z_tax |>
                                     "Oceanospirillales" =  '#A05C00', 'Chitinophagales' = '#92ABFF',
                                     "Alteromonadales" =  '#A63B00',  "Vibrionales" = '#F2AC5D', "Enterobacterales" = '#FFA200',
                                     "Cellvibrionales"   = '#F35900',  "Pseudomonadales"  = '#FF8E00', "SAR86 clade" = '#FFBF45') # NA ==  "#000000",
-  
-# asv_tab_all_bloo_z_tax$family |>
-  # unique()
 
+# asv_tab_all_bloo_z_tax$family_f |>
+# unique()
+# 
 # asv_tab_all_bloo_z_tax |>
-#   dplyr::filter(family == 'Moraxellaceae') |>
+#   dplyr::filter(family == "Thiotrichaceae") |>
 #   dplyr::select(order) |>
 #   distinct()
 
-palette_family_assigned_bloo <- c("Clade II" = '#B0413E',  "Clade I" = '#CD7F78', "Rhodobacteraceae" = '#C55E5C',
-                                  "Sphingomonadaceae"   = '#8C000A',  "SAR116 clade"  ='#D3BF27', 
+ 
+ 
+palette_family_assigned_bloo <- c("Thiotrichaceae" = '#5E5B5B',
+  "Clade II" = '#B0413E',  "Clade I" = '#CD7F78', "Rhodobacteraceae" = '#C55E5C',
+                                  "Sphingomonadaceae"   = '#8C000A',  "SAR116 clade"  ='#D3BF27', "Stappiaceae" = '#B31722',
                                   "AEGEAN-169 marine group" =  '#690000', "Rubritaleaceae"  =  '#005c69',       
                                   "DEV007" = '#74B9C8',  "Puniceicoccaceae"   = '#fcca46',     
                                   "Phycisphaeraceae"   = '#e3a6ce', "NS7 marine group" =  '#92ABFF',
-                                  "NS9 marine group"  =  '#3B52A3',        
+                                  "NS9 marine group"  =  '#3B52A3',   "Cryomorphaceae" = '#002A8E',
+    "Saprospiraceae" = '#5F7CCB',
                                   "Flavobacteriaceae"   =  '#0051BF',      "Cyanobiaceae"  = '#009F6A',          
                                   "Bacteriovoracaceae" =  '#8C789D',  "Alcanivoracaceae1"  =  '#A05C00',
                                   "Marinobacteraceae" =  '#DE6931',    
                                   "Vibrionaceae"      = '#F2AC5D',        "Yersiniaceae"  = '#FFA200',           
                                   "Alteromonadaceae"   =  '#A63B00',      "Halieaceae" = '#F35900',
-                                  "Moraxellaceae"  =  '#FF8E00', 
+                                  "Moraxellaceae"  =  '#FF8E00',  "SAR86 clade" = '#FFBA00'
                                  )  # NA == "#000000" 
                 
 # functions----
@@ -2445,7 +2450,8 @@ samples_id <- asv_tab_all_bloo_z_tax |>
 
 bloom_events_asvs <- asv_tab_all_bloo_z_tax |>
   dplyr::filter(abundance_type == 'relative_abundance' &
-                  z_score_ra >= 1.96) |>
+                  z_score_ra >= 1.96 &
+                abundance_value >= 0.1) |> #we add this line in case we want potential bloomers not just anomalies in their rel abund
   dplyr::select(sample_id, asv_num, abundance_type, abundance_value) |>
   group_by(sample_id) |>
   dplyr::mutate(abund_anom = sum(abundance_value)) |>
@@ -2488,30 +2494,231 @@ community_eveness_all_m |>
   scale_color_gradientn(colors = palete_gradient_cb)+
   #scale_size( range = c(1,14))+
   scale_size_continuous(
-                        breaks = seq(min(bloom_events_asvs$n_asv_bloom), max(bloom_events_asvs$n_asv_bloom), length.out = 7),
-                        labels = round(seq(min(bloom_events_asvs$n_asv_bloom), max(bloom_events_asvs$n_asv_bloom), length.out = 7), 0))+ #, labels = c("Min Value", "Max Value"
+                        breaks = seq(min(bloom_events_asvs$n_asv_bloom), max(bloom_events_asvs$n_asv_bloom), length.out = 3),
+                        labels = round(seq(min(bloom_events_asvs$n_asv_bloom), max(bloom_events_asvs$n_asv_bloom), length.out = 3), 0))+ #, labels = c("Min Value", "Max Value"
 guides(shape = guide_legend(ncol = 3, size = 1),
        size = guide_legend(ncol = 2,
                            override.aes = aes(label = '')))+
   labs(x = 'Community Evenness', 
-       color = 'Sum of the relative abundance\nof all ASVs presenting an anomaly\nper sample',
-       y = '', size = 'Number of ASVs\npresenting an anomaly\nin their relative abundance')+
+       color = 'Sum of the relative abundance\nof all ASVs potentially blooming\nin that sample',
+       y = '', size = 'Number of ASVs\npresenting a potential blooming event')+
   theme_bw()+
   theme(panel.grid = element_blank(), axis.text.y = element_blank(), 
         axis.ticks.y = element_blank(), legend.position = 'bottom', 
         text = element_text(size = 7),
         aspect.ratio = 3/9) #axis.text.x = element_blank()
 
-bray_curtis_rar_all_m|>
-  ggplot(aes(project, bray_curtis_result))+
-  geom_point(position = position_jitter(0.25),)+
-  geom_violin(alpha= 0.2, draw_quantiles = c(0.25, 0.5, 0.75))+
-  scale_y_continuous(limits = c(0.35, 1))+
+## here the tendency is less clear, probably because I 
+bray_curtis_rar_all_m |>
+  left_join(community_eveness_all_m) |>
+  left_join(bloom_events_asvs) |>
+  pivot_longer(cols = c('community_eveness_rar', 'bray_curtis_result'), names_to = 'diversity', values_to = 'values') |>
+  dplyr::filter(diversity != 'community_eveness_rar') |>
+  ggplot(aes(y = diversity, x = values, color = as.numeric(abund_anom)))+
+  geom_point(aes(size = as.numeric(n_asv_bloom)), position = position_jitter(0.03))+
+  geom_violin(aes(group = diversity), alpha= 0.1, draw_quantiles = c(0.25, 0.5, 0.75))+
+  scale_x_continuous(limits = c(0.3, 1.0), expand = c(0,0))+
+  stat_summary(fun = "mean", geom = "crossbar", 
+               width = 0.6, colour = "black")+
+  scale_color_gradientn(colors = palete_gradient_cb)+
+  #scale_size( range = c(1,14))+
+  scale_size_continuous(
+    breaks = seq(min(bloom_events_asvs$n_asv_bloom), max(bloom_events_asvs$n_asv_bloom), length.out = 3),
+    labels = round(seq(min(bloom_events_asvs$n_asv_bloom), max(bloom_events_asvs$n_asv_bloom), length.out = 3), 0))+ #, labels = c("Min Value", "Max Value"
+  guides(shape = guide_legend(ncol = 3, size = 1),
+         size = guide_legend(ncol = 2,
+                             override.aes = aes(label = '')))+
+  labs(x = 'Bray Curtis dissimilarity', 
+       color = 'Sum of the relative abundance\nof all ASVs potentially blooming\nin that sample',
+       y = '', size = 'Number of ASVs\npresenting a potential blooming event')+
   theme_bw()+
-  theme(axis.text.x = element_blank())
+  theme(panel.grid = element_blank(), axis.text.y = element_blank(), 
+        axis.ticks.y = element_blank(), legend.position = 'bottom', 
+        text = element_text(size = 7),
+        aspect.ratio = 3/9)
 
-### NMDS, clustering. Do some blooming events cluster together?-----
-#### necessitem senyalar quines mostres tenen blooming or potential blooming events.
+## NMDS, clustering. Do blooming events cluster together?-----
+#### which samples present a potential blooming event?
+samples_with_bloom_event <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(abundance_type == 'relative_abundance' &
+                  z_score_ra >= 1.96 &
+                  abundance_value >= 0.1) |> #we add this line in case we want potential bloomers not just anomalies in their rel abund
+  dplyr::select(sample_id, asv_num, abundance_type, abundance_value) |>
+  group_by(sample_id) |>
+  dplyr::mutate(abund_anom = sum(abundance_value)) |>
+  group_by(sample_id) |>
+  dplyr::summarize(n_asv_bloom = n(), abund_anom = unique(abund_anom)) |>
+  right_join(samples_id, by = 'sample_id') |>
+  group_by(sample_id) |>
+  slice_max(order_by = abund_anom, n = 1) |>
+  ungroup() |>
+  dplyr::filter(!is.na(n_asv_bloom)) 
+
+#### which is the maximal relative abundance of the potential bloomer/ event
+max_abund_asv_bloom_events <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(abundance_type == 'relative_abundance' &
+                  z_score_ra >= 1.96 &
+                  abundance_value >= 0.1) |> #we add this line in case we want potential bloomers not just anomalies in their rel abund
+  dplyr::select(sample_id, asv_num, abundance_type, abundance_value) |>
+  group_by(sample_id) |>
+  slice_max(order_by = abundance_value, n = 3)
+  
+max_abund_asv_bloom_events |>
+  dim() == samples_with_bloom_event |>
+  dim() ##ROW should be TRUE (row - cols)
+
+samples_with_bloom_event_asv_abund <- samples_with_bloom_event |>
+  right_join(max_abund_asv_bloom_events)
+
+## I would like to know more about these blooming events.
+### Are they more present in PA or FL? Which is their taxonomy?----
+new_tax <-  readRDS('~/Documentos/Doctorat/BBMO/BBMO_bloomers/data/03_tax_assignation/devotes_all_assign_tax_assignation_v2.rds') |>
+  as_tibble(rownames = 'sequence')
+
+tax_bbmo_10y_new <- tax_bbmo_10y_old |>
+  dplyr::select(asv_num, seq) |>
+  left_join(new_tax, by = c('seq' = 'sequence')) |>
+  rename(domain = Kingdom, phylum = Phylum, class = Class, order = Order, family = Family, genus = Genus) |>
+  dplyr::mutate(phylum_f = as_factor(phylum),
+              family_f = as_factor(family),
+              order_f = as_factor(order),
+              class_f = as_factor(class),
+              asv_num_f = as_factor(asv_num))
+
+tax_bbmo_10y_new$class_f <-  factor(tax_bbmo_10y_new$class_f, 
+                                          levels=unique(tax_bbmo_10y_new$class_f[order(tax_bbmo_10y_new$phylum_f)]), 
+                                          ordered=TRUE)
+
+tax_bbmo_10y_new$order_f <-  factor(tax_bbmo_10y_new$order_f, 
+                                          levels=unique(tax_bbmo_10y_new$order_f[order(tax_bbmo_10y_new$phylum_f,
+                                                                                             tax_bbmo_10y_new$class_f)]), 
+                                          ordered=TRUE)
+
+tax_bbmo_10y_new$family_f <-  factor(tax_bbmo_10y_new$family_f, 
+                                           levels=unique(tax_bbmo_10y_new$family_f[order(tax_bbmo_10y_new$phylum_f,
+                                                                                               tax_bbmo_10y_new$class_f,
+                                                                                               tax_bbmo_10y_new$order_f)]), 
+                                           ordered=TRUE)
+
+
+tax_bbmo_10y_new$asv_num_f <-  factor(tax_bbmo_10y_new$asv_num_f, 
+                                            levels=unique(tax_bbmo_10y_new$asv_num_f[order(tax_bbmo_10y_new$phylum_f,
+                                                                                                 tax_bbmo_10y_new$class_f,
+                                                                                                 tax_bbmo_10y_new$order_f,
+                                                                                                 tax_bbmo_10y_new$family_f)]), 
+                                            ordered=TRUE)
+
+
+
+blooming_events_fraction <- samples_with_bloom_event_asv_abund |>
+  dplyr::mutate(fraction = case_when(str_detect(sample_id, '0.2_') ~ 0.2,
+                                     str_detect(sample_id, '3_') ~ 3)) |>
+  group_by(fraction, asv_num) |>
+  dplyr::mutate(fraction_blooms_asv = n()) |>
+  group_by(fraction) |>
+  dplyr::mutate(fraction_blooms = n()) |>
+  left_join(tax_bbmo_10y_new, by = 'asv_num') |>
+  left_join(m_bbmo_10y, by = 'sample_id') |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) 
+
+blooming_events_fraction  |>
+  colnames()
+
+## create a hierachical clustering to add to the heat_map----
+
+## heat_map
+blooming_events_fraction |>
+  ggplot(aes( interaction(asv_num_f, family_f), date))+
+  geom_tile(aes(fill = abundance_value))+
+  scale_y_datetime(expand = c(0,0))+
+  facet_wrap(vars(fraction.y), labeller = labs_fraction)+
+  scale_fill_gradientn(colors = palete_gradient_cb)+
+  coord_flip()+
+  labs(y = 'Date', x = 'ASV number')+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 0), text = element_text(size = 7))
+
+##number of blooming events/fraction and their taxonomy----
+
+unique(blooming_events_fraction$fraction_blooms)
+
+unique(blooming_events_fraction$family_f)
+
+### plot in columns colored by family
+blooming_events_fraction |>
+  dplyr::select(family_f, fraction_blooms_asv, fraction_blooms, asv_num_f, fraction.y, class_f) |>
+  dplyr::distinct(fraction_blooms_asv, family_f, fraction_blooms, asv_num_f, fraction.y, class_f) |>
+  group_by(family_f, fraction_blooms_asv) |>
+  dplyr::mutate(sum_blooms_fam = sum(fraction_blooms_asv)) |>
+  distinct(family_f, fraction_blooms, sum_blooms_fam, fraction.y, class_f) |>
+  #mutate(abund_anom = sum(abundance_value)/fraction_blooms) |>
+  #distinct(family_f, abund_anom, fraction_blooms, fraction.y) |>
+  ggplot(aes(fraction.y, sum_blooms_fam, fill = family_f, label = fraction_blooms))+
+  geom_col()+
+  #geom_bar(stat = 'identity')+
+  scale_x_discrete(labels = labs_fraction)+
+  scale_y_continuous(expand = c(0,0), limits = c(0,93))+
+  scale_fill_manual(values = palette_family_assigned_bloo)+
+  # geom_text(aes(fraction.y, sum_blooms_fam), unique(blooming_events_fraction$fraction_blooms, blooming_events_fraction$fraction.y), 
+  #           color = "black") +  # Add text annotation for max value
+  geom_text(nudge_y = 91, check_overlap = TRUE, size = 3)+
+  scale_x_discrete(labels = labs_fraction) +
+  labs(fill = "Family", y = 'Number of\npotential blooming events')+
+  theme_bw()+
+  theme(panel.grid = element_blank(), text = element_text(size = 7), panel.border = element_blank(),
+        axis.title.x = element_blank(), axis.ticks.x = element_blank(), aspect.ratio = 7/3)
+
+###plot by families 
+blooming_events_fraction |>
+  dplyr::select(family_f, fraction_blooms_asv, fraction_blooms, asv_num_f, fraction.y, class_f) |>
+  dplyr::distinct(fraction_blooms_asv, family_f, fraction_blooms, asv_num_f, fraction.y, class_f) |>
+  group_by(family_f, fraction_blooms_asv) |>
+  dplyr::mutate(sum_blooms_fam = sum(fraction_blooms_asv)) |>
+  distinct(family_f, fraction_blooms, sum_blooms_fam, fraction.y, class_f) |>
+  #mutate(abund_anom = sum(abundance_value)/fraction_blooms) |>
+  #distinct(family_f, abund_anom, fraction_blooms, fraction.y) |>
+  ggplot(aes( sum_blooms_fam, interaction(family_f, class_f), fill = family_f, label = fraction_blooms))+
+  geom_col()+
+  #geom_bar(stat = 'identity')+
+  #scale_x_discrete(labels = labs_fraction)+
+  scale_x_continuous(expand = c(0,0))+
+  scale_fill_manual(values = palette_family_assigned_bloo)+
+  facet_grid(cols = vars(fraction.y),  labeller = labs_fraction)+
+  # geom_text(aes(fraction.y, sum_blooms_fam), unique(blooming_events_fraction$fraction_blooms, blooming_events_fraction$fraction.y), 
+  #           color = "black") +  # Add text annotation for max value
+  #geom_text(nudge_y = 91, check_overlap = TRUE, size = 3)+
+  labs(fill = "Family", y = 'Number of\npotential blooming events')+
+  guides(fill = guide_legend(ncol = 1, size = 3, keywidth = unit(2, 'mm'), keyheight = unit(2, 'mm')))+
+  #coord_flip()+
+  theme_bw()+
+  theme(panel.grid = element_blank(), text = element_text(size = 7), panel.border = element_blank(),
+        axis.title.x = element_blank(), axis.ticks.x = element_blank(), strip.background = element_blank())
+
+###plot by ASVs but colored by families 
+blooming_events_fraction |>
+  dplyr::select(family_f, fraction_blooms_asv, fraction_blooms, asv_num_f, fraction.y, class_f) |>
+  dplyr::distinct(fraction_blooms_asv, family_f, fraction_blooms, asv_num_f, fraction.y, class_f) |>
+  distinct(family_f, fraction_blooms_asv,  fraction.y, class_f, asv_num_f) |>
+  #mutate(abund_anom = sum(abundance_value)/fraction_blooms) |>
+  #distinct(family_f, abund_anom, fraction_blooms, fraction.y) |>
+  ggplot(aes( fraction_blooms_asv, interaction(asv_num_f, family_f), fill = family_f, label = fraction_blooms_asv))+
+  geom_col()+
+  #geom_bar(stat = 'identity')+
+  #scale_x_discrete(labels = labs_fraction)+
+  scale_x_continuous(expand = c(0,0))+
+  scale_fill_manual(values = palette_family_assigned_bloo)+
+  facet_grid(cols = vars(fraction.y),  labeller = labs_fraction)+
+  # geom_text(aes(fraction.y, sum_blooms_fam), unique(blooming_events_fraction$fraction_blooms, blooming_events_fraction$fraction.y), 
+  #           color = "black") +  # Add text annotation for max value
+  #geom_text(nudge_y = 91, check_overlap = TRUE, size = 3)+
+  labs(fill = "Family", y = 'Number of potential blooming events')+
+  guides(fill = guide_legend(ncol = 1, size = 3, keywidth = unit(2, 'mm'), keyheight = unit(2, 'mm')))+
+  #coord_flip()+
+  theme_bw()+
+  theme(panel.grid = element_blank(), text = element_text(size = 7), panel.border = element_blank(),
+        axis.title.x = element_blank(), axis.ticks.x = element_blank(), strip.background = element_blank())
+
+### NMDS----
 bbmo_10y@otu_table |>
   class()
 row.names(asv_tab_bbmo_10y_w_rar) <- asv_tab_bbmo_10y_w_rar[,1]  
