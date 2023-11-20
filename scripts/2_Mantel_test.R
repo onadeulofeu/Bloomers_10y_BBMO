@@ -381,7 +381,7 @@ bbmo_env_zscore_w <-   bbmo_env_z |>
 # 
 #   calculate_z_score(bbmo_env, col = day_length)
 
-### The remodelation of the Blanes harbour strated on 24th March 2010 and finished on the 9th of june 2012----
+### The restoration of the Blanes harbor strated on 24th March 2010 and finished on the 9th of june 2012----
 harbour_restoration <- tibble(xmin = '2010-03-24', xmax = '2012-06-09') |>
   dplyr::mutate(date_min = as.POSIXct(xmin, format = "%Y-%m-%d"),
                 date_max = (as.POSIXct(xmax, format = "%Y-%m-%d")))
@@ -431,7 +431,7 @@ asv_tab_bbmo_10y_l |> # upload the original table
 
 ####community data distance-----
 ## If we transform data to z-scores or rCLR we need to use Euclidean distance because we will have negative values, if
-## we don't transform our data, then we can use 'Bray distance
+## we don't transform our data, then we can use Bray curtis distance
 
 #####Rarefied dataset---
   abund_rar_02 <- asv_tab_rar |>
@@ -474,7 +474,7 @@ asv_tab_bbmo_10y_l |> # upload the original table
   
   abund_rar_02_rclr <-  abund_rar_02_ed |>
     decostand(method="rclr")
-  abund_rar_3_rclr <-  abund_rar_02_ed |>
+  abund_rar_3_rclr <-  abund_rar_3_ed |>
     decostand(method="rclr")
   
   asv_tab_bbmo_10y_w_02_rclr <-  asv_tab_bbmo_10y_w_02_ed |>
@@ -547,7 +547,7 @@ asv_tab_bbmo_10y_l |> # upload the original table
 
 ##one environmental variable at a time
   
-  ##inputs FL (02) ----
+##inputs FL (02) ----
   abund_rar_02_rclr
   bbmo_envz_02 <- bbmo_env_zscore_w |>
     dplyr::filter(str_detect(sample_id, '_0.2_')) |>
@@ -642,23 +642,24 @@ results_mantel_02$variable_name <- results_mantel_02$variable_name  |>
 
 
 plot_mantel_02_community <- results_mantel_02 |>
-  mutate(communty = 'Microbial_community_02') |>
+  mutate(community = 'Free living') |>
   #left_join(tax_factors, by = c('taxon_name' = 'asv_num_f')) |>
-  ggplot(aes(communty, variable_name, fill = mantel_correlation))+
+  ggplot(aes(community, variable_name, fill = mantel_correlation))+
   geom_tile()+
   scale_fill_gradientn(colors = palete_gradient_cb)+
   scale_y_discrete(labels = labs_env)+
   geom_text(aes(label = ifelse(p_value < 0.05, '*', '')))+
-  labs(x = 'Taxonomy', y = 'Environmental data', fill = 'Mantel correlation', title = 'Particle Attached')+
+  labs(x = 'Community', y = 'Environmental variables', fill = 'Mantel correlation', title = 'Particle Attached')+
   theme_bw()+
   theme(panel.grid.major = element_blank(), text = element_text(size = 5),
         axis.text.x = element_text(angle = 65, hjust = 1))
 
 
 ##inputs second PA (3) ----
-abund_rar_3_rclr
+abund_rar_3_rclr |>
+  row.names()
 bbmo_envz_3 <- bbmo_env_zscore_w |>
-  dplyr::filter(str_detect(sample_id, '_0.2_')) |>
+  dplyr::filter(str_detect(sample_id, '_3_')) |>
   as.data.frame()
 
 row.names(bbmo_envz_3) <-  bbmo_envz_3[,1] 
@@ -749,30 +750,33 @@ results_mantel_3$variable_name <- results_mantel_3$variable_name  |>
                     "HNF2_5um_Micro", "HNF_5um_Micro"))
 
 results_mantel_02 <-   results_mantel_02 |>
-  dplyr::mutate(community = 'free_living')
+  dplyr::mutate(community = 'Free living')
 
-##Surt el mateix resultat per les dues fraccions... sospitós
-
+##plot results from FL and PA together-----
 plot_mantel_3_02_community <- results_mantel_3 |>
-  dplyr::mutate(community = 'particle_attached') |>
+  dplyr::mutate(community = 'Particle attached') |>
   bind_rows(results_mantel_02) |>
   #left_join(tax_factors, by = c('taxon_name' = 'asv_num_f')) |>
   ggplot(aes(community, variable_name, fill = mantel_correlation))+
   geom_tile()+
   scale_fill_gradientn(colors = palete_gradient_cb)+
   scale_y_discrete(labels = labs_env)+
-  geom_text(aes(label = ifelse(p_value < 0.05, '*', '')))+
-  labs(x = 'Taxonomy', y = 'Environmental data', fill = 'Mantel correlation')+
+  geom_text(aes(label = ifelse(p_value < 0.05, '*', ''), colour = '#757C76'))+
+  labs(x = 'Community', y = 'Environmental variables', fill = 'Mantel correlation')+
+  guides( colour = 'none')+
   theme_bw()+
   theme(panel.grid.major = element_blank(), text = element_text(size = 5),
-        axis.text.x = element_text(angle = 65, hjust = 1))
+        axis.text.x = element_text(angle = 0), axis.ticks.x = element_blank(), panel.border = element_blank())
 
-
-  results_mantel_02
+# ggsave('mantel_test_community.pdf', plot_mantel_3_02_community, path = "~/Documentos/Doctorat/BBMO/BBMO_bloomers/results/figures/",
+#        width = 88,
+#        height = 120,
+#        units = 'mm')
 
 
 ## I perform the Mantel test only with my potential bloomers vs each environmental variable----
 
+### Prepare the inputs for the Mantel test
 asv_anom_3_tb <- asv_anom_3 |>
   as_tibble()
 
@@ -780,19 +784,45 @@ asv_anom_02_tb <- asv_anom_02 |>
   as_tibble()
 
 abundance_data_bloo02 <- asv_tab_bbmo_10y_w_02_ed |>
-  dplyr::select(asv_anom_02_tb$value)
+  dplyr::select(asv_anom_02_tb$value) # filter by potential bloomers in FL
 
 abundance_data_bloo3 <- asv_tab_bbmo_10y_w_3_ed |>
-  dplyr::select(asv_anom_3_tb$value)
+  dplyr::select(asv_anom_3_tb$value) # filter by potential bloomers in PA
 
 #abundance data transformed to rCLR: 
 abundance_data_clr02 <- abundance_data_bloo02 |>
   decostand(method="clr", na.rm = TRUE, pseudocount = 1) 
 
+abundance_data_clr02 |>
+  dim()
+
 abundance_data_clr3 <- abundance_data_bloo3 |>
   decostand(method="clr", na.rm = TRUE, pseudocount = 1) 
 
+abundance_data_clr3 |>
+  dim()
+
 ###FL -----
+bbmo_envz_02 <- bbmo_env_zscore_w |>
+  dplyr::filter(str_detect(sample_id, '_0.2_')) |>
+  as.data.frame()
+
+row.names(bbmo_envz_02) <-  bbmo_envz_02[,1] 
+bbmo_envz_02_ed <-  bbmo_envz_02[,-1]
+
+# Extract common sample names
+common_sample_names <- intersect(rownames(abundance_data_clr02), rownames(bbmo_envz_02_ed))
+
+# Subset both matrices based on common sample names
+abundance_data <- abundance_data_clr02[common_sample_names, ]
+environmental_data <- abundance_data_clr02[common_sample_names, ]
+
+# Extract the environmental variables (assuming they are in columns)
+environmental_variables <- bbmo_envz_02_ed[, colnames(bbmo_envz_02_ed) != "other_variables"]  # Adjust as needed
+
+# check that the names match
+row.names(abundance_data_clr02) == row.names(bbmo_envz_02_ed)
+
 # Create an empty tibble to store the Mantel test results
 mantel_results_02 <- tibble(
   taxon_name = character(),
@@ -811,10 +841,10 @@ for (taxon_name in colnames(abundance_data_clr02)) {
   distance_abundance <- vegdist(current_variable_abundance, method = "euclidean", na.rm = TRUE)
   
   # Iterate over each environmental variable
-  for (variable_name_environmental in colnames(bbmo_envz_02)) {
+  for (variable_name_environmental in colnames(bbmo_envz_02_ed)) {
     
     # Extract the environmental data for the current variable
-    current_variable_environmental <- bbmo_envz_02[, variable_name_environmental, drop = FALSE]
+    current_variable_environmental <- bbmo_envz_02_ed[, variable_name_environmental, drop = FALSE]
     
     # Calculate distance for the environmental variable
     distance_environmental <- vegdist(current_variable_environmental, method = "euclidean", na.rm = TRUE)
@@ -840,42 +870,47 @@ mantel_results_02$variable_name_environmental <- mantel_results_02$variable_name
   factor(levels = c("day_length", "temperature" ,"secchi" , "salinity" ,      
                     "PO4",  "NH4" ,  "NO2" , "NO3" , "Si" ,  "chla_total" ,  "chla_3um", "synechococcus", "prochlorococcus_FC", 
                     "bacteria_joint", "LNA", "HNA", "Peuk1",             
-                    "Peuk2",
+                    "Peuk2", 'total_vlp', 'low_vlp', 'med_vlp', 'high_vlp',
                     "BP_FC1.55", "PNF_Micro" , "PNF2_5um_Micro",  "PNF_5um_Micro", "dryptomonas", "micromonas","HNF_Micro",         
                     "HNF2_5um_Micro", "HNF_5um_Micro"))
 
 # plot the results
 plot_mantel_02 <- mantel_results_02 |>
   left_join(tax_factors, by = c('taxon_name' = 'asv_num_f')) |>
+  dplyr::mutate(community = 'Free living') |>
   ggplot(aes(interaction(taxon_name, family_f), variable_name_environmental, fill = mantel_correlation))+
   geom_tile()+
   scale_fill_gradientn(colors = palete_gradient_cb)+
   scale_y_discrete(labels = labs_env)+
-  labs(x = 'Taxonomy', y = 'Environmental data', fill = 'Mantel correlation', title = 'Free living fraction')+
+  facet_wrap(vars(community))+
+  labs(x = 'Taxonomy', y = 'Environmental variables', fill = 'Mantel correlation')+ #, title = 'Free living fraction'
+  geom_text(aes(label = ifelse(p_value < 0.05, '*', ''), colour = '#757C76'))+
+  guides( colour = 'none')+
   theme_bw()+
   theme(panel.grid.major = element_blank(), text = element_text(size = 5),
-        axis.text.x = element_text(angle = 65, hjust = 1))
+        axis.text.x = element_text(angle = 55, hjust = 1), strip.background = element_blank(),
+        panel.border = element_blank())
 
 ####for the PA fraction------
 bbmo_envz_3 <- bbmo_env_zscore_w |>
   dplyr::filter(str_detect(sample_id, '_3_')) |>
   as.data.frame()
 
-rownames(bbmo_envz_3) <- bbmo_envz_3$sample_id
-
-bbmo_envz_3 <- bbmo_envz_3[,-1] 
-
-asv_tab_bbmo_10y_w_3_ed |>
-  row.names()
-
-row.names(asv_tab_bbmo_10y_w_3_ed) <- asv_tab_bbmo_10y_w_3_ed$sample_id
-
+row.names(bbmo_envz_3) <-  bbmo_envz_3[,1] 
+bbmo_envz_3_ed <-  bbmo_envz_3[,-1]
 
 # Extract common sample names
-common_sample_names <- intersect(rownames(asv_tab_bbmo_10y_w_3_ed), rownames(bbmo_envz_3))
+common_sample_names <- intersect(rownames(abundance_data_clr3), rownames(bbmo_envz_3_ed))
 
-rownames(asv_tab_bbmo_10y_w_3_ed) == rownames(bbmo_envz_3)
+# Subset both matrices based on common sample names
+abundance_data <- abundance_data_clr3[common_sample_names, ]
+environmental_data <- abundance_data_clr3[common_sample_names, ]
 
+# Extract the environmental variables (assuming they are in columns)
+environmental_variables <- bbmo_envz_3_ed[, colnames(bbmo_envz_3_ed) != "other_variables"]  # Adjust as needed
+
+# check that the names match
+row.names(abundance_data_clr3) == row.names(bbmo_envz_3_ed)
 
 # Create an empty tibble to store the Mantel test results
 mantel_results_3 <- tibble(
@@ -895,10 +930,10 @@ for (taxon_name in colnames(abundance_data_clr3)) {
   distance_abundance <- vegdist(current_variable_abundance, method = "euclidean", na.rm = TRUE)
   
   # Iterate over each environmental variable
-  for (variable_name_environmental in colnames(bbmo_envz_3)) {
+  for (variable_name_environmental in colnames(bbmo_envz_3_ed)) {
     
     # Extract the environmental data for the current variable
-    current_variable_environmental <- bbmo_envz_3[, variable_name_environmental, drop = FALSE]
+    current_variable_environmental <- bbmo_envz_3_ed[, variable_name_environmental, drop = FALSE]
     
     # Calculate distance for the environmental variable
     distance_environmental <- vegdist(current_variable_environmental, method = "euclidean", na.rm = TRUE)
@@ -907,7 +942,7 @@ for (taxon_name in colnames(abundance_data_clr3)) {
     mantel_test_result <- mantel(distance_abundance, distance_environmental, method = "pearson", permutations = 999, na.rm = TRUE)
     
     # Store the Mantel test result in the tibble
-    mantel_results_3 <- bind_rows(mantel_results, tibble(
+    mantel_results_3 <- bind_rows(mantel_results_3, tibble(
       taxon_name = taxon_name,
       variable_name_environmental = variable_name_environmental,
       mantel_correlation = mantel_test_result$statistic,
@@ -969,107 +1004,116 @@ mantel_results_3$variable_name_environmental <- mantel_results_3$variable_name_e
   factor(levels = c("day_length", "temperature" ,"secchi" , "salinity" ,      
                     "PO4",  "NH4" ,  "NO2" , "NO3" , "Si" ,  "chla_total" ,  "chla_3um", "synechococcus", "prochlorococcus_FC", 
                     "bacteria_joint", "LNA", "HNA", "Peuk1",             
-                    "Peuk2",
+                    "Peuk2", 'total_vlp', 'low_vlp', 'med_vlp', 'high_vlp',
                     "BP_FC1.55", "PNF_Micro" , "PNF2_5um_Micro",  "PNF_5um_Micro", "dryptomonas", "micromonas","HNF_Micro",         
                     "HNF2_5um_Micro", "HNF_5um_Micro"))
 
-plot_mantel_3 <- mantel_results_3 |>
+## add FL results to plot them together
+mantel_results_02_tax <- mantel_results_02 |>
   left_join(tax_factors, by = c('taxon_name' = 'asv_num_f')) |>
+  dplyr::mutate(community = 'Free living')
+
+plot_mantel_all <- mantel_results_3 |>
+  left_join(tax_factors, by = c('taxon_name' = 'asv_num_f')) |>
+  dplyr::mutate(community = 'Particle Attached') |>
+  bind_rows(mantel_results_02_tax) |>
   ggplot(aes(interaction(taxon_name, family_f), variable_name_environmental, fill = mantel_correlation))+
   geom_tile()+
   scale_fill_gradientn(colors = palete_gradient_cb)+
   scale_y_discrete(labels = labs_env)+
-  geom_text(aes(label = ifelse(p_value < 0.05, '*', '')))+
-  labs(x = 'Taxonomy', y = 'Environmental data', fill = 'Mantel correlation', title = 'Particle Attached')+
+  facet_wrap(vars(community), nrow = 2)+
+  labs(x = 'Taxonomy', y = 'Environmental variables', fill = 'Mantel\ncorrelation')+ #, title = 'Free living fraction'
+  geom_text(aes(label = ifelse(p_value < 0.05, '*', ''), colour = '#757C76'))+
+  guides(colour = 'none')+
   theme_bw()+
   theme(panel.grid.major = element_blank(), text = element_text(size = 5),
-        axis.text.x = element_text(angle = 65, hjust = 1))
+        axis.text.x = element_text(angle = 55, hjust = 1), strip.background = element_blank(),
+        panel.border = element_blank(), legend.key.size = unit(4, 'mm'), plot.margin = margin(0,0,5,15),
+        legend.margin = margin(0,15,0,5))
 
-mantel_test_all <-  multi_panel_figure(columns = 1, rows = 2, width = 180, height = 200, 
-                                               row_spacing = 0.2, unit = 'mm',
-                                               panel_label_type = 'upper-alpha')
+# mantel_test_all <-  multi_panel_figure(columns = 1, rows = 2, width = 180, height = 200, 
+#                                                row_spacing = 0.2, unit = 'mm',
+#                                                panel_label_type = 'upper-alpha')
+# 
+# mantel_test_all  %<>%
+#   fill_panel(plot_mantel_02, column = 1, row = 1) %<>%
+#   fill_panel(plot_mantel_3, column = 1, row = 2)
 
-mantel_test_all  %<>%
-  fill_panel(plot_mantel_02, column = 1, row = 1) %<>%
-  fill_panel(plot_mantel_3, column = 1, row = 2)
+# ggsave('mantel_test_all_bloo.pdf', plot_mantel_all ,
+#        path = "~/Documentos/Doctorat/BBMO/BBMO_bloomers/results/figures/",
+#        width = 188,
+#        height = 200,
+#        units = 'mm')
 
-ggsave('mantel_test_all.pdf', mantel_test_all ,
-       path = "~/Documentos/Doctorat/BBMO/BBMO_bloomers/results/figures/",
-       width = 188,
-       height = 200,
-       units = 'mm')
-
-
-
-## plot the results of the Mantel test----
-correlation_coefficient <- abund_env_02$statistic
-p_value <- abund_env_02$signif
-
-results_mantel_02 <- tibble(Mantel_correlation = correlation_coefficient,
-                            p_value = p_value)
-
-results_mantel_3 |>
-  ggplot(aes(Mantel_correlation, p_value))+
-  geom_point()
-
-
-# Option, correlation matrix with bloomers and environmental data
-## subset ASV tab by potential bloomers
-asv_bloo <- asv_tab_all_bloo_z_tax |>
-  dplyr::select(asv_num) |>
-  as_vector() |>
-  unique() 
-
-asv_tab_all_bloo_z_tax |>
-  colnames()
-
-abund_dist_02_bloo <- asv_tab_rar |>
-  dplyr::select(X, all_of(asv_bloo)) |>
-  dplyr::filter(str_detect(X, '0.2')) |>
-  dplyr::select(-X) |>
-  vegdist(method = 'bray')
-
-abund_env_02 <- mantel(abund_dist_02_bloo, bbmo_env_02_dist,
-                       method = 'spearman', permutations = 9999,
-                       na.rm = TRUE)
-library(corrplot)
-qcorrplot(correlate(bbmo_env))
-
-
-##visualization of correlation matrix
-corr_bloo_02 <- cor(abund_dist_02_bloo, bbmo_envz_02_dist)
-
-ggcorrplot::ggcorrplot(as.matrix(corr_bloo_02))
-ggcorrplot::ggcorrplot(as.matrix(abund_dist_02))
-ggcorrplot::ggcorrplot(as.matrix(abund_dist_3))
-ggcorrplot::ggcorrplot(as.matrix(bbmo_env_02_dist))
-ggcorrplot::ggcorrplot(as.matrix(bbmo_env_3_dist))
-
-ggcorrplot::ggcorrplot(as.matrix(bbmo_envz_02_dist))
-ggcorrplot::ggcorrplot(as.matrix(bbmo_envz_3_dist))
-
-##
-rda1 <- rda(abund_dist_02, bbmo_env3)
-
-## Mantel correlogram
-## This function comptues a multivariate Mantel correlogram.
-mantel.correlog(abund_dist_02, bbmo_env_02_dist,
-                nperm = 9999)
-
-mantel.correlog(abund_dist_02, bbmo_envz_02_dist,
-                nperm = 9999)
-
-|>
-  print.mantel.correlog()
-
-bbmo_env_02_dist |>
-  head()
-
-bbmo_env_02_dist |>
-  dim()
-
-bbmo_env |>
-  dim()
+## TEST: plot the results of the Mantel test-------
+# correlation_coefficient <- abund_env_02$statistic
+# p_value <- abund_env_02$signif
+# 
+# results_mantel_02 <- tibble(Mantel_correlation = correlation_coefficient,
+#                             p_value = p_value)
+# 
+# results_mantel_3 |>
+#   ggplot(aes(Mantel_correlation, p_value))+
+#   geom_point()
+# 
+# 
+# # Option, correlation matrix with bloomers and environmental data
+# ## subset ASV tab by potential bloomers
+# asv_bloo <- asv_tab_all_bloo_z_tax |>
+#   dplyr::select(asv_num) |>
+#   as_vector() |>
+#   unique() 
+# 
+# asv_tab_all_bloo_z_tax |>
+#   colnames()
+# 
+# abund_dist_02_bloo <- asv_tab_rar |>
+#   dplyr::select(X, all_of(asv_bloo)) |>
+#   dplyr::filter(str_detect(X, '0.2')) |>
+#   dplyr::select(-X) |>
+#   vegdist(method = 'bray')
+# 
+# abund_env_02 <- mantel(abund_dist_02_bloo, bbmo_env_02_dist,
+#                        method = 'spearman', permutations = 9999,
+#                        na.rm = TRUE)
+# library(corrplot)
+# qcorrplot(correlate(bbmo_env))
+# 
+# 
+# ##visualization of correlation matrix
+# corr_bloo_02 <- cor(abund_dist_02_bloo, bbmo_envz_02_dist)
+# 
+# ggcorrplot::ggcorrplot(as.matrix(corr_bloo_02))
+# ggcorrplot::ggcorrplot(as.matrix(abund_dist_02))
+# ggcorrplot::ggcorrplot(as.matrix(abund_dist_3))
+# ggcorrplot::ggcorrplot(as.matrix(bbmo_env_02_dist))
+# ggcorrplot::ggcorrplot(as.matrix(bbmo_env_3_dist))
+# 
+# ggcorrplot::ggcorrplot(as.matrix(bbmo_envz_02_dist))
+# ggcorrplot::ggcorrplot(as.matrix(bbmo_envz_3_dist))
+# 
+# ##
+# rda1 <- rda(abund_dist_02, bbmo_env3)
+# 
+# ## Mantel correlogram
+# ## This function comptues a multivariate Mantel correlogram.
+# mantel.correlog(abund_dist_02, bbmo_env_02_dist,
+#                 nperm = 9999)
+# 
+# mantel.correlog(abund_dist_02, bbmo_envz_02_dist,
+#                 nperm = 9999)
+# 
+# |>
+#   print.mantel.correlog()
+# 
+# bbmo_env_02_dist |>
+#   head()
+# 
+# bbmo_env_02_dist |>
+#   dim()
+# 
+# bbmo_env |>
+#   dim()
 
 ## other ideas
 ### perform a mantel test for each environmental variable and the community 
