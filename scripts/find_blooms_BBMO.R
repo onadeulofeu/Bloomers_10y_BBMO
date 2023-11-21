@@ -59,9 +59,8 @@ asv_tab_all_bloo_z_tax |>
 asv_tab_all_bloo_z_tax |> 
   dplyr::filter(is.na(domain)) |>
   distinct(asv_num)
-
 palette_phylums_assigned_bloo <- c('Proteobacteria' = "#fcca46", 'Cyanobacteria' = "#009e73",
-                                   'Verrucomicrobiota' = "#0051BF", "Bacteroidota" = "#669bbc", 'Planctomycetota' = "#69267e",
+                                   "Bacteroidota" = "#0051BF",  'Verrucomicrobiota' = '#005c69', 'Planctomycetota' = "#69267e",
                                    'Bdellovibrionota' = "#8c789d") #, NA == "#000000"
 
 palette_class_assigned <- c('Gammaproteobacteria' = '#fcca46', 'Alphaproteobacteria' = '#d95726', 'Zetaproteobacteria' = '#EBCD92',
@@ -96,7 +95,7 @@ palette_class_assigned <- c('Gammaproteobacteria' = '#fcca46', 'Alphaproteobacte
 #   unique()
 
 palette_class_assigned_bloo <- c('Gammaproteobacteria' = '#FFA737', 'Alphaproteobacteria' = '#B0413E', 
-                                 'Bacteroidia' = '#0051BF', 'Cyanobacteriia'  =  '#009F6A',  
+                                 'Cyanobacteriia'  =  '#009F6A', 'Bacteroidia' = '#0051BF',  
                                 'Verrucomicrobiae' = '#005c69', 'Phycisphaerae' =  '#e3a6ce',   
                                 'Bdellovibrionia' = '#8C789D') #, NA == "#000000"
 
@@ -107,7 +106,7 @@ palette_class_assigned_bloo <- c('Gammaproteobacteria' = '#FFA737', 'Alphaproteo
 
 # asv_tab_all_bloo_z_tax$order |>
 #   unique()
-  
+
  # asv_tab_all_bloo_z_tax |>
  #  dplyr::filter(order == 'Synechococcales') |>
  #  dplyr::select(class) |>
@@ -115,45 +114,139 @@ palette_class_assigned_bloo <- c('Gammaproteobacteria' = '#FFA737', 'Alphaproteo
 
 asv_tab_all_bloo_z_tax |>
   dplyr::select(class_f, order_f) |>
-  dplyr::filter(order_f %in% c('Rhizobiales', 'Chitinophagales')) |>
+  dplyr::filter(order_f %in% c('Oceanospirillales', 'Opitutales')) |>
   distinct()
 
- palette_order_assigned_bloo <-  c( 'Thiotrichales' = '#5E5B5B',
-   "SAR11 clade" =  '#B0413E',  "Rhodobacterales" = '#C55E5C',
-                                    "Sphingomonadales"  = '#8C000A', "Puniceispirillales" = '#fcca46', 
-                                    "Rhodospirillales"  = '#FFA197',  "Verrucomicrobiales"= '#005c69', "Opitutales"   =   '#74B9C8',    
-                                    "Phycisphaerales"  = '#e3a6ce',  "Flavobacteriales"   =  '#0051BF', "Synechococcales"  = '#009F6A', 
-                                    "Bacteriovoracales" = '#8C789D', 'Rhizobiales' = '#B31722',
-                                    "Oceanospirillales" =  '#A05C00', 'Chitinophagales' = '#92ABFF',
-                                    "Alteromonadales" =  '#A63B00',  "Vibrionales" = '#F2AC5D', "Enterobacterales" = '#FFA200',
-                                    "Cellvibrionales"   = '#F35900',  "Pseudomonadales"  = '#FF8E00', "SAR86 clade" = '#FFBF45') # NA ==  "#000000",
+palette_order_assigned_bloo <-  c('Thiotrichales' = '#BB4430', "Alteromonadales" =  '#A63B00',  
+                                  "Vibrionales" = '#F2AC5D', "Enterobacterales" = '#FFA200',
+                                  "Cellvibrionales"   = '#F35900',  "Pseudomonadales"  = '#FF8E00', 
+                                  #"SAR86 clade" = '#FFBF45',
+                                  "SAR11 clade" =  '#B0413E',  "Rhodobacterales" = '#C55E5C',
+                                  "Sphingomonadales"  = '#8C000A', "Puniceispirillales" = '#931F1D',  'Rhizobiales' = '#B31722',
+                                  "Rhodospirillales"  = '#FFA197', 
+                                  "Synechococcales"  = '#009F6A', 
+                                  "Flavobacteriales"   =  '#0051BF',  'Chitinophagales' = '#92ABFF', 
+                                  "Verrucomicrobiales"= '#005c69', "Opitutales"   =   '#74B9C8',
+                                  "Phycisphaerales"  = '#e3a6ce',  
+                                  "Bacteriovoracales" = '#8C789D'
+                                  #"Oceanospirillales" =  '#A05C00'
+) # NA ==  "#000000",
 
 # asv_tab_all_bloo_z_tax$family_f |>
 # unique()
-# 
+
 # asv_tab_all_bloo_z_tax |>
-#   dplyr::filter(family == "Thiotrichaceae") |>
+#   dplyr::filter(family == "Puniceicoccaceae") |>
 #   dplyr::select(order) |>
 #   distinct()
 
- 
- 
-palette_family_assigned_bloo <- c("Thiotrichaceae" = '#5E5B5B',
-  "Clade II" = '#B0413E',  "Clade I" = '#CD7F78', "Rhodobacteraceae" = '#C55E5C',
-                                  "Sphingomonadaceae"   = '#8C000A',  "SAR116 clade"  ='#D3BF27', "Stappiaceae" = '#B31722',
-                                  "AEGEAN-169 marine group" =  '#690000', "Rubritaleaceae"  =  '#005c69',       
-                                  "DEV007" = '#74B9C8',  "Puniceicoccaceae"   = '#fcca46',     
-                                  "Phycisphaeraceae"   = '#e3a6ce', "NS7 marine group" =  '#92ABFF',
+palette_family_assigned_bloo <- c("Thiotrichaceae" = '#BB4430',  
+                                  "Marinobacteraceae" =  '#DE6931',  "Alcanivoracaceae1"  =  '#A05C00',  "Moraxellaceae"  =  '#FF8E00', #pseudomonadales
+                                  "Halieaceae" = '#F35900', "SAR86 clade" = '#FFBA00', #pseudomonadales
+                                  "Vibrionaceae"      = '#F2AC5D',   "Yersiniaceae"  = '#FFA200',    #enterobacterales    
+                                  "Alteromonadaceae"   =  '#A63B00',     
+                                  "Clade II" = '#B0413E',  "Clade I" = '#CD7F78', "Rhodobacteraceae" = '#C55E5C',
+                                  "Sphingomonadaceae"   = '#8C000A',  "SAR116 clade"  ='#931F1D', "Stappiaceae" = '#B31722',
+                                  "AEGEAN-169 marine group" =  '#690000', 
+                                  "Cyanobiaceae"  = '#009F6A', 
+                                  "NS7 marine group" =  '#92ABFF',
                                   "NS9 marine group"  =  '#3B52A3',   "Cryomorphaceae" = '#002A8E',
-    "Saprospiraceae" = '#5F7CCB',
-                                  "Flavobacteriaceae"   =  '#0051BF',      "Cyanobiaceae"  = '#009F6A',          
-                                  "Bacteriovoracaceae" =  '#8C789D',  "Alcanivoracaceae1"  =  '#A05C00',
-                                  "Marinobacteraceae" =  '#DE6931',    
-                                  "Vibrionaceae"      = '#F2AC5D',        "Yersiniaceae"  = '#FFA200',           
-                                  "Alteromonadaceae"   =  '#A63B00',      "Halieaceae" = '#F35900',
-                                  "Moraxellaceae"  =  '#FF8E00',  "SAR86 clade" = '#FFBA00'
+                                  "Saprospiraceae" = '#5F7CCB',
+                                  "Flavobacteriaceae"   =  '#0051BF',  
+                                  "Rubritaleaceae"  =  '#005c69',       
+                                  "DEV007" = '#74B9C8',  "Puniceicoccaceae"   = '#29335C',     
+                                  "Phycisphaeraceae"   = '#e3a6ce',    
+                                  "Bacteriovoracaceae" =  '#8C789D' 
                                  )  # NA == "#000000" 
-                
+##add genus color 
+asv_tab_all_bloo_z_tax |>
+  dplyr::filter(genus == "Roseibacillus") |>
+  dplyr::select(family) |>
+  distinct()
+
+palette_genus_assigned_bloo <- c('unclassified' = '#534F4A', 
+                                 "Marixanthomonas" =  '#0051BF',  "NS4 marine group" = '#46ACC2',                
+                                 "NS5 marine group" = '#2B4162', "Peredibacter"  = '#8C789D',
+                                 "Prochlorococcus MIT9313" =  '#009F6A',       
+                                 "Synechococcus CC9902" = '#004501',
+                                 "Urania-1B-19 marine sediment group" = '#e3a6ce',
+                                 "Candidatus Puniceispirillum" =  '#D3BF27',    
+                                 "Amylibacter" =  '#C55E5C', "Ascidiaceihabitans" = '#B0413E',
+                                 "HIMB11" =   '#960200',                      
+                                 "Limimaricola" = '#721817',
+                                 "Clade Ia"  =   '#CD7F78',  "Clade Ib"   = '#B84A62',                     
+                                 "Erythrobacter"  = '#8C000A',  "Sphingobium  " = '#70161E',          
+                                 "Glaciecola" =  '#A63B00', 
+                                 "Vibrio"    = '#F2AC5D',   "Serratia"  = '#FFA200',  
+                                 "Alcanivorax"    =  '#A05C00',                    
+                                 "OM60(NOR5) clade"  = '#F35900', 
+                                 "Marinobacter" =  '#DE6931', 
+                                 "Acinetobacter" = '#FF8E00', "Psychrobacter"  = '#E55934', 
+                                 "Lentimonas"  = '#fcca46',   
+                                 "Roseibacillus" =  '#005c69')
+
+palette_all_tax_rank <- c('Proteobacteria' = "#fcca46", 'Cyanobacteria' = "#009e73",
+                          "Bacteroidota" = "#0051BF",  'Verrucomicrobiota' = '#005c69', 'Planctomycetota' = "#69267e",
+                          'Bdellovibrionota' = "#8c789d",
+                          ##class
+                          'Gammaproteobacteria' = '#FFA737', 'Alphaproteobacteria' = '#B0413E', 
+                          'Cyanobacteriia'  =  '#009F6A', 'Bacteroidia' = '#0051BF',  
+                          'Verrucomicrobiae' = '#005c69', 'Phycisphaerae' =  '#e3a6ce',   
+                          'Bdellovibrionia' = '#8C789D',
+                          ##order
+                          'Thiotrichales' = '#BB4430', "Alteromonadales" =  '#A63B00',  
+                          "Vibrionales" = '#F2AC5D', "Enterobacterales" = '#FFA200',
+                          "Cellvibrionales"   = '#F35900',  "Pseudomonadales"  = '#FF8E00', 
+                          #"SAR86 clade" = '#FFBF45',
+                          "SAR11 clade" =  '#B0413E',  "Rhodobacterales" = '#C55E5C',
+                          "Sphingomonadales"  = '#8C000A', "Puniceispirillales" = '#931F1D',  'Rhizobiales' = '#B31722',
+                          "Rhodospirillales"  = '#FFA197', 
+                          "Synechococcales"  = '#009F6A', 
+                          "Flavobacteriales"   =  '#0051BF',  'Chitinophagales' = '#92ABFF', 
+                          "Verrucomicrobiales"= '#005c69', "Opitutales"   =   '#74B9C8',
+                          "Phycisphaerales"  = '#e3a6ce',  
+                          "Bacteriovoracales" = '#8C789D',
+                          ##family
+                          "Thiotrichaceae" = '#BB4430',  
+                          "Marinobacteraceae" =  '#DE6931',  "Alcanivoracaceae1"  =  '#A05C00',  "Moraxellaceae"  =  '#FF8E00', #pseudomonadales
+                          "Halieaceae" = '#F35900', "SAR86 clade" = '#FFBA00', #pseudomonadales
+                          "Vibrionaceae"      = '#F2AC5D',   "Yersiniaceae"  = '#FFA200',    #enterobacterales    
+                          "Alteromonadaceae"   =  '#A63B00',     
+                          "Clade II" = '#B0413E',  "Clade I" = '#CD7F78', "Rhodobacteraceae" = '#C55E5C',
+                          "Sphingomonadaceae"   = '#8C000A',  "SAR116 clade"  ='#931F1D', "Stappiaceae" = '#B31722',
+                          "AEGEAN-169 marine group" =  '#690000', 
+                          "Cyanobiaceae"  = '#009F6A', 
+                          "NS7 marine group" =  '#92ABFF',
+                          "NS9 marine group"  =  '#3B52A3',   "Cryomorphaceae" = '#002A8E',
+                          "Saprospiraceae" = '#5F7CCB',
+                          "Flavobacteriaceae"   =  '#0051BF',  
+                          "Rubritaleaceae"  =  '#005c69',       
+                          "DEV007" = '#74B9C8',  "Puniceicoccaceae"   = '#29335C',     
+                          "Phycisphaeraceae"   = '#e3a6ce',    
+                          "Bacteriovoracaceae" =  '#8C789D',
+                          ##genus
+                          'unclassified' = '#534F4A', 
+                          "Marixanthomonas" =  '#0051BF',  "NS4 marine group" = '#46ACC2',                
+                          "NS5 marine group" = '#2B4162', "Peredibacter"  = '#8C789D',
+                          "Prochlorococcus MIT9313" =  '#009F6A',       
+                          "Synechococcus CC9902" = '#004501',
+                          "Urania-1B-19 marine sediment group" = '#e3a6ce',
+                          "Candidatus Puniceispirillum" =  '#D3BF27',    
+                          "Amylibacter" =  '#C55E5C', "Ascidiaceihabitans" = '#B0413E',
+                          "HIMB11" =   '#960200',                      
+                          "Limimaricola" = '#721817',
+                          "Clade Ia"  =   '#CD7F78',  "Clade Ib"   = '#B84A62',                     
+                          "Erythrobacter"  = '#8C000A',  "Sphingobium" = '#70161E',          
+                          "Glaciecola" =  '#A63B00', 
+                          "Vibrio"    = '#F2AC5D',   "Serratia"  = '#FFA200',  
+                          "Alcanivorax"    =  '#A05C00',                    
+                          "OM60(NOR5) clade"  = '#F35900', 
+                          "Marinobacter" =  '#DE6931', 
+                          "Acinetobacter" = '#FF8E00', "Psychrobacter"  = '#E55934', 
+                          "Lentimonas"  = '#fcca46',   
+                          "Roseibacillus" =  '#005c69'
+                          
+)     
 # functions----
 #source('../Bloomers/R/community_evenness.R')
 #source('../Bloomers/R/get_anomalies.R') #la poso així perquè l'he actualizat i com que no he compilat el paquet potser no funciona actualitzada 
@@ -191,6 +284,9 @@ tax_bbmo_10y_old <- bbmo_10y@tax_table |>
 
 m_bbmo_10y <- bbmo_10y@sam_data |>
   as_tibble()
+
+m_bbmo_10y |>
+  colnames()
 
 ## tidy colnames----
 asv_tab_bbmo_10y_l |>
@@ -1062,6 +1158,7 @@ asv_tab_all_bloo_z_tax |>
 asv_tab_all_bloo_z_tax |>
   colnames()
 
+
 ##UPLOAD BLOOMERS DATA-----
 asv_tab_all_bloo_z_tax_old <- read.csv2('data/asv_tab_all_bloo_z_tax.csv') ## using silva 132 database
 asv_tab_all_bloo_z_tax <- read.csv2('data/
@@ -1125,7 +1222,7 @@ community_eveness_all <- community_eveness_02 |>
 bray_curtis_rar_all <- bray_curtis_02_rar |> ##one sample less, the first one can't be compared with the previous
   bind_rows(bray_curtis_3_rar)
 
-## At the level of community, we use the Eveness result and Bray Curtis dissimilarity ----
+## At the level of community, we use the Evenness result and Bray Curtis dissimilarity ----
 z_diversity <- bray_curtis_02_rar |>
   dplyr::right_join(community_eveness_02, by = join_by("samples" == "sample_id")) |> 
   #ungroup() %>%
@@ -1234,56 +1331,56 @@ asv_tab_all_bloo_z_tax |>
 asv_tab_all_bloo_z_tax$season <- asv_tab_all_bloo_z_tax$season |>
   factor(levels = c('winter', 'spring', 'summer', 'autumn'))
 
-### Bloomers taxonomy exploration----
-#### try to create a hierarchical piechart ----
 
-  asv_tab_all_bloo_z_tax |>
-  dplyr::select(asv_num, phylum, class, order, family, genus) |>
-  distinct() |>
-  group_by(phylum, class, order, family, genus) |>
-  dplyr::mutate(genus = case_when(genus = is.na(genus) ~ 'unclassified',
-                                  genus != is.na(genus) ~ genus)) |>
-  dplyr::summarize(n_bloom = n()) |>
-  ungroup() |>
-  dplyr::mutate(bloom_perc_genus = n_bloom/sum(n_bloom)) |>
-  group_by(phylum, class, order, family, genus) |>
-  mutate(sum_f = sum(bloom_perc_genus)) |>
-  
-  group_by(phylum, class, order, family) |>
-  dplyr::mutate(n_bloom = n()) |>
-  ungroup() |>
-  dplyr::mutate(bloom_perc_family = n_bloom/sum(n_bloom)) |>
-  group_by(phylum, class, order, family) |>
-  mutate(sum_f = sum(bloom_perc_family)) |>
-  
-  group_by(phylum, class, order) |>
-  dplyr::mutate(n_bloom = n()) |>
-  ungroup() |>
-  dplyr::mutate(bloom_perc_order = n_bloom/sum(n_bloom)) |>
-  group_by(phylum, class, order) |>
-  mutate(sum_o = sum(bloom_perc_order)) |>
-  
-  group_by(phylum, class) |>
-  dplyr::mutate(n_bloom = n()) |>
-  ungroup() |>
-  dplyr::mutate(bloom_perc_class = n_bloom/sum(n_bloom)) |>
-  group_by(phylum, class) |>
-  mutate(sum_c = sum(bloom_perc_class)) |>
-  
-  group_by(phylum) |>
-  dplyr::mutate(n_bloom = n()) |>
-  ungroup() |>
-  dplyr::mutate(bloom_perc_phylum = n_bloom/sum(n_bloom)) |>
-  group_by(phylum) |>
-  mutate(sum_p = sum(bloom_perc_phylum)) |>
-  pivot_longer(cols = starts_with('sum'), names_to = 'taxonomy_rank', values_to = 'percentage')
+# BLOOMERS TAXONOMY EXPLORATION ----
+#### We create a hierarchical piechart ----
+#### Separate between those that bloom in FL from those that bloom in PA
 
-bloomers_tax$taxonomy_rank <- bloomers_tax$taxonomy_rank |> 
-  factor(levels = c('bloom_perc_phylum', 'bloom_perc_class', 'bloom_perc_order', 'bloom_perc_family', 'bloom_perc_genus'))
+# bloomers_tax <- asv_tab_all_bloo_z_tax |>
+#   dplyr::select(asv_num_f, phylum_f, class_f, order_f, family_f, genus) |>
+#   distinct() |>
+#   group_by(phylum_f, class_f, order_f, family_f, genus) |>
+#   dplyr::mutate(genus = case_when(genus = is.na(genus) ~ 'unclassified',
+#                                   genus != is.na(genus) ~ genus)) |>
+#   dplyr::summarize(n_bloom = n()) |>
+#   ungroup() |>
+#   dplyr::mutate(bloom_perc_genus = n_bloom/sum(n_bloom)) |>
+#   group_by(phylum_f, class_f, order_f, family_f, genus) |>
+#   mutate(sum_f = sum(bloom_perc_genus)) |>
+#   
+#   group_by(phylum_f, class_f, order_f, family_f) |>
+#   dplyr::mutate(n_bloom = n()) |>
+#   ungroup() |>
+#   dplyr::mutate(bloom_perc_family = n_bloom/sum(n_bloom)) |>
+#   group_by(phylum_f, class_f, order_f, family_f) |>
+#   mutate(sum_f = sum(bloom_perc_family)) |>
+#   
+#   group_by(phylum_f, class_f, order_f) |>
+#   dplyr::mutate(n_bloom = n()) |>
+#   ungroup() |>
+#   dplyr::mutate(bloom_perc_order = n_bloom/sum(n_bloom)) |>
+#   group_by(phylum_f, class_f, order_f) |>
+#   mutate(sum_o = sum(bloom_perc_order)) |>
+#   
+#   group_by(phylum_f, class_f) |>
+#   dplyr::mutate(n_bloom = n()) |>
+#   ungroup() |>
+#   dplyr::mutate(bloom_perc_class = n_bloom/sum(n_bloom)) |>
+#   group_by(phylum_f, class_f) |>
+#   mutate(sum_c = sum(bloom_perc_class)) |>
+#   
+#   group_by(phylum_f) |>
+#   dplyr::mutate(n_bloom = n()) |>
+#   ungroup() |>
+#   dplyr::mutate(bloom_perc_phylum = n_bloom/sum(n_bloom)) |>
+#   group_by(phylum_f) |>
+#   mutate(sum_p = sum(bloom_perc_phylum)) |>
+#   pivot_longer(cols = starts_with('sum'), names_to = 'taxonomy_rank', values_to = 'percentage')
+# 
+# bloomers_tax$taxonomy_rank <- bloomers_tax$taxonomy_rank |> 
+#   factor(levels = c('bloom_perc_phylum', 'bloom_perc_class', 'bloom_perc_order', 'bloom_perc_family', 'bloom_perc_genus'))
 
-bloomers_tax$taxonomy_rank <- bloomers_tax$taxonomy_rank |> 
-  factor(levels = c('sum_p', 'sum_c', 'sum_o', 'sum_f', 'sum_g'))
-
+### we create a function that will allow us to calculate the % of each bloomer for the different taxonomic ranks
 bloomers_tax_rank <- function(data){
     data_ed <- data |>
       dplyr::select(asv_num, phylum, class, order, family, genus) |>
@@ -1367,48 +1464,139 @@ bloomers_tax_rank <- function(data){
 
 }
 
+# bloomers_tax$taxonomy_rank <- bloomers_tax$taxonomy_rank |> 
+#   factor(levels = c('sum_p', 'sum_c', 'sum_o', 'sum_f', 'sum_g'))
 
+bloomers_tax_02 <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(asv_num_f %in% bloo_02) |>
+  bloomers_tax_rank() |>
+  dplyr::mutate(community = 'Free living (0.2-3 um)',
+                n_bloo = '19')
 
-bloomers_tax <- asv_tab_all_bloo_z_tax |>
-  bloomers_tax_rank()
+bloomers_tax_3 <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(asv_num_f %in% bloo_3) |>
+  bloomers_tax_rank() |>
+  dplyr::mutate(community = 'Particle attached (3-20 um)',
+                n_bloo = '45') #number of ASVs that bloom in PA
 
-data_ed <- asv_tab_all_bloo_z_tax |>
-  dplyr::select(asv_num, phylum, class, order, family, genus) |>
-  distinct() |>
-  dplyr::mutate(genus = case_when(genus = is.na(genus) ~ 'unclassified',
-                                  genus != is.na(genus) ~ genus))
+# asv_tab_all_bloo_z_tax
+# 
+# data_ed <- asv_tab_all_bloo_z_tax |>
+#   dplyr::select(asv_num_f, phylum_f, class_f, order_f, family_f, genus) |>
+#   distinct() |>
+#   dplyr::mutate(genus = case_when(genus = is.na(genus) ~ 'unclassified',
+#                                   genus != is.na(genus) ~ genus))
 
+# bloom_g <- data_ed  |>
+#   group_by(phylum_f, class_f, order_f, family_f, genus) |>
+#   dplyr::summarize(n_bloom = n()) |>
+#   ungroup() |>
+#   dplyr::mutate(bloom_perc_genus = n_bloom/sum(n_bloom)) |>
+#   group_by(phylum_f, class_f, order_f, family_f, genus) |>
+#   mutate(sum_g = sum(bloom_perc_genus)) |>
+#   pivot_longer(cols = starts_with('sum'), names_to = 'taxonomy_rank', values_to = 'percentage') |>
+#   dplyr::select(genus, taxonomy_rank, percentage) |>
+#   ungroup() |>
+#   distinct(genus, family_f, taxonomy_rank, percentage) |>
+#   rename( taxonomy = genus) |>
+#   dplyr::select(-family_f)
+# 
+# bloom_g |>
+#   group_by(taxonomy_rank) |>
+#   summarize(n = sum(percentage))
+# 
+# bloom_c |>
+#   bind_rows(bloom_p)
+# 
+# tax_bbmo_10y |>
+#   head()
+# 
+# tax_bbmo_10y |>
+#   dplyr::select(-c(asv_num, otu_corr, seq)) |>
+#   pivot_longer(cols = )
+# 
+# bloomers_tax |>
+#   dplyr::filter(taxonomy_rank == 'sum_p')
 
-bloom_g <- data_ed  |>
-  group_by(phylum, class, order, family, genus) |>
-  dplyr::summarize(n_bloom = n()) |>
-  ungroup() |>
-  dplyr::mutate(bloom_perc_genus = n_bloom/sum(n_bloom)) |>
-  group_by(phylum, class, order, family, genus) |>
-  mutate(sum_g = sum(bloom_perc_genus)) |>
-  pivot_longer(cols = starts_with('sum'), names_to = 'taxonomy_rank', values_to = 'percentage') |>
-  dplyr::select(genus, taxonomy_rank, percentage) |>
-  ungroup() |>
-  distinct(genus, family, taxonomy_rank, percentage) |>
-  rename( taxonomy = genus) |>
-  dplyr::select(-family)
+bloomers_tax_02$taxonomy_rank <- factor(bloomers_tax_02$taxonomy_rank, 
+                                     levels = c('sum_p', 'sum_c', 'sum_o', 'sum_f', 'sum_g'))
 
-bloom_g |>
-  group_by(taxonomy_rank) |>
-  summarize(n = sum(percentage))
+bloomers_tax_3$taxonomy_rank <- factor(bloomers_tax_3$taxonomy_rank, 
+                                        levels = c('sum_p', 'sum_c', 'sum_o', 'sum_f', 'sum_g')) 
 
-bloom_c |>
-  bind_rows(bloom_p)
+bloomers_tax <- bloomers_tax_02 |>
+  bind_rows(bloomers_tax_3)
 
-tax_bbmo_10y |>
-  head()
+bloomers_tax$taxonomy_rank <- factor(bloomers_tax$taxonomy_rank, 
+                                       levels = c('sum_p', 'sum_c', 'sum_o', 'sum_f', 'sum_g')) 
 
-tax_bbmo_10y |>
-  dplyr::select(-c(asv_num, otu_corr, seq)) |>
-  pivot_longer(cols = )
+labs_taxonomic_rank <- as_labeller(c("sum_p" = 'Phylum' ,
+                          "sum_c" = 'Class',
+                          "sum_o"  = 'Order',    
+                          "sum_f" = 'Family',
+                          "sum_g" = 'Genus'))
 
-bloomers_tax |>
-  dplyr::filter(taxonomy_rank == 'sum_p')
+bloomers_tax$taxonomy <-  factor(bloomers_tax$taxonomy, levels = c('Proteobacteria', 'Cyanobacteria',
+                                                                   "Bacteroidota",  'Verrucomicrobiota' , 'Planctomycetota' ,
+                                                                   'Bdellovibrionota',
+                                                                   ##class
+                                                                   'Gammaproteobacteria', 'Alphaproteobacteria' , 
+                                                                   'Cyanobacteriia' , 'Bacteroidia',  
+                                                                   'Verrucomicrobiae' , 'Phycisphaerae',   
+                                                                   'Bdellovibrionia' ,
+                                                                   ##order
+                                                                   'Thiotrichales', "Alteromonadales" ,  
+                                                                   "Vibrionales", "Enterobacterales" ,
+                                                                   "Cellvibrionales",  "Pseudomonadales", 
+                                                                   #"SAR86 clade" = '#FFBF45',
+                                                                   "SAR11 clade",  "Rhodobacterales" ,
+                                                                   "Sphingomonadales", "Puniceispirillales",  'Rhizobiales',
+                                                                   "Rhodospirillales" , 
+                                                                   "Synechococcales", 
+                                                                   "Flavobacteriales" ,  'Chitinophagales', 
+                                                                   "Verrucomicrobiales", "Opitutales",
+                                                                   "Phycisphaerales" ,  
+                                                                   "Bacteriovoracales",
+                                                                   ##family
+                                                                   "Thiotrichaceae",  
+                                                                   "Marinobacteraceae",  "Alcanivoracaceae1",  "Moraxellaceae", #pseudomonadales
+                                                                   "Halieaceae" , "SAR86 clade", #pseudomonadales
+                                                                   "Vibrionaceae" ,   "Yersiniaceae" ,    #enterobacterales    
+                                                                   "Alteromonadaceae" ,     
+                                                                   "Clade II" ,  "Clade I", "Rhodobacteraceae",
+                                                                   "Sphingomonadaceae",  "SAR116 clade"  , "Stappiaceae",
+                                                                   "AEGEAN-169 marine group", 
+                                                                   "Cyanobiaceae" , 
+                                                                   "NS7 marine group" ,
+                                                                   "NS9 marine group" ,   "Cryomorphaceae",
+                                                                   "Saprospiraceae",
+                                                                   "Flavobacteriaceae",  
+                                                                   "Rubritaleaceae",       
+                                                                   "DEV007",  "Puniceicoccaceae",     
+                                                                   "Phycisphaeraceae" ,    
+                                                                   "Bacteriovoracaceae",
+                                                                   ##genus
+                                                                   'unclassified', 
+                                                                   "Marixanthomonas" ,  "NS4 marine group",                
+                                                                   "NS5 marine group" , "Peredibacter"  ,
+                                                                   "Prochlorococcus MIT9313" ,       
+                                                                   "Synechococcus CC9902",
+                                                                   "Urania-1B-19 marine sediment group",
+                                                                   "Candidatus Puniceispirillum" ,    
+                                                                   "Amylibacter" , "Ascidiaceihabitans" ,
+                                                                   "HIMB11",                      
+                                                                   "Limimaricola" ,
+                                                                   "Clade Ia" ,  "Clade Ib" ,                     
+                                                                   "Erythrobacter",  "Sphingobium" ,          
+                                                                   "Glaciecola" , 
+                                                                   "Vibrio" ,   "Serratia",  
+                                                                   "Alcanivorax"  ,                    
+                                                                   "OM60(NOR5) clade", 
+                                                                   "Marinobacter", 
+                                                                   "Acinetobacter", "Psychrobacter", 
+                                                                   "Lentimonas",   
+                                                                   "Roseibacillus"))
+
 
 bloomers_tax |>
   #dplyr::filter(taxonomy_rank == 'bloom_perc_phylum') |>
@@ -1418,18 +1606,24 @@ bloomers_tax |>
  # dplyr::select(-n_bloom) |>
   #dplyr::mutate(tax_combined = paste(phylum, class, order, family, genus)) |> 
   #distinct(tax_combined,  percentage, taxonomy_rank) |>
-  ggplot(aes(y = taxonomy_rank, x = percentage, fill = taxonomy))+
+  ggplot(aes(y =taxonomy_rank, x = percentage, fill = taxonomy))+
  # scale_fill_manual(values = paired_12_12)+ #values = palette_phylums_assigned
-  labs(x='% of potential bloomers', 'Taxonomy rank')+
+  labs(x='% of potential bloomers', y = 'Taxonomy rank', fill = 'Taxonomy')+
+  scale_fill_manual(values = palette_all_tax_rank)+
+  scale_y_discrete(labels = labs_taxonomic_rank)+
   coord_polar()+
   geom_col()+
+  facet_wrap(vars(community))+
+  geom_text(mapping = aes(x = 0.9, y = 5.55, label = paste0('n = ', n_bloo)),
+            check_overlap = TRUE, na.rm = TRUE, show.legend = FALSE, nudge_x = 0, nudge_y = 0,
+            color = 'black', size = 2.5)+
+  guides(fill =guide_legend(ncol = 3, size = 4))+
+  # annotate('text', x = 0, y = c('sum_c' ,'sum_f', 'sum_g', 'sum_o', 'sum_p'),
+  #          label = c('Class', 'Family', 'Order', 'Genus', 'Phylum'))+
   #scale_y_continuous(expand=c(0, 0)) +
-  theme_bw()
-
-paired_12_12 <- c("#a6cee3","#1f78b4","#b2df8a","#33a02c","#fb9a99","#e31a1c","#fdbf6f","#ff7f00","#cab2d6","#6a3d9a","#ffff99","#b15928",
-                  "#8dd3c7","#ffffb3","#bebada","#fb8072","#80b1d3","#fdb462","#b3de69","#fccde5","#d9d9d9","#bc80bd","#ccebc5","#ffed6f")
-
-### since pseudoabundance is only useful for the 0.2 fraction we now only plot the relative abundance changes
+  theme_bw()+
+  theme(legend.position = 'right', panel.grid = element_blank(), panel.border = element_blank(),
+        strip.background = element_blank(), text = element_text(size = 5), legend.key.size = unit(4, 'mm'))
 
 ## Plot Evenness and Bray Curtis anomalies----
 ### crec que no té sentit perquè ja ens indica un canvi en la comunitat al menys la Bray-Curtis dissimilarity
@@ -1507,6 +1701,7 @@ asv_tab_all_bloo_z_tax |>
 
 
 library(ggforce)
+library(scales)
 bloomers_bbmo <- asv_tab_all_bloo_z_tax |>
   #left_join(m_3, by = 'sample_id') |>
   #left_join(tax_bbmo_10y, by = 'asv_num') |>
@@ -2408,6 +2603,7 @@ anom_perc |>
   theme(axis.text.x = element_text(angle = 90))
 
 
+
 # EXPLORATION OF THE RELATIONSHIP BETWEEN BLOOMING EVENTS AND COMMUNITY ALTERATION----
 ## when blooming events happen we need the community evenness to be lower than 50%? Also high beta diversity?
 ### We explore this parammeters and see if we observe a pattern.
@@ -2624,7 +2820,7 @@ blooming_events_fraction <- samples_with_bloom_event_asv_abund |>
 blooming_events_fraction  |>
   colnames()
 
-## create a hierachical clustering to add to the heat_map----
+## create a hierarchical clustering to add to the heat_map----
 
 ## heat_map
 blooming_events_fraction |>
@@ -2638,7 +2834,7 @@ blooming_events_fraction |>
   theme_bw()+
   theme(axis.text.x = element_text(angle = 0), text = element_text(size = 7))
 
-##number of blooming events/fraction and their taxonomy----
+## number of blooming events/fraction and their taxonomy----
 
 unique(blooming_events_fraction$fraction_blooms)
 
@@ -2721,6 +2917,7 @@ blooming_events_fraction |>
 ### NMDS----
 bbmo_10y@otu_table |>
   class()
+
 row.names(asv_tab_bbmo_10y_w_rar) <- asv_tab_bbmo_10y_w_rar[,1]  
 
 asv_tab_bbmo_10y_w_rar_ed <- asv_tab_bbmo_10y_w_rar[,-1]
@@ -2732,12 +2929,16 @@ data.dist <- vegdist(data.hel, method="bray")
 head(data.dist)
 data.nmds<-metaMDS(data.dist)                   # càlcul per poder col·locar a l'espai les comparacions entre comunitats
 str(data.nmds)                                 # stress num 0.137 (per sota de 20; és acceptable)
-data.nmds.points<-data.frame(data.nmds$points)  # convertir dades a data.frame per utilitzar amb qplot
+data.nmds.points<-data.frame(data.nmds$points, Cluster = )  # convertir dades a data.frame per utilitzar amb qplot
 plot(data.nmds.points)
 head(data.nmds.points)
-
 data.nmds.points |>
   colnames()
+
+
+# Create a data frame with NMDS coordinates and cluster information
+nmds_data <- data.frame(nmds_result$points, Cluster = clusters)
+
 
 nmds_bbmo_10y <- data.nmds.points |>
   rownames_to_column(var = 'sample_id') |>
@@ -2749,11 +2950,32 @@ nmds_bbmo_10y |>
   colnames()
 
 nmds_bbmo_10y |>
-  ggplot(aes(MDS1, MDS2, color = season))+ # shape = fraction,
+  ggplot(aes(MDS1, MDS2, color = season, size = community_eveness_rar))+ # shape = fraction,
   geom_point(aes(color = season), alpha=3, shape = ifelse(nmds_bbmo_10y$community_eveness_rar <= 0.5, 16, 17))+
-  facet_grid(vars(year))+
+  #facet_grid(vars(year))+
   #geom_text(aes(label=`Sample-Name`), check_overlap = TRUE, nudge_x = 0.02, nudge_y = 0.005)+
   scale_color_manual(values = palette_seasons_4)+
+  #scale_color_manual(values=palette_large)+
+  theme_bw()
+
+#color year
+palette_years <- c("#efd9ce",
+                   "#d7b7c9",
+                   "#be95c4",
+                   "#af8ec2",
+                   "#9f86c0",
+                   "#7f6da7",
+                   "#5e548e",
+                   "#231942",
+                   "#20173c",
+                   "#1d1537")
+nmds_bbmo_10y |>
+  ggplot(aes(MDS1, MDS2, color = season, size = community_eveness_rar, shape = fraction))+ # shape = fraction,
+  geom_point(aes(color = as.factor(year)), alpha=3)+
+  #facet_grid(vars(year))+
+  #geom_text(aes(label=`Sample-Name`), check_overlap = TRUE, nudge_x = 0.02, nudge_y = 0.005)+
+  #scale_color_manual(values = palette_seasons_4)+
+  scale_color_manual(values = palette_years)+
   #scale_color_manual(values=palette_large)+
   theme_bw()
 
@@ -2779,7 +3001,332 @@ nmds_bbmo_10y |>
   #scale_color_manual(values=palette_large)+
   theme_bw()
 
+## NMDS with data transformed to CLR (maybe we need to recalculate the transformation (some ASVs are removed)----
+asv_tab_all_bloo_z_tax |>
+  colnames()
 
+asv_tab_all_bloo_z_tax %$%
+  abundance_type 
+  
+## we need to transform the dataframe to wide format (this in only data from ASVs maybe I need the whole database transformed)
+asv_tab_all_bloo_z_tax_w <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(abundance_type == 'zclr') |>
+  dplyr::select(sample_id, asv_num, abundance_value) |>
+  pivot_wider(id_cols = sample_id, names_from = asv_num, values_from = abundance_value, values_fill = 0) |>
+  as.data.frame()
+
+row.names(asv_tab_all_bloo_z_tax_w) <- asv_tab_all_bloo_z_tax_w[,1]  
+
+asv_tab_all_bloo_z_tax_ed <- asv_tab_all_bloo_z_tax_w[,-1]
+
+data.hel <- asv_tab_all_bloo_z_tax_ed |>
+  decostand(method="hellinger"); str(data.hel)
+
+data.dist <- vegdist(data.hel, method="euclidean", na.rm = TRUE)
+head(data.dist)
+data.nmds<-metaMDS(data.dist)                   # càlcul per poder col·locar a l'espai les comparacions entre comunitats
+str(data.nmds)                                 # stress num 0.0187 (per sota de 20; és acceptable)
+data.nmds.points<-data.frame(data.nmds$points)  # convertir dades a data.frame per utilitzar amb qplot
+plot(data.nmds.points)
+head(data.nmds.points)
+data.nmds.points |>
+  colnames()
+
+nmds_bbmo_10y_bloo_zclr <- data.nmds.points |>
+  rownames_to_column(var = 'sample_id') |>
+  as_tibble() |>
+  left_join(m_bbmo_10y, by = c('sample_id')) |>
+  left_join(community_eveness_all, by = 'sample_id')
+
+nmds_bbmo_10y_bloo_zclr |>
+  colnames()
+
+nmds_bbmo_10y_bloo_zclr |>
+  ggplot(aes(MDS1, MDS2, color = season, size = community_eveness_rar, shape = fraction))+ # shape = fraction,
+  geom_point(aes(color = as.factor(year)), alpha=3)+
+  facet_wrap(vars(fraction), scales = 'free')+
+  #geom_text(aes(label=`Sample-Name`), check_overlap = TRUE, nudge_x = 0.02, nudge_y = 0.005)+
+  #scale_color_manual(values = palette_seasons_4)+
+  scale_color_manual(values = palette_years)+
+  #scale_color_manual(values=palette_large)+
+  theme_bw()
+
+nmds_bbmo_10y_bloo_zclr |>
+  ggplot(aes(MDS1, MDS2, color = season, size = community_eveness_rar, shape = fraction))+ # shape = fraction,
+  geom_point(aes(color = season), alpha=3)+
+  facet_wrap(vars(fraction), scales = 'free')+
+  #geom_text(aes(label=`Sample-Name`), check_overlap = TRUE, nudge_x = 0.02, nudge_y = 0.005)+
+  #scale_color_manual(values = palette_seasons_4)+
+  scale_color_manual(values = palette_seasons_4)+
+  #scale_color_manual(values=palette_large)+
+  theme_bw()
+
+nmds_bbmo_10y_bloo_zclr |>
+  ggplot(aes(MDS1, MDS2, color = temperature, size = community_eveness_rar, shape = fraction))+ # shape = fraction,
+  geom_point(aes(color = temperature), alpha=3)+
+  facet_wrap(vars(fraction), scales = 'free')+
+  #geom_text(aes(label=`Sample-Name`), check_overlap = TRUE, nudge_x = 0.02, nudge_y = 0.005)+
+  #scale_color_manual(values = palette_seasons_4)+
+  scale_color_gradientn(colors  = palete_gradient_cb)+
+  #scale_color_manual(values=palette_large)+
+  theme_bw()
+
+### NMDS with the whole community transformed to zCLR-----
+asv_tab_10y_3_zclr |>
+  colnames()
+
+asv_tab_10y_02_zclr |>
+  colnames()
+
+#### We separate PA and FL because otherwise there are many NAs values and it can't calculate the distances.
+##### 3
+asv_tab_10y_3_zclr_w <- asv_tab_10y_3_zclr |>
+  #bind_rows(asv_tab_10y_02_zclr) |>
+  pivot_wider(id_cols = sample_id, names_from = asv_num, values_from = zclr, values_fill = 0) |>
+  as.data.frame()
+
+row.names(asv_tab_10y_3_zclr_w) <- asv_tab_10y_3_zclr_w[,1]  
+
+asv_tab_10y_3_zclr_w_ed <- asv_tab_10y_3_zclr_w[,-1]
+
+# my data is already transformed I don't need the transformation
+# data.hel <- asv_tab_10y_3_zclr_w_ed |>
+#   decostand(method="hellinger"); str(data.hel)
+
+data.dist <- vegdist(asv_tab_10y_3_zclr_w_ed, method="euclidean", na.rm = TRUE)
+head(data.dist)
+data.nmds<-metaMDS(data.dist)                   # càlcul per poder col·locar a l'espai les comparacions entre comunitats
+str(data.nmds)                                 # stress num 0.16 (per sota de 20; és acceptable)
+data.nmds.points<-data.frame(data.nmds$points)  # convertir dades a data.frame per utilitzar amb qplot
+plot(data.nmds.points)
+head(data.nmds.points)
+data.nmds.points |>
+  colnames()
+
+nmds_bbmo_10y_zclr_3 <- data.nmds.points |>
+  rownames_to_column(var = 'sample_id') |>
+  as_tibble() |>
+  left_join(m_bbmo_10y, by = c('sample_id')) |>
+  left_join(community_eveness_all, by = 'sample_id')
+
+nmds_bbmo_10y_zclr_3 |>
+  ggplot(aes(MDS1, MDS2, color = season, size = community_eveness_rar, shape = fraction))+ # shape = fraction,
+  geom_point(aes(color = as.factor(year)), alpha=3)+
+  facet_wrap(vars(fraction), scales = 'free')+
+  #geom_text(aes(label=`Sample-Name`), check_overlap = TRUE, nudge_x = 0.02, nudge_y = 0.005)+
+  #scale_color_manual(values = palette_seasons_4)+
+  scale_color_manual(values = palette_years)+
+  #scale_color_manual(values=palette_large)+
+  theme_bw()
+
+##### 0.2
+asv_tab_10y_02_zclr_w <- asv_tab_10y_02_zclr |>
+  #bind_rows(asv_tab_10y_02_zclr) |>
+  pivot_wider(id_cols = sample_id, names_from = asv_num, values_from = zclr, values_fill = 0) |>
+  as.data.frame()
+
+row.names(asv_tab_10y_02_zclr_w) <- asv_tab_10y_02_zclr_w[,1]  
+
+asv_tab_10y_02_zclr_w_ed <- asv_tab_10y_02_zclr_w[,-1]
+# My data is already transformed to zCLR so I don't need the transformation 
+# data.hel <- asv_tab_10y_02_zclr_w_ed |>
+#   decostand(method=""); str(data.hel)
+
+data.dist <- vegdist(asv_tab_10y_02_zclr_w_ed, method="euclidean", na.rm = TRUE)
+head(data.dist)
+data.nmds<-metaMDS(data.dist)                   # càlcul per poder col·locar a l'espai les comparacions entre comunitats
+str(data.nmds)                                 # stress num 0.13 (per sota de 20; és acceptable)
+data.nmds.points<-data.frame(data.nmds$points)  # convertir dades a data.frame per utilitzar amb qplot
+plot(data.nmds.points)
+head(data.nmds.points)
+data.nmds.points |>
+  colnames()
+
+nmds_bbmo_10y_zclr_02 <- data.nmds.points |>
+  rownames_to_column(var = 'sample_id') |>
+  as_tibble() |>
+  left_join(m_bbmo_10y, by = c('sample_id')) |>
+  left_join(community_eveness_all, by = 'sample_id')
+
+nmds_bbmo_10y_zclr_02 |>
+  ggplot(aes(MDS1, MDS2, color = season, size = community_eveness_rar, shape = fraction))+ # shape = fraction,
+  geom_point(aes(color = as.factor(year)), alpha=02)+
+  facet_wrap(vars(fraction), scales = 'free')+
+  #geom_text(aes(label=`Sample-Name`), check_overlap = TRUE, nudge_x = 0.02, nudge_y = 0.005)+
+  #scale_color_manual(values = palette_seasons_4)+
+  scale_color_manual(values = palette_years)+
+  #scale_color_manual(values=palette_large)+
+  theme_bw()
+
+## When I transformed my ASVs data to zCLR some ASVs disappear, but using deconstand function they are kept (transformation rclr). To answer the question:----
+## Do blooming events cluster together? 
+### after the previous observations I observe that since PA and FL communities are well differentiated then I do the NMDS separated
+
+asv_tab_bbmo_10y_l |> # upload the original table
+  head()
+
+asv_tab_bbmo_10y_w <- asv_tab_bbmo_10y_l |> #transform to wider fromat
+  pivot_wider(id_cols = sample_id, names_from = asv_num, values_from = reads) |>
+  as.data.frame()
+
+asv_tab_bbmo_10y_w_02 <- asv_tab_bbmo_10y_w |>
+  dplyr::filter(str_detect(as.character(sample_id), '_0.2'))
+
+asv_tab_bbmo_10y_w_3 <- asv_tab_bbmo_10y_w |>
+  dplyr::filter(str_detect(as.character(sample_id), '_3_'))
+
+row.names(asv_tab_bbmo_10y_w_02) <- asv_tab_bbmo_10y_w_02[,1]  
+row.names(asv_tab_bbmo_10y_w_3) <- asv_tab_bbmo_10y_w_3[,1] 
+
+asv_tab_bbmo_10y_w_02_ed <- asv_tab_bbmo_10y_w_02[,-1]
+asv_tab_bbmo_10y_w_3_ed <- asv_tab_bbmo_10y_w_3[,-1]
+
+data.hel <- asv_tab_bbmo_10y_w_02_ed |>
+  decostand(method="rclr"); str(data.hel)
+
+data.hel |>
+  dim()
+
+data.dist <- vegdist(data.hel, method="euclidean", na.rm = TRUE)
+head(data.dist)
+data.nmds<-metaMDS(data.dist)                   # càlcul per poder col·locar a l'espai les comparacions entre comunitats
+str(data.nmds)                                 # stress num 0.15 (per sota de 20; és acceptable)
+data.nmds.points<-data.frame(data.nmds$points)  # convertir dades a data.frame per utilitzar amb qplot
+plot(data.nmds.points)
+head(data.nmds.points)
+data.nmds.points |>
+  colnames()
+
+nmds_bbmo_10y_zclr_02_all <- data.nmds.points |>
+  rownames_to_column(var = 'sample_id') |>
+  as_tibble() |>
+  left_join(m_bbmo_10y, by = c('sample_id')) |>
+  left_join(community_eveness_all, by = 'sample_id')
+
+nmds_bbmo_10y_zclr_02_all |>
+  ggplot(aes(MDS1, MDS2, color = season, size = community_eveness_rar, shape = fraction))+ # shape = fraction,
+  geom_point(aes(color = as.factor(year)), alpha=02)+
+  facet_wrap(vars(fraction), scales = 'free')+
+  #geom_text(aes(label=`Sample-Name`), check_overlap = TRUE, nudge_x = 0.02, nudge_y = 0.005)+
+  #scale_color_manual(values = palette_seasons_4)+
+  scale_color_manual(values = palette_years)+
+  #scale_color_manual(values=palette_large)+
+  theme_bw()
+
+nmds_bbmo_10y_zclr_02_all |>
+  ggplot(aes(MDS1, MDS2, color = season, size = community_eveness_rar, shape = fraction))+ # shape = fraction,
+  geom_point(aes(color = as.factor(season)), alpha=02)+
+  facet_wrap(vars(fraction), scales = 'free', labeller = labs_fraction)+
+  #geom_text(aes(label=`Sample-Name`), check_overlap = TRUE, nudge_x = 0.02, nudge_y = 0.005)+
+  scale_color_manual(values = palette_seasons_4)+
+  #scale_color_manual(values = palette_years)+
+  #scale_color_manual(values=palette_large)+
+  theme_bw()
+
+### 3
+data.hel <- asv_tab_bbmo_10y_w_3_ed |>
+  decostand(method="rclr"); str(data.hel)
+
+data.dist <- vegdist(data.hel, method="euclidean", na.rm = TRUE)
+head(data.dist)
+data.nmds<-metaMDS(data.dist)                   # càlcul per poder col·locar a l'espai les comparacions entre comunitats
+str(data.nmds)                                 # stress num 0.20 (per sota de 20; és acceptable)
+data.nmds.points<-data.frame(data.nmds$points)  # convertir dades a data.frame per utilitzar amb qplot
+plot(data.nmds.points)
+head(data.nmds.points)
+data.nmds.points |>
+  colnames()
+
+nmds_bbmo_10y_zclr_3_all <- data.nmds.points |>
+  rownames_to_column(var = 'sample_id') |>
+  as_tibble() |>
+  left_join(m_bbmo_10y, by = c('sample_id')) |>
+  left_join(community_eveness_all, by = 'sample_id')
+
+nmds_bbmo_10y_zclr_3_all |>
+  ggplot(aes(MDS1, MDS2, color = season, size = community_eveness_rar, shape = fraction, label = date))+ # shape = fraction,
+  geom_point(aes(color = as.factor(year)), alpha=02)+
+  facet_wrap(vars(fraction), scales = 'free')+
+  #geom_text(aes(label=`Sample-Name`), check_overlap = TRUE, nudge_x = 0.02, nudge_y = 0.005)+
+  #scale_color_manual(values = palette_seasons_4)+
+  scale_color_manual(values = palette_years)+
+  #scale_color_manual(values=palette_large)+
+  theme_bw() 
+
+### outlier BL091222_3_4022
+nmds_bbmo_10y_zclr_3_all |>
+  dplyr::filter(sample_id != 'BL091222_3_4022') |> #we remove the outlier to better observe the patterns
+  ggplot(aes(MDS1, MDS2, color = season, size = community_eveness_rar, shape = fraction, label = date))+ # shape = fraction,
+  geom_point(aes(color = as.factor(season)), alpha=02)+
+  facet_wrap(vars(fraction), scales = 'free', labeller = labs_fraction)+
+  #geom_text(aes(label=`Sample-Name`), check_overlap = TRUE, nudge_x = 0.02, nudge_y = 0.005)+
+  scale_color_manual(values = palette_seasons_4)+
+  #scale_color_manual(values = palette_years)+
+  #scale_color_manual(values=palette_large)+
+  theme_bw() 
+
+### Conclusion: the community is basically structured by seasons
+
+##Idea plot and highlight the blooming events on the NMDS.
+nmds_bbmo_10y_zclr_3_all |>
+  colnames()
+
+samples_with_bloom_event ##list of ASVs that have a blooming event and the relative abundance of the anomaly and number of ASVs implicated
+
+samples_with_bloom_event %$%
+  n_asv_bloom |>
+  range()
+
+nmds_bbmo_10y_zclr_3_all |>
+  dim()
+
+nmds_bbmo_10y_zclr_3_all |>
+left_join(samples_with_bloom_event, by = 'sample_id') |>
+  dplyr::mutate(n_asv_bloom_ed = case_when(is.na(n_asv_bloom) ~ 0,
+                                           n_asv_bloom == '1' ~ 1,
+                                           n_asv_bloom == '2' ~ 1,
+                                           n_asv_bloom == '3' ~ 1)) |>
+  dplyr::filter(sample_id != 'BL091222_3_4022') |> #we remove the outlier to better observe the patterns
+  ggplot(aes(MDS1, MDS2, color = season, size = community_eveness_rar, shape = as.factor(n_asv_bloom_ed), label = date))+ # shape = fraction,
+  geom_point(aes(color = as.factor(season)), alpha=02)+
+  facet_wrap(vars(fraction), scales = 'free', labeller = labs_fraction)+
+  labs(shape = 'Blooming event', size = 'Community\nevenness')+
+  #geom_text(aes(label=`Sample-Name`), check_overlap = TRUE, nudge_x = 0.02, nudge_y = 0.005)+
+  scale_color_manual(values = palette_seasons_4)+
+  #scale_color_manual(values = palette_years)+
+  #scale_color_manual(values=palette_large)+
+  theme_bw() 
+
+nmds_bbmo_10y_zclr_3_all |>
+  colnames()
+
+samples_with_bloom_event ##list of ASVs that have a blooming event and the relative abundance of the anomaly and number of ASVs implicated
+
+samples_with_bloom_event %$%
+  n_asv_bloom |>
+  range()
+
+nmds_bbmo_10y_zclr_3_all |>
+  dim()
+
+nmds_bbmo_10y_zclr_02_all |>
+  left_join(samples_with_bloom_event, by = 'sample_id') |>
+  dplyr::mutate(n_asv_bloom_ed = case_when(is.na(n_asv_bloom) ~ 0,
+                                           n_asv_bloom == '1' ~ 1,
+                                           n_asv_bloom == '2' ~ 1,
+                                           n_asv_bloom == '3' ~ 1)) |>
+  dplyr::filter(sample_id != 'BL091222_3_4022') |> #we remove the outlier to better observe the patterns
+  ggplot(aes(MDS1, MDS2, color = season, size = community_eveness_rar, shape = as.factor(n_asv_bloom_ed), label = date))+ # shape = fraction,
+  geom_point(aes(color = as.factor(season)), alpha=02)+
+  facet_wrap(vars(fraction), scales = 'free', labeller = labs_fraction)+
+  labs(shape = 'Blooming event', size = 'Community\nevenness')+
+  #geom_text(aes(label=`Sample-Name`), check_overlap = TRUE, nudge_x = 0.02, nudge_y = 0.005)+
+  scale_color_manual(values = palette_seasons_4)+
+  #scale_color_manual(values = palette_years)+
+  #scale_color_manual(values=palette_large)+
+  theme_bw() 
+
+####----
 
 ## per year (explore the % of blooming events per tax)----
 asv_tab_all_bloo_z_tax |>
