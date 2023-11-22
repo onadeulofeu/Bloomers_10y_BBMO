@@ -246,26 +246,26 @@ bbmo_env_3 <- bbmo_env |>
 # }
 
 #calculate_z_score <- function(data, col, name = NULL, group = NULL) {
-  stopifnot(is.numeric(data[[col]]))
-  
-  # Check for NAs in the specified column
-  if (anyNA(data[[col]])) {
-    warning("The specified column contains NA values.")
-  }
-  
-  col_name <- ifelse(!is.null(name), paste0("z_score_", name), 'z_score')
-  
-  if (!is.null(group)) {
-    data <- data |>
-      dplyr::group_by(!!sym(group)) |>
-      dplyr::mutate(!!col_name := (!!sym(col) - base::mean(!!sym(col), na.rm = TRUE)) / stats::sd(!!sym(col), na.rm = TRUE))
-  } else {
-    data <- data |>
-      dplyr::mutate(!!col_name := (!!sym(col) - base::mean(!!sym(col), na.rm = TRUE)) / stats::sd(!!sym(col), na.rm = TRUE))
-  }
-  
-  return(data)
-}
+#   stopifnot(is.numeric(data[[col]]))
+#   
+#   # Check for NAs in the specified column
+#   if (anyNA(data[[col]])) {
+#     warning("The specified column contains NA values.")
+#   }
+#   
+#   col_name <- ifelse(!is.null(name), paste0("z_score_", name), 'z_score')
+#   
+#   if (!is.null(group)) {
+#     data <- data |>
+#       dplyr::group_by(!!sym(group)) |>
+#       dplyr::mutate(!!col_name := (!!sym(col) - base::mean(!!sym(col), na.rm = TRUE)) / stats::sd(!!sym(col), na.rm = TRUE))
+#   } else {
+#     data <- data |>
+#       dplyr::mutate(!!col_name := (!!sym(col) - base::mean(!!sym(col), na.rm = TRUE)) / stats::sd(!!sym(col), na.rm = TRUE))
+#   }
+#   
+#   return(data)
+# }
 
 # calculate_z_score(bbmo_env_sim, col = 'day_length', name = 'day_length', group = NULL)
 # 
@@ -631,6 +631,8 @@ for (variable_name in names(mantel_results_02)) {
 # Print the summary tibble
 print(results_mantel_02)
 
+#write.csv2(results_mantel_02, 'results/mantel_community_02.csv')
+
 #plot the results for the Mantel test between environmental variables and the community structure 
 results_mantel_02$variable_name <- results_mantel_02$variable_name  |>
   factor(levels = c("day_length", "temperature" ,"secchi" , "salinity" ,      
@@ -642,7 +644,7 @@ results_mantel_02$variable_name <- results_mantel_02$variable_name  |>
 
 
 plot_mantel_02_community <- results_mantel_02 |>
-  mutate(community = 'Free living') |>
+  mutate(community = 'Free living (0.2-3 um)') |>
   #left_join(tax_factors, by = c('taxon_name' = 'asv_num_f')) |>
   ggplot(aes(community, variable_name, fill = mantel_correlation))+
   geom_tile()+
@@ -750,29 +752,32 @@ results_mantel_3$variable_name <- results_mantel_3$variable_name  |>
                     "HNF2_5um_Micro", "HNF_5um_Micro"))
 
 results_mantel_02 <-   results_mantel_02 |>
-  dplyr::mutate(community = 'Free living')
+  dplyr::mutate(community = 'Free living (0.2-3 um)')
+
+#write.csv2(results_mantel_3, 'results/mantel_community_3.csv')
 
 ##plot results from FL and PA together-----
 plot_mantel_3_02_community <- results_mantel_3 |>
-  dplyr::mutate(community = 'Particle attached') |>
+  dplyr::mutate(community = 'Particle attached (3-20 um)') |>
   bind_rows(results_mantel_02) |>
+  dplyr::filter(p_value < 0.05 &
+                  abs(mantel_correlation) > 0.1) |>
   #left_join(tax_factors, by = c('taxon_name' = 'asv_num_f')) |>
   ggplot(aes(community, variable_name, fill = mantel_correlation))+
   geom_tile()+
   scale_fill_gradientn(colors = palete_gradient_cb)+
   scale_y_discrete(labels = labs_env)+
-  geom_text(aes(label = ifelse(p_value < 0.05, '*', ''), colour = '#757C76'))+
+  #geom_text(aes(label = ifelse(p_value < 0.05, '*', ''), colour = '#757C76'))+
   labs(x = 'Community', y = 'Environmental variables', fill = 'Mantel correlation')+
   guides( colour = 'none')+
   theme_bw()+
   theme(panel.grid.major = element_blank(), text = element_text(size = 5),
         axis.text.x = element_text(angle = 0), axis.ticks.x = element_blank(), panel.border = element_blank())
 
-# ggsave('mantel_test_community.pdf', plot_mantel_3_02_community, path = "~/Documentos/Doctorat/BBMO/BBMO_bloomers/results/figures/",
+# ggsave('mantel_test_community_sig.pdf', plot_mantel_3_02_community, path = "~/Documentos/Doctorat/BBMO/BBMO_bloomers/results/figures/",
 #        width = 88,
-#        height = 120,
+#        height = 88,
 #        units = 'mm')
-
 
 ## I perform the Mantel test only with my potential bloomers vs each environmental variable----
 
@@ -865,6 +870,8 @@ for (taxon_name in colnames(abundance_data_clr02)) {
 # Print the summary tibble
 print(mantel_results_02)
 
+#write.csv2(mantel_results_02, 'results/mantel_results_02_bloo.csv')
+
 ## reorder environmental factors ----
 mantel_results_02$variable_name_environmental <- mantel_results_02$variable_name_environmental  |>
   factor(levels = c("day_length", "temperature" ,"secchi" , "salinity" ,      
@@ -954,6 +961,8 @@ for (taxon_name in colnames(abundance_data_clr3)) {
 # Print the summary tibble
 print(mantel_results_3)
 
+#write.csv2(mantel_results_3, 'results/mantel_results_3_bloo.csv')
+
 ##reorder taxonomy as factors 
 asv_tab_all_bloo_z_tax <- asv_tab_all_bloo_z_tax |>
   dplyr::mutate(phylum_f = as_factor(phylum),
@@ -1011,19 +1020,23 @@ mantel_results_3$variable_name_environmental <- mantel_results_3$variable_name_e
 ## add FL results to plot them together
 mantel_results_02_tax <- mantel_results_02 |>
   left_join(tax_factors, by = c('taxon_name' = 'asv_num_f')) |>
-  dplyr::mutate(community = 'Free living')
+  dplyr::mutate(community = 'Free living (0.2-3 um)')
+
 
 plot_mantel_all <- mantel_results_3 |>
   left_join(tax_factors, by = c('taxon_name' = 'asv_num_f')) |>
-  dplyr::mutate(community = 'Particle Attached') |>
+  dplyr::mutate(community = 'Particle Attached (3-20 um)') |>
   bind_rows(mantel_results_02_tax) |>
+  dplyr::filter(p_value < 0.05 &
+                  abs(mantel_correlation) > 0.2) |>
   ggplot(aes(interaction(taxon_name, family_f), variable_name_environmental, fill = mantel_correlation))+
   geom_tile()+
   scale_fill_gradientn(colors = palete_gradient_cb)+
   scale_y_discrete(labels = labs_env)+
+  #coord_flip()+
   facet_wrap(vars(community), nrow = 2)+
   labs(x = 'Taxonomy', y = 'Environmental variables', fill = 'Mantel\ncorrelation')+ #, title = 'Free living fraction'
-  geom_text(aes(label = ifelse(p_value < 0.05, '*', ''), colour = '#757C76'))+
+  #geom_text(aes(label = ifelse(p_value < 0.05, '*', ''), colour = '#757C76'))+
   guides(colour = 'none')+
   theme_bw()+
   theme(panel.grid.major = element_blank(), text = element_text(size = 5),
@@ -1038,11 +1051,11 @@ plot_mantel_all <- mantel_results_3 |>
 # mantel_test_all  %<>%
 #   fill_panel(plot_mantel_02, column = 1, row = 1) %<>%
 #   fill_panel(plot_mantel_3, column = 1, row = 2)
-
-# ggsave('mantel_test_all_bloo.pdf', plot_mantel_all ,
+# 
+# ggsave('mantel_test_all_bloo_sig.pdf', plot_mantel_all ,
 #        path = "~/Documentos/Doctorat/BBMO/BBMO_bloomers/results/figures/",
-#        width = 188,
-#        height = 200,
+#        width = 88,
+#        height = 100,
 #        units = 'mm')
 
 ## TEST: plot the results of the Mantel test-------
