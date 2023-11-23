@@ -2423,39 +2423,39 @@ asv_anom_all <- x |>
 
 
 ###plot those by anomaly presence colored in red----
-asv_tab_all_bloo_z_tax |>
-  colnames()
-
-asv_tab_all_bloo_z_tax |>
-  left_join(z_scores_all, by = c('sample_id', 'asv_num')) |>
-  #left_join(tax_bbmo_10y, by = 'asv_num') |>
-  dplyr::mutate(date.x = (as.POSIXct(date.x, format = "%Y-%m-%d"))) |>
-  mutate(z_score_ra_ed = case_when(is.na(z_score_ra.x) ~ 0,
-                                   z_score_ra.x == 'NaN' ~ 0,
-                                   z_score_ra.x == Inf ~ 0,
-                                   TRUE ~ z_score_ra.x)) |>
-  dplyr::mutate(anomaly_color = if_else(z_score_ra_ed >= 1.96,  '#9F0011', '#080808', missing = '#080808')) |>
-  #ungroup() |>
-  #left_join(m_bbmo_10y, by = 'sample_id') |>
-  #left_join(tax, by = c('asv_num' = 'asv')) |>
-  #dplyr::filter(class != is.na(class)) |> ##Raro tenir NAs a Class i que no estiguin filtrats?
-  # ggplot(aes(date, abundance_value, color = ifelse(is.na(z_score_ra), "#080808", 
-  #            if_else(z_score_ra >= 1.96, '#9F0011', '#080808'))))+ #, color = 'Class' , shape = class 
-  #ggplot(aes(date, abundance_value, color = if_else(z_score_ra_ed >= 1.96,  '#9F0011', '#080808', missing = '#080808')))+
-  ggplot(aes(date.x, abundance_value, color = anomaly_color))+  
-  scale_x_datetime()+
-  #facet_wrap(vars(class), scales = 'free')+
-  geom_line(aes(group = asv_num), color = '#080808')+ #, color = '#3D3B3B'
-  geom_point(alpha = 1)+ #aes(shape = class)
-  labs(x = 'Time', y = 'Relative abundance (%)', color = 'Anomaly')+ #, shpae = 'Class'
-  scale_color_identity()+
-  facet_wrap(fraction.x~abundance_type, scales = 'free')+
-  guides(fill = 'none')+
-  theme_bw()+
-  theme(axis.text.x = element_text(size = 5), panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank(),
-        axis.ticks = element_blank(), legend.position = 'Bottom', axis.text.y = element_text(size = 12),
-        axis.title.y = element_text(size = 14), strip.background = element_blank())
+# asv_tab_all_bloo_z_tax |>
+#   colnames()
+# 
+# asv_tab_all_bloo_z_tax |>
+#   left_join(z_scores_all, by = c('sample_id', 'asv_num')) |>
+#   #left_join(tax_bbmo_10y, by = 'asv_num') |>
+#   dplyr::mutate(date.x = (as.POSIXct(date.x, format = "%Y-%m-%d"))) |>
+#   mutate(z_score_ra_ed = case_when(is.na(z_score_ra.x) ~ 0,
+#                                    z_score_ra.x == 'NaN' ~ 0,
+#                                    z_score_ra.x == Inf ~ 0,
+#                                    TRUE ~ z_score_ra.x)) |>
+#   dplyr::mutate(anomaly_color = if_else(z_score_ra_ed >= 1.96,  '#9F0011', '#080808', missing = '#080808')) |>
+#   #ungroup() |>
+#   #left_join(m_bbmo_10y, by = 'sample_id') |>
+#   #left_join(tax, by = c('asv_num' = 'asv')) |>
+#   #dplyr::filter(class != is.na(class)) |> ##Raro tenir NAs a Class i que no estiguin filtrats?
+#   # ggplot(aes(date, abundance_value, color = ifelse(is.na(z_score_ra), "#080808", 
+#   #            if_else(z_score_ra >= 1.96, '#9F0011', '#080808'))))+ #, color = 'Class' , shape = class 
+#   #ggplot(aes(date, abundance_value, color = if_else(z_score_ra_ed >= 1.96,  '#9F0011', '#080808', missing = '#080808')))+
+#   ggplot(aes(date.x, abundance_value, color = anomaly_color))+  
+#   scale_x_datetime()+
+#   #facet_wrap(vars(class), scales = 'free')+
+#   geom_line(aes(group = asv_num), color = '#080808')+ #, color = '#3D3B3B'
+#   geom_point(alpha = 1)+ #aes(shape = class)
+#   labs(x = 'Time', y = 'Relative abundance (%)', color = 'Anomaly')+ #, shpae = 'Class'
+#   scale_color_identity()+
+#   facet_wrap(fraction.x~abundance_type, scales = 'free')+
+#   guides(fill = 'none')+
+#   theme_bw()+
+#   theme(axis.text.x = element_text(size = 5), panel.grid.minor = element_blank(),
+#         panel.grid.major = element_blank(),
+#         axis.ticks = element_blank(), legend.position = 'Bottom', axis.text.y = element_text(size = 12),
+#         axis.title.y = element_text(size = 14), strip.background = element_blank())
 
 ## I divide the different abundance values in separated plots and I filter only the potential bloomers in FL or PA-----
 bloo_02 <- read.csv('data/bloo_02.csv') |>
@@ -2505,7 +2505,7 @@ asv_tab_bloo_rel_abund_z  |>
         axis.title.y = element_text(size = 7), strip.background = element_blank(),
         panel.border = element_blank())
 
-## I plot zCLR instead of relative abundances
+## I plot zCLR instead of relative abundances----
 ## preparation of the data for the plot
 asv_tab_bloo_clr_z <- asv_tab_all_bloo_z_tax |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
@@ -2567,28 +2567,28 @@ asv_tab_bloo_pseudo_anom <- asv_tab_bloo_pseudo_02 |>
   dplyr::filter(anomaly_color == '#9F0011')
 
 ## here we plot all potential bloomers for FL and in which sampling points do they present an anomaly
-asv_tab_bloo_pseudo_02   |>
-  ggplot(aes(date, abundance_value, color = anomaly_color))+  
-  scale_x_datetime(expand = c(0,0), 
-                   breaks = seq(min(asv_tab_bloo_rel_abund_z$date), 
-                                max(asv_tab_bloo_rel_abund_z$date), by = '1 year'),
-                   date_labels = "%Y")+
-  geom_hline(yintercept = 0.1, color = '#8B8989')+
-  geom_line(aes(group = asv_num), color = '#5B5A5A')+ #, color = '#3D3B3B'
-  geom_point(data = asv_tab_bloo_pseudo_anom, 
-             aes(date, abundance_value, color =  '#9F0011', alpha = 1))+ #size = z_score_ra
-  scale_y_continuous(expand = c(0,0))+
-  labs(x = 'Time', y = 'Pseudoabundance', color = 'Anomaly')+ #, shpae = 'Class'
-  scale_color_identity()+
-  facet_wrap(vars(fraction), scales = 'fixed', ncol = 1, labeller = labs_fraction)+
-  guides(fill = 'none')+
-  theme_bw()+
-  theme(axis.text.x = element_text(size = 5), panel.grid.minor = element_blank(),
-        panel.grid.major.y = element_blank(),
-        axis.title.x = element_text(size = 7),
-        axis.ticks = element_blank(), legend.position = 'Bottom', axis.text.y = element_text(size = 7),
-        axis.title.y = element_text(size = 7), strip.background = element_blank(),
-        panel.border = element_blank())
+# asv_tab_bloo_pseudo_02   |>
+#   ggplot(aes(date, abundance_value, color = anomaly_color))+  
+#   scale_x_datetime(expand = c(0,0), 
+#                    breaks = seq(min(asv_tab_bloo_rel_abund_z$date), 
+#                                 max(asv_tab_bloo_rel_abund_z$date), by = '1 year'),
+#                    date_labels = "%Y")+
+#   geom_hline(yintercept = 0.1, color = '#8B8989')+
+#   geom_line(aes(group = asv_num), color = '#5B5A5A')+ #, color = '#3D3B3B'
+#   geom_point(data = asv_tab_bloo_pseudo_anom, 
+#              aes(date, abundance_value, color =  '#9F0011', alpha = 1))+ #size = z_score_ra
+#   scale_y_continuous(expand = c(0,0))+
+#   labs(x = 'Time', y = 'Pseudoabundance', color = 'Anomaly')+ #, shpae = 'Class'
+#   scale_color_identity()+
+#   facet_wrap(vars(fraction), scales = 'fixed', ncol = 1, labeller = labs_fraction)+
+#   guides(fill = 'none')+
+#   theme_bw()+
+#   theme(axis.text.x = element_text(size = 5), panel.grid.minor = element_blank(),
+#         panel.grid.major.y = element_blank(),
+#         axis.title.x = element_text(size = 7),
+#         axis.ticks = element_blank(), legend.position = 'Bottom', axis.text.y = element_text(size = 7),
+#         axis.title.y = element_text(size = 7), strip.background = element_blank(),
+#         panel.border = element_blank())
 
 ##divided by family
 asv_tab_bloo_pseudo_02   |>
@@ -2604,19 +2604,19 @@ asv_tab_bloo_pseudo_02   |>
   scale_y_continuous(expand = c(0,0))+
   labs(x = 'Time', y = 'Pseudoabundance', color = 'Anomaly')+ #, shpae = 'Class'
   scale_color_identity()+
-  facet_wrap(vars(family_f), scales = 'free_y', ncol = 1)+
+  facet_wrap(vars(family_f), scales = 'free_y', ncol = 2)+
   guides(fill = 'none')+
   theme_bw()+
   theme(axis.text.x = element_text(size = 5), panel.grid.minor = element_blank(),
         panel.grid.major.y = element_blank(),
         axis.title.x = element_text(size = 7),
         axis.ticks = element_blank(), legend.position = 'Bottom', axis.text.y = element_text(size = 7),
-        axis.title.y = element_text(size = 7), strip.background = element_blank(),
+        axis.title.y = element_text(size = 7), strip.background = element_blank(), strip.text = element_text(size = 5),
         panel.border = element_blank(), plot.margin = margin(15,0,5,5))
 
 ##we plot the same but for PA and observe what we see divided by family but using relative_abundance or CLR
 asv_tab_bloo_rel_abund_z  |>
- # dplyr::filter(fraction == '3') |>
+  dplyr::filter(fraction == '3') |>
   ggplot(aes(date, abundance_value, color = anomaly_color))+  
   scale_x_datetime(expand = c(0,0), 
                    breaks = seq(min(asv_tab_bloo_rel_abund_z$date), 
@@ -2625,7 +2625,7 @@ asv_tab_bloo_rel_abund_z  |>
   geom_hline(yintercept = 0.1, color = '#8B8989', alpha = 0.5, linetype = 'dashed')+
   geom_line(aes(group = asv_num), color = '#5B5A5A')+ #, color = '#3D3B3B'
   geom_point(data = asv_tab_bloo_rel_abund_z |>
-               dplyr::filter(#fraction == '3' &
+               dplyr::filter(fraction == '3' &
                                z_score_ra_ed >= 1.96 &
                                abundance_value >= 0.1), 
              aes(date, abundance_value, color =  '#9F0011', alpha = 1), size = 0.6)+ #size = z_score_ra
@@ -2633,8 +2633,8 @@ asv_tab_bloo_rel_abund_z  |>
   labs(x = 'Time', y = 'Relative_abundance', color = 'Anomaly')+ #, shpae = 'Class'
   scale_color_identity()+
   #facet_wrap(vars(family_f), scales = 'free_y', ncol = 2)+
-  #facet_wrap(fraction~family_f, scales = 'free_y', ncol = 2)+
-  facet_grid(family_f~fraction, scales = 'free_y')+
+  facet_wrap(vars(family_f), scales = 'free_y', ncol = 3)+
+  #facet_grid(family_f~fraction, scales = 'free_y')+
   guides(fill = 'none')+
   theme_bw()+
   theme(axis.text.x = element_text(size = 5), panel.grid.minor = element_blank(),
@@ -2689,7 +2689,7 @@ asv_tab_all_bloo_z_tax |>
 
 ##plot all seasons together (seasonal anomalies?)
 asv_tab_all_bloo_z_tax$season <- asv_tab_all_bloo_z_tax$season |>
-  factor(levels = c('winter', 'spring', 'summer', 'autum'))
+  factor(levels = c('winter', 'spring', 'summer', 'autumn'))
 asv_tab_all_bloo_z_tax |>
   dplyr::filter(abundance_type == 'relative_abundance') |>
   dplyr::filter(fraction == '0.2' & asv_num %in% bloo_02$value |
@@ -2915,17 +2915,18 @@ occurence_perc <- occurence_perc_02 |>
   bind_rows(occurence_perc_3)
 
 ###calculate number of anomalies > 0.1% in the dataset & z_score > 1.96
-#### we use number of total samples or number of presence of that ASV?
+#### we can use number of total samples per fraction
 anom_perc_3 <- asv_tab_all_bloo_z_tax |>
   dplyr::filter(fraction == '3' &
                   !abundance_type %in% c('pseudoabundance', 'zclr') &
                   asv_num %in% bloo_3$value) |>
-  dplyr::filter(abundance_value >= 0.1) |>
-  dplyr::mutate(z_score_ra_ed = case_when(is.na(z_score_ra) ~ 0,
-                                   z_score_ra == 'NaN' ~ 0,
-                                   z_score_ra = is.na(z_score_ra) ~ 0,
-                                   z_score_ra = is.infinite(z_score_ra) ~ 10000,
-                                   TRUE ~ z_score_ra)) |>
+  dplyr::filter(abundance_value >= 0.1 &
+                  z_score_ra >= 1.96) |>
+  # dplyr::mutate(z_score_ra_ed = case_when(is.na(z_score_ra) ~ 0,
+  #                                  z_score_ra == 'NaN' ~ 0,
+  #                                  z_score_ra = is.na(z_score_ra) ~ 0,
+  #                                  z_score_ra = is.infinite(z_score_ra) ~ 10000,
+  #                                  TRUE ~ z_score_ra)) |>
   dplyr::mutate(anomaly = case_when(z_score_ra >= 1.96 ~ 1,
                                           z_score_ra < 1.96 ~ 0)) |>
   group_by(asv_num) |>
@@ -2938,12 +2939,13 @@ anom_perc_02 <- asv_tab_all_bloo_z_tax |>
                   !abundance_type %in% c('pseudoabundance', 'zclr')
                 & asv_num %in% bloo_02$value
                 ) |>
-  dplyr::filter(abundance_value >= 0.1) |>
-  dplyr::mutate(z_score_ra_ed = case_when(is.na(z_score_ra) ~ 0,
-                                          z_score_ra == 'NaN' ~ 0,
-                                          z_score_ra = is.na(z_score_ra) ~ 0,
-                                          z_score_ra = is.infinite(z_score_ra) ~ 10000,
-                                          TRUE ~ z_score_ra)) |>
+  dplyr::filter(abundance_value >= 0.1 &
+                  z_score_ra >= 1.96) |>
+  # dplyr::mutate(z_score_ra_ed = case_when(is.na(z_score_ra) ~ 0,
+  #                                         z_score_ra == 'NaN' ~ 0,
+  #                                         z_score_ra = is.na(z_score_ra) ~ 0,
+  #                                         z_score_ra = is.infinite(z_score_ra) ~ 10000,
+  #                                         TRUE ~ z_score_ra)) |>
   dplyr::mutate(anomaly = case_when(z_score_ra >= 1.96 ~ 1,
                                     z_score_ra < 1.96 ~ 0)) |>
   group_by(asv_num) |>
@@ -2959,35 +2961,58 @@ tax_factors <- tax_factors |>
 
 anom_perc <- anom_perc |>
   left_join(tax_factors, by = c('asv_num'))
+
+#### we can use number of samples in which that ASV has been detected
+pres_s_02 <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(fraction == '0.2' &
+                  !abundance_type %in% c('pseudoabundance', 'zclr')
+                & asv_num %in% bloo_02$value) |>
+  dplyr::filter(abundance_value > 0) |>
+  group_by(asv_num) |>
+  dplyr::summarize(presence_asv = n())|>
+  dplyr::mutate(fraction = '0.2')
+
+pres_s_3 <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(fraction == '3' &
+                  !abundance_type %in% c('pseudoabundance', 'zclr')
+                & asv_num %in% bloo_3$value) |>
+  dplyr::filter(abundance_value > 0) |>
+  group_by(asv_num) |>
+  dplyr::summarize(presence_asv = n()) |>
+  dplyr::mutate(fraction = '3')
+
+pres_s <- pres_s_02 |>
+  bind_rows(pres_s_3)
+
 # |>
 #   dplyr::mutate(phylum_f = as_factor(phylum),
 #                 family_f = as_factor(family),
 #                 order_f = as_factor(order),
 #                 class_f = as_factor(class),
 #                 asv_num_f = as_factor(asv_num))
-
-anom_perc$class_f <-  factor(anom_perc$class_f, 
-                                          levels=unique(anom_perc$class_f[order(anom_perc$phylum_f)]), 
-                                          ordered=TRUE)
-
-anom_perc$order_f <-  factor(anom_perc$order_f, 
-                                          levels=unique(anom_perc$order_f[order(anom_perc$phylum_f,
-                                                                                             anom_perc$class_f)]), 
-                                          ordered=TRUE)
-
-anom_perc$family_f <-  factor(anom_perc$family_f, 
-                                           levels=unique(anom_perc$family_f[order(anom_perc$phylum_f,
-                                                                                               anom_perc$class_f,
-                                                                                               anom_perc$order_f)]), 
-                                           ordered=TRUE)
-
-
-anom_perc$asv_num <-  factor(anom_perc$asv_num, 
-                                            levels=unique(anom_perc$asv_num[order(anom_perc$phylum_f,
-                                                                                                 anom_perc$class_f,
-                                                                                                 anom_perc$order_f,
-                                                                                                 anom_perc$family_f)]), 
-                                            ordered=TRUE)
+# 
+# anom_perc$class_f <-  factor(anom_perc$class_f, 
+#                                           levels=unique(anom_perc$class_f[order(anom_perc$phylum_f)]), 
+#                                           ordered=TRUE)
+# 
+# anom_perc$order_f <-  factor(anom_perc$order_f, 
+#                                           levels=unique(anom_perc$order_f[order(anom_perc$phylum_f,
+#                                                                                              anom_perc$class_f)]), 
+#                                           ordered=TRUE)
+# 
+# anom_perc$family_f <-  factor(anom_perc$family_f, 
+#                                            levels=unique(anom_perc$family_f[order(anom_perc$phylum_f,
+#                                                                                                anom_perc$class_f,
+#                                                                                                anom_perc$order_f)]), 
+#                                            ordered=TRUE)
+# 
+# 
+# anom_perc$asv_num <-  factor(anom_perc$asv_num, 
+#                                             levels=unique(anom_perc$asv_num[order(anom_perc$phylum_f,
+#                                                                                                  anom_perc$class_f,
+#                                                                                                  anom_perc$order_f,
+#                                                                                                  anom_perc$family_f)]), 
+#                                             ordered=TRUE)
 
 anom_perc |>
   ggplot(aes(interaction(family_f, asv_num_f), anom_perc, fill = order_f))+
@@ -3002,8 +3027,70 @@ anom_perc |>
         panel.grid = element_blank(),
         strip.background = element_blank())
 
-### Blooming residuals 
+### I explore more the relationship between the anomaly percentage and their occurrence
+
+anom_occurence <- anom_perc |>
+  left_join(occurence_perc) |>
+  left_join(pres_s)  |>
+  dplyr::mutate(anom_pres = n_anom/presence_asv)
+
+anom_occurence |>
+  dplyr::mutate(anom_pres = n_anom/presence_asv) |>
+  ggplot(aes(occurence_perc, anom_perc, size = n_anom))+
+  geom_point(aes(color = family_f))+
+  facet_wrap(vars(fraction), labeller = labs_fraction)+
+  scale_x_log10(expand = c(0,0), labels = percent_format())+
+  scale_y_log10(labels = percent_format())+
+  scale_color_manual(values = palette_family_assigned_bloo)+
+  labs(x = 'Occurrence', y = 'Anomaly %', color = 'Family', size = 'Number of\npotentialblooming\nevents')+
+  guides(size = guide_legend(ncol = 3))+
+  theme_bw()+
+  theme(panel.grid = element_blank(),
+        strip.background = element_blank(),
+        text = element_text(size = 5),
+        legend.key.size = unit(4, 'mm'))
+
+###size is num of anomalies dividied by the number of times an asv is detected
+anom_occurence |>
+  ggplot(aes(occurence_perc, anom_perc, size = anom_pres))+
+  geom_point(aes(color = family_f))+
+  facet_wrap(vars(fraction), labeller = labs_fraction)+
+  scale_x_log10(expand = c(0,0), labels = percent_format())+
+  scale_y_log10(labels = percent_format())+
+  scale_color_manual(values = palette_family_assigned_bloo)+
+  labs(x = 'Occurrence', y = 'Anomaly %', color = 'Family', 
+       size = '% of\npotentialblooming\nevents\ndivided by\npresence in samples')+
+  guides(size = guide_legend(ncol = 3))+
+  theme_bw()+
+  theme(panel.grid = element_blank(),
+        strip.background = element_blank(),
+        text = element_text(size = 5),
+        legend.key.size = unit(4, 'mm'))
+
+anom_occurence |>
+  colnames()
+
+anom_occurence |>
+  ggplot(aes(anom_pres, anom_perc, group = fraction, size = n_anom))+ #, shape = fraction
+  geom_point(aes(color = family_f))+
+  #geom_smooth(aes(group = fraction), method = 'loess', se = F, span = 5)+
+  scale_color_manual(values = palette_family_assigned_bloo)+
+  labs(x = 'Anomaly (%) based on presence', y = 'Anomaly (%) based on all samples', color = 'Family',
+       size = 'Number of anomalies')+
+  facet_wrap(vars(fraction), labeller = labs_fraction)+
+  scale_x_log10(expand = c(0,0), labels = percent_format())+
+  scale_y_log10(labels = percent_format())+
+  guides(size = guide_legend(ncol = 3))+
+  theme_bw()+
+  theme(panel.grid = element_blank(),
+        strip.background = element_blank(),
+        text = element_text(size = 5),
+        legend.key.size = unit(4, 'mm'))
+
+### Blooming residuals -----
 #### Here we would like to plot the difference between the mean abundance of an ASV and it's abundance during a blooming event.
+source('src/calculate_and_plot_residuals.R')
+library(purrr)
 #### mean abundance of each ASVs 
 mean_abund_f_asv <- asv_tab_all_bloo_z_tax |>
   dplyr::filter(abundance_type == 'relative_abundance') |>
@@ -3030,37 +3117,168 @@ anom_rel_abund_02 <- asv_tab_all_bloo_z_tax |>
 anom_rel_abund <- anom_rel_abund_3 |>
   bind_rows(anom_rel_abund_02)
 
-mean_abund_f_asv_asv_1 <- mean_abund_f_asv |>
-  dplyr::filter(asv_num == 'asv1' & 
-                  fraction == '0.2')
+# mean_abund_f_asv_asv_1 <- mean_abund_f_asv |>
+#   dplyr::filter(asv_num == 'asv1' & 
+#                   fraction == '0.2')
+# ### asv1
+# anom_rel_abund |>
+#   left_join(mean_abund_f_asv, by = c('asv_num', 'fraction')) |>
+#   dplyr::mutate(residual = abundance_value - mean_abund) |>
+#   dplyr::filter(asv_num == 'asv1' & 
+#                   fraction == '0.2') |>
+#   ggplot(aes(date, residual))+
+#   geom_point()+
+#   geom_hline(yintercept = mean_abund_f_asv_asv_1$mean_abund)+
+#   #facet_wrap(vars(fraction))+
+#   geom_segment(aes(x = date, y = residual, xend = date, yend = mean_abund_f_asv_asv_1$mean_abund), linetype = "dashed")+ 
+#   coord_flip()+
+#   theme_bw()+
+#   theme(panel.grid = element_blank(),
+#         strip.background = element_blank(),
+#         text = element_text(size = 5),
+#         legend.key.size = unit(4, 'mm'))
+# 
+# anom_rel_abund |>
+#   left_join(mean_abund_f_asv, by = c('asv_num', 'fraction')) |>
+#   dplyr::mutate(residual = abundance_value - mean_abund) |>
+#   dplyr::filter(asv_num == 'asv1' & 
+#                   fraction == '3') |>
+#   ggplot(aes(date, residual))+
+#   geom_point()+
+#   geom_hline(yintercept = mean_abund_f_asv_asv_1$mean_abund)+
+#   #facet_wrap(vars(fraction))+
+#   geom_segment(aes(x = date, y = residual, xend = date, yend = mean_abund_f_asv_asv_1$mean_abund), linetype = "dashed")+ 
+#   coord_flip()+
+#   theme_bw()+
+#   theme(panel.grid = element_blank(),
+#         strip.background = element_blank(),
+#         text = element_text(size = 5),
+#         legend.key.size = unit(4, 'mm'))
+# 
+# ## asv38
+# anom_rel_abund |>
+#   left_join(mean_abund_f_asv, by = c('asv_num', 'fraction')) |>
+#   dplyr::mutate(residual = abundance_value - mean_abund) |>
+#   dplyr::filter(asv_num == 'asv38' & 
+#                   fraction == '0.2') |>
+#   ggplot(aes(date, residual))+
+#   geom_point()+
+#   geom_hline(yintercept = mean_abund_f_asv_asv_1$mean_abund)+
+#   #facet_wrap(vars(fraction))+
+#   geom_segment(aes(x = date, y = residual, xend = date, yend = mean_abund_f_asv_asv_1$mean_abund), linetype = "dashed")+ 
+#   coord_flip()+
+#   theme_bw()+
+#   theme(panel.grid = element_blank(),
+#         strip.background = element_blank(),
+#         text = element_text(size = 5),
+#         legend.key.size = unit(4, 'mm'))
+# 
+# anom_rel_abund |>
+#   left_join(mean_abund_f_asv, by = c('asv_num', 'fraction')) |>
+#   dplyr::mutate(residual = abundance_value - mean_abund) |>
+#   dplyr::filter(asv_num == 'asv38' & 
+#                   fraction == '3') |>
+#   ggplot(aes(date, residual))+
+#   geom_point()+
+#   geom_hline(yintercept = mean_abund_f_asv_asv_1$mean_abund)+
+#   #facet_wrap(vars(fraction))+
+#   geom_segment(aes(x = date, y = residual, xend = date, yend = mean_abund_f_asv_asv_1$mean_abund), linetype = "dashed")+ 
+#   coord_flip()+
+#   theme_bw()+
+#   theme(panel.grid = element_blank(),
+#         strip.background = element_blank(),
+#         text = element_text(size = 5),
+#         legend.key.size = unit(4, 'mm'))
+#
+# ## asv27
+# anom_rel_abund |>
+#   left_join(mean_abund_f_asv, by = c('asv_num', 'fraction')) |>
+#   dplyr::mutate(residual = abundance_value - mean_abund) |>
+#   dplyr::filter(asv_num == 'asv27' & 
+#                   fraction == '0.2') |>
+#   ggplot(aes(date, residual))+
+#   geom_point()+
+#   geom_hline(yintercept = mean_abund_f_asv_asv_1$mean_abund)+
+#   #facet_wrap(vars(fraction))+
+#   geom_segment(aes(x = date, y = residual, xend = date, yend = mean_abund_f_asv_asv_1$mean_abund), linetype = "dashed")+ 
+#   coord_flip()+
+#   theme_bw()+
+#   theme(panel.grid = element_blank(),
+#         strip.background = element_blank(),
+#         text = element_text(size = 5),
+#         legend.key.size = unit(4, 'mm'))
+# 
+# anom_rel_abund |>
+#   left_join(mean_abund_f_asv, by = c('asv_num', 'fraction')) |>
+#   dplyr::mutate(residual = abundance_value - mean_abund) |>
+#   dplyr::filter(asv_num == 'asv27' & 
+#                   fraction == '3') |>
+#   ggplot(aes(date, residual))+
+#   geom_point()+
+#   geom_hline(yintercept = mean_abund_f_asv_asv_1$mean_abund)+
+#   #facet_wrap(vars(fraction))+
+#   geom_segment(aes(x = date, y = residual, xend = date, yend = mean_abund_f_asv_asv_1$mean_abund), linetype = "dashed")+ 
+#   coord_flip()+
+#   theme_bw()+
+#   theme(panel.grid = element_blank(),
+#         strip.background = element_blank(),
+#         text = element_text(size = 5),
+#         legend.key.size = unit(4, 'mm'))
 
-anom_rel_abund |>
-  left_join(mean_abund_f_asv, by = c('asv_num', 'fraction')) |>
-  dplyr::mutate(residual = abundance_value - mean_abund) |>
-  dplyr::filter(asv_num == 'asv1' & 
-                  fraction == '0.2') |>
-  ggplot(aes(date, residual))+
-  geom_point()+
-  geom_hline(yintercept = mean_abund_f_asv_asv_1$mean_abund)+
-  #facet_wrap(vars(fraction))+
-  geom_segment(aes(x = date, y = residual, xend = date, yend = mean_abund_f_asv_asv_1$mean_abund), linetype = "dashed")
+plot_residuals <- function(data_anom_abund, data_mean_abund_asv, asv_num, community_fraction){
+  plot_residuals <- data_anom_abund |>
+    left_join(data_mean_abund_asv, by = c('asv_num', 'fraction')) |>
+    dplyr::mutate(residual = abundance_value - mean_abund) |>
+    dplyr::filter(asv_num == {{asv_num}} & 
+                    fraction == {{community_fraction}}) |>
+    ggplot(aes(date, residual))+
+    geom_point()+
+    geom_hline(yintercept = mean_abund_f_asv_asv_1$mean_abund)+
+    #facet_wrap(vars(fraction))+
+    geom_segment(aes(x = date, y = residual, xend = date, yend = mean_abund_f_asv_asv_1$mean_abund), linetype = "dashed")+ 
+    labs(title = {{asv_num}})+
+    scale_x_datetime(date_labels = "%Y", limits = c(min(data_anom_abund$date), max(data_anom_abund$date)))+
+    labs(x = 'Time', y = 'Difference from mean abundance during\n potential blooming event')+
+    #coord_flip()+
+    theme_bw()+
+    theme(panel.grid = element_blank(),
+          strip.background = element_blank(),
+          text = element_text(size = 5),
+          legend.key.size = unit(4, 'mm'))
 
+return(plot_residuals)
+}
 
-mean_abund_f_asv_asv_1 <- mean_abund_f_asv |>
-  dplyr::filter(asv_num == 'asv1' & 
-                  fraction == '3')
+#example of individual plot computing residuals.
+# plot_residuals(data_anom_abund = anom_rel_abund,
+#                data_mean_abund_asv = mean_abund_f_asv,
+#                asv_num = 'asv17',
+#                community_fraction = '0.2')
 
-anom_rel_abund |>
-  left_join(mean_abund_f_asv, by = c('asv_num', 'fraction')) |>
-  dplyr::mutate(residual = abundance_value - mean_abund) |>
-  dplyr::filter(asv_num == 'asv1' & 
-                  fraction == '3') |>
-  ggplot(aes(date, residual))+
-  geom_point()+
-  geom_hline(yintercept = mean_abund_f_asv_asv_1$mean_abund)+
-  #facet_wrap(vars(fraction))+
-  geom_segment(aes(x = date, y = residual, xend = date, yend = mean_abund_f_asv_asv_1$mean_abund), linetype = "dashed")
+##little function to compute residuals for all ASVs in PA or FL
+create_plot_02 <- function(asv_num) {
+  plot_residuals(
+    data_anom_abund = anom_rel_abund,
+    data_mean_abund_asv = mean_abund_f_asv,
+    asv_num = {{asv_num}},
+    community_fraction = '0.2'
+  )
+}
 
+create_plot_3 <- function(asv_num) {
+  plot_residuals(
+    data_anom_abund = anom_rel_abund,
+    data_mean_abund_asv = mean_abund_f_asv,
+    asv_num = {{asv_num}},
+    community_fraction = '3'
+  )
+}
+
+plots_list_02 <- map(unique(bloo_02$value), create_plot_02)
+plots_list_3 <- map(unique(bloo_3$value), create_plot_3)
+
+residuals_02 <- grid.arrange(grobs = plots_list_02, ncol = 4) 
+residuals_3 <- grid.arrange(grobs = plots_list_3, ncol = 5) 
 
 # EXPLORATION OF THE RELATIONSHIP BETWEEN BLOOMING EVENTS AND COMMUNITY ALTERATION----
 ## when blooming events happen we need the community evenness to be lower than 50%? Also high beta diversity?
