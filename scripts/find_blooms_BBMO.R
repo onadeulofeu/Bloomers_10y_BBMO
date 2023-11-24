@@ -3091,11 +3091,64 @@ anom_occurence |>
 #### Here we would like to plot the difference between the mean abundance of an ASV and it's abundance during a blooming event.
 source('src/calculate_and_plot_residuals.R')
 library(purrr)
+library(EnvStats) ##compute geometric mean and geometric sd
 #### mean abundance of each ASVs 
+
 mean_abund_f_asv <- asv_tab_all_bloo_z_tax |>
   dplyr::filter(abundance_type == 'relative_abundance') |>
   dplyr::group_by(asv_num, fraction) |>
-  dplyr::summarize(mean_abund = mean(abundance_value))
+  dplyr::summarize(mean_abund = mean(abundance_value),
+                   sd_abund = sd(abundance_value))
+#geometric mean
+gm <- function(x){
+  exp(mean(log(x[x>0]))) #remove 0 values, one of the limitations of the geometric mean is that it is not useful for datasets that contain one or more zero values.
+}
+##we can work with normal mean or geometric mean, previously to computing geometric mean we need to deal with 0. 
+
+asv_tab_bbmo_10y_w |>
+  row.names() <- asv_tab_bbmo_10y_w [,1]
+
+# sample_id_col <- asv_tab_bbmo_10y_w %$%
+#   sample_id
+
+m_bbmo_10y_f <- m_bbmo_10y |>
+  dplyr::select(fraction, asv_num, samples_id)
+
+#write.csv(asv_tab_bbmo_10y_w, 'data/asv_tab_bbmo_10y_w.csv')
+asv_tab_bbmo_10y_w <- read.csv( 'data/asv_tab_bbmo_10y_w.csv', row.names = 'X')
+
+asv_tab_bbmo_10y_w_for_gm <- asv_tab_bbmo_10y_w |>
+  dplyr::select(-sample_id) |>
+  # dplyr::select(bloo_02$value &
+  #                  bloo_3$value) |>
+  cmultRepl(method = 'CZM', output = 'p-count', z.warning = 0.99
+                     #adjust = 0.2,    t = 237, s = 7849
+  ) |>
+  as_tibble(rownames = "sample_id") %>%
+  pivot_longer(-sample_id, names_to = 'asv_num') %>%
+  rename(reads = value) |>
+  calculate_rel_abund(group_cols = sample_id) |>
+  dplyr::mutate(fraction = case_when(str_detect(sample_id, '0.2_') ~ 0.2,
+                                     str_detect(sample_id, '3_') ~ 3)) |>
+  dplyr::filter(asv_num %in% bloo_02$value & fraction == '0.2' |
+                  asv_num %in% bloo_3$value & fraction == '0.2')
+
+##calculate geometric mean from relative abundances from reads edited to deal with 0es. NOT SURE IF THIS IS CORRECT!
+mean_abund_f_asv_geo <- asv_tab_bbmo_10y_w_for_gm |>
+  dplyr::group_by(asv_num, fraction) |>
+  #dplyr::filter(abundance_value > 0 ) |>
+  dplyr::summarize(#mean_abund = mean(abundance_value),
+                  #mean_gm = gm(abundance_value),
+                  mean_abund = geoMean(reads, na.rm = T), 
+                  sd_abund = geoSD(reads, na.rm = T)) 
+
+mean_abund_f_asv_geo$fraction <- mean_abund_f_asv_geo$fraction |>
+  factor(levels = c('0.2', '3'))
+
+mean_abund_f_asv_geo |>
+  dplyr::filter(!is.na(sd_abund)) %$%
+  sd_abund |>
+  range() # 1.026426 34.423793
 
 ## recover each abundance during a blooming event
 anom_rel_abund_3 <- asv_tab_all_bloo_z_tax |>
@@ -3225,35 +3278,23 @@ anom_rel_abund <- anom_rel_abund_3 |>
 #         text = element_text(size = 5),
 #         legend.key.size = unit(4, 'mm'))
 
-plot_residuals <- function(data_anom_abund, data_mean_abund_asv, asv_num, community_fraction){
-  plot_residuals <- data_anom_abund |>
-    left_join(data_mean_abund_asv, by = c('asv_num', 'fraction')) |>
-    dplyr::mutate(residual = abundance_value - mean_abund) |>
-    dplyr::filter(asv_num == {{asv_num}} & 
-                    fraction == {{community_fraction}}) |>
-    ggplot(aes(date, residual))+
-    geom_point()+
-    geom_hline(yintercept = mean_abund_f_asv_asv_1$mean_abund)+
-    #facet_wrap(vars(fraction))+
-    geom_segment(aes(x = date, y = residual, xend = date, yend = mean_abund_f_asv_asv_1$mean_abund), linetype = "dashed")+ 
-    labs(title = {{asv_num}})+
-    scale_x_datetime(date_labels = "%Y", limits = c(min(data_anom_abund$date), max(data_anom_abund$date)))+
-    labs(x = 'Time', y = 'Difference from mean abundance during\n potential blooming event')+
-    #coord_flip()+
-    theme_bw()+
-    theme(panel.grid = element_blank(),
-          strip.background = element_blank(),
-          text = element_text(size = 5),
-          legend.key.size = unit(4, 'mm'))
+timeseries_limits <- tibble(xmin = '2004-01-26', xmax = '2013-10-15') |>
+  dplyr::mutate(date_min = as.POSIXct(xmin, format = "%Y-%m-%d"),
+                date_max = (as.POSIXct(xmax, format = "%Y-%m-%d")))
 
-return(plot_residuals)
-}
 
 #example of individual plot computing residuals.
-# plot_residuals(data_anom_abund = anom_rel_abund,
-#                data_mean_abund_asv = mean_abund_f_asv,
-#                asv_num = 'asv17',
-#                community_fraction = '0.2')
+##normal mean
+plot_residuals(data_anom_abund = anom_rel_abund,
+               data_mean_abund_asv = mean_abund_f_asv,
+               asv_num = 'asv22',
+               community_fraction = '0.2')
+
+## geometric mean
+plot_residuals(data_anom_abund = anom_rel_abund,
+               data_mean_abund_asv = mean_abund_f_asv_geo,
+               asv_num = 'asv22',
+               community_fraction = '0.2')
 
 ##little function to compute residuals for all ASVs in PA or FL
 create_plot_02 <- function(asv_num) {
@@ -3279,6 +3320,9 @@ plots_list_3 <- map(unique(bloo_3$value), create_plot_3)
 
 residuals_02 <- grid.arrange(grobs = plots_list_02, ncol = 4) 
 residuals_3 <- grid.arrange(grobs = plots_list_3, ncol = 5) 
+
+View(residuals_02)
+
 
 # EXPLORATION OF THE RELATIONSHIP BETWEEN BLOOMING EVENTS AND COMMUNITY ALTERATION----
 ## when blooming events happen we need the community evenness to be lower than 50%? Also high beta diversity?
