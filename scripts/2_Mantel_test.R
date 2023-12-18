@@ -108,6 +108,202 @@ bbmo_20y_v_red <-  bbmo_20y_v |>
   dplyr::filter(!sample_id_ed2 == 'BL130709') |> #transecte DEVOTES
   dplyr::distinct(sample_id_ed2, total_vlp, low_vlp, med_vlp, high_vlp)
 
+## we also have some data for the radiometer even though it has been broken for a period -----
+### radiometer units llum (µE m-2 s-1)
+library(readxl)
+
+radiometer_data <- read_xlsx('data/raw/llum_Blanes_2005-14_ed.xlsx') |>
+  mutate_all(~str_replace_all(., '/', 'NA')) |>
+  pivot_longer(starts_with('BL'), names_to = 'sample_id', values_to = 'light') |>
+  mutate_all(~str_replace_all(., '_', '')) |>
+  right_join(m_bbmo_10y_ed, by = c('sample_id' = 'sample_id_sim'), relationship = "many-to-many") |>
+  dplyr::mutate(light = as.numeric(light))
+
+radiometer_data$sample_id
+
+m_bbmo_10y_ed <- m_bbmo_10y |>
+ separate(sample_id, into = c('sample_id_sim', 'fraction', 'code'), sep = '_') |>
+  dplyr::filter(fraction == '0.2')
+
+m_bbmo_10y_ed$samname
+
+radiometer_data |>
+  dplyr::filter(prof == '0') |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  ggplot(aes(date, light))+
+  geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
+                                                    ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
+  geom_point(alpha = 0.6, size = 1/2)+
+  geom_line()+
+  labs(x = 'Time', y = 'Light')+
+  facet_grid(vars(environmental_variable), scales = 'free_y', cols = vars(type_of_env), drop = T)+
+  scale_y_continuous(labels = function(x) sprintf("%.1f", x),
+                     expand = c(0,0))+
+  scale_x_datetime(expand = c(0,0))+
+  theme_bw()+
+  theme(panel.grid.minor.y = element_blank(), 
+        strip.background = element_blank(), 
+        axis.text.y = element_text(size = 5),
+        panel.grid.major.y = element_blank())
+
+radiometer_data |>
+  colnames()
+
+radiometer_data |>
+  dplyr::mutate(date = as.POSIXct(date, format = "%Y-%m-%d"),
+                        prof = as.numeric(prof)) |>
+  dplyr::filter(light != is.na(light) &
+                  !is.na(prof)) |>
+  ggplot(aes(month, prof))+
+  geom_tile(aes(fill = light))+
+  scale_y_reverse()+
+  labs(x = 'Month', y = 'Depth (m)', fill = 'Light')+
+  facet_wrap(vars(year))+
+  #scale_fill_gradient()+
+  scale_fill_viridis_c(option = "magma")+
+  theme_light()+
+  theme(panel.grid.major.y = element_blank())
+harbour_restoration
+
+radiometer_data_mean <- radiometer_data |>
+  dplyr::mutate(prof = as.numeric(prof)) |>
+  dplyr::filter(prof >= 5) |>
+  group_by(sample_id) |>
+  dplyr::summarize(mean_surf_light = mean(light),
+                sd_surf_light = sd(light)) |>
+  left_join(m_bbmo_10y_ed, by = c('sample_id' = 'sample_id_sim')) |>
+  dplyr::mutate(restoration = case_when(
+    between(date, as.Date('2010-03-24', format = "%Y-%m-%d"), as.Date('2012-06-09', format = "%Y-%m-%d")) ~ 'restoration',
+    date < as.Date('2010-03-24', format = "%Y-%m-%d") ~ 'no-restoration',
+    date > as.Date('2012-06-09', format = "%Y-%m-%d") ~ 'no-restoration'
+  )) |>
+  dplyr::mutate(year = as.factor(year),
+                restoration = as.factor(restoration))
+
+##the same but by season
+radiometer_data_mean_seas <- radiometer_data |>
+  dplyr::mutate(prof = as.numeric(prof),
+                      light = as.numeric(light)) |>
+  dplyr::mutate(restoration = case_when(
+    between(date, as.Date('2010-03-24', format = "%Y-%m-%d"), as.Date('2012-06-09', format = "%Y-%m-%d")) ~ 'restoration',
+    date < as.Date('2010-03-24', format = "%Y-%m-%d") ~ 'no-restoration',
+    date > as.Date('2012-06-09', format = "%Y-%m-%d") ~ 'no-restoration'
+  )) |>
+  dplyr::filter(prof >= 5) |>
+  dplyr::filter(!is.na(light)) |>
+  group_by(year, season, restoration) |>
+  dplyr::summarize(mean_surf_light = mean(light),
+                   sd_surf_light = sd(light)) |>
+  dplyr::mutate(year = as.factor(year),
+                restoration = as.factor(restoration))
+
+radiometer_data_mean_seas$season <- radiometer_data_mean_seas$season |>
+  factor(levels = c('winter', 'spring', 'summer', 'autumn'))
+
+labs_season <- as_labeller(c('winter' = 'Winter',
+                           'spring' = 'Spring', 
+                           'summer' = 'Summer',
+                           'autumn' = 'Autumn'))
+
+radiometer_data_mean_seas |>
+  ggplot(aes(x = season, y = mean_surf_light, shape = restoration)) +
+  geom_boxplot(aes(x = season, y = mean_surf_light, shape = restoration), alpha = 0.1) +
+  geom_point(aes(color = year, shape = restoration), position = position_jitterdodge(dodge.width = 0.1, jitter.width = 0.1)) +
+  scale_color_manual(values = palette_years) +
+  facet_wrap(vars(restoration))+
+  labs(x = 'Season', color = 'Year', y = 'Light', shape = 'Harbour restoration')+
+  scale_fill_manual(values = palette_years) +
+  scale_x_discrete(labels = labs_season)+
+  theme_light()
+
+### restoration and no-restoration for other environmental data ----
+m_bbmo_10y_ed_f <- m_bbmo_10y |>
+  dplyr::select(date, year, season, month, sample_id) |>
+  dplyr::mutate(restoration = case_when(
+    between(date, as.Date('2010-03-24', format = "%Y-%m-%d"), as.Date('2012-06-09', format = "%Y-%m-%d")) ~ 'restoration',
+    date < as.Date('2010-03-24', format = "%Y-%m-%d") ~ 'no-restoration',
+    date > as.Date('2012-06-09', format = "%Y-%m-%d") ~ 'no-restoration'
+  ))
+
+bbmo_env_02_seas <- bbmo_env_02 |>
+  pivot_longer(cols = (-sample_id), values_to = 'values', names_to = 'environmental_var') |>
+  left_join(m_bbmo_10y_ed_f) |>
+  dplyr::mutate(year = as.factor(year),
+                restoration = as.factor(restoration))
+
+bbmo_env_02_seas$season <- bbmo_env_02_seas$season |>
+  factor(levels = c('winter', 'spring', 'summer', 'autumn'))
+
+bbmo_env_02_seas$environmental_var |>
+  unique()
+
+bbmo_env_02_seas |>
+  dplyr::filter(environmental_var %in% c("day_length",  "temperature", "secchi",  "salinity", "chla_total",  "chla_3um")) |>
+  ggplot(aes(x = season, y = values, shape = restoration)) +
+  geom_boxplot(aes(x = season, y = values, shape = restoration), alpha = 0.1) +
+  geom_point(aes(color = year, shape = restoration), position = position_jitterdodge(dodge.width = 0.1, jitter.width = 0.1)) +
+  scale_color_manual(values = palette_years) +
+  facet_grid(environmental_var~restoration , scales = 'free_y', labeller = labs_env)+
+  labs(x = 'Season', color = 'Year', y = '', shape = 'Harbour restoration')+
+  scale_fill_manual(values = palette_years) +
+  scale_x_discrete(labels = labs_season)+
+  theme_light()+
+  theme(text = element_text(size = 12), strip.text.x = element_blank())
+
+bbmo_env_02_seas |>
+  dplyr::filter(environmental_var %in% c("PO4", "NH4","NO2", "NO3","Si","BP_FC1.55")) |>
+  ggplot(aes(x = season, y = values, shape = restoration)) +
+  geom_boxplot(aes(x = season, y = values, shape = restoration), alpha = 0.1) +
+  geom_point(aes(color = year, shape = restoration), position = position_jitterdodge(dodge.width = 0.1, jitter.width = 0.1)) +
+  scale_color_manual(values = palette_years) +
+  facet_grid(environmental_var~restoration , scales = 'free_y', labeller = labs_env)+
+  labs(x = 'Season', color = 'Year', y = '', shape = 'Harbour restoration')+
+  scale_fill_manual(values = palette_years) +
+  scale_x_discrete(labels = labs_season)+
+  theme_light()+
+  theme(text = element_text(size = 12), strip.text.x = element_blank())
+
+bbmo_env_02_seas |>
+  dplyr::filter(environmental_var %in% c("PNF_Micro", "PNF2_5um_Micro" ,"PNF_5um_Micro", "dryptomonas", "micromonas" ,"HNF_Micro"  )) |>
+  ggplot(aes(x = season, y = values, shape = restoration)) +
+  geom_boxplot(aes(x = season, y = values, shape = restoration), alpha = 0.1) +
+  geom_point(aes(color = year, shape = restoration), position = position_jitterdodge(dodge.width = 0.1, jitter.width = 0.1)) +
+  scale_color_manual(values = palette_years) +
+  facet_grid(environmental_var~restoration , scales = 'free_y', labeller = labs_env)+
+  labs(x = 'Season', color = 'Year', y = '', shape = 'Harbour restoration')+
+  scale_fill_manual(values = palette_years) +
+  scale_x_discrete(labels = labs_season)+
+  theme_light()+
+  theme(text = element_text(size = 12), strip.text.x = element_blank())
+
+bbmo_env_02_seas |>
+  dplyr::filter(environmental_var %in% c("HNF2_5um_Micro", "HNF_5um_Micro", "LNA", "HNA", "prochlorococcus_FC", "Peuk1", "Peuk2" )) |>
+  ggplot(aes(x = season, y = values, shape = restoration)) +
+  geom_boxplot(aes(x = season, y = values, shape = restoration), alpha = 0.1) +
+  geom_point(aes(color = year, shape = restoration), position = position_jitterdodge(dodge.width = 0.1, jitter.width = 0.1)) +
+  scale_color_manual(values = palette_years) +
+  facet_grid(environmental_var~restoration , scales = 'free_y', labeller = labs_env)+
+  labs(x = 'Season', color = 'Year', y = '', shape = 'Harbour restoration')+
+  scale_fill_manual(values = palette_years) +
+  scale_x_discrete(labels = labs_season)+
+  theme_light()+
+  theme(text = element_text(size = 12), strip.text.x = element_blank())
+
+bbmo_env_02_seas |>
+  dplyr::filter(environmental_var %in% c( "bacteria_joint", "synechococcus", "low_vlp", "med_vlp", "high_vlp", "total_vlp" )) |>
+  ggplot(aes(x = season, y = values, shape = restoration)) +
+  geom_boxplot(aes(x = season, y = values, shape = restoration), alpha = 0.1) +
+  geom_point(aes(color = year, shape = restoration), position = position_jitterdodge(dodge.width = 0.1, jitter.width = 0.1)) +
+  scale_color_manual(values = palette_years) +
+  facet_grid(environmental_var~restoration , scales = 'free_y', labeller = labs_env)+
+  labs(x = 'Season', color = 'Year', y = '', shape = 'Harbour restoration')+
+  scale_fill_manual(values = palette_years) +
+  scale_x_discrete(labels = labs_season)+
+  theme_light()+
+  theme(text = element_text(size = 12), strip.text.x = element_blank())
+
+  
+
 # Mantel test whole community structure vs environmental data------
 ### in this case we use the rarefied community to overcome the compositional problem previous to calculate
 ### the distances
@@ -535,8 +731,6 @@ asv_tab_bbmo_10y_l |> # upload the original table
 #                        method = 'spearman', 
 #                       permutations = 9999,
 #                        na.rm = TRUE)
-
-
 
 ## MANTEL TEST environmental variable (z-scores) vs community structure (transformed to zCLR)----
 

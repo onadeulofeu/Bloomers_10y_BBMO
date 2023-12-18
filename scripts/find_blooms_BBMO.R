@@ -17,7 +17,7 @@ library(zCompositions)
 #labels----
 labs_fraction <- as_labeller(c('0.2' = 'Free living (0.2 um)',
                                '3' = 'Particle attached (3 um)'))
-
+    
 labs_diversity <- as_labeller(c('community_eveness_rar' = 'Community Eveness', 
                                 'bray_curtis_result' = 'Bray-Curtis dissimilarity'))
 
@@ -2459,10 +2459,10 @@ asv_anom_all <- x |>
 
 ## I divide the different abundance values in separated plots and I filter only the potential bloomers in FL or PA-----
 bloo_02 <- read.csv('data/bloo_02.csv') |>
-  as.tibble()
+  as_tibble()
 
 bloo_3 <-read.csv('data/bloo_3.csv') |>
-  as.tibble()
+  as_tibble()
 
 ## preparation of the data for the plot
 asv_tab_bloo_rel_abund_z <- asv_tab_all_bloo_z_tax |>
@@ -2790,7 +2790,7 @@ asv_tab_all_bloo_z_tax |>
 # asv_tab_all_bloo_z_tax$date |>
 #   range()
 
-## per month---
+## per month----
 bloo_ev_month <- asv_tab_all_bloo_z_tax |>
   dplyr::filter(abundance_type == 'relative_abundance') |>
   dplyr::filter(fraction == '0.2' & asv_num %in% bloo_02$value |
@@ -2832,7 +2832,7 @@ asv_tab_all_bloo_z_tax |>
         axis.ticks = element_blank(), legend.position = 'right', axis.text.y = element_text(size = 7),
         axis.title.y = element_text(size = 7), strip.background = element_blank())
 
-## per season---
+## per season----
 bloo_ev_season <- asv_tab_all_bloo_z_tax |>
   dplyr::filter(abundance_type == 'relative_abundance') |>
   dplyr::filter(fraction == '0.2' & asv_num %in% bloo_02$value |
@@ -3478,13 +3478,6 @@ max_abund_asv_bloom_events <- asv_tab_all_bloo_z_tax |>
   dplyr::select(sample_id, asv_num, abundance_type, abundance_value) |>
   group_by(sample_id) |>
   slice_max(order_by = abundance_value, n = 3)
-  
-max_abund_asv_bloom_events |>
-  dim() == samples_with_bloom_event |>
-  dim() ##ROW should be TRUE (row - cols)
-
-samples_with_bloom_event_asv_abund <- samples_with_bloom_event |>
-  right_join(max_abund_asv_bloom_events)
 
 ## I would like to know more about these blooming events.
 ### Are they more present in PA or FL? Which is their taxonomy?----
@@ -3635,9 +3628,6 @@ blooming_events_fraction |>
         axis.title.x = element_blank(), axis.ticks.x = element_blank(), strip.background = element_blank())
 
 ### NMDS----
-bbmo_10y@otu_table |>
-  class()
-
 row.names(asv_tab_bbmo_10y_w_rar) <- asv_tab_bbmo_10y_w_rar[,1]  
 
 asv_tab_bbmo_10y_w_rar_ed <- asv_tab_bbmo_10y_w_rar[,-1]
@@ -3649,16 +3639,14 @@ data.dist <- vegdist(data.hel, method="bray")
 head(data.dist)
 data.nmds<-metaMDS(data.dist)                   # càlcul per poder col·locar a l'espai les comparacions entre comunitats
 str(data.nmds)                                 # stress num 0.137 (per sota de 20; és acceptable)
-data.nmds.points<-data.frame(data.nmds$points, Cluster = )  # convertir dades a data.frame per utilitzar amb qplot
+data.nmds.points<-data.frame(data.nmds$points)  # convertir dades a data.frame per utilitzar amb qplot
 plot(data.nmds.points)
 head(data.nmds.points)
 data.nmds.points |>
   colnames()
 
-
 # Create a data frame with NMDS coordinates and cluster information
-nmds_data <- data.frame(nmds_result$points, Cluster = clusters)
-
+#nmds_data <- data.frame(nmds_result$points, Cluster = clusters)
 
 nmds_bbmo_10y <- data.nmds.points |>
   rownames_to_column(var = 'sample_id') |>
@@ -4182,7 +4170,6 @@ occurrence_perc_tax |>
         axis.title.y = element_text(size = 14), strip.background = element_blank())
 
 ##distribution of zcores in the dataset----
-
 asv_tab_all_bloo_z_tax |>
   colnames()
 
@@ -4271,15 +4258,12 @@ asv_tab_all_bloo |>
         panel.grid.major = element_blank(),
         axis.ticks = element_blank(), legend.position = 'right', axis.text.y = element_text(size = 12),
         axis.title.y = element_text(size = 14), strip.background = element_blank())
-
 # 
 #   ggsave('bbmo_10y_bloomers_10perc.pdf', bbmo_10y_bloomers_10perc,
 #        path = "~/Documentos/Doctorat/BBMO/BBMO_bloomers/Results/Figures/",
 #        width = 230,
 #        height = 180,
 #        units = 'mm')
-
-
 
 # Analysis with years sequenced with Parada primers (2014-2015) -----
 
