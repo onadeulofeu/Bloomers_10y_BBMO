@@ -1315,7 +1315,6 @@ asv_tab_all_bloo_z_tax$asv_num_f <-  factor(asv_tab_all_bloo_z_tax$asv_num_f,
                                                                                                  asv_tab_all_bloo_z_tax$family_f)]), 
                                             ordered=TRUE)
 
-
 asv_tab_all_bloo_z_tax |>
   dplyr::filter(asv_num == 'asv38') |>
   dplyr::filter(abundance_type == 'relative_abundance') |>
