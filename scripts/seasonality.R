@@ -8,7 +8,121 @@ library(stringr)
 library(tidyverse)
 library(phyloseq)
 
-# Differentiate seasonal from non-seasonal bloomers
+# Differentiate seasonal from non-seasonal bloomers to analyze them separately----
+
+## Previous to the analysis we need to interpolate missing samples----
+### we use the most straightforward way which is linear interpolation
+#### for the FL faction I have already a complete dataset
+asv_tab_all_bloo_z_tax_02 <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(fraction == '0.2')
+
+asv_tab_all_bloo_z_tax_02_sam <- asv_tab_all_bloo_z_tax_02 |>
+  dplyr::select(date) |>
+  distinct(date) |>
+  as_tibble()
+
+asv_tab_all_bloo_z_tax |>
+  dplyr::filter(fraction == '0.2') |>
+  group_by(sample_id) |>
+  dplyr::reframe(n_samples = n())
+
+#### for the particle attached fraction
+asv_tab_all_bloo_z_tax_3 <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(fraction == '3')
+
+asv_tab_all_bloo_z_tax |>
+  dplyr::filter(fraction == '3') |>
+  group_by(sample_id) |>
+  dplyr::reframe(n_samples = n()) #117 samples
+
+asv_tab_all_bloo_z_tax_3_sam <- asv_tab_all_bloo_z_tax_3 |>
+  dplyr::select(date) |>
+  distinct(date) |>
+  as_tibble()
+ 
+asv_tab_all_bloo_z_tax_02_sam |>
+  anti_join(asv_tab_all_bloo_z_tax_3_sam)
+
+#### Missing samples to be interpolated in the particle attached fraction-----
+### 2004-03-22
+### 2005-02-15
+### 2005-05-10
+
+## prepare the dataset previous to computing the interpolation  
+asv_tab_all_bloo_3_interpol <- asv_tab_all_bloo_z_tax_3 |>
+  dplyr::select(date, abundance_value, asv_num, abundance_type) |>
+  dplyr::filter(#asv_num == 'asv179' &
+                  abundance_type == 'relative_abundance') |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d")))
+
+# Convert the target date to a Date object
+target_date1 <- as.POSIXct("2004-03-22", format = "%Y-%m-%d")
+target_date2 <- as.POSIXct("2005-02-15", format = "%Y-%m-%d")
+target_date3 <- as.POSIXct("2005-05-10", format = "%Y-%m-%d")
+
+# Perform linear interpolation
+asv_tab_all_bloo_3_interpol <- asv_tab_all_bloo_3_interpol |>
+  group_by(asv_num) |>
+  dplyr::reframe(target_date1 = approx(date, abundance_value, xout = target_date1)$y, #The approx function fits a linear spline to the data and estimates values at the specified target dates.
+                 target_date2 = approx(date, abundance_value, xout = target_date2)$y,
+                 target_date3 = approx(date, abundance_value, xout = target_date3)$y) |>
+  ungroup() |>
+  pivot_longer(cols = starts_with('target'), values_to = 'abundance_value', names_to = 'date') |> #prepare the dataset to add it to the general dataset
+  dplyr::mutate(date = case_when(date == 'target_date1' ~ '2004-03-22',
+                                 date == 'target_date2' ~ '2005-02-15',
+                                 date == 'target_date3' ~ '2005-05-10')) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d")))
+
+##check how do the interpolations look like are they normal?----
+ asv_tab_all_bloo_z_tax_3 |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::select(date, abundance_value, asv_num, abundance_type) |>
+  dplyr::filter(#asv_num == 'asv179' &
+    abundance_type == 'relative_abundance') |>
+  dplyr::select(-abundance_type) |>
+  bind_rows(asv_tab_all_bloo_3_interpol) |>
+  dplyr::mutate(interpolation = if_else(date %in% c(as.POSIXct('2004-03-22', format = "%Y-%m-%d"),
+                                                   as.POSIXct('2005-02-15', format = "%Y-%m-%d"),
+                                                   as.POSIXct('2005-05-10', format = "%Y-%m-%d")),  '#9F0011', '#080808', missing = '#080808')) |>
+  ggplot(aes(date, abundance_value))+
+  facet_wrap(vars(asv_num))+
+  scale_color_identity()+
+  geom_vline(xintercept = c(as.POSIXct('2004-03-22', format = "%Y-%m-%d"),
+                            as.POSIXct('2005-02-15', format = "%Y-%m-%d"),
+                            as.POSIXct('2005-05-10', format = "%Y-%m-%d")))+
+  geom_point(aes(color = interpolation), size = 1, alpha = 0.8)+
+  geom_line()+
+  theme_bw()+
+  theme(text = element_text(size = 3))
+
+##they all look fine so I will add them to the main dataset to proceed with the seasonality analysis
+
+## add the interpolated samples to the dataset----
+
+## I add the metadata and taxonmical data to them, and then I add it to the PA general dataset
+asv_tab_all_bloo_z_tax_02_subset <- asv_tab_all_bloo_z_tax_02 |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(date %in% c(as.POSIXct('2004-03-22', format = "%Y-%m-%d"),
+                            as.POSIXct('2005-02-15', format = "%Y-%m-%d"),
+                            as.POSIXct('2005-05-10', format = "%Y-%m-%d"))) |>
+  dplyr::filter(#asv_num == 'asv179' &
+    abundance_type == 'relative_abundance') |>
+  dplyr::select(-seq, -asv_num, -family, - phylum, -class, -order, -genus, -abundance_type, -abundance_value, -z_score_ra, -sample_id_num, -domain, -sample_id, -reads, -X) |>
+  dplyr::distinct()
+
+asv_tab_all_bloo_z_tax_3 <- asv_tab_all_bloo_z_tax_3 |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) 
+
+asv_tab_all_bloo_3_complete <- asv_tab_all_bloo_3_interpol |>
+  right_join(asv_tab_all_bloo_z_tax_02_subset, by = ('date')) |>
+  left_join(tax_bbmo_10y_new, by = 'asv_num') |>
+  bind_rows(asv_tab_all_bloo_z_tax_3)
+
+
+asv_tab_all_bloo_3_complete %$%
+  date |>
+  unique() #120 we have all the data!!!
+
 
 ## Adria's functions
 ## https://gitlab.com/aauladell/AAP_time_series here we have the source.
