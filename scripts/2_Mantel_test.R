@@ -41,7 +41,7 @@ source('src/calculate_z_scores.R')
 ## environmental variables labs----
 labs_env <- as_labeller(c("day_length" = 'Day length' ,
                                 "temperature" = 'Temperature',
-                                "secchi"  = 'Turbididty (Secchi disck)',    
+                                "secchi"  = 'Turbididty\n(Secchi disck)',    
                                 "salinity" = 'Salinity',
                                 "chla_total" = 'Total chl-a',
                                 "chla_3um" = 'Chl-a 3 um',
@@ -625,6 +625,13 @@ palete_gradient_cb <- c("#86a0df",
                      '#bbbbbb' = 0,
                      "#b81131") 
 
+
+palete_gradient_cb2 <- c("#3baf47",
+"#d5f2d2",
+'#FFFFFF' = 0,
+"#8011b8",
+"#4d009c")
+
 m_bbmo_10y |>
   colnames()
 
@@ -668,14 +675,32 @@ bbmo_env_z_ed$environmental_variable <- factor(bbmo_env_z_ed$environmental_varia
                                                                                           "high_vlp" ,
                                                                                           "total_vlp"))
 
+# Define a custom color palette with fixed 0 color----
+palete_gradient_cb5 <- c("#005300",
+                         "#8ec68b",
+                         "#FFFFFF", 
+                         "#8011b8", 
+                         "#4d009c")
+
+bbmo_env_z_ed |>
+  dplyr::filter(environmental_variable %in% 
+                  c("day_length", "temperature" ,"secchi" , "salinity" ,
+                                              "PO4",  "NH4" ,  "NO2" , "NO3" , "Si" )) %$% 
+  z_score_environmental_variable |>
+  range() ##which is the range of our palette, to have 0 at the middle
+
 phyico_chemical <- bbmo_env_z_ed |>
   dplyr::filter(environmental_variable %in% c("day_length", "temperature" ,"secchi" , "salinity" ,
                 "PO4",  "NH4" ,  "NO2" , "NO3" , "Si" )) |>
   ggplot(aes(consecutive_number, fct_rev(environmental_variable), fill = z_score_environmental_variable))+
   scale_y_discrete(labels = labs_env)+
-  #scale_fill_gradientn( colours = palete_gradient_cb)+
-  scale_fill_gradient2(low = "#0049B7",
-                       high = "#b81131", midpoint = 0)+
+  #scale_fill_gradientn( colours = palete_gradient_cb2)+
+  #scale_fill_gradient2(low = palete_gradient_cb2[1], high = palete_gradient_cb2[4], midpoint = 0) +
+  scale_fill_gradientn(colors = palete_gradient_cb5,
+                       breaks=c(-5, 0, 5),
+                       limits=c(-5.9,  5.9)) +
+  # scale_fill_gradient2(low = "#0049B7",
+  #                      high = "#b81131", midpoint = 0)+
   facet_wrap(.~year, scales = 'free_x', nrow = 1, switch = 'x')+
   geom_tile(alpha = 1)+
   geom_vline(xintercept = seq(0.5, 12, by = 12), linetype = "dashed", color = "darkgrey") +
@@ -683,19 +708,36 @@ phyico_chemical <- bbmo_env_z_ed |>
   scale_x_continuous(expand = c(0,0), labels = unique(bbmo_env_z_ed$year), breaks = unique(bbmo_env_z_ed$year))+
   labs(x = 'Year', y = '', fill = 'z-score')+
   theme_bw()+
-  theme(panel.grid = element_blank(), text = element_text(size = 6), legend.position = 'bottom',
-        panel.border = element_blank(), strip.background = element_blank())
+  theme(panel.grid = element_blank(), text = element_text(size = 5), legend.position = 'bottom',
+        panel.border = element_blank(), strip.background = element_blank(), plot.margin = unit(c(1,3,1,1), "mm"), 
+        legend.key.size = unit(3, "mm"))
 
-ggsave()
+  # ggsave('physico_chem_z_scores_bbmo.pdf', phyico_chemical,
+  #      path = "~/Documentos/Doctorat/BBMO/BBMO_bloomers/Results/Figures/",
+  #      width = 188,
+  #      height = 60,
+  #      units = 'mm')
 
-biological <- bbmo_env_z_ed |>
+  bbmo_env_z_ed |>
+    dplyr::filter(!(environmental_variable %in% c("day_length", "temperature" ,"secchi" , "salinity" ,
+                                                  "PO4",  "NH4" ,  "NO2" , "NO3" , "Si" )))  %$% 
+    z_score_environmental_variable |>
+    range() ##which is the range of our palette, to have 0 at the middle
+  
+ biological <-
+  bbmo_env_z_ed |>
   dplyr::filter(!(environmental_variable %in% c("day_length", "temperature" ,"secchi" , "salinity" ,
                                               "PO4",  "NH4" ,  "NO2" , "NO3" , "Si" ))) |>
   ggplot(aes(consecutive_number, fct_rev(environmental_variable), fill = z_score_environmental_variable))+
   scale_y_discrete(labels = labs_env)+
   #scale_fill_gradientn( colours = palete_gradient_cb)+
-  scale_fill_gradient2(low = "#0049B7",
-                       high = "#b81131", midpoint = 0)+
+  # scale_fill_gradient2(low = "#0049B7",
+  #                      high = "#b81131", midpoint = 0)+
+  # scale_fill_gradient2(colours = palete_gradient_cb2,
+  #                      midpoint = 0  # Set the midpoint value)+
+    scale_fill_gradientn(colors = palete_gradient_cb5,
+                         breaks=c(-8,3, 0, 8.3),
+                         limits=c(-8.3,  8.3))+
   facet_wrap(.~year, scales = 'free_x', nrow = 1, switch = 'x')+
   geom_tile(alpha = 1)+
   geom_vline(xintercept = seq(0.5, 12, by = 12), linetype = "dashed", color = "darkgrey") +
@@ -703,9 +745,15 @@ biological <- bbmo_env_z_ed |>
   scale_x_continuous(expand = c(0,0), labels = unique(bbmo_env_z_ed$year), breaks = unique(bbmo_env_z_ed$year))+
   labs(x = 'Year', y = '', fill = 'z-score')+
   theme_bw()+
-  theme(panel.grid = element_blank(), text = element_text(size = 6), legend.position = 'bottom',
-        panel.border = element_blank(), strip.background = element_blank())
+  theme(panel.grid = element_blank(), text = element_text(size = 5), legend.position = 'bottom',
+        panel.border = element_blank(), strip.background = element_blank(), plot.margin = unit(c(0,3,0,1), "mm"), 
+        legend.key.size = unit(3, "mm"))
 
+# ggsave('biological_bbmo.pdf', biological,
+#        path = "~/Documentos/Doctorat/BBMO/BBMO_bloomers/Results/Figures/",
+#        width = 188,
+#        height = 90,
+#        units = 'mm')
 
 ## I divide them in different groups so that we can observe them better----
 bbmo_env_z |>
