@@ -30,6 +30,7 @@ library(tidyverse)
 library(ggplot2)
 library(magrittr)
 library(multipanelfigure) #merge plots with different sizes
+library(forcats) 
 # 
 # m_bbmo_10y |>
 #   colnames()
@@ -53,7 +54,7 @@ labs_env <- as_labeller(c("day_length" = 'Day length' ,
                                 "PNF_Micro" = 'Phototrophic nanoflagellates',
                                 "PNF2_5um_Micro"  = 'Phototrophic nanoflagellates (2-5um)',
                                 "PNF_5um_Micro"   = 'Phototrophic nanoflagellates (5um)',
-                                "dryptomonas"   = 'Dryptomonas',
+                                "dryptomonas"   = 'Cryptomonas',
                                 "micromonas"  = 'Micromonas',
                                 "HNF_Micro"  =  'Heterotrophic nanoflagellates',   
                                 "HNF2_5um_Micro" ='Heterotrophic nanoflagellates (2-5um)',
@@ -301,8 +302,6 @@ bbmo_env_02_seas |>
   scale_x_discrete(labels = labs_season)+
   theme_light()+
   theme(text = element_text(size = 12), strip.text.x = element_blank())
-
-  
 
 # Mantel test whole community structure vs environmental data------
 ### in this case we use the rarefied community to overcome the compositional problem previous to calculate
@@ -582,7 +581,6 @@ harbour_restoration <- tibble(xmin = '2010-03-24', xmax = '2012-06-09') |>
   dplyr::mutate(date_min = as.POSIXct(xmin, format = "%Y-%m-%d"),
                 date_max = (as.POSIXct(xmax, format = "%Y-%m-%d")))
   
-
 ## reorder environmental factors ----
 bbmo_env_z$environmental_variable <- factor(bbmo_env_z$environmental_variable, levels = c("day_length", "temperature" ,"secchi" , "salinity" ,      
                                                                                           "PO4",  "NH4" ,  "NO2" , "NO3" , "Si" ,  "chla_total" ,  "chla_3um", "synechococcus", "prochlorococcus_FC", 
@@ -620,6 +618,234 @@ bbmo_env_z |>
           strip.background = element_blank(), 
           axis.text.y = element_text(size = 5),
           panel.grid.major.y = element_blank())
+
+## I use a heat map so that maybe we can observe the changes better---
+palete_gradient_cb <- c("#86a0df",
+                     #"#666585" = 0,
+                     '#bbbbbb' = 0,
+                     "#b81131") 
+
+m_bbmo_10y |>
+  colnames()
+
+bbmo_env_z |>
+  colnames()
+
+m_bbmo_10y_red <- m_bbmo_10y |>
+  dplyr::select(date, decimal_date, sample_id, year)
+
+bbmo_env_z_ed <- bbmo_env_z |>
+  dplyr::filter(str_detect(sample_id, '0.2_')) |> #remove duplicates I had the same information for FL and PA
+  dplyr::select(-env_values) |>
+  pivot_wider( values_from = z_score_environmental_variable, values_fill = 0, names_from = environmental_variable) |>
+  pivot_longer(cols = -sample_id, values_to = 'z_score_environmental_variable', names_to = 'environmental_variable') |>
+left_join(m_bbmo_10y_red) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  arrange(decimal_date) |>
+  group_by(environmental_variable, year) |>
+  dplyr::mutate(consecutive_number = row_number()) |>
+  mutate(type_of_env = case_when(environmental_variable %in% c("day_length", "temperature" ,"secchi" , "salinity" ,
+                                                               "PO4",  "NH4" ,  "NO2" , "NO3" , "Si" ,  "chla_total" ,  "chla_3um") ~ 'physico_chem',
+                                 environmental_variable %in% c( 
+                                                                "bacteria_joint", "LNA", "HNA",
+                                                                "BP_FC1.55", "PNF_Micro" , "PNF2_5um_Micro",  "PNF_5um_Micro", "dryptomonas", "micromonas","HNF_Micro",
+                                        "HNF2_5um_Micro", "HNF_5um_Micro", "prochlorococcus_FC", "Peuk1",
+                                        "Peuk2", "synechococcus", "low_vlp" ,
+                                        "med_vlp" ,  
+                                        "high_vlp" ,
+                                        "total_vlp") ~ 'biological'))
+## reorder environmental factors ----
+bbmo_env_z_ed$environmental_variable <- factor(bbmo_env_z_ed$environmental_variable, levels = c("day_length", "temperature" ,"secchi" , "salinity" ,      
+                                                                                          "PO4",  "NH4" ,  "NO2" , "NO3" , "Si" , "BP_FC1.55", "bacteria_joint", "LNA", "HNA", "chla_total" ,  "chla_3um", 
+                                                                                          "synechococcus", "prochlorococcus_FC", 
+                                                                                           "PNF_Micro" , "PNF2_5um_Micro",  "PNF_5um_Micro", "HNF_Micro",         
+                                                                                          "HNF2_5um_Micro", "HNF_5um_Micro", "Peuk1",             
+                                                                                          "Peuk2",
+                                                                                          "dryptomonas", "micromonas",
+                                                                                          
+                                                                                          "low_vlp" ,
+                                                                                          "med_vlp" ,  
+                                                                                          "high_vlp" ,
+                                                                                          "total_vlp"))
+
+phyico_chemical <- bbmo_env_z_ed |>
+  dplyr::filter(environmental_variable %in% c("day_length", "temperature" ,"secchi" , "salinity" ,
+                "PO4",  "NH4" ,  "NO2" , "NO3" , "Si" )) |>
+  ggplot(aes(consecutive_number, fct_rev(environmental_variable), fill = z_score_environmental_variable))+
+  scale_y_discrete(labels = labs_env)+
+  #scale_fill_gradientn( colours = palete_gradient_cb)+
+  scale_fill_gradient2(low = "#0049B7",
+                       high = "#b81131", midpoint = 0)+
+  facet_wrap(.~year, scales = 'free_x', nrow = 1, switch = 'x')+
+  geom_tile(alpha = 1)+
+  geom_vline(xintercept = seq(0.5, 12, by = 12), linetype = "dashed", color = "darkgrey") +
+  #scale_x_datetime(expand = c(0,0))+
+  scale_x_continuous(expand = c(0,0), labels = unique(bbmo_env_z_ed$year), breaks = unique(bbmo_env_z_ed$year))+
+  labs(x = 'Year', y = '', fill = 'z-score')+
+  theme_bw()+
+  theme(panel.grid = element_blank(), text = element_text(size = 6), legend.position = 'bottom',
+        panel.border = element_blank(), strip.background = element_blank())
+
+ggsave()
+
+biological <- bbmo_env_z_ed |>
+  dplyr::filter(!(environmental_variable %in% c("day_length", "temperature" ,"secchi" , "salinity" ,
+                                              "PO4",  "NH4" ,  "NO2" , "NO3" , "Si" ))) |>
+  ggplot(aes(consecutive_number, fct_rev(environmental_variable), fill = z_score_environmental_variable))+
+  scale_y_discrete(labels = labs_env)+
+  #scale_fill_gradientn( colours = palete_gradient_cb)+
+  scale_fill_gradient2(low = "#0049B7",
+                       high = "#b81131", midpoint = 0)+
+  facet_wrap(.~year, scales = 'free_x', nrow = 1, switch = 'x')+
+  geom_tile(alpha = 1)+
+  geom_vline(xintercept = seq(0.5, 12, by = 12), linetype = "dashed", color = "darkgrey") +
+  #scale_x_datetime(expand = c(0,0))+
+  scale_x_continuous(expand = c(0,0), labels = unique(bbmo_env_z_ed$year), breaks = unique(bbmo_env_z_ed$year))+
+  labs(x = 'Year', y = '', fill = 'z-score')+
+  theme_bw()+
+  theme(panel.grid = element_blank(), text = element_text(size = 6), legend.position = 'bottom',
+        panel.border = element_blank(), strip.background = element_blank())
+
+
+## I divide them in different groups so that we can observe them better----
+bbmo_env_z |>
+  left_join(m_bbmo_10y) |>
+  dplyr::filter(environmental_variable %in% c('day_length', 'temperature', 'secchi', 'salinity', 'chla_total', 'chla_3um', 'PO4', 'NH4',
+                                              'NO2', 'NO3', "Si", "BP_FC1.55" )) |>
+  # mutate(type_of_env = case_when(environmental_variable %in% c("day_length", "temperature" ,"secchi" , "salinity" ,      
+  #                                                              "PO4",  "NH4" ,  "NO2" , "NO3" , "Si" ,  "chla_total" ,  "chla_3um", 
+  #                                                              "bacteria_joint", "LNA", "HNA") ~ 'physico_chem',
+  #                                environmental_variable %in% c(  "BP_FC1.55", "PNF_Micro" , "PNF2_5um_Micro",  "PNF_5um_Micro", "dryptomonas", "micromonas","HNF_Micro",         
+  #                                       "HNF2_5um_Micro", "HNF_5um_Micro", "prochlorococcus_FC", "Peuk1",             
+  #                                       "Peuk2", "synechococcus") ~ 'biological')) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  ggplot(aes(date, z_score_environmental_variable))+
+  geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
+                                                    ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
+  geom_point(alpha = 0.6, size = 1/2)+
+  geom_line()+
+  labs(x = 'Time', y = 'z-scores')+
+  facet_wrap(vars(environmental_variable), ncol = 2, scales = 'free_y', labeller = labs_env)+
+  #facet_grid(vars(environmental_variable), scales = 'free_y', cols = vars(type_of_env), drop = T)+
+  scale_y_continuous(labels = function(x) sprintf("%.1f", x),
+                     expand = c(0,0))+
+  scale_x_datetime(expand = c(0,0))+
+  theme_bw()+
+  theme(panel.grid.minor.y = element_blank(), 
+        strip.background = element_blank(), 
+        axis.text.y = element_text(size = 5),
+        panel.grid.major.y = element_blank())
+
+bbmo_env_z |>
+  left_join(m_bbmo_10y) |>
+  dplyr::filter(environmental_variable %in% c( "synechococcus", "prochlorococcus_FC", 
+                                              "bacteria_joint", "LNA", "HNA", "Peuk1",             
+                                              "Peuk2",
+                                               "PNF_Micro" , "PNF2_5um_Micro",  "PNF_5um_Micro", "dryptomonas", "micromonas","HNF_Micro",         
+                                              "HNF2_5um_Micro", "HNF_5um_Micro",
+                                              "low_vlp" ,
+                                              "med_vlp" ,  
+                                              "high_vlp" ,
+                                              "total_vlp")) |>
+  # mutate(type_of_env = case_when(environmental_variable %in% c("day_length", "temperature" ,"secchi" , "salinity" ,      
+  #                                                              "PO4",  "NH4" ,  "NO2" , "NO3" , "Si" ,  "chla_total" ,  "chla_3um", 
+  #                                                              "bacteria_joint", "LNA", "HNA") ~ 'physico_chem',
+  #                                environmental_variable %in% c(  "BP_FC1.55", "PNF_Micro" , "PNF2_5um_Micro",  "PNF_5um_Micro", "dryptomonas", "micromonas","HNF_Micro",         
+  #                                       "HNF2_5um_Micro", "HNF_5um_Micro", "prochlorococcus_FC", "Peuk1",             
+  #                                       "Peuk2", "synechococcus") ~ 'biological')) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  ggplot(aes(date, z_score_environmental_variable))+
+  geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
+                                                    ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
+  geom_point(alpha = 0.6, size = 1/2)+
+  geom_line()+
+  labs(x = 'Time', y = 'z-scores')+
+  facet_wrap(vars(environmental_variable), ncol = 2, scales = 'free_y', labeller = labs_env)+
+  #facet_grid(vars(environmental_variable), scales = 'free_y', cols = vars(type_of_env), drop = T)+
+  scale_y_continuous(labels = function(x) sprintf("%.1f", x),
+                     expand = c(0,0))+
+  scale_x_datetime(expand = c(0,0))+
+  theme_bw()+
+  theme(panel.grid.minor.y = element_blank(), 
+        strip.background = element_blank(), 
+        axis.text.y = element_text(size = 5),
+        panel.grid.major.y = element_blank())
+
+#plot the original data without the zscores normalization----
+env_data_physico_chem <- bbmo_env_z |>
+left_join(m_bbmo_10y) |>
+  dplyr::filter(environmental_variable %in% c('day_length', 'temperature', 'secchi', 'salinity', 'chla_total', 'chla_3um', 'PO4', 'NH4',
+                                              'NO2', 'NO3', "Si", "BP_FC1.55" )) |>
+  # mutate(type_of_env = case_when(environmental_variable %in% c("day_length", "temperature" ,"secchi" , "salinity" ,      
+  #                                                              "PO4",  "NH4" ,  "NO2" , "NO3" , "Si" ,  "chla_total" ,  "chla_3um", 
+  #                                                              "bacteria_joint", "LNA", "HNA") ~ 'physico_chem',
+  #                                environmental_variable %in% c(  "BP_FC1.55", "PNF_Micro" , "PNF2_5um_Micro",  "PNF_5um_Micro", "dryptomonas", "micromonas","HNF_Micro",         
+  #                                       "HNF2_5um_Micro", "HNF_5um_Micro", "prochlorococcus_FC", "Peuk1",             
+  #                                       "Peuk2", "synechococcus") ~ 'biological')) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  ggplot(aes(date, env_values))+
+  geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
+                                                    ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
+  geom_point(alpha = 0.6, size = 1/2)+
+  geom_line()+
+  labs(x = 'Time', y = '')+
+  facet_wrap(vars(environmental_variable), ncol = 2, scales = 'free_y', labeller = labs_env)+
+  #facet_grid(vars(environmental_variable), scales = 'free_y', cols = vars(type_of_env), drop = T)+
+  scale_y_continuous(labels = function(x) sprintf("%.1f", x),
+                     expand = c(0,0))+
+  scale_x_datetime(expand = c(0,0))+
+  theme_bw()+
+  theme(panel.grid.minor.y = element_blank(), 
+        strip.background = element_blank(), 
+        axis.text.y = element_text(size = 5),
+        panel.grid.major.y = element_blank())
+
+ggsave('env_data_physico_chem.pdf', env_data_physico_chem,
+       path = '~/Documentos/Doctorat/BBMO/BBMO_bloomers/Results/Figures/',
+       width = 230,
+       height = 180,
+       units = 'mm')
+
+env_data_cyto <- bbmo_env_z |>
+  left_join(m_bbmo_10y) |>
+  dplyr::filter(environmental_variable %in% c( "synechococcus", "prochlorococcus_FC", 
+                                               "bacteria_joint", "LNA", "HNA", "Peuk1",             
+                                               "Peuk2",
+                                               "PNF_Micro" , "PNF2_5um_Micro",  "PNF_5um_Micro", "dryptomonas", "micromonas","HNF_Micro",         
+                                               "HNF2_5um_Micro", "HNF_5um_Micro",
+                                               "low_vlp" ,
+                                               "med_vlp" ,  
+                                               "high_vlp" ,
+                                               "total_vlp")) |>
+  # mutate(type_of_env = case_when(environmental_variable %in% c("day_length", "temperature" ,"secchi" , "salinity" ,      
+  #                                                              "PO4",  "NH4" ,  "NO2" , "NO3" , "Si" ,  "chla_total" ,  "chla_3um", 
+  #                                                              "bacteria_joint", "LNA", "HNA") ~ 'physico_chem',
+  #                                environmental_variable %in% c(  "BP_FC1.55", "PNF_Micro" , "PNF2_5um_Micro",  "PNF_5um_Micro", "dryptomonas", "micromonas","HNF_Micro",         
+  #                                       "HNF2_5um_Micro", "HNF_5um_Micro", "prochlorococcus_FC", "Peuk1",             
+  #                                       "Peuk2", "synechococcus") ~ 'biological')) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  ggplot(aes(date, env_values))+
+  geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
+                                                    ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
+  geom_point(alpha = 0.6, size = 1/2)+
+  geom_line()+
+  labs(x = 'Time', y = 'Abundances (cells/mL) ')+
+  facet_wrap(vars(environmental_variable), ncol = 2, scales = 'free_y', labeller = labs_env)+
+  #facet_grid(vars(environmental_variable), scales = 'free_y', cols = vars(type_of_env), drop = T)+
+  scale_y_continuous(labels = function(x) sprintf("%.1f", x),
+                     expand = c(0,0))+
+  scale_x_datetime(expand = c(0,0))+
+  theme_bw()+
+  theme(panel.grid.minor.y = element_blank(), 
+        strip.background = element_blank(), 
+        axis.text.y = element_text(size = 5),
+        panel.grid.major.y = element_blank())
+
+ggsave('env_data_cyto.pdf', env_data_cyto,
+       path = '~/Documentos/Doctorat/BBMO/BBMO_bloomers/Results/Figures/',
+       width = 230,
+               height = 180,
+               units = 'mm')
 
 ##calculate distance matrices----
 asv_tab_bbmo_10y_l |> # upload the original table
@@ -849,7 +1075,6 @@ plot_mantel_02_community <- results_mantel_02 |>
   theme_bw()+
   theme(panel.grid.major = element_blank(), text = element_text(size = 5),
         axis.text.x = element_text(angle = 65, hjust = 1))
-
 
 ##inputs second PA (3) ----
 abund_rar_3_rclr |>
