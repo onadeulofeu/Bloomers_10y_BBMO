@@ -124,6 +124,59 @@ asv_tab_all_bloo_3_complete %$%
   unique() #120 we have all the data!!!
 
 
+### Dataset to perform the seasonality analysis on----
+asv_tab_all_bloo_3_complete #PA datset
+asv_tab_all_bloo_z_tax_02 #FL dataset
+
+####### MAKING A DECISION ON USING WAVELETS // FOURIER ANALYSIS // ARIMA FOR OUR DATASET --------
+
+## The seasonal dynamics of persistent and intermittent individual bacterial taxa was analysed by Fourier time-series analysis. 
+## Periodic components were extracted, and their significance was determined by Anderson and the Fisher G-test.
+
+## Fourier transform works when no variation in time happens, when we are in the frequency-domain we lose this dependency.
+ 
+# fisher.g.test calculates the p-value(s) according to Fisher's exact g test for one or more time series. 
+## This test is useful to detect hidden periodicities of unknown frequency in a data set. For an application to microarray data see Wichert, Fokianos, and Strimmer (2004).
+
+## Wavelet analysis enables investigation of time series characterized by different periodicities and is particularly suited for time series which are 
+## not stationary, as applies to many biological systems. (nonstationarity is the status of a time series whose statistical properties are changing through time)
+
+## We saw in the last section that we need a method to handle signals whose constituent frequencies vary over time (e.g. the ECG data). 
+## We need a tool that has high resolution in the frequency domain and also in the time domain, that allows us to know at which frequencies the signal oscillates, and at which time these oscillations occur.
+## The Wavelet transform fullfils these two conditions.
+# 
+# By means of wavelet transform a time series can be decomposed into
+# a time dependent sum of frequency components. As a result we are able
+# to capture seasonalities with time-varying period and intensity, which
+# nourishes the belief that incorporating the wavelet transform in existing forecasting methods can improve their quality.
+
+# A widely used approach is the Autoregressive Moving Average (ARIMA) model,
+# which captures intertemporal linear dependence in the data itself as well as in the
+# error term.
+# 
+# This is why Wong et al. (2003) use the wavelet transform, which is able to
+# capture dynamics in period and intensity, to model both the trend and the seasonality. 
+# By means of the wavelet transform we can decompose a time series into a
+# linear combination of different frequencies
+
+## Why do we choosed wavelet transform: traditional Fourier transform (decomposition using sine 
+## and cosine) gives global average over entire signal, thus may obscure local information 
+## (which we are very interested in)
+
+## Continuous wavelet transform (CWT) we pick basicaly every possible scale in location
+## Discrete wavelet transform (DWT) there's a discrete number of wavelets scales and locations
+
+##Wavelet analysis is also well suited when signals exhibit sharp spikes or local
+## discontinuities, features that are very poorly represented by Fourier analysis
+## file:///Users/onadeulofeucapo/Downloads/engeland.pdf
+
+## prior to the analysis we need to use CLR transformed data------
+
+
+##(need to be re-calcualted for the PA fraction!!! )
+
+
+
 ## Adria's functions
 ## https://gitlab.com/aauladell/AAP_time_series here we have the source.
 
@@ -166,17 +219,21 @@ check_periodogram <- function(df,wrap="phylogroup"){
 
 ## Fourier time series analysis
 
-## maybe we should interpolate the missing samples...
-
-
 ## We need values transformed to CLR
 
-four <- asv_tab_all_bloo_z_tax |>
+four <- asv_tab_all_bloo_z_tax_02 |>
   dplyr::filter(abundance_type == 'zclr') |>
   dplyr::select(asv_num,abundance_value, month, year, day, family_f, decimal_date) |>
   arrange(decimal_date)
 
 ## Seasonality of each ASV that we believe can be a potential bloomer
+## I divide the different abundance values in separated plots and I filter only the potential bloomers in FL or PA-----
+bloo_02 <- read.csv('data/bloo_02.csv') |>
+  as_tibble()
+
+bloo_3 <-read.csv('data/bloo_3.csv') |>
+  as_tibble()
+
 bloo_02$value
 
 # [1] "asv38"  "asv8"   "asv5"   "asv3"   "asv2"   "asv15"  "asv18"  "asv27"  "asv17"  "asv555"
@@ -195,7 +252,7 @@ four |>
   colnames()
 
 asv1.ts <- four %>%
-  filter(asv_num == "asv1") %>%
+  filter(asv_num == "asv8") %>%
   ts_conversor()
 
 ## I try to apply this part of the code to all potential bloomers ASVs
@@ -244,14 +301,126 @@ ggplot(as.data.frame(periodogram(asv1.ts)), aes(freq, spec)) +
 acf(asv1.ts, lag.max = 120)
 
 
-
 ## Fisher G-test to determine the significance of periodic components
 library(GeneCycle)
 
 ## The time series was decomposed in three components, seasonal periodicity 
+
 ## (oscillation inside each period), trend (evolution over time) and residuals, 
 ## through local regression by the stl function.
 
 
 
 ## Autocorrelogram was calculated using the acf function
+
+### WAVELETS ANALYSIS-----
+##I will try the biwavelet package
+#install.packages('biwavelet')
+library(biwavelet)
+
+##we run the analysis for just one ASV
+asv11 <- asv_tab_all_bloo_z_tax_02 |> #FL dataset 
+  dplyr::filter(asv_num == 'asv11') |>
+  dplyr::filter(abundance_type == 'relative_abundance') |> #see if we can perform the same analysis with zclr transformations
+  dplyr::select(decimal_date, abundance_value)
+
+asv_tab_all_bloo_z_tax_02 |>
+  colnames()
+
+asv11 |>
+  colnames()
+
+# Assuming 'your_data' is your microbiome time series data frame with 'date' and 'abundance_value'
+# Convert 'date' to numeric if not already in a suitable format
+asv11$date_numeric <- as.numeric(asv11$decimal_date)
+
+# Perform wavelet analysis
+wt_result <- wt(asv11)
+
+# Plot the wavelet power spectrum
+plot(wt_result)
+
+# Assuming 'asv11' is your microbiome time series data frame with 'date' and 'abundance_value'
+# Convert 'date' to Date class
+asv11$date <- as.Date(asv11$date)
+
+# Create a regular time series with constant time increment
+regular_time_series <- zoo::zoo(asv11$abundance_value, asv11$date)
+regular_time_series <- zoo::na.approx(regular_time_series)
+
+# Perform wavelet analysis
+wt_result <- wt(regular_time_series) #continuous wavelet transform
+
+# Plot the wavelet power spectrum
+plot(wt_result)
+
+
+## I try the discrete wavelet transform-----
+
+## need to pick a family of wavelets we want to work with.
+### using the waveslim package 
+library(waveslim)
+asv11 <- asv_tab_all_bloo_z_tax_02 |> #FL dataset 
+  dplyr::filter(asv_num == 'asv11') |>
+  dplyr::filter(abundance_type == 'zclr') |> #see if we can perform the same analysis with zclr transformations
+  dplyr::select(decimal_date, abundance_value)
+
+asv178 <- asv_tab_all_bloo_z_tax_02 |> #FL dataset 
+  dplyr::filter(asv_num == 'asv178') |>
+  dplyr::filter(abundance_type == 'zclr') |> #see if we can perform the same analysis with zclr transformations
+  dplyr::select(decimal_date, abundance_value)
+
+## observe my data
+asv11 |>
+  ggplot(aes(decimal_date, abundance_value))+
+  geom_line()+
+  theme_bw()
+
+asv178 |>
+  ggplot(aes(decimal_date, abundance_value))+
+  geom_line()+
+  theme_bw()
+
+# Extract the abundance values
+abundance_values <- asv11$abundance_value
+abundance_values <- asv178$abundance_value
+
+# Access the wavelet coefficients for the first scale
+coefficients_scale1 <- modwt_result$d4
+
+
+# Plot the wavelet coefficients for the first scale
+plot(coefficients_scale1, type = "l", col = "blue", xlab = "Index", ylab = "Wavelet Coefficients", main = "Wavelet Coefficients - Scale 1")
+
+# Reconstruct the signal from the wavelet coefficients and scaling coefficients
+reconstructed_signal <- imodwt(modwt_result)
+
+# Compare the original signal with the reconstructed signal
+plot(asv11$decimal_date, asv11$abundance_value, type = "l", col = "blue", lty = 1, xlab = "Decimal Date", ylab = "Abundance Value", main = "Original vs Reconstructed Signal")
+lines(asv11$decimal_date, reconstructed_signal, col = "red", lty = 6)
+legend("topright", legend = c("Original Signal", "Reconstructed Signal"), col = c("blue", "red"), lty = 1:2)
+
+## try help of the package waveslim
+ibm.returns <- diff(abundance_values)
+
+# Perform Maximal Overlap Discrete Wavelet Transform (MODWT)
+ibmr.la8 <- modwt(ibm.returns, n.levels = 4, wf = "la8")
+names(ibmr.la8) <- c("w1", "w2", "w3", "w4", "v4")
+
+ibmr.la8 <- phase.shift(ibmr.la8, "la8")
+## plot partial MODWT for IBM data
+par(mfcol=c(6,1), pty="m", mar=c(5-2,4,4-2,2))
+plot.ts(ibm.returns, axes=FALSE, ylab="", main="(a)")
+for(i in 1:5)
+  plot.ts(ibmr.haar[[i]], axes=FALSE, ylab=names(ibmr.haar)[i])
+axis(side=1, at=seq(0,368,by=23), 
+     labels=c(0,"",46,"",92,"",138,"",184,"",230,"",276,"",322,"",368))
+par(mfcol=c(6,1), pty="m", mar=c(5-2,4,4-2,2))
+plot.ts(ibm.returns, axes=FALSE, ylab="", main="(b)")
+for(i in 1:5)
+  plot.ts(ibmr.la8[[i]], axes=FALSE, ylab=names(ibmr.la8)[i])
+axis(side=1, at=seq(0,368,by=23), 
+     labels=c(0,"",46,"",92,"",138,"",184,"",230,"",276,"",322,"",368))
+
+
+
