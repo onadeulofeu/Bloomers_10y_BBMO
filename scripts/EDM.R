@@ -27,7 +27,7 @@ library(rEDM)
 
 ### We need occurrence and relative abundance - rank table-----
 
-asv_tab_all_bloo_z_tax <- read_csv2('asv_tab_all_bloo_z_tax.csv') |>
+asv_tab_all_bloo_z_tax <- read_csv2('data/asv_tab_all_bloo_z_tax.csv') |>
   as_tibble()
 
 asv_tab_all_bloo_z_tax |>
@@ -130,7 +130,6 @@ tax_bbmo_10y_new <- tax_bbmo_10y_old |>
   dplyr::select(asv_num, seq) |>
   left_join(new_tax, by = c('seq' = 'sequence'))
 
-
 ## tidy colnames----
 asv_tab_bbmo_10y_l |>
   colnames()
@@ -211,6 +210,17 @@ asv_tab_10y_3_rel <- asv_tab_10y_l_rel %>%
 asv_tab_10y_02_rel <- asv_tab_10y_l_rel %>%
   dplyr::filter(sample_id %in% m_02$sample_id)
 
+## we could also do it with rCLR add here in case we want to do it----
+sample_id <- asv_tab_bbmo_10y_l |>
+  pivot_wider(names_from = asv_num, values_from = reads, values_fill = 0) |>
+  dplyr::select(sample_id)
+
+asv_tab_bbmo_10y_rclr <- asv_tab_bbmo_10y_l |>
+  pivot_wider(names_from = asv_num, values_from = reads, values_fill = 0) |>
+  dplyr::select(-sample_id) |>
+  decostand( method = 'rclr') |>
+  as_tibble() |>
+  bind_cols(sample_id)
 
 #Calculate occurrence----
 ## Occurence by fraction (0.2 - 3)
@@ -259,13 +269,26 @@ asv_tab_10y_rel_occ_filt_w <- asv_tab_10y_l_rel_occ_filt |>
 asv_tab_10y_rel_occ_filt_w |>
   dim()
 
+## check that I'm NOT filtering by ASV num
+asv_tab_10y_l_rel_occ_filt |>
+  dplyr::ungroup() |>
+  dplyr::select(asv_num) |>
+  distinct() |>
+  dplyr::filter(asv_num %in% bloo_02$value)
+
+asv_tab_10y_l_rel_occ_filt |>
+  dplyr::ungroup() |>
+  dplyr::select(asv_num) |>
+  distinct() |>
+  dplyr::filter(asv_num %in% bloo_3$value)
+
 ##add metadata at the last cols of the dataset
 m_bbmo_10y |>
   colnames()
 m_bbmo_10y_sim |>
   dim()
 
-m_bbmo_10y_sim <- m_bbmo_10y |>
+m_bbmo_10y_sim_ed <- m_bbmo_10y |>
   dplyr::select(Day, Month, Year, day_length, temperature, secchi, salinity, chla_total, chla_3um, PO4, NH4, NO2, NO3, Si, BP_FC1.55, PNF_Micro,         
                 PNF2_5um_Micro, PNF_5um_Micro, dryptomonas, micromonas, HNF_Micro, HNF2_5um_Micro, HNF_5um_Micro,
                 LNA, HNA, prochlorococcus_FC, Peuk1, Peuk2, bacteria_joint, synechococcus) |>
@@ -274,7 +297,7 @@ m_bbmo_10y_sim <- m_bbmo_10y |>
            LNA, HNA, prochlorococcus_FC, Peuk1, Peuk2, bacteria_joint, synechococcus)
 
 asv_tab_10y_rel_occ_filt_w_env <- asv_tab_10y_rel_occ_filt_w |>
-  left_join(m_bbmo_10y_sim, by = c('Year' = 'Year', 'Month' = 'Month', 'Day' = 'Day'))
+  left_join(m_bbmo_10y_sim_ed, by = c('Year' = 'Year', 'Month' = 'Month', 'Day' = 'Day'))
 
 write.csv2(asv_tab_10y_rel_occ_filt_w_env, file = '../../EDM_carmen/asv_tab_10y_rel_occ_filt_w_env.csv')
 
@@ -352,3 +375,35 @@ asv_tab_10y_l_rel_occ_filt |>
                 f_asv_num = paste0(fraction_ed,'_',asv_num)) |>
   dplyr::select(Year, Month, Day, f_asv_num, relative_abundance) |>
   pivot_wider(id_cols = c(Year, Month, Day), names_from = f_asv_num, values_from = relative_abundance, values_fill = 0 )
+
+
+## filter rCLR by those ASVs that were pesent in 2/3 of the dataset-----
+
+asv_occurrence_frac <- asv_tab_10y_l_rel_occ_filt |>
+  dplyr::select(asv_num, fraction) |>
+  dplyr::distinct() |>
+  dplyr::mutate(fraction_asv = paste0(fraction,'_',asv_num))
+
+asv_tab_bbmo_10y_rclr_occ_filt <- asv_tab_bbmo_10y_rclr |>
+  pivot_longer(cols = starts_with('asv'), names_to = 'asv_num', values_to = 'clr') |>
+  dplyr::mutate(fraction = case_when(str_detect(sample_id, '_0.2') ~ '0.2',
+                                        str_detect(sample_id, '_3') ~ '3')) |>
+  dplyr::mutate(fraction_asv = paste0(fraction,'_',asv_num)) |>
+  dplyr::filter(fraction_asv %in% asv_occurrence_frac$fraction_asv) |>
+  dplyr::mutate(fraction_ed = case_when(str_detect(fraction, '0.2') ~ 'bp',
+                                        str_detect(fraction, '3') ~ 'bn'),
+                f_asv_num = paste0(fraction_ed,'_',asv_num)) |>
+  dplyr::left_join(m_bbmo_10y_sim) |>
+  dplyr::select(Year, Month, Day, f_asv_num, clr) |>
+  pivot_wider(id_cols = c(Year, Month, Day), names_from = f_asv_num, values_from = clr, values_fill = 0 ) |>
+  left_join(m_bbmo_10y_sim_ed, by = c('Year' = 'Year', 'Month' = 'Month', 'Day' = 'Day')) ## add metadata at the end of the tibble 
+  
+
+  write.csv(asv_tab_bbmo_10y_rclr_occ_filt, '../../EDM_carmen/asv_tab_bbmo_10y_rclr_occ_filt.csv')
+  
+  asv_tab_bbmo_10y_rclr_occ_filt |>
+    dim()
+  
+  asv_tab_10y_rel_occ_filt_w_env |>
+    dim()
+  
