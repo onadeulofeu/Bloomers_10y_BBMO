@@ -256,3 +256,195 @@ cluster_membership <- cluster_membership |>
                                               "Cluster 2" > "Cluster 1" &  "Cluster 2" > "Cluster 3" ~ 'cluster_2', 
                                               "Cluster 3" > "Cluster 1" & "Cluster 3" > "Cluster 2" ~ 'cluster_3',
                                               "Cluster 4" > "Clutser 1" & "Cluster 4" > "Clutser 2" & "Cluster 4" > "Clutser 3" ~ 'cluster_4'))
+
+
+### Another way of clustering could be using the Wavelet Coherence analysis----
+
+
+### Another idea is using the Euclidean distances then the Ward Hierarchical clustering using the results obtained from the wavelets and then cross correlate them----
+
+## Cross-correlation functions provide a measure of association between signals. When two time series data sets are cross-correlated, a measure
+## of temporal similarity is achieved. 
+
+#upload wavelets results 
+
+wavelets_result_tibble_tax_3_biased <- read.csv2('wavelets_result_tibble_tax_3_biased.csv')
+wavelets_result_tibble_tax_02_biased <- read.csv2('wavelets_result_tibble_tax_02_biased.csv')
+
+# packages
+library(cluster)    # clustering algorithms
+library(factoextra) # clustering visualization
+library(dendextend) # for comparing two dendrograms
+
+## data preparation rows are observations and columns are variables----
+time_series_1 <- wavelets_result_tibble_tax_3_biased |>
+  dplyr::select(decimal_date, wavelets_result, asv_num, wavelets_transformation) |>
+  dplyr::filter(wavelets_transformation == 'd1' ) |>
+  dplyr::select(-wavelets_transformation) |>
+  pivot_wider(names_from = asv_num, values_from = wavelets_result)
+
+time_series_3 <- wavelets_result_tibble_tax_3_biased |>
+  dplyr::select(decimal_date, wavelets_result, asv_num, wavelets_transformation) |>
+  dplyr::filter(wavelets_transformation == 'd3' ) |>
+  dplyr::select(-wavelets_transformation) |>
+  pivot_wider(names_from = asv_num, values_from = wavelets_result)
+
+time_series_5 <- wavelets_result_tibble_tax_3_biased |>
+  dplyr::select(decimal_date, wavelets_result, asv_num, wavelets_transformation) |>
+  dplyr::filter(wavelets_transformation == 's5' ) |>
+  dplyr::select(-wavelets_transformation) |>
+  pivot_wider(names_from = asv_num, values_from = wavelets_result)
+
+# Dissimilarity matrix
+distances <- time_series_1 |>
+  dplyr::select(-decimal_date) |>
+  t() |>
+  stats::dist( method = "euclidean")
+
+distances_3 <- time_series_3 |>
+  dplyr::select(-decimal_date) |>
+  t() |>
+  stats::dist( method = "euclidean")
+
+distances_5 <- time_series_5 |>
+  dplyr::select(-decimal_date) |>
+  t() |>
+  stats::dist( method = "euclidean")
+
+# Hierarchical clustering using Complete Linkage
+hc1 <- hclust(distances, method = "ward.D" )  |>
+  as.dendrogram()
+hc3 <- hclust(distances_3, method = "ward.D" ) |>
+  as.dendrogram()
+hc5 <- hclust(distances_5, method = "ward.D" ) |>
+  as.dendrogram()
+
+# Plot the obtained dendrogram
+plot(hc1, cex = 0.6, hang = -1)
+
+# Compute with agnes
+hc2 <- agnes(distances, method = "complete")
+
+# Agglomerative coefficient
+hc2$ac
+
+# methods to assess
+m <- c( "average", "single", "complete", "ward")
+names(m) <- c( "average", "single", "complete", "ward")
+
+# function to compute coefficient
+ac <- function(x) {
+  agnes(distances, method = x)$ac
+}
+
+map_dbl(m, ac)
+
+hc3 <- agnes(distances, method = "ward")
+pltree(hc3, cex = 0.6, hang = -1, main = "Dendrogram of agnes")
+
+### Compare two dendograms----
+
+# Custom these kendo, and place them in a list
+dl <- dendlist(
+  hc1 %>% 
+    set("labels_col", value = c("skyblue", "orange", "grey"), k=3) %>%
+    set("branches_lty", 1) %>%
+    set("branches_k_color", value = c("skyblue", "orange", "grey"), k = 3),
+  hc3 %>% 
+    set("labels_col", value = c("skyblue", "orange", "grey"), k=3) %>%
+    set("branches_lty", 1) %>%
+    set("branches_k_color", value = c("skyblue", "orange", "grey"), k = 3)
+)
+
+dl <- dendlist(
+  hc1 %>% 
+    set("labels_col", value = c("skyblue", "orange", "grey"), k=3) %>%
+    set("branches_lty", 1) %>%
+    set("branches_k_color", value = c("skyblue", "orange", "grey"), k = 3),
+  hc5 %>% 
+    set("labels_col", value = c("skyblue", "orange", "grey"), k=3) %>%
+    set("branches_lty", 1) %>%
+    set("branches_k_color", value = c("skyblue", "orange", "grey"), k = 3)
+)
+
+dl <- dendlist(
+  hc3 %>% 
+    set("labels_col", value = c("skyblue", "orange", "grey"), k=3) %>%
+    set("branches_lty", 1) %>%
+    set("branches_k_color", value = c("skyblue", "orange", "grey"), k = 3),
+  hc5 %>% 
+    set("labels_col", value = c("skyblue", "orange", "grey"), k=3) %>%
+    set("branches_lty", 1) %>%
+    set("branches_k_color", value = c("skyblue", "orange", "grey"), k = 3)
+)
+
+# Plot them together
+tanglegram(dl, 
+           common_subtrees_color_lines = FALSE, highlight_distinct_edges  = TRUE, highlight_branches_lwd=FALSE, 
+           margin_inner=7,
+           lwd=2
+)
+
+
+
+# In the dendrogram displayed above, each leaf corresponds to one observation. As we move up the tree, observations that are similar to each other are combined into branches, which are themselves fused at a higher height.
+# 
+# The height of the fusion, provided on the vertical axis, indicates the (dis)similarity between two observations. The higher the height of the fusion, the less similar the observations are. Note that, conclusions about the proximity of two observations can be drawn only based on the height where branches containing those two observations first are fused. We cannot use the proximity of two observations along the horizontal axis as a criteria of their similarity.
+# 
+# The height of the cut to the dendrogram controls the number of clusters obtained.
+
+# Ward's method
+hc5 <- hclust(distances, method = "ward.D2" )
+
+# Cut tree into 4 groups
+sub_grp <- cutree(hc5, k = 4)
+
+# Number of members in each cluster
+table(sub_grp)
+
+USArrests %>%
+  dplyr::mutate(cluster = sub_grp) %>%
+  head
+
+
+plot(hc5, cex = 0.6)
+rect.hclust(hc5, k = 4, border = 2:5)
+
+fviz_cluster(list(data = distances, cluster = sub_grp))
+
+# Compute euclidean distance and ward hierarchical clustering-----
+dist_matrix <- dist(rbind(ts1, ts2)) 
+
+time_series_1 <- wavelets_result_tibble_tax_3_biased |>
+  dplyr::select(decimal_date, wavelets_result, asv_num, wavelets_transformation) |>
+  dplyr::filter(wavelets_transformation == 'd1' ) |>
+  dplyr::select(-wavelets_transformation) |>
+  pivot_wider(names_from = asv_num, values_from = wavelets_result)
+
+time_series_2 <- wavelets_result_tibble_tax_3_biased |>
+  dplyr::select(decimal_date, wavelets_result, asv_num, wavelets_transformation) |>
+  dplyr::filter(wavelets_transformation == 'd3' ) |>
+  dplyr::select(-wavelets_transformation) |>
+  pivot_wider(names_from = asv_num, values_from = wavelets_result)
+
+# Get unique taxa
+unique_taxa <- unique(wavelets_result_tibble_tax_3_biased$asv_num)
+
+# Initialize lists to store cross-correlation results
+cross_corr_results_ts1 <- list()
+cross_corr_results_ts2 <- list()
+
+# Iterate over each taxon
+for (taxon in unique_taxa) {
+  # Subset data for the current taxon
+  subset_data <- time_series_1 |>
+    dplyr::filter(asv_num == taxon)  # Remove the 'taxa' column# Remove the 'taxa' column
+  
+  # Compute cross-correlation for time series 1 and current taxon
+  cross_corr_ts1 <- ccf(time_series_1, subset_data)
+  cross_corr_results_ts1[[taxon]] <- cross_corr_ts1
+  
+  # Compute cross-correlation for time series 2 and current taxon
+  cross_corr_ts2 <- ccf(time_series_2, subset_data)
+  cross_corr_results_ts2[[taxon]] <- cross_corr_ts2
+}
