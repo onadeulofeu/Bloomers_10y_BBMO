@@ -55,9 +55,8 @@ cat("FASTA file '", output_file, "' has been created.\n")
 ## Visualization of our tree
 #devtools::install_github("GuangchuangYu/ggtree")
 library(ggtree)
-library(ggtree)
 
-tree <- ggtree::read.tree('raxml/bloo_bbmo.raxml.support')
+tree <- ggtree::read.tree('data/raxml/bloo_bbmo.raxml.support')
 
 tree |>
   ggplot() + 
@@ -65,8 +64,5 @@ tree |>
   theme_tree2() +
   #geom_treescale()+
   geom_tiplab(align = T)
-
   #geom_tippoint()
   
-
-

@@ -289,49 +289,64 @@ wavelets_result_tibble_tax_02_biased <- read.csv2('data/wavelets_result_ed_tibbl
 
 ### PA ------
 time_series_1 <- wavelets_result_tibble_tax_3_biased |>
-  dplyr::select(decimal_date, wavelets_result, asv_num, wavelets_transformation) |>
+  dplyr::select(decimal_date, wavelets_result_ed, asv_num, wavelets_transformation) |>
   left_join(tax_bbmo_10y_new, by = 'asv_num') |>
-  dplyr::mutate(asv_f = paste0(family,'.',asv_num)) |>
+  dplyr::mutate(asv_f = case_when(!is.na(family) ~ paste0(family,'.',asv_num),
+                                  is.na(family) & !is.na(order) ~ paste0(order, '.', asv_num),
+                                  is.na(family) & is.na(order) ~ paste0(class, '.', asv_num),
+                                  is.na(family) & is.na(order) & is.na(class) ~ paste0(phylum, '.', asv_num))) |>
   dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus, species)) |>
   dplyr::filter(wavelets_transformation == 'd1' ) |>
   dplyr::select(-wavelets_transformation) |>
-  pivot_wider(names_from = asv_f, values_from = wavelets_result)
+  pivot_wider(names_from = asv_f, values_from = wavelets_result_ed)
 
 time_series_2 <- wavelets_result_tibble_tax_3_biased |>
-  dplyr::select(decimal_date, wavelets_result, asv_num, wavelets_transformation) |>
+  dplyr::select(decimal_date, wavelets_result_ed, asv_num, wavelets_transformation) |>
   left_join(tax_bbmo_10y_new, by = 'asv_num') |>
-  dplyr::mutate(asv_f = paste0(family,'.',asv_num)) |>
+  dplyr::mutate(asv_f = case_when(!is.na(family) ~ paste0(family,'.',asv_num),
+                                  is.na(family) & !is.na(order) ~ paste0(order, '.', asv_num),
+                                  is.na(family) & is.na(order) ~ paste0(class, '.', asv_num),
+                                  is.na(family) & is.na(order) & is.na(class) ~ paste0(phylum, '.', asv_num))) |>
   dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus, species)) |>
   dplyr::filter(wavelets_transformation == 'd2' ) |>
   dplyr::select(-wavelets_transformation) |>
-  pivot_wider(names_from = asv_f, values_from = wavelets_result)
+  pivot_wider(names_from = asv_f, values_from = wavelets_result_ed)
 
 time_series_3 <- wavelets_result_tibble_tax_3_biased |>
-  dplyr::select(decimal_date, wavelets_result, asv_num, wavelets_transformation) |>
+  dplyr::select(decimal_date, wavelets_result_ed, asv_num, wavelets_transformation) |>
   left_join(tax_bbmo_10y_new, by = 'asv_num') |>
-  dplyr::mutate(asv_f = paste0(family,'.',asv_num)) |>
+  dplyr::mutate(asv_f = case_when(!is.na(family) ~ paste0(family,'.',asv_num),
+                                  is.na(family) & !is.na(order) ~ paste0(order, '.', asv_num),
+                                  is.na(family) & is.na(order) ~ paste0(class, '.', asv_num),
+                                  is.na(family) & is.na(order) & is.na(class) ~ paste0(phylum, '.', asv_num))) %$%
   dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus, species)) |>
   dplyr::filter(wavelets_transformation == 'd3' ) |>
   dplyr::select(-wavelets_transformation) |>
-  pivot_wider(names_from = asv_f, values_from = wavelets_result)
+  pivot_wider(names_from = asv_f, values_from = wavelets_result_ed)
 
 time_series_4 <- wavelets_result_tibble_tax_3_biased |>
-  dplyr::select(decimal_date, wavelets_result, asv_num, wavelets_transformation) |>
+  dplyr::select(decimal_date, wavelets_result_ed, asv_num, wavelets_transformation) |>
   left_join(tax_bbmo_10y_new, by = 'asv_num') |>
-  dplyr::mutate(asv_f = paste0(family,'.',asv_num)) |>
+  dplyr::mutate(asv_f = case_when(!is.na(family) ~ paste0(family,'.',asv_num),
+                                  is.na(family) & !is.na(order) ~ paste0(order, '.', asv_num),
+                                  is.na(family) & is.na(order) ~ paste0(class, '.', asv_num),
+                                  is.na(family) & is.na(order) & is.na(class) ~ paste0(phylum, '.', asv_num))) |>
   dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus, species)) |>
   dplyr::filter(wavelets_transformation == 'd4' ) |>
   dplyr::select(-wavelets_transformation) |>
-  pivot_wider(names_from = asv_f, values_from = wavelets_result)
+  pivot_wider(names_from = asv_f, values_from = wavelets_result_ed)
 
 time_series_5 <- wavelets_result_tibble_tax_3_biased |>
-  dplyr::select(decimal_date, wavelets_result, asv_num, wavelets_transformation) |>
+  dplyr::select(decimal_date, wavelets_result_ed, asv_num, wavelets_transformation) |>
   left_join(tax_bbmo_10y_new, by = 'asv_num') |>
-  dplyr::mutate(asv_f = paste0(family,'.',asv_num)) |>
+  dplyr::mutate(asv_f = case_when(!is.na(family) ~ paste0(family,'.',asv_num),
+                                  is.na(family) & !is.na(order) ~ paste0(order, '.', asv_num),
+                                  is.na(family) & is.na(order) ~ paste0(class, '.', asv_num),
+                                  is.na(family) & is.na(order) & is.na(class) ~ paste0(phylum, '.', asv_num))) |>
   dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus, species)) |>
-  dplyr::filter(wavelets_transformation == 's5' ) |>
+  dplyr::filter(wavelets_transformation == 's4' ) |>
   dplyr::select(-wavelets_transformation) |>
-  pivot_wider(names_from = asv_f, values_from = wavelets_result)
+  pivot_wider(names_from = asv_f, values_from = wavelets_result_ed)
 
 # time_series_1 |>
 #   pivot_longer(cols = c(-decimal_date)) |>
@@ -400,8 +415,11 @@ heatmap_data_l <- time_series_1 |>
 asv_order <- order.dendrogram(hc1)
 
 dendro <- ggdendrogram(data = hc1, rotate = T)+
-  scale_y_reverse()+
-  theme(axis.text.y = element_text(size = 0), text = element_text(size = 5))
+  scale_y_reverse(expand = c(0,0))+
+  scale_x_discrete(expand = c(0,0))+
+  labs(y = 'Distance')+
+  theme(axis.text.y = element_text(size = 0), text = element_text(size = 5),
+        plot.margin = unit(c(6, 0.1, 6, 5), "mm"))
 
 heatmap_data_l$asv_num <- factor(x = heatmap_data_l$asv_num,
                                  levels = heatmap_data_l$asv_num[asv_order], 
@@ -410,18 +428,20 @@ heatmap_data_l$asv_num <- factor(x = heatmap_data_l$asv_num,
 heatmap_plot <- heatmap_data_l |>
   ggplot( aes(x = as.numeric(sample_num), y = asv_num)) +
   geom_tile(aes(fill = value)) +
-  scale_fill_gradient2(low = "navy", mid = "white", high = "red", midpoint = 0)+
+  scale_fill_gradient2(low = "navy", mid = "white", high = "red", midpoint = 0, limits = c(-5.21, 5.21), na.value = '#D7D6D3')+
   theme(axis.text.y = element_text(size = 6))+
   scale_x_continuous(expand = c(0, 0), breaks = c(1,   13,   25,   37,   49,   61,   73,   85,   97,  109), 
                      labels =  year_labels) +
+  scale_y_discrete(expand = c(0,0))+
   labs(x = 'Time (Years)', y = '', fill = 'Wavelet\nresult')+
   theme_bw()+
   theme(panel.grid = element_blank(), legend.position = 'right',
-        axis.text.y = element_text(size = 5), text = element_text(size = 5),
-        panel.border = element_blank(),  legend.key.size = unit(4, 'mm'))
+        axis.text = element_text(size = 5), text = element_text(size = 5),
+        panel.border = element_blank(),  legend.key.size = unit(4, 'mm'),
+        plot.margin = unit(c(5, 1, 5, 0), "mm"))
 
 # Create a new page
-pdf("results/figures/hierarchical_clustering/clust_d1_PA.pdf", width = 8, height = 4)  # Adjust width and height as needed
+pdf("results/figures/hierarchical_clustering_scales/clust_d1_PA.pdf", width = 8, height = 4)  # Adjust width and height as needed
 
 # Arrange and print the plots
 composition_of_plots <- grid.arrange(dendro, 
@@ -432,7 +452,6 @@ composition_of_plots <- grid.arrange(dendro,
 # Close the PDF device
 dev.off()
 
-
 ### d2------
 heatmap_data_l <- time_series_2 |>
   dplyr::mutate(sample_num = row_number()) |>
@@ -441,8 +460,11 @@ heatmap_data_l <- time_series_2 |>
 asv_order <- order.dendrogram(hc2)
 
 dendro <- ggdendrogram(data = hc2, rotate = T)+
-  scale_y_reverse()+
-  theme(axis.text.y = element_text(size = 0), text = element_text(size = 5))
+  scale_y_reverse(expand = c(0,0))+
+  scale_x_discrete(expand = c(0,0))+
+  labs(y = 'Distance')+
+  theme(axis.text.y = element_text(size = 0), text = element_text(size = 5),
+        plot.margin = unit(c(6, 0.1, 6, 5), "mm"))
 
 heatmap_data_l$asv_num <- factor(x = heatmap_data_l$asv_num,
                                  levels = heatmap_data_l$asv_num[asv_order], 
@@ -451,18 +473,20 @@ heatmap_data_l$asv_num <- factor(x = heatmap_data_l$asv_num,
 heatmap_plot <- heatmap_data_l |>
   ggplot( aes(x = as.numeric(sample_num), y = asv_num)) +
   geom_tile(aes(fill = value)) +
-  scale_fill_gradient2(low = "navy", mid = "white", high = "red", midpoint = 0)+
+  scale_fill_gradient2(low = "navy", mid = "white", high = "red", midpoint = 0, limits = c(-5.21, 5.21), na.value = '#D7D6D3')+
   theme(axis.text.y = element_text(size = 6))+
   scale_x_continuous(expand = c(0, 0), breaks = c(1,   13,   25,   37,   49,   61,   73,   85,   97,  109), 
                      labels =  year_labels) +
+  scale_y_discrete(expand = c(0,0))+
   labs(x = 'Time (Years)', y = '', fill = 'Wavelet\nresult')+
   theme_bw()+
   theme(panel.grid = element_blank(), legend.position = 'right',
-        axis.text.y = element_text(size = 5), text = element_text(size = 5),
-        panel.border = element_blank(),  legend.key.size = unit(4, 'mm'))
+        axis.text = element_text(size = 5), text = element_text(size = 5),
+        panel.border = element_blank(),  legend.key.size = unit(4, 'mm'),
+        plot.margin = unit(c(5, 1, 5, 0), "mm"))
 
 # Create a new page
-pdf("results/figures/hierarchical_clustering/clust_d2_PA.pdf", width = 8, height = 4)  # Adjust width and height as needed
+pdf("results/figures/hierarchical_clustering_scales/clust_d2_PA.pdf", width = 8, height = 4)  # Adjust width and height as needed
 
 # Arrange and print the plots
 composition_of_plots <- grid.arrange(dendro, 
@@ -481,8 +505,11 @@ heatmap_data_l <- time_series_3 |>
 asv_order <- order.dendrogram(hc3)
 
 dendro <- ggdendrogram(data = hc3, rotate = T)+
-  scale_y_reverse()+
-  theme(axis.text.y = element_text(size = 0), text = element_text(size = 5))
+  scale_y_reverse(expand = c(0,0))+
+  scale_x_discrete(expand = c(0,0))+
+  labs(y = 'Distance')+
+  theme(axis.text.y = element_text(size = 0), text = element_text(size = 5),
+        plot.margin = unit(c(6, 0.1, 6, 5), "mm"))
 
 heatmap_data_l$asv_num <- factor(x = heatmap_data_l$asv_num,
                                  levels = heatmap_data_l$asv_num[asv_order], 
@@ -491,18 +518,20 @@ heatmap_data_l$asv_num <- factor(x = heatmap_data_l$asv_num,
 heatmap_plot <- heatmap_data_l |>
   ggplot( aes(x = as.numeric(sample_num), y = asv_num)) +
   geom_tile(aes(fill = value)) +
-  scale_fill_gradient2(low = "navy", mid = "white", high = "red", midpoint = 0)+
+  scale_fill_gradient2(low = "navy", mid = "white", high = "red", midpoint = 0, limits = c(-5.21, 5.21), na.value = '#D7D6D3')+
   theme(axis.text.y = element_text(size = 6))+
   scale_x_continuous(expand = c(0, 0), breaks = c(1,   13,   25,   37,   49,   61,   73,   85,   97,  109), 
                      labels =  year_labels) +
+  scale_y_discrete(expand = c(0,0))+
   labs(x = 'Time (Years)', y = '', fill = 'Wavelet\nresult')+
   theme_bw()+
   theme(panel.grid = element_blank(), legend.position = 'right',
-        axis.text.y = element_text(size = 5), text = element_text(size = 5),
-        panel.border = element_blank(),  legend.key.size = unit(4, 'mm'))
+        axis.text = element_text(size = 5), text = element_text(size = 5),
+        panel.border = element_blank(),  legend.key.size = unit(4, 'mm'),
+        plot.margin = unit(c(5, 1, 5, 0), "mm"))
 
 # Create a new page
-pdf("results/figures/hierarchical_clustering/clust_d3_PA.pdf", width = 8, height = 4)  # Adjust width and height as needed
+pdf("results/figures/hierarchical_clustering_scales/clust_d3_PA.pdf", width = 8, height = 4)  # Adjust width and height as needed
 
 # Arrange and print the plots
 composition_of_plots <- grid.arrange(dendro, 
@@ -521,8 +550,11 @@ heatmap_data_l <- time_series_4 |>
 asv_order <- order.dendrogram(hc4)
 
 dendro <- ggdendrogram(data = hc4, rotate = T)+
-  scale_y_reverse()+
-  theme(axis.text.y = element_text(size = 0), text = element_text(size = 5))
+  scale_y_reverse(expand = c(0,0))+
+  scale_x_discrete(expand = c(0,0))+
+  labs(y = 'Distance')+
+  theme(axis.text.y = element_text(size = 0), text = element_text(size = 5),
+        plot.margin = unit(c(6, 0.1, 6, 5), "mm"))
 
 heatmap_data_l$asv_num <- factor(x = heatmap_data_l$asv_num,
                                  levels = heatmap_data_l$asv_num[asv_order], 
@@ -531,18 +563,20 @@ heatmap_data_l$asv_num <- factor(x = heatmap_data_l$asv_num,
 heatmap_plot <- heatmap_data_l |>
   ggplot( aes(x = as.numeric(sample_num), y = asv_num)) +
   geom_tile(aes(fill = value)) +
-  scale_fill_gradient2(low = "navy", mid = "white", high = "red", midpoint = 0)+
+  scale_fill_gradient2(low = "navy", mid = "white", high = "red", midpoint = 0, limits = c(-5.21, 5.21), na.value = '#D7D6D3')+
   theme(axis.text.y = element_text(size = 6))+
   scale_x_continuous(expand = c(0, 0), breaks = c(1,   13,   25,   37,   49,   61,   73,   85,   97,  109), 
                      labels =  year_labels) +
+  scale_y_discrete(expand = c(0,0))+
   labs(x = 'Time (Years)', y = '', fill = 'Wavelet\nresult')+
   theme_bw()+
   theme(panel.grid = element_blank(), legend.position = 'right',
-        axis.text.y = element_text(size = 5), text = element_text(size = 5),
-        panel.border = element_blank(),  legend.key.size = unit(4, 'mm'))
+        axis.text = element_text(size = 5), text = element_text(size = 5),
+        panel.border = element_blank(),  legend.key.size = unit(4, 'mm'),
+        plot.margin = unit(c(5, 1, 5, 0), "mm"))
 
 # Create a new page
-pdf("results/figures/hierarchical_clustering/clust_d4_PA.pdf", width = 8, height = 4)  # Adjust width and height as needed
+pdf("results/figures/hierarchical_clustering_scales/clust_d4_PA.pdf", width = 8, height = 4)  # Adjust width and height as needed
 
 # Arrange and print the plots
 composition_of_plots <- grid.arrange(dendro, 
@@ -553,8 +587,7 @@ composition_of_plots <- grid.arrange(dendro,
 # Close the PDF device
 dev.off()
 
-
-### s5------
+### s4------
 heatmap_data_l <- time_series_5 |>
   dplyr::mutate(sample_num = row_number()) |>
   pivot_longer(cols = -c(decimal_date, sample_num), names_to = 'asv_num')
@@ -562,8 +595,11 @@ heatmap_data_l <- time_series_5 |>
 asv_order <- order.dendrogram(hc5)
 
 dendro <- ggdendrogram(data = hc5, rotate = T)+
-  scale_y_reverse()+
-  theme(axis.text.y = element_text(size = 0), text = element_text(size = 5))
+  scale_y_reverse(expand = c(0,0))+
+  scale_x_discrete(expand = c(0,0))+
+  labs(y = 'Distance')+
+  theme(axis.text.y = element_text(size = 0), text = element_text(size = 5),
+        plot.margin = unit(c(6, 0.1, 6, 5), "mm"))
 
 heatmap_data_l$asv_num <- factor(x = heatmap_data_l$asv_num,
                                  levels = heatmap_data_l$asv_num[asv_order], 
@@ -572,18 +608,20 @@ heatmap_data_l$asv_num <- factor(x = heatmap_data_l$asv_num,
 heatmap_plot <- heatmap_data_l |>
   ggplot( aes(x = as.numeric(sample_num), y = asv_num)) +
   geom_tile(aes(fill = value)) +
-  scale_fill_gradient2(low = "navy", mid = "white", high = "red", midpoint = 0)+
+  scale_fill_gradient2(low = "navy", mid = "white", high = "red", midpoint = 0, limits = c(-5.21, 5.21), na.value = '#D7D6D3')+
   theme(axis.text.y = element_text(size = 6))+
   scale_x_continuous(expand = c(0, 0), breaks = c(1,   13,   25,   37,   49,   61,   73,   85,   97,  109), 
                      labels =  year_labels) +
+  scale_y_discrete(expand = c(0,0))+
   labs(x = 'Time (Years)', y = '', fill = 'Wavelet\nresult')+
   theme_bw()+
   theme(panel.grid = element_blank(), legend.position = 'right',
-        axis.text.y = element_text(size = 5), text = element_text(size = 5),
-        panel.border = element_blank(),  legend.key.size = unit(4, 'mm'))
+        axis.text = element_text(size = 5), text = element_text(size = 5),
+        panel.border = element_blank(),  legend.key.size = unit(4, 'mm'),
+        plot.margin = unit(c(5, 1, 5, 0), "mm"))
 
 # Create a new page
-pdf("results/figures/hierarchical_clustering/clust_s5_PA.pdf", width = 8, height = 4)  # Adjust width and height as needed
+pdf("results/figures/hierarchical_clustering_scales/clust_s4_PA.pdf", width = 8, height = 4)  # Adjust width and height as needed
 
 # Arrange and print the plots
 composition_of_plots <- grid.arrange(dendro, 
@@ -593,52 +631,68 @@ composition_of_plots <- grid.arrange(dendro,
 
 # Close the PDF device
 dev.off()
+
 
 ### The same for the FL fraction----
 time_series_1 <- wavelets_result_tibble_tax_02_biased |>
-  dplyr::select(decimal_date, wavelets_result, asv_num, wavelets_transformation) |>
+  dplyr::select(decimal_date, wavelets_result_ed, asv_num, wavelets_transformation) |>
   left_join(tax_bbmo_10y_new, by = 'asv_num') |>
-  dplyr::mutate(asv_f = paste0(family,'.',asv_num)) |>
+  dplyr::mutate(asv_f = case_when(!is.na(family) ~ paste0(family,'.',asv_num),
+                                  is.na(family) & !is.na(order) ~ paste0(order, '.', asv_num),
+                                  is.na(family) & is.na(order) ~ paste0(class, '.', asv_num),
+                                  is.na(family) & is.na(order) & is.na(class) ~ paste0(phylum, '.', asv_num))) |>
   dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus, species)) |>
   dplyr::filter(wavelets_transformation == 'd1' ) |>
   dplyr::select(-wavelets_transformation) |>
-  pivot_wider(names_from = asv_f, values_from = wavelets_result)
+  pivot_wider(names_from = asv_f, values_from = wavelets_result_ed)
 
 time_series_2 <- wavelets_result_tibble_tax_02_biased |>
-  dplyr::select(decimal_date, wavelets_result, asv_num, wavelets_transformation) |>
+  dplyr::select(decimal_date, wavelets_result_ed, asv_num, wavelets_transformation) |>
   left_join(tax_bbmo_10y_new, by = 'asv_num') |>
-  dplyr::mutate(asv_f = paste0(family,'.',asv_num)) |>
+  dplyr::mutate(asv_f = case_when(!is.na(family) ~ paste0(family,'.',asv_num),
+                                  is.na(family) & !is.na(order) ~ paste0(order, '.', asv_num),
+                                  is.na(family) & is.na(order) ~ paste0(class, '.', asv_num),
+                                  is.na(family) & is.na(order) & is.na(class) ~ paste0(phylum, '.', asv_num))) |>
   dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus, species)) |>
   dplyr::filter(wavelets_transformation == 'd2' ) |>
   dplyr::select(-wavelets_transformation) |>
-  pivot_wider(names_from = asv_f, values_from = wavelets_result)
+  pivot_wider(names_from = asv_f, values_from = wavelets_result_ed)
 
 time_series_3 <- wavelets_result_tibble_tax_02_biased |>
-  dplyr::select(decimal_date, wavelets_result, asv_num, wavelets_transformation) |>
+  dplyr::select(decimal_date, wavelets_result_ed, asv_num, wavelets_transformation) |>
   left_join(tax_bbmo_10y_new, by = 'asv_num') |>
-  dplyr::mutate(asv_f = paste0(family,'.',asv_num)) |>
+  dplyr::mutate(asv_f = case_when(!is.na(family) ~ paste0(family,'.',asv_num),
+                                  is.na(family) & !is.na(order) ~ paste0(order, '.', asv_num),
+                                  is.na(family) & is.na(order) ~ paste0(class, '.', asv_num),
+                                  is.na(family) & is.na(order) & is.na(class) ~ paste0(phylum, '.', asv_num))) %$%
   dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus, species)) |>
   dplyr::filter(wavelets_transformation == 'd3' ) |>
   dplyr::select(-wavelets_transformation) |>
-  pivot_wider(names_from = asv_f, values_from = wavelets_result)
+  pivot_wider(names_from = asv_f, values_from = wavelets_result_ed)
 
 time_series_4 <- wavelets_result_tibble_tax_02_biased |>
-  dplyr::select(decimal_date, wavelets_result, asv_num, wavelets_transformation) |>
+  dplyr::select(decimal_date, wavelets_result_ed, asv_num, wavelets_transformation) |>
   left_join(tax_bbmo_10y_new, by = 'asv_num') |>
-  dplyr::mutate(asv_f = paste0(family,'.',asv_num)) |>
+  dplyr::mutate(asv_f = case_when(!is.na(family) ~ paste0(family,'.',asv_num),
+                                  is.na(family) & !is.na(order) ~ paste0(order, '.', asv_num),
+                                  is.na(family) & is.na(order) ~ paste0(class, '.', asv_num),
+                                  is.na(family) & is.na(order) & is.na(class) ~ paste0(phylum, '.', asv_num))) |>
   dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus, species)) |>
   dplyr::filter(wavelets_transformation == 'd4' ) |>
   dplyr::select(-wavelets_transformation) |>
-  pivot_wider(names_from = asv_f, values_from = wavelets_result)
+  pivot_wider(names_from = asv_f, values_from = wavelets_result_ed)
 
 time_series_5 <- wavelets_result_tibble_tax_02_biased |>
-  dplyr::select(decimal_date, wavelets_result, asv_num, wavelets_transformation) |>
+  dplyr::select(decimal_date, wavelets_result_ed, asv_num, wavelets_transformation) |>
   left_join(tax_bbmo_10y_new, by = 'asv_num') |>
-  dplyr::mutate(asv_f = paste0(family,'.',asv_num)) |>
+  dplyr::mutate(asv_f = case_when(!is.na(family) ~ paste0(family,'.',asv_num),
+                                  is.na(family) & !is.na(order) ~ paste0(order, '.', asv_num),
+                                  is.na(family) & is.na(order) ~ paste0(class, '.', asv_num),
+                                  is.na(family) & is.na(order) & is.na(class) ~ paste0(phylum, '.', asv_num))) |>
   dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus, species)) |>
-  dplyr::filter(wavelets_transformation == 's5' ) |>
+  dplyr::filter(wavelets_transformation == 's4' ) |>
   dplyr::select(-wavelets_transformation) |>
-  pivot_wider(names_from = asv_f, values_from = wavelets_result)
+  pivot_wider(names_from = asv_f, values_from = wavelets_result_ed)
 
 # time_series_1 |>
 #   pivot_longer(cols = c(-decimal_date)) |>
@@ -707,8 +761,11 @@ heatmap_data_l <- time_series_1 |>
 asv_order <- order.dendrogram(hc1)
 
 dendro <- ggdendrogram(data = hc1, rotate = T)+
-  scale_y_reverse()+
-  theme(axis.text.y = element_text(size = 0), text = element_text(size = 5))
+  scale_y_reverse(expand = c(0,0))+
+  scale_x_discrete(expand = c(0,0))+
+  labs(y = 'Distance')+
+  theme(axis.text.y = element_text(size = 0), text = element_text(size = 5),
+        plot.margin = unit(c(7, 0.1, 7, 5), "mm"))
 
 heatmap_data_l$asv_num <- factor(x = heatmap_data_l$asv_num,
                                  levels = heatmap_data_l$asv_num[asv_order], 
@@ -717,18 +774,20 @@ heatmap_data_l$asv_num <- factor(x = heatmap_data_l$asv_num,
 heatmap_plot <- heatmap_data_l |>
   ggplot( aes(x = as.numeric(sample_num), y = asv_num)) +
   geom_tile(aes(fill = value)) +
-  scale_fill_gradient2(low = "navy", mid = "white", high = "red", midpoint = 0)+
+  scale_fill_gradient2(low = "navy", mid = "white", high = "red", midpoint = 0, limits = c(-5.21, 5.21), na.value = '#D7D6D3')+
   theme(axis.text.y = element_text(size = 6))+
   scale_x_continuous(expand = c(0, 0), breaks = c(1,   13,   25,   37,   49,   61,   73,   85,   97,  109), 
                      labels =  year_labels) +
+  scale_y_discrete(expand = c(0,0))+
   labs(x = 'Time (Years)', y = '', fill = 'Wavelet\nresult')+
   theme_bw()+
   theme(panel.grid = element_blank(), legend.position = 'right',
-        axis.text.y = element_text(size = 5), text = element_text(size = 5),
-        panel.border = element_blank(),  legend.key.size = unit(4, 'mm'))
+        axis.text = element_text(size = 5), text = element_text(size = 5),
+        panel.border = element_blank(),  legend.key.size = unit(4, 'mm'),
+        plot.margin = unit(c(5, 1, 5, 0), "mm"))
 
 # Create a new page
-pdf("results/figures/hierarchical_clustering/clust_d1_FL.pdf", width = 8, height = 4)  # Adjust width and height as needed
+pdf("results/figures/hierarchical_clustering_scales/clust_d1_FL.pdf", width = 8, height = 4)  # Adjust width and height as needed
 
 # Arrange and print the plots
 composition_of_plots <- grid.arrange(dendro, 
@@ -739,7 +798,6 @@ composition_of_plots <- grid.arrange(dendro,
 # Close the PDF device
 dev.off()
 
-
 ### d2------
 heatmap_data_l <- time_series_2 |>
   dplyr::mutate(sample_num = row_number()) |>
@@ -748,8 +806,11 @@ heatmap_data_l <- time_series_2 |>
 asv_order <- order.dendrogram(hc2)
 
 dendro <- ggdendrogram(data = hc2, rotate = T)+
-  scale_y_reverse()+
-  theme(axis.text.y = element_text(size = 0), text = element_text(size = 5))
+  scale_y_reverse(expand = c(0,0))+
+  scale_x_discrete(expand = c(0,0))+
+  labs(y = 'Distance')+
+  theme(axis.text.y = element_text(size = 0), text = element_text(size = 5),
+        plot.margin = unit(c(7, 0.1, 7, 5), "mm"))
 
 heatmap_data_l$asv_num <- factor(x = heatmap_data_l$asv_num,
                                  levels = heatmap_data_l$asv_num[asv_order], 
@@ -758,18 +819,20 @@ heatmap_data_l$asv_num <- factor(x = heatmap_data_l$asv_num,
 heatmap_plot <- heatmap_data_l |>
   ggplot( aes(x = as.numeric(sample_num), y = asv_num)) +
   geom_tile(aes(fill = value)) +
-  scale_fill_gradient2(low = "navy", mid = "white", high = "red", midpoint = 0)+
+  scale_fill_gradient2(low = "navy", mid = "white", high = "red", midpoint = 0, limits = c(-5.21, 5.21), na.value = '#D7D6D3')+
   theme(axis.text.y = element_text(size = 6))+
   scale_x_continuous(expand = c(0, 0), breaks = c(1,   13,   25,   37,   49,   61,   73,   85,   97,  109), 
                      labels =  year_labels) +
+  scale_y_discrete(expand = c(0,0))+
   labs(x = 'Time (Years)', y = '', fill = 'Wavelet\nresult')+
   theme_bw()+
   theme(panel.grid = element_blank(), legend.position = 'right',
-        axis.text.y = element_text(size = 5), text = element_text(size = 5),
-        panel.border = element_blank(),  legend.key.size = unit(4, 'mm'))
+        axis.text = element_text(size = 5), text = element_text(size = 5),
+        panel.border = element_blank(),  legend.key.size = unit(4, 'mm'),
+        plot.margin = unit(c(5, 1, 5, 0), "mm"))
 
 # Create a new page
-pdf("results/figures/hierarchical_clustering/clust_d2_FL.pdf", width = 8, height = 4)  # Adjust width and height as needed
+pdf("results/figures/hierarchical_clustering_scales/clust_d2_FL.pdf", width = 8, height = 4)  # Adjust width and height as needed
 
 # Arrange and print the plots
 composition_of_plots <- grid.arrange(dendro, 
@@ -788,8 +851,11 @@ heatmap_data_l <- time_series_3 |>
 asv_order <- order.dendrogram(hc3)
 
 dendro <- ggdendrogram(data = hc3, rotate = T)+
-  scale_y_reverse()+
-  theme(axis.text.y = element_text(size = 0), text = element_text(size = 5))
+  scale_y_reverse(expand = c(0,0))+
+  scale_x_discrete(expand = c(0,0))+
+  labs(y = 'Distance')+
+  theme(axis.text.y = element_text(size = 0), text = element_text(size = 5),
+        plot.margin = unit(c(7, 0.1, 7, 5), "mm"))
 
 heatmap_data_l$asv_num <- factor(x = heatmap_data_l$asv_num,
                                  levels = heatmap_data_l$asv_num[asv_order], 
@@ -798,18 +864,20 @@ heatmap_data_l$asv_num <- factor(x = heatmap_data_l$asv_num,
 heatmap_plot <- heatmap_data_l |>
   ggplot( aes(x = as.numeric(sample_num), y = asv_num)) +
   geom_tile(aes(fill = value)) +
-  scale_fill_gradient2(low = "navy", mid = "white", high = "red", midpoint = 0)+
+  scale_fill_gradient2(low = "navy", mid = "white", high = "red", midpoint = 0, limits = c(-5.21, 5.21), na.value = '#D7D6D3')+
   theme(axis.text.y = element_text(size = 6))+
   scale_x_continuous(expand = c(0, 0), breaks = c(1,   13,   25,   37,   49,   61,   73,   85,   97,  109), 
                      labels =  year_labels) +
+  scale_y_discrete(expand = c(0,0))+
   labs(x = 'Time (Years)', y = '', fill = 'Wavelet\nresult')+
   theme_bw()+
   theme(panel.grid = element_blank(), legend.position = 'right',
-        axis.text.y = element_text(size = 5), text = element_text(size = 5),
-        panel.border = element_blank(),  legend.key.size = unit(4, 'mm'))
+        axis.text = element_text(size = 5), text = element_text(size = 5),
+        panel.border = element_blank(),  legend.key.size = unit(4, 'mm'),
+        plot.margin = unit(c(5, 1, 5, 0), "mm"))
 
 # Create a new page
-pdf("results/figures/hierarchical_clustering/clust_d3_FL.pdf", width = 8, height = 4)  # Adjust width and height as needed
+pdf("results/figures/hierarchical_clustering_scales/clust_d3_FL.pdf", width = 8, height = 4)  # Adjust width and height as needed
 
 # Arrange and print the plots
 composition_of_plots <- grid.arrange(dendro, 
@@ -828,8 +896,11 @@ heatmap_data_l <- time_series_4 |>
 asv_order <- order.dendrogram(hc4)
 
 dendro <- ggdendrogram(data = hc4, rotate = T)+
-  scale_y_reverse()+
-  theme(axis.text.y = element_text(size = 0), text = element_text(size = 5))
+  scale_y_reverse(expand = c(0,0))+
+  scale_x_discrete(expand = c(0,0))+
+  labs(y = 'Distance')+
+  theme(axis.text.y = element_text(size = 0), text = element_text(size = 5),
+        plot.margin = unit(c(7, 0.1, 7, 5), "mm"))
 
 heatmap_data_l$asv_num <- factor(x = heatmap_data_l$asv_num,
                                  levels = heatmap_data_l$asv_num[asv_order], 
@@ -838,18 +909,20 @@ heatmap_data_l$asv_num <- factor(x = heatmap_data_l$asv_num,
 heatmap_plot <- heatmap_data_l |>
   ggplot( aes(x = as.numeric(sample_num), y = asv_num)) +
   geom_tile(aes(fill = value)) +
-  scale_fill_gradient2(low = "navy", mid = "white", high = "red", midpoint = 0)+
+  scale_fill_gradient2(low = "navy", mid = "white", high = "red", midpoint = 0, limits = c(-5.21, 5.21), na.value = '#D7D6D3')+
   theme(axis.text.y = element_text(size = 6))+
   scale_x_continuous(expand = c(0, 0), breaks = c(1,   13,   25,   37,   49,   61,   73,   85,   97,  109), 
                      labels =  year_labels) +
+  scale_y_discrete(expand = c(0,0))+
   labs(x = 'Time (Years)', y = '', fill = 'Wavelet\nresult')+
   theme_bw()+
   theme(panel.grid = element_blank(), legend.position = 'right',
-        axis.text.y = element_text(size = 5), text = element_text(size = 5),
-        panel.border = element_blank(),  legend.key.size = unit(4, 'mm'))
+        axis.text = element_text(size = 5), text = element_text(size = 5),
+        panel.border = element_blank(),  legend.key.size = unit(4, 'mm'),
+        plot.margin = unit(c(5, 1, 5, 0), "mm"))
 
 # Create a new page
-pdf("results/figures/hierarchical_clustering/clust_d4_FL.pdf", width = 8, height = 4)  # Adjust width and height as needed
+pdf("results/figures/hierarchical_clustering_scales/clust_d4_FL.pdf", width = 8, height = 4)  # Adjust width and height as needed
 
 # Arrange and print the plots
 composition_of_plots <- grid.arrange(dendro, 
@@ -860,17 +933,24 @@ composition_of_plots <- grid.arrange(dendro,
 # Close the PDF device
 dev.off()
 
-
-### s5------
+### s4------
 heatmap_data_l <- time_series_5 |>
   dplyr::mutate(sample_num = row_number()) |>
   pivot_longer(cols = -c(decimal_date, sample_num), names_to = 'asv_num')
 
+heatmap_data_l |>
+  dplyr::filter(!is.na(value)) %$%
+  value |>
+  range()
+
 asv_order <- order.dendrogram(hc5)
 
 dendro <- ggdendrogram(data = hc5, rotate = T)+
-  scale_y_reverse()+
-  theme(axis.text.y = element_text(size = 0), text = element_text(size = 5))
+  scale_y_reverse(expand = c(0,0))+
+  scale_x_discrete(expand = c(0,0))+
+  labs(y = 'Distance')+
+  theme(axis.text.y = element_text(size = 0), text = element_text(size = 5),
+        plot.margin = unit(c(7, 0.1, 7, 5), "mm"))
 
 heatmap_data_l$asv_num <- factor(x = heatmap_data_l$asv_num,
                                  levels = heatmap_data_l$asv_num[asv_order], 
@@ -879,18 +959,20 @@ heatmap_data_l$asv_num <- factor(x = heatmap_data_l$asv_num,
 heatmap_plot <- heatmap_data_l |>
   ggplot( aes(x = as.numeric(sample_num), y = asv_num)) +
   geom_tile(aes(fill = value)) +
-  scale_fill_gradient2(low = "navy", mid = "white", high = "red", midpoint = 0)+
+  scale_fill_gradient2(low = "navy", mid = "white", high = "red", midpoint = 0, limits = c(-8.87, 8.87), na.value = '#D7D6D3')+
   theme(axis.text.y = element_text(size = 6))+
   scale_x_continuous(expand = c(0, 0), breaks = c(1,   13,   25,   37,   49,   61,   73,   85,   97,  109), 
                      labels =  year_labels) +
+  scale_y_discrete(expand = c(0,0))+
   labs(x = 'Time (Years)', y = '', fill = 'Wavelet\nresult')+
   theme_bw()+
   theme(panel.grid = element_blank(), legend.position = 'right',
-        axis.text.y = element_text(size = 5), text = element_text(size = 5),
-        panel.border = element_blank(),  legend.key.size = unit(4, 'mm'))
+        axis.text = element_text(size = 5), text = element_text(size = 5),
+        panel.border = element_blank(),  legend.key.size = unit(4, 'mm'),
+        plot.margin = unit(c(5, 1, 5, 0), "mm"))
 
 # Create a new page
-pdf("results/figures/hierarchical_clustering/clust_s5_FL.pdf", width = 8, height = 4)  # Adjust width and height as needed
+pdf("results/figures/hierarchical_clustering_scales/clust_s4_FL.pdf", width = 8, height = 4)  # Adjust width and height as needed
 
 # Arrange and print the plots
 composition_of_plots <- grid.arrange(dendro, 
@@ -934,7 +1016,7 @@ time_series_5 <- wavelets_result_tibble_tax_3_biased |>
   left_join(tax_bbmo_10y_new, by = 'asv_num') |>
   dplyr::mutate(asv_f = paste0(family,'.',asv_num)) |>
   dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus, species)) |>
-  dplyr::filter(wavelets_transformation == 's5' ) |>
+  dplyr::filter(wavelets_transformation == 's4' ) |>
   dplyr::select(-wavelets_transformation) |>
   pivot_wider(names_from = asv_f, values_from = wavelets_result)
 
@@ -959,7 +1041,7 @@ distances_5 <- time_series_5 |>
   t() |>
   stats::dist( method = "euclidean")
 
-# Hierarchical clustering using Complete Linkage
+# Hierarchical clustering using ward.d
 distances_1 |>
   str()
 
@@ -980,7 +1062,7 @@ hc1 <- hclust(distances_1, method = "ward.D" )  |>
 # plot(hc2, cex = 0.6, hang = -1)
 # 
 # # Compute with agnes
-# hc2 <- agnes(distances, method = "complete")
+# hc2 <- agnes(distances, method = 'ward.D')
 # 
 # # Agglomerative coefficient
 # hc2$ac
@@ -1094,7 +1176,7 @@ for (i in 1:(length(distance_matrices) - 1)) {
   for (j in (i + 1):length(distance_matrices)) {
     name <- paste("cross_correlation_", i, ".", j, sep = "")
     cross_correlation_matrices[[name]] <- cor(distance_matrices[[i]], distance_matrices[[j]])
-    hc_list[[name]] <- hclust(as.dist(1 - cross_correlation_matrices[[name]]), method = "complete")
+    hc_list[[name]] <- hclust(as.dist(1 - cross_correlation_matrices[[name]]), method = 'ward.D')
   }
 }
 
@@ -1159,8 +1241,8 @@ for (i in 1:(length(distance_matrices) - 1)) {
 # 
 # dim(cross_correlation)
 # 
-# hc <- hclust(as.dist(1 - cross_correlation_1.2), method = "complete")
-# hc <- hclust(as.dist(1 - cross_correlation), method = "complete")
+# hc <- hclust(as.dist(1 - cross_correlation_1.2), method = 'ward.D')
+# hc <- hclust(as.dist(1 - cross_correlation), method = 'ward.D')
 # 
 # # Plot the heatmap
 # #library(ggplot2)
@@ -1235,12 +1317,21 @@ time_series_3 <- wavelets_result_tibble_tax_02_biased |>
   dplyr::select(-wavelets_transformation) |>
   pivot_wider(names_from = asv_f, values_from = wavelets_result)
 
+time_series_4 <- wavelets_result_tibble_tax_02_biased |>
+  dplyr::select(decimal_date, wavelets_result, asv_num, wavelets_transformation) |>
+  left_join(tax_bbmo_10y_new, by = 'asv_num') |>
+  dplyr::mutate(asv_f = paste0(family,'.',asv_num)) |>
+  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus, species)) |>
+  dplyr::filter(wavelets_transformation == 'd4' ) |>
+  dplyr::select(-wavelets_transformation) |>
+  pivot_wider(names_from = asv_f, values_from = wavelets_result)
+
 time_series_5 <- wavelets_result_tibble_tax_02_biased |>
   dplyr::select(decimal_date, wavelets_result, asv_num, wavelets_transformation) |>
   left_join(tax_bbmo_10y_new, by = 'asv_num') |>
   dplyr::mutate(asv_f = paste0(family,'.',asv_num)) |>
   dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus, species)) |>
-  dplyr::filter(wavelets_transformation == 'd5' ) |>
+  dplyr::filter(wavelets_transformation == 's4' ) |>
   dplyr::select(-wavelets_transformation) |>
   pivot_wider(names_from = asv_f, values_from = wavelets_result)
 
@@ -1256,6 +1347,11 @@ distances_2 <- time_series_2 |>
   stats::dist( method = "euclidean")
 
 distances_3 <- time_series_3 |>
+  dplyr::select(-decimal_date) |>
+  t() |>
+  stats::dist( method = "euclidean")
+
+distances_4 <- time_series_4 |>
   dplyr::select(-decimal_date) |>
   t() |>
   stats::dist( method = "euclidean")
@@ -1285,6 +1381,9 @@ distances_2 <- distances_2 |>
 distances_3 <- distances_3 |>
   as.matrix()
 
+distances_4 <- distances_4 |>
+  as.matrix()
+
 distances_5 <- distances_5 |>
   as.matrix()
 
@@ -1305,9 +1404,9 @@ distances_5 <- distances_5 |>
 # 
 # dim(cross_correlation)
 # 
-# hc <- hclust(as.dist(1 - cross_correlation_1.2), method = "complete")
-# hc <- hclust(as.dist(1 - cross_correlation_1.3), method = "complete")
-# hc <- hclust(as.dist(1 - cross_correlation), method = "complete")
+# hc <- hclust(as.dist(1 - cross_correlation_1.2), method = 'ward.D')
+# hc <- hclust(as.dist(1 - cross_correlation_1.3), method = 'ward.D')
+# hc <- hclust(as.dist(1 - cross_correlation), method = 'ward.D')
 # 
 # # Plot the heatmap
 # #library(ggplot2)
@@ -1339,9 +1438,7 @@ distances_5 <- distances_5 |>
 #         scale = "none", # prevent scaling of the data
 #         #main = "Cross-correlation Heatmap",
 #         xlab = 'Fine-scale', ylab = 'Seasonal')
-# 
-# 
-# 
+
 # # Add color legend using image.plot()
 # 
 # image.plot(x = c(-1, 1), y = c(-1, 1), z = matrix(seq(-1, 1, length.out = 100), nrow = 1),
@@ -1364,7 +1461,7 @@ for (i in 1:(length(distance_matrices) - 1)) {
   for (j in (i + 1):length(distance_matrices)) {
     name <- paste("cross_correlation_", i, ".", j, sep = "")
     cross_correlation_matrices[[name]] <- cor(distance_matrices[[i]], distance_matrices[[j]])
-    hc_list[[name]] <- hclust(as.dist(1 - cross_correlation_matrices[[name]]), method = "complete")
+    hc_list[[name]] <- hclust(as.dist(1 - cross_correlation_matrices[[name]]), method = 'ward.D')
   }
 }
 
@@ -1489,3 +1586,333 @@ for (taxon in unique_taxa) {
   cross_corr_ts2 <- ccf(time_series_2, subset_data)
   cross_corr_results_ts2[[taxon]] <- cross_corr_ts2
 }
+
+
+##### CLUSTERING ENVIRONMENTAL VARIABLES AND CROSSCOREATE THEM WITH ASVs (USING WAVELETS RESULTS)------
+
+### Prepare the environmental data----
+time_series_env_1 <- wavelets_result_env_tibble_red |>
+  dplyr::select(decimal_date, wavelets_result, environmental_variable, wavelets_transformation) |>
+  dplyr::filter(wavelets_transformation == 'd1' ) |>
+  dplyr::select(-wavelets_transformation) |>
+  pivot_wider(names_from = environmental_variable, values_from = wavelets_result)
+
+time_series_env_2 <-wavelets_result_env_tibble_red |>
+  dplyr::select(decimal_date, wavelets_result, environmental_variable, wavelets_transformation) |>
+  dplyr::filter(wavelets_transformation == 'd2' ) |>
+  dplyr::select(-wavelets_transformation) |>
+  pivot_wider(names_from = environmental_variable, values_from = wavelets_result)
+
+time_series_env_3 <- wavelets_result_env_tibble_red |>
+  dplyr::select(decimal_date, wavelets_result, environmental_variable, wavelets_transformation) |>
+  dplyr::filter(wavelets_transformation == 'd3' ) |>
+  dplyr::select(-wavelets_transformation) |>
+  pivot_wider(names_from = environmental_variable, values_from = wavelets_result)
+
+time_series_env_4 <-wavelets_result_env_tibble_red |>
+  dplyr::select(decimal_date, wavelets_result, environmental_variable, wavelets_transformation) |>
+  dplyr::filter(wavelets_transformation == 'd4' ) |>
+  dplyr::select(-wavelets_transformation) |>
+  pivot_wider(names_from = environmental_variable, values_from = wavelets_result)
+
+time_series_env_5 <- wavelets_result_env_tibble_red |>
+  dplyr::select(decimal_date, wavelets_result, environmental_variable, wavelets_transformation) |>
+  dplyr::filter(wavelets_transformation == 's4' ) |>
+  dplyr::select(-wavelets_transformation) |>
+  pivot_wider(names_from = environmental_variable, values_from = wavelets_result)
+
+# time_series_env_1 |>
+#   pivot_longer(cols = c(-decimal_date)) |>
+#   ggplot(aes(decimal_date, name))+
+#   geom_tile(aes(fill = value))+
+#   #scale_fill_gradientn(colours = scale_fill_viridis_b)+
+#   theme_minimal()
+
+# Dissimilarity matrix
+distances_env_1 <- time_series_env_1 |>
+  dplyr::select(-decimal_date) |>
+  t() |>
+  stats::dist( method = "euclidean")
+
+distances_env_2 <- time_series_env_2 |>
+  dplyr::select(-decimal_date) |>
+  t() |>
+  stats::dist( method = "euclidean")
+
+distances_env_3 <- time_series_env_3 |>
+  dplyr::select(-decimal_date) |>
+  t() |>
+  stats::dist( method = "euclidean")
+
+distances_env_4 <- time_series_env_4 |>
+  dplyr::select(-decimal_date) |>
+  t() |>
+  stats::dist( method = "euclidean")
+
+distances_env_5 <- time_series_env_5 |>
+  dplyr::select(-decimal_date) |>
+  t() |>
+  stats::dist( method = "euclidean")
+
+# Hierarchical clustering
+hc1_env <- hclust(distances_env_1, method = "ward.D" )  |>
+  as.dendrogram()
+
+hc2_env <- hclust(distances_env_2, method = "ward.D" )  |>
+  as.dendrogram()
+
+hc3_env <- hclust(distances_env_3, method = "ward.D" )  |>
+  as.dendrogram()
+
+hc4_env <- hclust(distances_env_4, method = "ward.D" )  |>
+  as.dendrogram()
+
+hc5_env <- hclust(distances_env_5, method = "ward.D" )  |>
+  as.dendrogram()
+
+plot(hc1_env)
+plot(hc2_env)
+plot(hc3_env)
+plot(hc4_env)
+plot(hc5_env)
+
+## I plot the dendogram and the wavelets results in a heatmap and observe the clustering analysis----
+
+year_labels <- c("2004", "2005", "2006", '2007', '2008', '2009', '2010',
+                 '2011', '2012', '2013') ## create the labels with correspond with the sample num
+### d1------
+heatmap_data_l <- time_series_env_1 |>
+  dplyr::mutate(sample_num = row_number()) |>
+  pivot_longer(cols = -c(decimal_date, sample_num), names_to = 'env_var')
+
+env_order <- order.dendrogram(hc1_env)
+
+dendro <- ggdendrogram(data = hc1_env, rotate = T)+
+  scale_y_reverse()+
+  theme(axis.text.y = element_text(size = 0), text = element_text(size = 5))
+
+heatmap_data_l$env_var <- factor(x = heatmap_data_l$env_var,
+                                 levels = heatmap_data_l$env_var[env_order], 
+                                 ordered = TRUE)
+
+heatmap_plot <- heatmap_data_l |>
+  ggplot( aes(x = as.numeric(sample_num), y = env_var)) +
+  geom_tile(aes(fill = value)) +
+  scale_fill_gradient2(low = "navy", mid = "white", high = "red", midpoint = 0)+
+  theme(axis.text.y = element_text(size = 6))+
+  scale_x_continuous(expand = c(0, 0), breaks = c(1,   13,   25,   37,   49,   61,   73,   85,   97,  109), 
+                     labels =  year_labels) +
+  labs(x = 'Time (Years)', y = '', fill = 'Wavelet\nresult')+
+  theme_bw()+
+  theme(panel.grid = element_blank(), legend.position = 'right',
+        axis.text.y = element_text(size = 5), text = element_text(size = 5),
+        panel.border = element_blank(),  legend.key.size = unit(4, 'mm'))
+
+### d2------
+heatmap_data_l <- time_series_env_1 |>
+  dplyr::mutate(sample_num = row_number()) |>
+  pivot_longer(cols = -c(decimal_date, sample_num), names_to = 'env_var')
+
+env_order <- order.dendrogram(hc2_env)
+
+dendro <- ggdendrogram(data = hc2_env, rotate = T)+
+  scale_y_reverse()+
+  theme(axis.text.y = element_text(size = 0), text = element_text(size = 5))
+
+heatmap_data_l$env_var <- factor(x = heatmap_data_l$env_var,
+                                 levels = heatmap_data_l$env_var[env_order], 
+                                 ordered = TRUE)
+
+heatmap_plot <- heatmap_data_l |>
+  ggplot( aes(x = as.numeric(sample_num), y = env_var)) +
+  geom_tile(aes(fill = value)) +
+  scale_fill_gradient2(low = "navy", mid = "white", high = "red", midpoint = 0)+
+  theme(axis.text.y = element_text(size = 6))+
+  scale_x_continuous(expand = c(0, 0), breaks = c(1,   13,   25,   37,   49,   61,   73,   85,   97,  109), 
+                     labels =  year_labels) +
+  labs(x = 'Time (Years)', y = '', fill = 'Wavelet\nresult')+
+  theme_bw()+
+  theme(panel.grid = element_blank(), legend.position = 'right',
+        axis.text.y = element_text(size = 5), text = element_text(size = 5),
+        panel.border = element_blank(),  legend.key.size = unit(4, 'mm'))
+
+### d3------
+heatmap_data_l <- time_series_env_1 |>
+  dplyr::mutate(sample_num = row_number()) |>
+  pivot_longer(cols = -c(decimal_date, sample_num), names_to = 'env_var')
+
+env_order <- order.dendrogram(hc3_env)
+
+dendro <- ggdendrogram(data = hc3_env, rotate = T)+
+  scale_y_reverse()+
+  theme(axis.text.y = element_text(size = 0), text = element_text(size = 5))
+
+heatmap_data_l$env_var <- factor(x = heatmap_data_l$env_var,
+                                 levels = heatmap_data_l$env_var[env_order], 
+                                 ordered = TRUE)
+
+heatmap_plot <- heatmap_data_l |>
+  ggplot( aes(x = as.numeric(sample_num), y = env_var)) +
+  geom_tile(aes(fill = value)) +
+  scale_fill_gradient2(low = "navy", mid = "white", high = "red", midpoint = 0)+
+  theme(axis.text.y = element_text(size = 6))+
+  scale_x_continuous(expand = c(0, 0), breaks = c(1,   13,   25,   37,   49,   61,   73,   85,   97,  109), 
+                     labels =  year_labels) +
+  labs(x = 'Time (Years)', y = '', fill = 'Wavelet\nresult')+
+  theme_bw()+
+  theme(panel.grid = element_blank(), legend.position = 'right',
+        axis.text.y = element_text(size = 5), text = element_text(size = 5),
+        panel.border = element_blank(),  legend.key.size = unit(4, 'mm'))
+
+### d4------
+heatmap_data_l <- time_series_env_1 |>
+  dplyr::mutate(sample_num = row_number()) |>
+  pivot_longer(cols = -c(decimal_date, sample_num), names_to = 'env_var')
+
+env_order <- order.dendrogram(hc4_env)
+
+dendro <- ggdendrogram(data = hc4_env, rotate = T)+
+  scale_y_reverse()+
+  theme(axis.text.y = element_text(size = 0), text = element_text(size = 5))
+
+heatmap_data_l$env_var <- factor(x = heatmap_data_l$env_var,
+                                 levels = heatmap_data_l$env_var[env_order], 
+                                 ordered = TRUE)
+
+heatmap_plot <- heatmap_data_l |>
+  ggplot( aes(x = as.numeric(sample_num), y = env_var)) +
+  geom_tile(aes(fill = value)) +
+  scale_fill_gradient2(low = "navy", mid = "white", high = "red", midpoint = 0)+
+  theme(axis.text.y = element_text(size = 6))+
+  scale_x_continuous(expand = c(0, 0), breaks = c(1,   13,   25,   37,   49,   61,   73,   85,   97,  109), 
+                     labels =  year_labels) +
+  labs(x = 'Time (Years)', y = '', fill = 'Wavelet\nresult')+
+  theme_bw()+
+  theme(panel.grid = element_blank(), legend.position = 'right',
+        axis.text.y = element_text(size = 5), text = element_text(size = 5),
+        panel.border = element_blank(),  legend.key.size = unit(4, 'mm'))
+
+### s4------
+heatmap_data_l <- time_series_env_1 |>
+  dplyr::mutate(sample_num = row_number()) |>
+  pivot_longer(cols = -c(decimal_date, sample_num), names_to = 'env_var')
+
+env_order <- order.dendrogram(hc5_env)
+
+dendro <- ggdendrogram(data = hc5_env, rotate = T)+
+  scale_y_reverse()+
+  theme(axis.text.y = element_text(size = 0), text = element_text(size = 5))
+
+heatmap_data_l$env_var <- factor(x = heatmap_data_l$env_var,
+                                 levels = heatmap_data_l$env_var[env_order], 
+                                 ordered = TRUE)
+
+heatmap_plot <- heatmap_data_l |>
+  ggplot( aes(x = as.numeric(sample_num), y = env_var)) +
+  geom_tile(aes(fill = value)) +
+  scale_fill_gradient2(low = "navy", mid = "white", high = "red", midpoint = 0)+
+  theme(axis.text.y = element_text(size = 6))+
+  scale_x_continuous(expand = c(0, 0), breaks = c(1,   13,   25,   37,   49,   61,   73,   85,   97,  109), 
+                     labels =  year_labels) +
+  labs(x = 'Time (Years)', y = '', fill = 'Wavelet\nresult')+
+  theme_bw()+
+  theme(panel.grid = element_blank(), legend.position = 'right',
+        axis.text.y = element_text(size = 5), text = element_text(size = 5),
+        panel.border = element_blank(),  legend.key.size = unit(4, 'mm'))
+
+
+
+## CREAE A LOOP TO PERFORM THE CROSS-CORRELATIONS BETWEEN ENVIRONMENTAL VARIABLES AND ASVs AT DIFFERENT TRANSFORMATIONS-----
+
+## first we do it for just two matrices d1-d1_env for example 
+
+## if I do it without calculating the distances it works but if I use the Euclidean distances then it doesn't work (maybe it is related to the dimensions)
+## Try to understand why.
+
+distances_env_1 <- time_series_env_1 |>
+  #dplyr::select(-decimal_date) |>
+  stats::dist( method = "euclidean")
+
+distances_1 <- time_series_1 |>
+  #dplyr::select(-decimal_date) |>
+  #t() |>
+  stats::dist( method = "euclidean")
+
+distances_env_2 <- time_series_env_2 |>
+  #dplyr::select(-decimal_date) |>
+  stats::dist( method = "euclidean")
+
+distances_2 <- time_series_2 |>
+  #dplyr::select(-decimal_date) |>
+  stats::dist( method = "euclidean")
+
+distances_env_2 <- time_series_env_2 |>
+  #dplyr::select(-decimal_date) |>
+  stats::dist( method = "euclidean")
+
+distances_2 <- time_series_2 |>
+  #dplyr::select(-decimal_date) |>
+  stats::dist( method = "euclidean")
+
+
+distances_1 <- distances_1 |>
+  as.matrix()
+  
+distances_env_1 <- distances_env_1 |>
+  as.matrix() 
+
+distances_2 <- distances_2 |>
+  as.matrix()
+
+distances_env_2 <- distances_env_2 |>
+  as.matrix()
+
+distances_env_3 <- distances_env_3 |>
+  as.matrix()
+
+distances_env_4 <- distances_env_4  |>
+  as.matrix()
+
+distances_env_5 <- distances_env_5 |>
+  as.matrix()
+
+cross_correlation_matrices <- cor(distances_env_1, distances_1)
+
+hc_list <- hclust(as.dist(1 - cross_correlation_matrices), method = "ward.D")
+
+time_series_env_1_ed <-  time_series_env_1 |>
+  dplyr::select(-decimal_date)
+
+time_series_1_ed <- time_series_1 |>
+  dplyr::select(-decimal_date)
+
+cor_1 <- cor(time_series_1_ed, time_series_env_1_ed) |>
+  melt()
+
+dim(cor_1)
+
+clust <- hclust(distances_1, method = 'ward.D') |>
+  as.dendrogram()
+
+asv_order <- order.dendrogram(clust)
+
+dendro <- ggdendrogram(data = clust)+
+  scale_y_reverse()+
+  theme(axis.text.y = element_text(size = 0), text = element_text(size = 5))
+
+cor_1$Var1 <- factor(x = cor_1$Var1,
+                                 levels = cor_1$Var1[asv_order], 
+                                 ordered = TRUE)
+
+heatmap_plot <- ggplot(cor_1, aes(x = Var1, y = Var2, fill = value))+
+  geom_tile()+
+  scale_fill_gradient2(low = "navy", mid = "white", high = "red", midpoint = 0, limits = c(-1, 1))+
+  theme(axis.text.y = element_text(size = 6))+
+  theme_bw()+
+  theme(panel.grid = element_blank(), legend.position = 'right',
+        axis.text.y = element_text(size = 5), text = element_text(size = 5),
+        panel.border = element_blank(),  legend.key.size = unit(4, 'mm'),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+  
+
+grid.arrange(heatmap_plot, dendro)

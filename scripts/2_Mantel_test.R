@@ -620,23 +620,10 @@ bbmo_env_z |>
           panel.grid.major.y = element_blank())
 
 ## I use a heat map so that maybe we can observe the changes better---
-palete_gradient_cb <- c("#86a0df",
-                     #"#666585" = 0,
-                     '#bbbbbb' = 0,
-                     "#b81131") 
-
-
-palete_gradient_cb2 <- c("#3baf47",
-"#d5f2d2",
-'#FFFFFF' = 0,
-"#8011b8",
-"#4d009c")
-
-m_bbmo_10y |>
-  colnames()
-
-bbmo_env_z |>
-  colnames()
+# palete_gradient_cb <- c("#86a0df",
+#                      #"#666585" = 0,
+#                      '#bbbbbb' = 0,
+#                      "#b81131") 
 
 m_bbmo_10y_red <- m_bbmo_10y |>
   dplyr::select(date, decimal_date, sample_id, year)
@@ -736,8 +723,8 @@ phyico_chemical <- bbmo_env_z_ed |>
   # scale_fill_gradient2(colours = palete_gradient_cb2,
   #                      midpoint = 0  # Set the midpoint value)+
     scale_fill_gradientn(colors = palete_gradient_cb5,
-                         breaks=c(-8,3, 0, 8.3),
-                         limits=c(-8.3,  8.3))+
+                         breaks=c(-6, 0, 6),
+                         limits=c(-6,  6), na.value="#4d009c")+ # I add this since I have one value which is outside the range, to define the color it should have
   facet_wrap(.~year, scales = 'free_x', nrow = 1, switch = 'x')+
   geom_tile(alpha = 1)+
   geom_vline(xintercept = seq(0.5, 12, by = 12), linetype = "dashed", color = "darkgrey") +
@@ -749,11 +736,11 @@ phyico_chemical <- bbmo_env_z_ed |>
         panel.border = element_blank(), strip.background = element_blank(), plot.margin = unit(c(0,3,0,1), "mm"), 
         legend.key.size = unit(3, "mm"))
 
-# ggsave('biological_bbmo.pdf', biological,
-#        path = "~/Documentos/Doctorat/BBMO/BBMO_bloomers/Results/Figures/",
-#        width = 188,
-#        height = 90,
-#        units = 'mm')
+ggsave('biological_bbmo.pdf', biological,
+       path = "~/Documentos/Doctorat/BBMO/BBMO_bloomers/Results/Figures/",
+       width = 188,
+       height = 90,
+       units = 'mm')
 
 ## I divide them in different groups so that we can observe them better----
 bbmo_env_z |>
@@ -1815,3 +1802,228 @@ library(ggcorrplot)
 cor_pmat(asv_tab_rar)
 
 ggcorr(asv_tab_rar, method = c("everything", "pearson")) 
+
+
+# Wavelets analysis for the environmental variables-------
+library(waveslim)
+
+## input data
+### we need environmental variables z-scores----
+sample_id_dec_date <- asv_tab_all_bloo_z_tax_02 |>
+  dplyr::select(sample_id, decimal_date) |>
+  distinct() 
+
+env_z_wavelets_df <- bbmo_env_z |>
+  dplyr::filter(str_detect(sample_id, '_0.2_')) |>
+  left_join(sample_id_dec_date) |>
+  dplyr::select(-sample_id, -env_values) #|>
+  #pivot_wider(id_cols = decimal_date, names_from = environmental_variable, values_from = z_score_environmental_variable)
+
+##before imputing values I use the complete variables which are abundance and synechococcus
+env_z_wavelets_df <- env_z_wavelets_df |>
+  group_by(environmental_variable) |>
+  dplyr::filter(n() >= 120)
+
+#### 4 steps 
+### 1. modwt computation----
+
+  modwt_results_env <- env_z_wavelets_df  |>
+    group_by(environmental_variable) %>%
+    summarize(modwt_result = list(modwt.function.biased(z_score_environmental_variable)))
+
+### 2. e-folding-----
+  ###### commmon for all 
+  x <- rep(0, 10001) 
+  x[5000] <- 1 
+  n.levels <- 4 
+  len <- length(m_02$sample_id) ##120 (length of my dataset)
+  temp <- phase.shift(modwt(x, n.levels = n.levels, wf = "la8"), wf = "la8")
+  
+  ## The positions to the left and to the right of the maximal influence of this spike are recorded in a matrix (left, right) together with the 
+  ## position of the maximum itself (top).
+  waveExtremes <- matrix(nrow = 3, ncol = n.levels + 1) 
+  colnames(waveExtremes) <- c(paste("d", 1:n.levels, sep = ""), paste("s", n.levels,  sep = "")) 
+  rownames(waveExtremes) <- c("left", "right", "top")
+  
+  ## The distance to the maximum from both sides of the influence is determined as 1/e2 times the maximum within a specific coefficient vector.
+  for (i in 1:(n.levels + 1)) waveExtremes[, i] <- c(range(which(abs(temp[[i]]) 
+                                                                 >= max(abs(temp[[i]]))/(exp(2)))), which.max(abs(temp[[i]])))
+  
+  ## The positions (waveExtremes) are used to calculate the distances to the left and to the right of the influence maximum. 
+  ## The distance to the left of the maximum is called "right" because it will serve to calculate the distance at the end of the series.
+  
+  boundaries <- data.frame(end = len - (waveExtremes[3, ] - waveExtremes[1, ]), 
+                           start = waveExtremes[2, ] - waveExtremes[3, ])
+  
+  ##### specific for each ASV
+  asv_num_index <- i
+  modwt_results <- modwt_results_02$modwt_result[[asv_num_index]]
+  
+  i = 1 #i defined it because it was not working, but it should be fixed.
+  for (j in 1:(n.levels + 1)) { 
+    is.na(modwt_results[[i]]) <- c(1:boundaries$start[i], boundaries$end[i]:length(modwt_results[[i]])) 
+    
+  }
+  
+  
+### 3. Visualize the results obtained from the modwt transfomation ------
+
+ ### I extract the wavelets results at the same time for ALL environmental variables that I have in modwt_results -----
+
+ # Initialize a list to store tibbles
+ all_tibbles <- list()
+ 
+ # Loop through the rows of modwt_results_env
+ for (i in seq_len(nrow(modwt_results_env))) {
+   # Extract the current row
+   current_row <- modwt_results_env[i, ]
+   current_asv_row.number <- current_row |>
+     dplyr::mutate(row_number_asv = row_number()) |>
+     dplyr::select(row_number_asv) 
+   
+   current_asv_row.number <- current_asv_row.number$row_number_asv[1]
+   
+   # Extract environmental_variable and modwt_result list
+   current_environmental_variable <- current_row$environmental_variable
+   current_modwt_result <- current_row$modwt_result
+   
+   # Initialize a list to store tibbles for the current environmental_variable
+   d_tibbles <- list()
+   
+   # Loop through modwt_result
+   for (j in 1:5) {
+     # Extract the environmental_variable tibble
+     d_tibbles[[j]] <- current_modwt_result[[current_asv_row.number]][[j]] %>%
+       as_tibble_col(column_name = paste0("d", j))
+   }
+   
+   ##create a column with the environmental_variable
+   current_row <- current_environmental_variable %>%
+     as_tibble() |>
+     mutate(asv_name = list(rep(value, each = 120))) |>
+     unnest(asv_name) |>
+     dplyr::select(-value)
+   
+   # Combine the tibbles for the current environmental_variable
+   if (length(d_tibbles) > 0) {
+     all_tibbles[[current_environmental_variable]] <- bind_cols(d_tibbles) %>%
+       dplyr::mutate(sample_num = row_number()) %>%
+       bind_cols(current_row)
+   }
+ }
+ 
+ # Combine all the tibbles into one
+ final_tibble <- bind_rows(all_tibbles)
+ 
+  decimal_date_tibble <-  env_z_wavelets_df %$%
+     decimal_date |>
+     unique() |>
+     as_tibble_col(column_name = 'decimal_date') |>
+     dplyr::mutate(sample_num = row_number())
+  
+   # tax <- asv_tab_all_bloo_z_tax |>
+   #   dplyr::select(environmental_variable, phylum, class, order, family, genus) |>
+   #   distinct()
+ 
+ wavelets_result_env_tibble  <-  final_tibble |>
+   pivot_longer(cols = !c(asv_name, sample_num), values_to = 'wavelets_result', names_to = 'wavelets_transformation') |>
+   left_join( decimal_date_tibble) |>
+   #left_join(tax, by = c('asv_name' = 'environmental_variable')) |>
+   rename(environmental_variable = asv_name) |>
+   dplyr::mutate(wavelets_transformation = str_replace(wavelets_transformation, 'd5', 's5'))
+ 
+ ## I remove the most afected samples by the boundaries it is less biased but still more biased than when applying the brick wall function
+ ## as we increase the signal the wavelet gets more affected by the margin effect
+ boundaries 
+ 
+ wavelets_result_env_tibble_red <-   wavelets_result_env_tibble |>
+   dplyr::mutate(wavelets_result_ed = case_when(wavelets_transformation == 'd1' &
+                                                  sample_num %in% c(1, 119) ~ 'NA',
+                                                wavelets_transformation == 'd2' &
+                                                  sample_num %in% c(1,2,3,  117, 118, 119) ~ 'NA',
+                                                wavelets_transformation == 'd3' &
+                                                  sample_num %in% c(1,2,3,4,5,6, 113,114,115,116,  117, 118, 119) ~ 'NA',
+                                                wavelets_transformation == 'd4' &
+                                                  sample_num %in% c(1,2,3,4,5,6,7,8,9,10,11,12, 105,106,107,108,109,110,111,112,113,114,
+                                                                    115,116,117, 118, 119) ~ 'NA',
+                                                wavelets_transformation == 'd5' &
+                                                  sample_num %in% c(1,2,3,4,5,6,7,8,9,10,11,12, 
+                                                                    13,14,15,16,17,
+                                                                    108,109,110,111,112,113,114,
+                                                                    115,116,117, 118, 119) ~ 'NA',
+                                                TRUE ~ as.character(wavelets_result)))
+ 
+### PLOT THE WAVELETS TRANSFROMATINS COMPUTED (visually inspect them, to be sure of the results)----
+ wavelets_result_env_tibble_red |>
+   str()
+ 
+ wavelets_result_env_tibble_red |>
+   ggplot(aes(as.numeric(decimal_date), as.numeric(wavelets_result_ed)))+
+   geom_col()+
+   #ggtitle(paste0(unique(wavelets_result_tibble_tax$asv_name), ' ', unique( wavelets_result_tibble_tax$family))) +
+   labs(x = 'Decimal date', y = 'Wavelets results')+
+   facet_grid(wavelets_transformation~environmental_variable)+
+   scale_x_continuous(expand = c(0,0))+
+   theme_bw()+
+   theme(panel.grid = element_blank(), strip.background = element_blank(),
+         #aspect.ratio = 4/10,
+         text = element_text(size = 5))
+
+### create a loop to save all the wavelets transformations computed and visually inspect them
+ # Create a folder to save the PDF files
+ dir.create("results/figures/wavelets_plots", showWarnings = FALSE)
+ 
+ ### FL----
+ # Get unique asv_num values
+ asv_nums <- unique(wavelets_result_tibble_tax_02$asv_num)
+ 
+ for (asv_num in asv_nums) {
+   # Filter data for the current asv_num
+   plot_data <- wavelets_result_env_tibble %>%
+     dplyr::filter(asv_num == !!asv_num)  # Use !! to unquote asv_num
+   
+   title_plot <- plot_data |>
+     group_by(asv_num, family) |>
+     dplyr::reframe(title_ed = paste0(asv_num,', ', family, ', ', order)) |>
+     distinct() |>
+     dplyr::select(title_ed) |>
+     as.character()
+   
+   # Create the plot
+   p <- ggplot(plot_data, aes(decimal_date, wavelets_result)) +
+     geom_col() +
+     labs(x = 'Decimal date', y = 'Wavelets results') +
+     facet_grid(vars(wavelets_transformation)) +
+     scale_x_continuous(expand = c(0,0)) +
+     labs(title = title_plot)+
+     theme_bw() +
+     theme(panel.grid = element_blank(), strip.background = element_blank(),
+           aspect.ratio = 4/10,
+           text = element_text(size = 5))
+   
+   # Save the plot as a PDF file
+   pdf_file <- paste0("results/figures/wavelets_plots/", asv_num, "_plot_02.pdf")
+   ggsave(pdf_file, p, width = 6, height = 3, units = "in")
+   
+   # Print a message indicating the plot has been saved
+   cat("Plot for", asv_num, "saved as", pdf_file, "\n")
+ }
+ 
+ 
+### 4. Magnitude (coefficients) observe were they got the highest coefficients for the wavelet analysis--------
+
+ #### Wavelet coefficient magnitude indicates how strongly the data are correlated with the mother wavelet at a given frequency and distance.
+ 
+env_type <-  wavelets_result_env_tibble_red %>%
+   group_by(environmental_variable, wavelets_transformation) %>%
+   dplyr::filter(!is.na(wavelets_result)) |>
+   dplyr::summarize(coefficients = sqrt(sum(wavelets_result^2))) |>  # Calculate the magnitude of coefficients for each level
+   group_by(environmental_variable) |>
+   top_n(1, wt = coefficients) |>  # Find the level with the maximum magnitude
+   rename(max_coeff = wavelets_transformation) |>
+   dplyr::mutate(bloomer_type = case_when(max_coeff == 's5' ~ 'inter-annual',
+                                          max_coeff == 'd1' ~ 'fine-scale',
+                                          max_coeff == 'd2' ~ 'half-yearly', 
+                                          max_coeff == 'd3' ~ 'seasonal', 
+                                          max_coeff == 'd4' ~ 'year-to-year')) 
+ 

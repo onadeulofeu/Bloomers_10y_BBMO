@@ -1,6 +1,6 @@
 # packages
-library(fdrtool)
-library(GeneCycle)
+#library(fdrtool)
+#library(GeneCycle)
 library(patchwork)
 library(lubridate)
 library(ggthemes)
@@ -8,9 +8,9 @@ library(stringr)
 library(tidyverse)
 library(phyloseq)
 library(ggpubr)
+library(waveslim)
 
-# Differentiate seasonal from non-seasonal bloomers to analyze them separately----
-
+# Differentiate different types of bloomers studying their signals across time----
 
 ## upload data----
 asv_tab_all_bloo_z_tax <- read.csv2('data/asv_tab_all_bloo_z_tax_new_assign.csv') ## in this dataset I have all the information from potential blooming ASVs
@@ -19,7 +19,6 @@ bloo_02 <- read.csv('data/bloo_02.csv') |>
 
 bloo_3 <-read.csv('data/bloo_3.csv') |>
   as_tibble()
-
 
 ## Previous to the analysis we need to interpolate missing samples----
 ### we use the most straightforward way which is linear interpolation
@@ -495,111 +494,110 @@ modwtasv194_biased <- modwt(abund194, wf = 'la8', boundary = "periodic", n.level
 
 ### We would like to perform the modwt on all ASVs and have them in a tibble with many lists inside.
 
-modwt.function <-function(abundance){
- modwt_result <-  abundance |>
-   modwt( wf = 'la8', boundary = "periodic", n.levels = 4) |>
-    brick.wall(wf = 'la8') |> #elimination of all boundary coefficients is accomplished by the function 'brick.wall' prior to the phase shift correction
-    phase.shift(wf = 'la8')
-  return(modwt_result)
- }  
-
-
-## FL fraction
-# wavelet_02_df |>
-#   dplyr::group_by(asv_num) |>
-#   #dplyr::filter(asv_num == 'asv11') |>
-#   dplyr::select(abundance_value) %$%
-#   modwt.funtion(abundance = abundance_value)
-
-modwt_results_02 <- wavelet_02_df |>
-  group_by(asv_num) %>%
-  dplyr::summarize(modwt_result = list(modwt.function(abundance_value)))
-
-modwt_results_02 |>
-  str()
-
-modwt_results_3 |>
-  str()
-
-# # Continue with phase shift
-# shifted_result <- phase.shift(brick.wall(result, filter = db5_filter), filter = db5_filter)
-
-# e-folding estimates (modified from Appendix A)
-x <- rep(0, 10001) 
-x[5000] <- 1 
-n.levels <- 4 
-len <- length(abund11) 
-temp <- phase.shift(modwt(x, n.levels = n.levels, wf = "la8"), wf = "la8")
-
- waveExtremes <- matrix(nrow = 3, ncol = n.levels + 1) 
- colnames(waveExtremes) <- c(paste("d", 1:n.levels, sep = ""), paste("s", n.levels,  sep = "")) 
- rownames(waveExtremes) <- c("left", "right", "top")
-
-  for (i in 1:(n.levels + 1)) waveExtremes[, i] <- c(range(which(abs(temp[[i]]) 
-                                                                 >= max(abs(temp[[i]]))/(exp(2)))), which.max(abs(temp[[i]])))
-
- boundaries <- data.frame(end = len - (waveExtremes[3, ] - waveExtremes[1, ]), 
-                          start = waveExtremes[2, ] - waveExtremes[3, ])
- 
- for (j in 1:(n.levels + 1)) { 
-   is.na(modwtasv11[[i]]) <- c(1:boundaries$start[i], boundaries$end[i]:length(modwtasv11[[i]])) 
-   is.na(modwtasv178[[i]]) <- c(1:boundaries$start[i], boundaries$end[i]:length(modwtasv178[[i]])) 
- }
- 
- ## i modify the function to apply it to the results I created before, which is the tibble with many lists inside-----
- ### Elimination of the e-folding coefficients is accomplished using the following script where a constant zero valued series with a perturbation of 
- ### value 1 in the middle (=x) is transformed.
- x <- rep(0, 10001) 
- x[5000] <- 1 
- n.levels <- 4 
- len <- length(abund11) 
- temp <- phase.shift(modwt(x, n.levels = n.levels, wf = "la8"), wf = "la8")
- 
- ## The positions to the left and to the right of the maximal influence of this spike are recorded in a matrix (left, right) together with the 
- ## position of the maximum itself (top).
- waveExtremes <- matrix(nrow = 3, ncol = n.levels + 1) 
- colnames(waveExtremes) <- c(paste("d", 1:n.levels, sep = ""), paste("s", n.levels,  sep = "")) 
- rownames(waveExtremes) <- c("left", "right", "top")
- 
- ## The distance to the maximum from both sides of the influence is determined as 1/e2 times the maximum within a specific coefficient vector.
- for (i in 1:(n.levels + 1)) waveExtremes[, i] <- c(range(which(abs(temp[[i]]) 
-                                                                >= max(abs(temp[[i]]))/(exp(2)))), which.max(abs(temp[[i]])))
- 
- ## The positions (waveExtremes) are used to calculate the distances to the left and to the right of the influence maximum. 
- ## The distance to the left of the maximum is called "right" because it will serve to calculate the distance at the end of the series.
- 
- boundaries <- data.frame(end = len - (waveExtremes[3, ] - waveExtremes[1, ]), 
-                          start = waveExtremes[2, ] - waveExtremes[3, ])
- 
- ## The actual elimination of the coefficients within the margin defined by the e-folding boundaries: (this is what I want to apply to each ASV)----
- modwt_results_02$asv_num
-
- modwt_results_02$modwt_result
- 
- for (j in 1:(n.levels + 1)) { 
-   is.na(modwt_results_02$ modwtasv11[[i]]) <- c(1:boundaries$start[i], boundaries$end[i]:length(modwtasv11[[i]])) 
-   
- }
- 
- ##another try
- 
- for (i in 1:length(modwt_results_02$asv_num)) {
-   asv_num_index <- i
-   modwt_results <- modwt_results_02$modwt_result[[asv_num_index]]
-   
-   for (j in 1:(n.levels + 1)) {
-     # Check if boundaries$start[i] is not NA before proceeding
-     if (!is.na(boundaries$start[i])) {
-       is.na(modwt_results[[j]]) <- c(1:boundaries$start[i], boundaries$end[i]:length(modwt_results[[j]]))
-     } else {
-       # Handle the case where boundaries$start[i] is NA (modify as needed)
-       warning(paste("Skipping index", i, "due to NA in boundaries$start."))
-     }
-   }
- }
- 
-
- 
+# modwt.function <-function(abundance){
+#  modwt_result <-  abundance |>
+#    modwt( wf = 'la8', boundary = "periodic", n.levels = 4) |>
+#     brick.wall(wf = 'la8') |> #elimination of all boundary coefficients is accomplished by the function 'brick.wall' prior to the phase shift correction
+#     phase.shift(wf = 'la8')
+#   return(modwt_result)
+#  }  
+# 
+# ## FL fraction
+# # wavelet_02_df |>
+# #   dplyr::group_by(asv_num) |>
+# #   #dplyr::filter(asv_num == 'asv11') |>
+# #   dplyr::select(abundance_value) %$%
+# #   modwt.funtion(abundance = abundance_value)
+# 
+# modwt_results_02 <- wavelet_02_df |>
+#   group_by(asv_num) %>%
+#   dplyr::summarize(modwt_result = list(modwt.function(abundance_value)))
+# 
+# modwt_results_02 |>
+#   str()
+# 
+# modwt_results_3 |>
+#   str()
+# 
+# # # Continue with phase shift
+# # shifted_result <- phase.shift(brick.wall(result, filter = db5_filter), filter = db5_filter)
+# 
+# # e-folding estimates (modified from Appendix A)
+# x <- rep(0, 10001) 
+# x[5000] <- 1 
+# n.levels <- 4 
+# len <- length(abund11) 
+# temp <- phase.shift(modwt(x, n.levels = n.levels, wf = "la8"), wf = "la8")
+# 
+#  waveExtremes <- matrix(nrow = 3, ncol = n.levels + 1) 
+#  colnames(waveExtremes) <- c(paste("d", 1:n.levels, sep = ""), paste("s", n.levels,  sep = "")) 
+#  rownames(waveExtremes) <- c("left", "right", "top")
+# 
+#   for (i in 1:(n.levels + 1)) waveExtremes[, i] <- c(range(which(abs(temp[[i]]) 
+#                                                                  >= max(abs(temp[[i]]))/(exp(2)))), which.max(abs(temp[[i]])))
+# 
+#  boundaries <- data.frame(end = len - (waveExtremes[3, ] - waveExtremes[1, ]), 
+#                           start = waveExtremes[2, ] - waveExtremes[3, ])
+#  
+#  for (j in 1:(n.levels + 1)) { 
+#    is.na(modwtasv11[[i]]) <- c(1:boundaries$start[i], boundaries$end[i]:length(modwtasv11[[i]])) 
+#    is.na(modwtasv178[[i]]) <- c(1:boundaries$start[i], boundaries$end[i]:length(modwtasv178[[i]])) 
+#  }
+#  
+#  ## i modify the function to apply it to the results I created before, which is the tibble with many lists inside-----
+#  ### Elimination of the e-folding coefficients is accomplished using the following script where a constant zero valued series with a perturbation of 
+#  ### value 1 in the middle (=x) is transformed.
+#  x <- rep(0, 10001) 
+#  x[5000] <- 1 
+#  n.levels <- 4 
+#  len <- length(abund11) 
+#  temp <- phase.shift(modwt(x, n.levels = n.levels, wf = "la8"), wf = "la8")
+#  
+#  ## The positions to the left and to the right of the maximal influence of this spike are recorded in a matrix (left, right) together with the 
+#  ## position of the maximum itself (top).
+#  waveExtremes <- matrix(nrow = 3, ncol = n.levels + 1) 
+#  colnames(waveExtremes) <- c(paste("d", 1:n.levels, sep = ""), paste("s", n.levels,  sep = "")) 
+#  rownames(waveExtremes) <- c("left", "right", "top")
+#  
+#  ## The distance to the maximum from both sides of the influence is determined as 1/e2 times the maximum within a specific coefficient vector.
+#  for (i in 1:(n.levels + 1)) waveExtremes[, i] <- c(range(which(abs(temp[[i]]) 
+#                                                                 >= max(abs(temp[[i]]))/(exp(2)))), which.max(abs(temp[[i]])))
+#  
+#  ## The positions (waveExtremes) are used to calculate the distances to the left and to the right of the influence maximum. 
+#  ## The distance to the left of the maximum is called "right" because it will serve to calculate the distance at the end of the series.
+#  
+#  boundaries <- data.frame(end = len - (waveExtremes[3, ] - waveExtremes[1, ]), 
+#                           start = waveExtremes[2, ] - waveExtremes[3, ])
+#  
+#  ## The actual elimination of the coefficients within the margin defined by the e-folding boundaries: (this is what I want to apply to each ASV)----
+ # modwt_results_02$asv_num
+ # 
+ # modwt_results_02$modwt_result
+ # 
+ # for (j in 1:(n.levels + 1)) { 
+ #   is.na(modwt_results_02$ modwtasv11[[i]]) <- c(1:boundaries$start[i], boundaries$end[i]:length(modwtasv11[[i]])) 
+ #   
+ # }
+ # 
+ # ##another try
+ # 
+ # for (i in 1:length(modwt_results_02$asv_num)) {
+ #   asv_num_index <- i
+ #   modwt_results <- modwt_results_02$modwt_result[[asv_num_index]]
+ #   
+ #   for (j in 1:(n.levels + 1)) {
+ #     # Check if boundaries$start[i] is not NA before proceeding
+ #     if (!is.na(boundaries$start[i])) {
+ #       is.na(modwt_results[[j]]) <- c(1:boundaries$start[i], boundaries$end[i]:length(modwt_results[[j]]))
+ #     } else {
+ #       # Handle the case where boundaries$start[i] is NA (modify as needed)
+ #       warning(paste("Skipping index", i, "due to NA in boundaries$start."))
+ #     }
+ #   }
+ # }
+ # 
+ # 
+ # 
  ##PLOTS----
  
  #### Interpretation of the following plots----
@@ -1521,7 +1519,7 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
  boundaries <- data.frame(end = len - (waveExtremes[3, ] - waveExtremes[1, ]), 
                           start = waveExtremes[2, ] - waveExtremes[3, ])
  
- ##### specific for each ASV
+ ##### General for the whole dataset
  asv_num_index <- i
  modwt_results <- modwt_results_02$modwt_result[[asv_num_index]]
  
@@ -1596,7 +1594,28 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
    left_join( decimal_date_tibble) |>
    left_join(tax, by = c('asv_name' = 'asv_num')) |>
    rename(asv_num = asv_name) |>
-   dplyr::mutate(wavelets_transformation = str_replace(wavelets_transformation, 'd5', 's5'))
+   dplyr::mutate(wavelets_transformation = str_replace(wavelets_transformation, 'd5', 's4'))
+ 
+ ## I remove the most afected samples by the boundaries it is less biased but still more biased than when applying the brick wall function
+ ## as we increase the signal the wavelet gets more affected by the margin effect
+ boundaries 
+ 
+ wavelets_result_tibble_tax_02_biased_red <-  wavelets_result_tibble_tax_02_biased |>
+   dplyr::mutate(wavelets_result_ed = case_when(wavelets_transformation == 'd1' &
+                                                  sample_num %in% c(1, 119, 120) ~ 'NA',
+                                                wavelets_transformation == 'd2' &
+                                                  sample_num %in% c(1,2,3,  117, 118, 119, 120) ~ 'NA',
+                                                wavelets_transformation == 'd3' &
+                                                  sample_num %in% c(1,2,3,4,5,6, 113,114,115,116,  117, 118, 119, 120) ~ 'NA',
+                                                wavelets_transformation == 'd4' &
+                                                  sample_num %in% c(1,2,3,4,5,6,7,8,9,10,11,12, 105,106,107,108,109,110,111,112,113,114,
+                                                                    115,116,117, 118, 119, 120) ~ 'NA',
+                                                wavelets_transformation == 's4' &
+                                                  sample_num %in% c(1,2,3,4,5,6,7,8,9,10,11,12, 
+                                                                    13,14,15,16,17,
+                                                                    108,109,110,111,112,113,114,
+                                                                    115,116,117, 118, 119, 120) ~ 'NA',
+                                                TRUE ~ as.character(wavelets_result)))
  
  ## PA fraction----
  # Initialize a list to store tibbles
@@ -1659,20 +1678,43 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
    left_join( decimal_date_tibble) |>
    left_join(tax, by = c('asv_name' = 'asv_num')) |>
    rename(asv_num = asv_name) |>
-   dplyr::mutate(wavelets_transformation = str_replace(wavelets_transformation, 'd5', 's5'))
+   dplyr::mutate(wavelets_transformation = str_replace(wavelets_transformation, 'd5', 's4'))
+ 
+ wavelets_result_tibble_tax_3_biased_red <-  wavelets_result_tibble_tax_3_biased |>
+   dplyr::mutate(wavelets_result_ed = case_when(wavelets_transformation == 'd1' &
+                                                  sample_num %in% c(1, 120) ~ 'NA',
+                                                wavelets_transformation == 'd2' &
+                                                  sample_num %in% c(1,2,3,  117, 118, 119, 120) ~ 'NA',
+                                                wavelets_transformation == 'd3' &
+                                                  sample_num %in% c(1,2,3,4,5,6, 113,114,115,116,  117, 118, 119, 120) ~ 'NA',
+                                                wavelets_transformation == 'd4' &
+                                                  sample_num %in% c(1,2,3,4,5,6,7,8,9,10,11,12, 105,106,107,108,109,110,111,112,113,114,
+                                                                    115,116,117, 118, 119, 120) ~ 'NA',
+                                                wavelets_transformation == 's4' &
+                                                  sample_num %in% c(1,2,3,4,5,6,7,8,9,10,11,12, 
+                                                                    13,14,15,16,17,
+                                                                    108,109,110,111,112,113,114,
+                                                                    115,116,117, 118, 119, 120) ~ 'NA',
+                                                TRUE ~ as.character(wavelets_result)))
+ 
+ wavelets_result_ed_tibble_tax_02_biased_red <-  wavelets_result_tibble_tax_02_biased_red |>
+   dplyr::mutate(wavelets_result_ed = as.numeric(wavelets_result_ed))
+ 
+ wavelets_result_ed_tibble_tax_3_biased_red <-  wavelets_result_tibble_tax_3_biased_red |>
+   dplyr::mutate(wavelets_result_ed = as.numeric(wavelets_result_ed))
  
  ### PLOT THE WAVELETS TRANSFROMATINS COMPUTED (visually inspect them, to be sure of the results)----
  ## FL FRACTION----
  ##i divide them so that i can see the plots better
  bloo_02
  
- wavelets_result_tibble_tax_02_biased |>
+ wavelets_result_ed_tibble_tax_02_biased_red |>
    dplyr::filter(asv_num %in%  (bloo_02 |>
                                    slice_head(n = 10) %$%
                                    value)) |>
-   ggplot(aes(decimal_date, wavelets_result))+
+   ggplot(aes(decimal_date, wavelets_result_ed))+
    geom_col()+
-   #ggtitle(paste0(unique(wavelets_result_tibble_tax$asv_name), ' ', unique( wavelets_result_tibble_tax$family))) +
+   #ggtitle(paste0(unique(wavelets_result_ed_tibble_tax$asv_name), ' ', unique( wavelets_result_ed_tibble_tax$family))) +
    labs(x = 'Decimal date', y = 'Wavelets results')+
    facet_grid(wavelets_transformation~asv_num)+
    scale_x_continuous(expand = c(0,0))+
@@ -1681,13 +1723,13 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
          #aspect.ratio = 4/10,
          text = element_text(size = 5))
  
- wavelets_result_tibble_tax_02_biased |>
+ wavelets_result_ed_tibble_tax_02_biased_red |>
    dplyr::filter(asv_num %in%  (bloo_02 |>
                                   slice_tail(n = 11) %$%
                                   value)) |>
-   ggplot(aes(decimal_date, wavelets_result))+
+   ggplot(aes(decimal_date, wavelets_result_ed))+
    geom_col()+
-   #ggtitle(paste0(unique(wavelets_result_tibble_tax$asv_num), ' ', unique(wavelets_result_tibble_tax$family))) +
+   #ggtitle(paste0(unique(wavelets_result_ed_tibble_tax$asv_num), ' ', unique(wavelets_result_ed_tibble_tax$family))) +
    labs(x = 'Decimal date', y = 'Wavelets results')+
    facet_grid(wavelets_transformation~asv_num)+
    scale_x_continuous(expand = c(0,0))+
@@ -1699,13 +1741,13 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
  ## PA FRACTION---- 
  bloo_3$value #45 in total
  
- wavelets_result_tibble_tax_3_biased |>
+ wavelets_result_ed_tibble_tax_3_biased_red |>
    dplyr::filter(asv_num %in%  (bloo_3 |>
                                    slice_head(n = 20) %$%
                                    value)) |>
-   ggplot(aes(decimal_date, wavelets_result))+
+   ggplot(aes(decimal_date, wavelets_result_ed))+
    geom_col()+
-   #ggtitle(paste0(unique(wavelets_result_tibble_tax$asv_num), ' ', unique( wavelets_result_tibble_tax$family))) +
+   #ggtitle(paste0(unique(wavelets_result_ed_tibble_tax$asv_num), ' ', unique( wavelets_result_ed_tibble_tax$family))) +
    labs(x = 'Decimal date', y = 'Wavelets results')+
    facet_grid(wavelets_transformation~asv_num)+
    scale_x_continuous(expand = c(0,0))+
@@ -1714,13 +1756,13 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
          #aspect.ratio = 4/10,
          text = element_text(size = 5))
  
- wavelets_result_tibble_tax_3_biased |>
+ wavelets_result_ed_tibble_tax_3_biased_red |>
    dplyr::filter(asv_num %in%  (bloo_3 |>
                                    slice_tail(n = 20) %$%
                                    value)) |>
-   ggplot(aes(decimal_date, wavelets_result))+
+   ggplot(aes(decimal_date, wavelets_result_ed))+
    geom_col()+
-   #ggtitle(paste0(unique(wavelets_result_tibble_tax$asv_num), ' ', unique(wavelets_result_tibble_tax$family))) +
+   #ggtitle(paste0(unique(wavelets_result_ed_tibble_tax$asv_num), ' ', unique(wavelets_result_ed_tibble_tax$family))) +
    labs(x = 'Decimal date', y = 'Wavelets results')+
    facet_grid(wavelets_transformation~asv_num)+
    scale_x_continuous(expand = c(0,0))+
@@ -1731,15 +1773,15 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
  
  ### create a loop to save all the wavelets transformations computed and visually inspect them
  # Create a folder to save the PDF files
- dir.create("results/figures/wavelets_plots/biased", showWarnings = FALSE)
+ dir.create("results/figures/wavelets_plots/biased_red", showWarnings = FALSE)
  
  ### FL----
  # Get unique asv_num values
- asv_nums <- unique(wavelets_result_tibble_tax_02_biased$asv_num)
+ asv_nums <- unique(wavelets_result_ed_tibble_tax_02_biased_red$asv_num)
  
  for (asv_num in asv_nums) {
    # Filter data for the current asv_num
-   plot_data <- wavelets_result_tibble_tax_02_biased %>%
+   plot_data <- wavelets_result_ed_tibble_tax_02_biased_red %>%
      dplyr::filter(asv_num == !!asv_num)  # Use !! to unquote asv_num
    
    title_plot <- plot_data |>
@@ -1750,7 +1792,7 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
      as.character()
    
    # Create the plot
-   p <- ggplot(plot_data, aes(decimal_date, wavelets_result)) +
+   p <- ggplot(plot_data, aes(decimal_date, wavelets_result_ed)) +
      geom_col() +
      labs(x = 'Decimal date', y = 'Wavelets results') +
      facet_grid(vars(wavelets_transformation)) +
@@ -1762,7 +1804,7 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
            text = element_text(size = 5))
    
    # Save the plot as a PDF file
-   pdf_file <- paste0("results/figures/wavelets_plots/biased/", asv_num, "_plot_02_biased.pdf")
+   pdf_file <- paste0("results/figures/wavelets_plots/biased_red/", asv_num, "_plot_02_biased_red.pdf")
    ggsave(pdf_file, p, width = 6, height = 3, units = "in")
    
    # Print a message indicating the plot has been saved
@@ -1772,11 +1814,11 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
  
  ## PA----
  # Get unique asv_num values
- asv_nums <- unique(wavelets_result_tibble_tax_3_biased$asv_num)
+ asv_nums <- unique(wavelets_result_ed_tibble_tax_3_biased_red$asv_num)
  
  for (asv_num in asv_nums) {
    # Filter data for the current asv_num
-   plot_data <- wavelets_result_tibble_tax_3_biased %>%
+   plot_data <- wavelets_result_ed_tibble_tax_3_biased_red %>%
      dplyr::filter(asv_num == !!asv_num)  # Use !! to unquote asv_num
    
    title_plot <- plot_data |>
@@ -1787,7 +1829,7 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
      as.character()
    
    # Create the plot
-   p <- ggplot(plot_data, aes(decimal_date, wavelets_result)) +
+   p <- ggplot(plot_data, aes(decimal_date, wavelets_result_ed)) +
      geom_col() +
      labs(x = 'Decimal date', y = 'Wavelets results') +
      facet_grid(vars(wavelets_transformation)) +
@@ -1799,7 +1841,7 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
            text = element_text(size = 5))
    
    # Save the plot as a PDF file
-   pdf_file <- paste0("results/figures/wavelets_plots/biased/", asv_num, "_plot_3_biased.pdf")
+   pdf_file <- paste0("results/figures/wavelets_plots/biased_red/", asv_num, "_plot_3_biased_red.pdf")
    ggsave(pdf_file, p, width = 6, height = 3, units = "in")
    
    # Print a message indicating the plot has been saved
@@ -1810,61 +1852,61 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
  
  #### Wavelet coefficient magnitude indicates how strongly the data are correlated with the mother wavelet at a given frequency and distance.
  
- bloo_02_type_biased <- wavelets_result_tibble_tax_02_biased %>%
+bloo_02_type_biased_red <- wavelets_result_ed_tibble_tax_02_biased_red %>%
    group_by(asv_num, wavelets_transformation) %>%
-   dplyr::filter(!is.na(wavelets_result)) |>
-   dplyr::summarize(coefficients = sqrt(sum(wavelets_result^2))) |>  # Calculate the magnitude of coefficients for each level
+   dplyr::filter(!is.na(wavelets_result_ed)) |>
+   dplyr::summarize(coefficients = sqrt(sum(wavelets_result_ed^2))) |>  # Calculate the magnitude of coefficients for each level
    group_by(asv_num) |>
    top_n(1, wt = coefficients) |>  # Find the level with the maximum magnitude
    rename(max_coeff = wavelets_transformation) |>
-   dplyr::mutate(bloomer_type = case_when(max_coeff == 's5' ~ 'inter-annual',
+   dplyr::mutate(bloomer_type = case_when(max_coeff == 's4' ~ 'inter-annual',
                                           max_coeff == 'd1' ~ 'fine-scale',
                                           max_coeff == 'd2' ~ 'half-yearly', 
                                           max_coeff == 'd3' ~ 'seasonal', 
                                           max_coeff == 'd4' ~ 'year-to-year')) |>
    left_join(tax, by = 'asv_num')
  
- bloo_02_type_biased |>
+ bloo_02_type_biased_red |>
    ungroup() |>
    dplyr::filter(bloomer_type == 'seasonal') |>
    dplyr::reframe(n = n())
  
- 3/19 ## 15.58% of the free living blooms seem to have a seasonal pattern
+ 1/19 ## 15.58% of the free living blooms seem to have a seasonal pattern
  
- bloo_02_type_tax_biased <-  bloo_02_type_biased |>
+ bloo_02_type_tax_biased_red <-  bloo_02_type_biased_red |>
    group_by(bloomer_type, family ) |>
    dplyr::reframe(n = n()) |>
    dplyr::mutate(fraction = '0.2')
  
- bloo_3_type_biased <- wavelets_result_tibble_tax_3_biased %>%
+ bloo_3_type_biased_red <- wavelets_result_ed_tibble_tax_3_biased_red %>%
    group_by(asv_num, wavelets_transformation) %>%
-   dplyr::filter(!is.na(wavelets_result)) |>
-   dplyr::summarize(coefficients = sqrt(sum(wavelets_result^2))) |>  # Calculate the magnitude of coefficients for each level
+   dplyr::filter(!is.na(wavelets_result_ed)) |>
+   dplyr::summarize(coefficients = sqrt(sum(wavelets_result_ed^2))) |>  # Calculate the magnitude of coefficients for each level
    group_by(asv_num) |>
    top_n(1, wt = coefficients) |>  # Find the level with the maximum magnitude
    rename(max_coeff = wavelets_transformation) |>
-   dplyr::mutate(bloomer_type = case_when(max_coeff == 's5' ~ 'inter-annual',
+   dplyr::mutate(bloomer_type = case_when(max_coeff == 's4' ~ 'inter-annual',
                                           max_coeff == 'd1' ~ 'fine-scale',
                                           max_coeff == 'd2' ~ 'half-yearly', 
                                           max_coeff == 'd3' ~ 'seasonal', 
                                           max_coeff == 'd4' ~ 'year-to-year')) |>
    left_join(tax, by = 'asv_num')
  
- bloo_3_type_biased |>
+ bloo_3_type_biased_red |>
    ungroup() |>
    dplyr::filter(bloomer_type == 'seasonal') |>
    dplyr::reframe(n = n())
  
  6/45 ## 13.33% of the particle attached seem to have a seasonal pattern
  
- bloo_3_type_tax_biased <-  bloo_3_type_biased |>
+ bloo_3_type_tax_biased_red <-  bloo_3_type_biased_red |>
    group_by(bloomer_type, family) |>
    dplyr::reframe(n = n()) |>
    dplyr::mutate(fraction = '3')
  
  ## I create a table that summarizes the different type of bloomers that we have, observe their taxonomy too.
- bloo_02_type_tax_biased |>
-   bind_rows(bloo_3_type_tax_biased) |>
+ bloo_02_type_tax_biased_red |>
+   bind_rows(bloo_3_type_tax_biased_red) |>
    group_by( bloomer_type, fraction) |>
    dplyr::mutate(n_total = sum(n)) |>
    ggplot(aes(bloomer_type, n_total))+
@@ -1881,8 +1923,8 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
          panel.border = element_blank(), text = element_text(size = 5))
  
  ## in relatives  
- bloo_all_type_tax_biased <-  bloo_02_type_tax_biased |>
-   bind_rows(bloo_3_type_tax_biased) |>
+ bloo_all_type_tax_biased_red <-  bloo_02_type_tax_biased_red |>
+   bind_rows(bloo_3_type_tax_biased_red) |>
    group_by( bloomer_type, fraction) |>
    dplyr::mutate(n_total = sum(n)) |>
    dplyr::group_by(fraction) |>
@@ -1890,11 +1932,12 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
    dplyr::mutate(n_blooms_fraction_perc = n/n_blooms_fraction) |>
    dplyr::mutate(n_blooms_fraction_perc_type = n/n_total) 
  
- bloo_all_type_tax_biased$bloomer_type <- factor( bloo_all_type_tax_biased$bloomer_type,
+ bloo_all_type_tax_biased_red$bloomer_type <- factor( bloo_all_type_tax_biased_red$bloomer_type,
                                            levels = c('fine-scale', 'seasonal', 'half-yearly', 'inter-annual'))
  
  ### by family
- bloo_all_type_tax_biased |>
+ library(scales)
+ bloo_all_type_tax_biased_red |>
    ggplot(aes(bloomer_type, 1))+
    geom_col(aes(y = n_blooms_fraction_perc_type, fill = family))+
    scale_fill_manual(values = palette_family_assigned_bloo)+
@@ -1910,17 +1953,17 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
          panel.border = element_blank(), text = element_text(size = 5))
  
  ### by order ----
- bloo_02_type_tax_order_biased <-  bloo_02_type_biased |>
+ bloo_02_type_tax_order_biased_red <-  bloo_02_type_biased_red |>
    group_by(bloomer_type, order ) |>
    dplyr::reframe(n = n()) |>
    dplyr::mutate(fraction = '0.2')
  
- bloo_3_type_tax_order_biased <-  bloo_3_type_biased |>
+ bloo_3_type_tax_order_biased_red <-  bloo_3_type_biased_red |>
    group_by(bloomer_type, order) |>
    dplyr::reframe(n = n()) |>
    dplyr::mutate(fraction = '3')
  
- bloo_all_type_tax_order_biased <-  bloo_02_type_tax_order_biased |>
+ bloo_all_type_tax_order_biased_red <-  bloo_02_type_tax_order_biased_red |>
    bind_rows(bloo_3_type_tax_order) |>
    group_by( bloomer_type, fraction) |>
    dplyr::mutate(n_total = sum(n)) |>
@@ -1929,10 +1972,10 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
    dplyr::mutate(n_blooms_fraction_perc = n/n_blooms_fraction) |>
    dplyr::mutate(n_blooms_fraction_perc_type = n/n_total) 
  
- bloo_all_type_tax_order_biased$bloomer_type <- factor(bloo_all_type_tax_order_biased$bloomer_type,
+ bloo_all_type_tax_order_biased_red$bloomer_type <- factor(bloo_all_type_tax_order_biased_red$bloomer_type,
                                                 levels = c('fine-scale', 'seasonal', 'half-yearly', 'inter-annual'))
  
- bloo_all_type_tax_order_biased |>
+ bloo_all_type_tax_order_biased_red |>
    ggplot(aes(bloomer_type, 1))+
    geom_col(aes(y = n_blooms_fraction_perc_type, fill = order))+
    scale_fill_manual(values = palette_order_assigned_bloo)+
@@ -1950,21 +1993,21 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
  
  ## General plots for observing different patterns at different periods of blooming ASVs----
  
- wavelets_result_tibble_tax_3_biased <-  wavelets_result_tibble_tax_3_biased |>
+ wavelets_result_ed_tibble_tax_3_biased_red <-  wavelets_result_ed_tibble_tax_3_biased_red |>
    dplyr::mutate(fraction = '3')
  
- wavelets_result_tibble_tax_02_biased <-  wavelets_result_tibble_tax_02_biased |>
+ wavelets_result_ed_tibble_tax_02_biased_red <-  wavelets_result_ed_tibble_tax_02_biased_red |>
    dplyr::mutate(fraction = '0.2')
  
- wavelets_result_tibble_tax_02_biased |>
-   bind_rows(wavelets_result_tibble_tax_3_biased) |>
-   ggplot(aes(decimal_date, wavelets_result))+
+ wavelets_result_ed_tibble_tax_02_biased_red |>
+   bind_rows(wavelets_result_ed_tibble_tax_3_biased_red) |>
+   ggplot(aes(decimal_date, wavelets_result_ed))+
    facet_grid(wavelets_transformation~fraction)+
    geom_line(aes(group = asv_num))+
    theme_bw()
  
- # write.csv2( wavelets_result_tibble_tax_3_biased, 'wavelets_result_tibble_tax_3_biased.csv')
- # write.csv2( wavelets_result_tibble_tax_02_biased, 'wavelets_result_tibble_tax_02_biased.csv')
+ #write.csv2( wavelets_result_ed_tibble_tax_3_biased_red, 'data/wavelets_result_ed_tibble_tax_3_biased_red.csv')
+ #write.csv2( wavelets_result_ed_tibble_tax_02_biased_red, 'data/wavelets_result_ed_tibble_tax_02_biased_red.csv')
  
  ### in the biased dataset we should be able to remove some of the margins of the wavelets prior to deciding in which transformation they belong most----
  
@@ -1972,11 +2015,11 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
  #### GENERAL PLOTS FOR THOSE ASVs THAT ARE ACTUALLY SEASONAL FORM THOSE THAT ARE NOT-----
  ##reorder taxonomy as factors ----
  asv_tab_all_bloo_z_tax <- asv_tab_all_bloo_z_tax |>
-   dplyr::mutate(phylum_f = as_factor(phylum),
-                 family_f = as_factor(family),
-                 order_f = as_factor(order),
-                 class_f = as_factor(class),
-                 asv_num_f = as_factor(asv_num))
+   dplyr::mutate(phylum_f = as.factor(phylum),
+                 family_f = as.factor(family),
+                 order_f = as.factor(order),
+                 class_f = as.factor(class),
+                 asv_num_f = as.factor(asv_num))
  
  asv_tab_all_bloo_z_tax$class_f <-  factor(asv_tab_all_bloo_z_tax$class_f, 
                                            levels=unique(asv_tab_all_bloo_z_tax$class_f[order(asv_tab_all_bloo_z_tax$phylum_f)]), 
@@ -2008,7 +2051,7 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
    dplyr::filter(fraction == '0.2') |>
    dplyr::filter(asv_num %in%  (bloo_02_type |>
                                   dplyr::filter(bloomer_type == 'seasonal') %$%
-                   asv_name)) |>
+                   asv_num)) |>
    dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
    dplyr::filter(abundance_type == 'relative_abundance') |>
    group_by(date, fraction) |>
@@ -2031,10 +2074,10 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
    #geom_stream(aes(fill = class_f, group = class_f), type = "ridge", bw=1)+
    geom_area(aes(date, abund_order, fill = order_f, group = order_f), alpha = 0.8,  position='stack')+
    #geom_line(data = bray_curtis_rar_all_m, aes(date, bray_curtis_result))+
-   geom_line(data = community_eveness_all_m, aes(date, community_eveness_rar/1.6), color = '#2D2A2B', alpha = 0.8)+
-   geom_point(data = community_eveness_all_m |>
-                dplyr::filter(anomaly_color == '#9F0011'),  
-              aes(date, community_eveness_rar/1.6, color = anomaly_color, alpha = 0.8))+
+   # geom_line(data = community_eveness_all_m, aes(date, community_eveness_rar/1.6), color = '#2D2A2B', alpha = 0.8)+
+   # geom_point(data = community_eveness_all_m |>
+   #              dplyr::filter(anomaly_color == '#9F0011'),  
+   #            aes(date, community_eveness_rar/1.6, color = anomaly_color, alpha = 0.8))+
    scale_y_continuous(labels = percent_format(), expand = c(0,0), limits = c(0,1),
                       sec.axis = sec_axis(~.* 1 , name = 'Community Evenness'))+
    scale_color_identity()+
@@ -2056,7 +2099,7 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
    dplyr::filter(fraction == '0.2') |>
    dplyr::filter(asv_num %in%  (bloo_02_type |>
                                   dplyr::filter(bloomer_type == 'random2') %$%
-                                  asv_name)) |>
+                                  asv_num)) |>
    dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
    dplyr::filter(abundance_type == 'relative_abundance') |>
    group_by(date, fraction) |>
@@ -2079,10 +2122,10 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
    #geom_stream(aes(fill = class_f, group = class_f), type = "ridge", bw=1)+
    geom_area(aes(date, abund_order, fill = order_f, group = order_f), alpha = 0.8,  position='stack')+
    #geom_line(data = bray_curtis_rar_all_m, aes(date, bray_curtis_result))+
-   geom_line(data = community_eveness_all_m, aes(date, community_eveness_rar/1.6), color = '#2D2A2B', alpha = 0.8)+
-   geom_point(data = community_eveness_all_m |>
-                dplyr::filter(anomaly_color == '#9F0011'),  
-              aes(date, community_eveness_rar/1.6, color = anomaly_color, alpha = 0.8))+
+   # geom_line(data = community_eveness_all_m, aes(date, community_eveness_rar/1.6), color = '#2D2A2B', alpha = 0.8)+
+   # geom_point(data = community_eveness_all_m |>
+   #              dplyr::filter(anomaly_color == '#9F0011'),  
+   #            aes(date, community_eveness_rar/1.6, color = anomaly_color, alpha = 0.8))+
    scale_y_continuous(labels = percent_format(), expand = c(0,0), limits = c(0,1),
                       sec.axis = sec_axis(~.* 1 , name = 'Community Evenness'))+
    scale_color_identity()+
