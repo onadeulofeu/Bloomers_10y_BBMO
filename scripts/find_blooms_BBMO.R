@@ -434,8 +434,6 @@ asvs_3 |>
   dplyr::filter(duplicated(asv_num)) #2,027
 
 # general plot of the whole community along the years----
-m_bbmo_10y <- m_bbmo_10y |>
-
 
 asv_tab_10y_l_rel |>
   left_join(tax_bbmo_10y_new, by = 'asv_num') |>
@@ -549,22 +547,36 @@ gm <- function(x){
 ## with this transformation I'm losing samples (due to too much 0 in some samples, z.warning set up to 0.99 to keep all samples)
 ### at 0.8 (default) I lose 30 samples which belonged to the years corresponding to harbour remodelation 
 ### I don't lose samples but I lose ASVs.
-zclr_df <- cmultRepl(asv_tab_bbmo_10y_w, method = 'CZM', output = 'p-count', z.warning = 0.99
-                     #adjust = 0.2,    t = 237, s = 7849
-                  ) |>
-  as_tibble(rownames = "sample_id") %>%
-  pivot_longer(-sample_id) %>%
-  group_by(sample_id) %>%
-  dplyr::mutate(zclr = log(value/gm(value))) %>%
-  ungroup() %>%
-  dplyr::select(-value) %>%
-  pivot_wider(names_from = name, values_from = zclr, values_fill = 0) %>%
-  column_to_rownames("sample_id")
+
+### cmultRepl: This function implements methods for imputing zeros in compositional count data sets based on a Bayesian-multiplicative replacement
+### CZM: count zero multiplicative
+# zclr_df <- cmultRepl(asv_tab_bbmo_10y_w, method = 'CZM', output = 'p-count', z.warning = 0.99
+#                      #adjust = 0.2,    t = 237, s = 7849
+#                   ) |>
+#   as_tibble(rownames = "sample_id") %>%
+#   pivot_longer(-sample_id) %>%
+#   group_by(sample_id) %>%
+#   dplyr::mutate(zclr = log(value/gm(value))) %>%
+#   ungroup() %>%
+#   dplyr::select(-value) %>%
+#   pivot_wider(names_from = name, values_from = zclr, values_fill = 0) %>%
+#   column_to_rownames("sample_id")
 
 ## with the deconstant function from vegan using pseudocunt we don't lose samples but, in Coenen 2020 they say that
 ## adding a pseudocount disproportionately affects rare taxa, where the magnitude of differences between samples may 
 ## be similar to the magnitude of the added pseudocount and therefore obscured.
-# zclr_df <- decostand(asv_tab_bbmo_10y_w, method = 'rclr' )
+
+## However, when using the rCLR which is similar to the CLR it allows data that contains zeroes. This method does not use
+## pseudocounts, unlike the standard CLR. Robust clr divides the vales by geometric mean o the observed features; zero values 
+## are kept as zeroes, and not taken into account. In high dimensional data, the geometric mean of rclr is a good approximation
+## of the true geometric mean (from deconstand documentation)
+
+### after cheching the results from the different approximations we keep the rCLR transformation.
+
+zclr_df <- decostand(asv_tab_bbmo_10y_w, method = 'rclr' )
+
+zclr_df_pseudocount <- decostand(asv_tab_bbmo_10y_w, method = 'clr',
+                                 pseudocount = 1)
 # 
 # zclr_df |>
 #   dim()
@@ -576,12 +588,76 @@ zclr_df <- cmultRepl(asv_tab_bbmo_10y_w, method = 'CZM', output = 'p-count', z.w
 asv_tab_10y_02_zclr <- zclr_df |>
   rownames_to_column(var = 'sample_id') |>
   pivot_longer(cols = starts_with('asv'), names_to = 'asv_num', values_to = 'zclr') |>
-  dplyr::filter(str_detect(sample_id, '_0.2_'))
+  dplyr::filter(str_detect(sample_id, '_0.2_')) 
 
 asv_tab_10y_3_zclr <- zclr_df |>
   rownames_to_column(var = 'sample_id') |>
   pivot_longer(cols = starts_with('asv'), names_to = 'asv_num', values_to = 'zclr') |>
   dplyr::filter(str_detect(sample_id, '_3_'))
+
+
+###check differences between CLR and rCLR-----
+asv_tab_10y_02_zclr <- zclr_df |>
+  rownames_to_column(var = 'sample_id') |>
+  pivot_longer(cols = starts_with('asv'), names_to = 'asv_num', values_to = 'zclr') |>
+  dplyr::filter(str_detect(sample_id, '_0.2_')) |>
+  dplyr::mutate(method = 'rclr')
+
+asv_tab_10y_3_zclr <- zclr_df |>
+  rownames_to_column(var = 'sample_id') |>
+  pivot_longer(cols = starts_with('asv'), names_to = 'asv_num', values_to = 'zclr') |>
+  dplyr::filter(str_detect(sample_id, '_3_')) |>
+  dplyr::mutate(method = 'rclr')
+
+
+asv_tab_10y_02_zclr_pseudocount <- zclr_df_pseudocount |>
+  rownames_to_column(var = 'sample_id') |>
+  pivot_longer(cols = starts_with('asv'), names_to = 'asv_num', values_to = 'zclr') |>
+  dplyr::filter(str_detect(sample_id, '_0.2_')) |>
+  dplyr::mutate(method = 'pseudocount')
+
+asv_tab_10y_3_zclr_pseudocount <- zclr_df_pseudocount |>
+  rownames_to_column(var = 'sample_id') |>
+  pivot_longer(cols = starts_with('asv'), names_to = 'asv_num', values_to = 'zclr') |>
+  dplyr::filter(str_detect(sample_id, '_3_')) |>
+  dplyr::mutate(method = 'pseudocount')
+
+## general correlation between both approximations
+asv_tab_10y_02_zclr |>
+  bind_rows(asv_tab_10y_02_zclr_pseudocount) |>
+  pivot_wider(id_cols = c(sample_id, asv_num), values_from = zclr, names_from = method) |>
+  ggplot(aes(rclr, pseudocount))+
+  geom_point()+
+  theme_bw()
+
+asv_tab_10y_3_zclr |>
+  bind_rows(asv_tab_10y_3_zclr_pseudocount) |>
+  pivot_wider(id_cols = c(sample_id, asv_num), values_from = zclr, names_from = method) |>
+  ggplot(aes(rclr, pseudocount))+
+  geom_point()+
+  theme_bw()
+
+### I observe bloomers data 
+asv_tab_10y_02_zclr |>
+  bind_rows(asv_tab_10y_02_zclr_pseudocount) |>
+  dplyr::filter(asv_num %in% bloo_02$value) |>
+  pivot_wider(id_cols = c(sample_id, asv_num), values_from = zclr, names_from = method) |>
+  ggplot(aes(rclr, pseudocount))+
+  geom_point()+
+  theme_bw()
+
+asv_tab_10y_3_zclr |>
+  bind_rows(asv_tab_10y_3_zclr_pseudocount) |>
+  dplyr::filter(asv_num %in% bloo_3$value) |>
+  pivot_wider(id_cols = c(sample_id, asv_num), values_from = zclr, names_from = method) |>
+  ggplot(aes(rclr, pseudocount))+
+  geom_point()+
+  theme_bw()
+
+### observation: the 0's in rCLR are 0 but in pseudocounts are negative values.
+
+## observe what happens with 
+
 
 ##dimensions are different from relative and pseudo dataset and zclr understand why----
 ### i have less ASVs in the zclr dataset specifically 5282 less
@@ -933,6 +1009,7 @@ community_eveness_all |>
   theme_bw()+
   theme(panel.grid = element_blank(), strip.background = element_blank(), legend.position = 'bottom')
 
+
 # Discover anomalies----
 ## For each ASVs based on relative abundances and pseudoabundances -----
 ### those ASVs that are present > 50% of the sampless
@@ -1134,7 +1211,7 @@ find_asv_with_anomalies <- function(anomalies_result, anomaly_in1,
   return(asv_potential_bloomers)
 }
 
-## I only filter for those anomalies in relative abundance because pseudoabundance I can only use it for fl not for PA and zclr has a problem with 
+## I only filter for those anomalies in relative abundance because pseudoabundance I can only use it for FL not for PA and zclr has a problem with ----
 ## dealing with many 0.
 
 asv_anom_02 <- find_asv_with_anomalies(anomalies_result = z_02, anomaly_in1 = anomalies_ra, 
