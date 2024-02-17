@@ -276,8 +276,14 @@ library(gridExtra) ## combine the dendogram and the heatmap
 # I use the dataset that has the results with wavelets analysis without removing all samples that could be affected by the margin effects but some were
 ## trying to reduce the bias but not completely
 
-wavelets_result_tibble_tax_3_biased <- read.csv2('data/wavelets_result_ed_tibble_tax_3_biased_red.csv')
-wavelets_result_tibble_tax_02_biased <- read.csv2('data/wavelets_result_ed_tibble_tax_02_biased_red.csv')
+wavelets_result_tibble_tax_3_biased <- read.csv2('data/wavelets_analysis/wavelets_result_ed_tibble_tax_3_biased_red.csv')
+wavelets_result_tibble_tax_02_biased <- read.csv2('data/wavelets_analysis/wavelets_result_ed_tibble_tax_02_biased_red.csv')
+
+asv_tab_all_bloo_z_tax <- read.csv2('data/detect_bloo/asv_tab_all_bloo_z_tax_new_assign_checked.csv') ##using dada2 classifier assign tax with silva 138.1
+
+tax_bbmo_10y_new <- asv_tab_all_bloo_z_tax |>
+  dplyr::select(asv_num, seq, domain, phylum, class, order, family, genus) |>
+  distinct()
 
 # packages
 # library(cluster)    # clustering algorithms
@@ -295,7 +301,7 @@ time_series_1 <- wavelets_result_tibble_tax_3_biased |>
                                   is.na(family) & !is.na(order) ~ paste0(order, '.', asv_num),
                                   is.na(family) & is.na(order) ~ paste0(class, '.', asv_num),
                                   is.na(family) & is.na(order) & is.na(class) ~ paste0(phylum, '.', asv_num))) |>
-  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus, species)) |>
+  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus)) |>
   dplyr::filter(wavelets_transformation == 'd1' ) |>
   dplyr::select(-wavelets_transformation) |>
   pivot_wider(names_from = asv_f, values_from = wavelets_result_ed)
@@ -307,7 +313,7 @@ time_series_2 <- wavelets_result_tibble_tax_3_biased |>
                                   is.na(family) & !is.na(order) ~ paste0(order, '.', asv_num),
                                   is.na(family) & is.na(order) ~ paste0(class, '.', asv_num),
                                   is.na(family) & is.na(order) & is.na(class) ~ paste0(phylum, '.', asv_num))) |>
-  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus, species)) |>
+  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus)) |>
   dplyr::filter(wavelets_transformation == 'd2' ) |>
   dplyr::select(-wavelets_transformation) |>
   pivot_wider(names_from = asv_f, values_from = wavelets_result_ed)
@@ -318,8 +324,8 @@ time_series_3 <- wavelets_result_tibble_tax_3_biased |>
   dplyr::mutate(asv_f = case_when(!is.na(family) ~ paste0(family,'.',asv_num),
                                   is.na(family) & !is.na(order) ~ paste0(order, '.', asv_num),
                                   is.na(family) & is.na(order) ~ paste0(class, '.', asv_num),
-                                  is.na(family) & is.na(order) & is.na(class) ~ paste0(phylum, '.', asv_num))) %$%
-  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus, species)) |>
+                                  is.na(family) & is.na(order) & is.na(class) ~ paste0(phylum, '.', asv_num))) |>
+  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus)) |>
   dplyr::filter(wavelets_transformation == 'd3' ) |>
   dplyr::select(-wavelets_transformation) |>
   pivot_wider(names_from = asv_f, values_from = wavelets_result_ed)
@@ -331,7 +337,7 @@ time_series_4 <- wavelets_result_tibble_tax_3_biased |>
                                   is.na(family) & !is.na(order) ~ paste0(order, '.', asv_num),
                                   is.na(family) & is.na(order) ~ paste0(class, '.', asv_num),
                                   is.na(family) & is.na(order) & is.na(class) ~ paste0(phylum, '.', asv_num))) |>
-  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus, species)) |>
+  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus)) |>
   dplyr::filter(wavelets_transformation == 'd4' ) |>
   dplyr::select(-wavelets_transformation) |>
   pivot_wider(names_from = asv_f, values_from = wavelets_result_ed)
@@ -343,7 +349,7 @@ time_series_5 <- wavelets_result_tibble_tax_3_biased |>
                                   is.na(family) & !is.na(order) ~ paste0(order, '.', asv_num),
                                   is.na(family) & is.na(order) ~ paste0(class, '.', asv_num),
                                   is.na(family) & is.na(order) & is.na(class) ~ paste0(phylum, '.', asv_num))) |>
-  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus, species)) |>
+  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus)) |>
   dplyr::filter(wavelets_transformation == 's4' ) |>
   dplyr::select(-wavelets_transformation) |>
   pivot_wider(names_from = asv_f, values_from = wavelets_result_ed)
@@ -451,6 +457,21 @@ composition_of_plots <- grid.arrange(dendro,
 
 # Close the PDF device
 dev.off()
+
+## I would like to visualize the clusters and try to identifiy some groups to label them----
+library(factoextra)
+# Cut tree into 4 groups
+sub_grp <- cutree(hc4, k = 6)
+
+# Number of members in each cluster
+table(sub_grp)
+
+df <- time_series_1 |>
+  dplyr::select(-decimal_date) |>
+  na.omit() %>%
+  t()
+
+fviz_cluster(list(data = df , cluster = sub_grp))
 
 ### d2------
 heatmap_data_l <- time_series_2 |>
@@ -632,7 +653,6 @@ composition_of_plots <- grid.arrange(dendro,
 # Close the PDF device
 dev.off()
 
-
 ### The same for the FL fraction----
 time_series_1 <- wavelets_result_tibble_tax_02_biased |>
   dplyr::select(decimal_date, wavelets_result_ed, asv_num, wavelets_transformation) |>
@@ -641,7 +661,7 @@ time_series_1 <- wavelets_result_tibble_tax_02_biased |>
                                   is.na(family) & !is.na(order) ~ paste0(order, '.', asv_num),
                                   is.na(family) & is.na(order) ~ paste0(class, '.', asv_num),
                                   is.na(family) & is.na(order) & is.na(class) ~ paste0(phylum, '.', asv_num))) |>
-  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus, species)) |>
+  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus)) |>
   dplyr::filter(wavelets_transformation == 'd1' ) |>
   dplyr::select(-wavelets_transformation) |>
   pivot_wider(names_from = asv_f, values_from = wavelets_result_ed)
@@ -653,7 +673,7 @@ time_series_2 <- wavelets_result_tibble_tax_02_biased |>
                                   is.na(family) & !is.na(order) ~ paste0(order, '.', asv_num),
                                   is.na(family) & is.na(order) ~ paste0(class, '.', asv_num),
                                   is.na(family) & is.na(order) & is.na(class) ~ paste0(phylum, '.', asv_num))) |>
-  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus, species)) |>
+  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus)) |>
   dplyr::filter(wavelets_transformation == 'd2' ) |>
   dplyr::select(-wavelets_transformation) |>
   pivot_wider(names_from = asv_f, values_from = wavelets_result_ed)
@@ -664,8 +684,8 @@ time_series_3 <- wavelets_result_tibble_tax_02_biased |>
   dplyr::mutate(asv_f = case_when(!is.na(family) ~ paste0(family,'.',asv_num),
                                   is.na(family) & !is.na(order) ~ paste0(order, '.', asv_num),
                                   is.na(family) & is.na(order) ~ paste0(class, '.', asv_num),
-                                  is.na(family) & is.na(order) & is.na(class) ~ paste0(phylum, '.', asv_num))) %$%
-  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus, species)) |>
+                                  is.na(family) & is.na(order) & is.na(class) ~ paste0(phylum, '.', asv_num))) |>
+  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus)) |>
   dplyr::filter(wavelets_transformation == 'd3' ) |>
   dplyr::select(-wavelets_transformation) |>
   pivot_wider(names_from = asv_f, values_from = wavelets_result_ed)
@@ -677,7 +697,7 @@ time_series_4 <- wavelets_result_tibble_tax_02_biased |>
                                   is.na(family) & !is.na(order) ~ paste0(order, '.', asv_num),
                                   is.na(family) & is.na(order) ~ paste0(class, '.', asv_num),
                                   is.na(family) & is.na(order) & is.na(class) ~ paste0(phylum, '.', asv_num))) |>
-  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus, species)) |>
+  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus)) |>
   dplyr::filter(wavelets_transformation == 'd4' ) |>
   dplyr::select(-wavelets_transformation) |>
   pivot_wider(names_from = asv_f, values_from = wavelets_result_ed)
@@ -689,7 +709,7 @@ time_series_5 <- wavelets_result_tibble_tax_02_biased |>
                                   is.na(family) & !is.na(order) ~ paste0(order, '.', asv_num),
                                   is.na(family) & is.na(order) ~ paste0(class, '.', asv_num),
                                   is.na(family) & is.na(order) & is.na(class) ~ paste0(phylum, '.', asv_num))) |>
-  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus, species)) |>
+  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus)) |>
   dplyr::filter(wavelets_transformation == 's4' ) |>
   dplyr::select(-wavelets_transformation) |>
   pivot_wider(names_from = asv_f, values_from = wavelets_result_ed)
@@ -986,39 +1006,40 @@ dev.off()
 ## Cross-correlation for the PA fraction----
 ## data preparation rows are observations and columns are variables----
 time_series_1 <- wavelets_result_tibble_tax_3_biased |>
-  dplyr::select(decimal_date, wavelets_result, asv_num, wavelets_transformation) |>
+  dplyr::select(decimal_date, wavelets_result_ed, asv_num, wavelets_transformation) |>
   left_join(tax_bbmo_10y_new, by = 'asv_num') |>
   dplyr::mutate(asv_f = paste0(family,'.',asv_num)) |>
-  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus, species)) |>
+  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus)) |>
   dplyr::filter(wavelets_transformation == 'd1' ) |>
   dplyr::select(-wavelets_transformation) |>
-  pivot_wider(names_from = asv_f, values_from = wavelets_result)
+  pivot_wider(names_from = asv_f, values_from = wavelets_result_ed)
 
 time_series_2 <- wavelets_result_tibble_tax_3_biased |>
-  dplyr::select(decimal_date, wavelets_result, asv_num, wavelets_transformation) |>
+  dplyr::select(decimal_date, wavelets_result_ed, asv_num, wavelets_transformation) |>
   left_join(tax_bbmo_10y_new, by = 'asv_num') |>
   dplyr::mutate(asv_f = paste0(family,'.',asv_num)) |>
-  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus, species)) |>
+  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus)) |>
   dplyr::filter(wavelets_transformation == 'd2' ) |>
   dplyr::select(-wavelets_transformation) |>
-  pivot_wider(names_from = asv_f, values_from = wavelets_result)
+  pivot_wider(names_from = asv_f, values_from = wavelets_result_ed)
 
 time_series_3 <- wavelets_result_tibble_tax_3_biased |>
+  dplyr::select(decimal_date, wavelets_result_ed, asv_num, wavelets_transformation) |>
   left_join(tax_bbmo_10y_new, by = 'asv_num') |>
   dplyr::mutate(asv_f = paste0(family,'.',asv_num)) |>
-  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus, species)) |>
+  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus)) |>
   dplyr::filter(wavelets_transformation == 'd3' ) |>
   dplyr::select(-wavelets_transformation) |>
-  pivot_wider(names_from = asv_f, values_from = wavelets_result)
+  pivot_wider(names_from = asv_f, values_from = wavelets_result_ed)
 
 time_series_5 <- wavelets_result_tibble_tax_3_biased |>
-  dplyr::select(decimal_date, wavelets_result, asv_num, wavelets_transformation) |>
+  dplyr::select(decimal_date, wavelets_result_ed, asv_num, wavelets_transformation) |>
   left_join(tax_bbmo_10y_new, by = 'asv_num') |>
   dplyr::mutate(asv_f = paste0(family,'.',asv_num)) |>
-  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus, species)) |>
+  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus)) |>
   dplyr::filter(wavelets_transformation == 's4' ) |>
   dplyr::select(-wavelets_transformation) |>
-  pivot_wider(names_from = asv_f, values_from = wavelets_result)
+  pivot_wider(names_from = asv_f, values_from = wavelets_result_ed)
 
 # Dissimilarity matrix
 distances_1 <- time_series_1 |>
@@ -1291,49 +1312,49 @@ for (i in 1:(length(distance_matrices) - 1)) {
 
 ### cross correlation for the FL fraction ------
 time_series_1 <- wavelets_result_tibble_tax_02_biased |>
-  dplyr::select(decimal_date, wavelets_result, asv_num, wavelets_transformation) |>
+  dplyr::select(decimal_date, wavelets_result_ed, asv_num, wavelets_transformation) |>
   left_join(tax_bbmo_10y_new, by = 'asv_num') |>
   dplyr::mutate(asv_f = paste0(family,'.',asv_num)) |>
-  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus, species)) |>
+  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus)) |>
   dplyr::filter(wavelets_transformation == 'd1' ) |>
   dplyr::select(-wavelets_transformation) |>
-  pivot_wider(names_from = asv_f, values_from = wavelets_result)
+  pivot_wider(names_from = asv_f, values_from = wavelets_result_ed)
 
 time_series_2 <- wavelets_result_tibble_tax_02_biased |>
-  dplyr::select(decimal_date, wavelets_result, asv_num, wavelets_transformation) |>
+  dplyr::select(decimal_date, wavelets_result_ed, asv_num, wavelets_transformation) |>
   left_join(tax_bbmo_10y_new, by = 'asv_num') |>
   dplyr::mutate(asv_f = paste0(family,'.',asv_num)) |>
-  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus, species)) |>
+  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus)) |>
   dplyr::filter(wavelets_transformation == 'd2' ) |>
   dplyr::select(-wavelets_transformation) |>
-  pivot_wider(names_from = asv_f, values_from = wavelets_result)
+  pivot_wider(names_from = asv_f, values_from = wavelets_result_ed)
 
 time_series_3 <- wavelets_result_tibble_tax_02_biased |>
-  dplyr::select(decimal_date, wavelets_result, asv_num, wavelets_transformation) |>
+  dplyr::select(decimal_date, wavelets_result_ed, asv_num, wavelets_transformation) |>
   left_join(tax_bbmo_10y_new, by = 'asv_num') |>
   dplyr::mutate(asv_f = paste0(family,'.',asv_num)) |>
-  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus, species)) |>
+  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus)) |>
   dplyr::filter(wavelets_transformation == 'd3' ) |>
   dplyr::select(-wavelets_transformation) |>
-  pivot_wider(names_from = asv_f, values_from = wavelets_result)
+  pivot_wider(names_from = asv_f, values_from = wavelets_result_ed)
 
 time_series_4 <- wavelets_result_tibble_tax_02_biased |>
-  dplyr::select(decimal_date, wavelets_result, asv_num, wavelets_transformation) |>
+  dplyr::select(decimal_date, wavelets_result_ed, asv_num, wavelets_transformation) |>
   left_join(tax_bbmo_10y_new, by = 'asv_num') |>
   dplyr::mutate(asv_f = paste0(family,'.',asv_num)) |>
-  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus, species)) |>
+  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus)) |>
   dplyr::filter(wavelets_transformation == 'd4' ) |>
   dplyr::select(-wavelets_transformation) |>
-  pivot_wider(names_from = asv_f, values_from = wavelets_result)
+  pivot_wider(names_from = asv_f, values_from = wavelets_result_ed)
 
 time_series_5 <- wavelets_result_tibble_tax_02_biased |>
-  dplyr::select(decimal_date, wavelets_result, asv_num, wavelets_transformation) |>
+  dplyr::select(decimal_date, wavelets_result_ed, asv_num, wavelets_transformation) |>
   left_join(tax_bbmo_10y_new, by = 'asv_num') |>
   dplyr::mutate(asv_f = paste0(family,'.',asv_num)) |>
-  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus, species)) |>
+  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus)) |>
   dplyr::filter(wavelets_transformation == 's4' ) |>
   dplyr::select(-wavelets_transformation) |>
-  pivot_wider(names_from = asv_f, values_from = wavelets_result)
+  pivot_wider(names_from = asv_f, values_from = wavelets_result_ed)
 
 # Dissimilarity matrix
 distances_1 <- time_series_1 |>
@@ -1449,6 +1470,9 @@ distances_5 <- distances_5 |>
 
 
 ## CREAE A LOOP TO PERFORM THE CROSS-CORRELATIONS -----
+#### now it sais incompatible dimensions, this could be because when I remove the samples most affected by margins effects, depending on the decomposition 
+#### we remove more or less samples.
+
 # List of distances matrices
 distance_matrices <- list(distances_1, distances_2, distances_3, distances_5)
 
@@ -1554,13 +1578,13 @@ fviz_cluster(list(data = distances, cluster = sub_grp))
 dist_matrix <- dist(rbind(ts1, ts2)) 
 
 time_series_1 <- wavelets_result_tibble_tax_3_biased |>
-  dplyr::select(decimal_date, wavelets_result, asv_num, wavelets_transformation) |>
+  dplyr::select(decimal_date, wavelets_result_ed asv_num, wavelets_transformation) |>
   dplyr::filter(wavelets_transformation == 'd1' ) |>
   dplyr::select(-wavelets_transformation) |>
   pivot_wider(names_from = asv_num, values_from = wavelets_result)
 
 time_series_2 <- wavelets_result_tibble_tax_3_biased |>
-  dplyr::select(decimal_date, wavelets_result, asv_num, wavelets_transformation) |>
+  dplyr::select(decimal_date, wavelets_result_ed asv_num, wavelets_transformation) |>
   dplyr::filter(wavelets_transformation == 'd3' ) |>
   dplyr::select(-wavelets_transformation) |>
   pivot_wider(names_from = asv_num, values_from = wavelets_result)
@@ -1592,34 +1616,34 @@ for (taxon in unique_taxa) {
 
 ### Prepare the environmental data----
 time_series_env_1 <- wavelets_result_env_tibble_red |>
-  dplyr::select(decimal_date, wavelets_result, environmental_variable, wavelets_transformation) |>
+  dplyr::select(decimal_date, wavelets_result_ed, environmental_variable, wavelets_transformation) |>
   dplyr::filter(wavelets_transformation == 'd1' ) |>
   dplyr::select(-wavelets_transformation) |>
-  pivot_wider(names_from = environmental_variable, values_from = wavelets_result)
+  pivot_wider(names_from = environmental_variable, values_from = wavelets_result_ed)
 
 time_series_env_2 <-wavelets_result_env_tibble_red |>
-  dplyr::select(decimal_date, wavelets_result, environmental_variable, wavelets_transformation) |>
+  dplyr::select(decimal_date, wavelets_result_ed, environmental_variable, wavelets_transformation) |>
   dplyr::filter(wavelets_transformation == 'd2' ) |>
   dplyr::select(-wavelets_transformation) |>
-  pivot_wider(names_from = environmental_variable, values_from = wavelets_result)
+  pivot_wider(names_from = environmental_variable, values_from = wavelets_result_ed)
 
 time_series_env_3 <- wavelets_result_env_tibble_red |>
-  dplyr::select(decimal_date, wavelets_result, environmental_variable, wavelets_transformation) |>
+  dplyr::select(decimal_date, wavelets_result_ed, environmental_variable, wavelets_transformation) |>
   dplyr::filter(wavelets_transformation == 'd3' ) |>
   dplyr::select(-wavelets_transformation) |>
-  pivot_wider(names_from = environmental_variable, values_from = wavelets_result)
+  pivot_wider(names_from = environmental_variable, values_from = wavelets_result_ed)
 
 time_series_env_4 <-wavelets_result_env_tibble_red |>
-  dplyr::select(decimal_date, wavelets_result, environmental_variable, wavelets_transformation) |>
+  dplyr::select(decimal_date, wavelets_result_ed, environmental_variable, wavelets_transformation) |>
   dplyr::filter(wavelets_transformation == 'd4' ) |>
   dplyr::select(-wavelets_transformation) |>
-  pivot_wider(names_from = environmental_variable, values_from = wavelets_result)
+  pivot_wider(names_from = environmental_variable, values_from = wavelets_result_ed)
 
 time_series_env_5 <- wavelets_result_env_tibble_red |>
-  dplyr::select(decimal_date, wavelets_result, environmental_variable, wavelets_transformation) |>
+  dplyr::select(decimal_date, wavelets_result_ed, environmental_variable, wavelets_transformation) |>
   dplyr::filter(wavelets_transformation == 's4' ) |>
   dplyr::select(-wavelets_transformation) |>
-  pivot_wider(names_from = environmental_variable, values_from = wavelets_result)
+  pivot_wider(names_from = environmental_variable, values_from = wavelets_result_ed)
 
 # time_series_env_1 |>
 #   pivot_longer(cols = c(-decimal_date)) |>
@@ -1822,6 +1846,7 @@ heatmap_plot <- heatmap_data_l |>
 
 
 
+
 ## CREAE A LOOP TO PERFORM THE CROSS-CORRELATIONS BETWEEN ENVIRONMENTAL VARIABLES AND ASVs AT DIFFERENT TRANSFORMATIONS-----
 
 ## first we do it for just two matrices d1-d1_env for example 
@@ -1829,54 +1854,68 @@ heatmap_plot <- heatmap_data_l |>
 ## if I do it without calculating the distances it works but if I use the Euclidean distances then it doesn't work (maybe it is related to the dimensions)
 ## Try to understand why.
 
-distances_env_1 <- time_series_env_1 |>
-  #dplyr::select(-decimal_date) |>
-  stats::dist( method = "euclidean")
-
-distances_1 <- time_series_1 |>
-  #dplyr::select(-decimal_date) |>
-  #t() |>
-  stats::dist( method = "euclidean")
-
-distances_env_2 <- time_series_env_2 |>
-  #dplyr::select(-decimal_date) |>
-  stats::dist( method = "euclidean")
-
-distances_2 <- time_series_2 |>
-  #dplyr::select(-decimal_date) |>
-  stats::dist( method = "euclidean")
-
-distances_env_2 <- time_series_env_2 |>
-  #dplyr::select(-decimal_date) |>
-  stats::dist( method = "euclidean")
-
-distances_2 <- time_series_2 |>
-  #dplyr::select(-decimal_date) |>
-  stats::dist( method = "euclidean")
-
-
-distances_1 <- distances_1 |>
-  as.matrix()
-  
-distances_env_1 <- distances_env_1 |>
-  as.matrix() 
-
-distances_2 <- distances_2 |>
+#### we sure that the tibbles are ordered in the same way. 
+time_series_1_mat <- time_series_1 |>
+  dplyr::select(-decimal_date) |>
+  dplyr::filter(if_all(everything(), ~ !is.na(.))) |>
   as.matrix()
 
-distances_env_2 <- distances_env_2 |>
+time_series_env_1_mat <- time_series_env_1 |>
+  dplyr::select(-decimal_date) |>
+  dplyr::filter(!is.na(any())) %>%
+  dplyr::filter(rowSums(is.na(.)) == NA)) |>
   as.matrix()
 
-distances_env_3 <- distances_env_3 |>
-  as.matrix()
+cross_correlation_matrices <- cor(time_series_1_mat, time_series_env_1_mat)
 
-distances_env_4 <- distances_env_4  |>
-  as.matrix()
+# distances_env_1 <- time_series_env_1 |>
+#   #dplyr::select(-decimal_date) |>
+#   stats::dist( method = "euclidean")
+# 
+# distances_1 <- time_series_1 |>
+#   #dplyr::select(-decimal_date) |>
+#   #t() |>
+#   stats::dist( method = "euclidean")
+# 
+# distances_env_2 <- time_series_env_2 |>
+#   #dplyr::select(-decimal_date) |>
+#   stats::dist( method = "euclidean")
+# 
+# distances_2 <- time_series_2 |>
+#   #dplyr::select(-decimal_date) |>
+#   stats::dist( method = "euclidean")
+# 
+# distances_env_2 <- time_series_env_2 |>
+#   #dplyr::select(-decimal_date) |>
+#   stats::dist( method = "euclidean")
+# 
+# distances_2 <- time_series_2 |>
+#   #dplyr::select(-decimal_date) |>
+#   stats::dist( method = "euclidean")
 
-distances_env_5 <- distances_env_5 |>
-  as.matrix()
+# 
+# distances_1 <- distances_1 |>
+#   as.matrix()
+#   
+# distances_env_1 <- distances_env_1 |>
+#   as.matrix() 
+# 
+# distances_2 <- distances_2 |>
+#   as.matrix()
+# 
+# distances_env_2 <- distances_env_2 |>
+#   as.matrix()
+# 
+# distances_env_3 <- distances_env_3 |>
+#   as.matrix()
+# 
+# distances_env_4 <- distances_env_4  |>
+#   as.matrix()
+# 
+# distances_env_5 <- distances_env_5 |>
+#   as.matrix()
 
-cross_correlation_matrices <- cor(distances_env_1, distances_1)
+
 
 hc_list <- hclust(as.dist(1 - cross_correlation_matrices), method = "ward.D")
 
