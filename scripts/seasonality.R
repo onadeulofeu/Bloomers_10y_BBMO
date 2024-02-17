@@ -9,15 +9,19 @@ library(tidyverse)
 library(phyloseq)
 library(ggpubr)
 library(waveslim)
+library(vegan) #deconstand
 
 # Differentiate different types of bloomers studying their signals across time----
 
 ## upload data----
-asv_tab_all_bloo_z_tax <- read.csv2('data/asv_tab_all_bloo_z_tax_new_assign.csv') ## in this dataset I have all the information from potential blooming ASVs
-bloo_02 <- read.csv('data/bloo_02.csv') |>
+asv_tab_all_bloo_z_tax <- read.csv2('data/detect_bloo/asv_tab_all_bloo_z_tax_new_assign_checked.csv') |> ## in this dataset I have all the information from potential blooming ASVs
+  as_tibble() |>
+  dplyr::select(-X)
+  
+bloo_02 <- read.csv('data/detect_bloo/bloo_02.csv') |>
   as_tibble()
 
-bloo_3 <-read.csv('data/bloo_3.csv') |>
+bloo_3 <-read.csv('data/detect_bloo/bloo_3.csv') |>
   as_tibble()
 
 ## Previous to the analysis we need to interpolate missing samples----
@@ -128,7 +132,7 @@ asv_tab_all_bloo_z_tax_02_subset <- asv_tab_all_bloo_z_tax |>
                             as.POSIXct('2005-05-10', format = "%Y-%m-%d"))) |>
   dplyr::filter(#asv_num == 'asv179' &
     abundance_type == 'relative_abundance') |>
-  dplyr::select(-seq, -asv_num, -family, - phylum, -class, -order, -genus, -abundance_type, -abundance_value, -z_score_ra, -sample_id_num, -domain, -sample_id, -reads, -X) |>
+  dplyr::select(-seq, -asv_num, -family, - phylum, -class, -order, -genus, -abundance_type, -abundance_value, -z_score_ra, -sample_id_num, -domain, -sample_id, -reads) |>
   dplyr::distinct()
 
 asv_tab_all_bloo_z_tax_3 <- asv_tab_all_bloo_z_tax |>
@@ -150,6 +154,7 @@ asv_tab_all_bloo_z_tax_02 <- asv_tab_all_bloo_z_tax |>
 ### Dataset to perform the seasonality analysis on----
 asv_tab_all_bloo_3_complete #PA datset
 asv_tab_all_bloo_z_tax_02 #FL dataset
+
 
 ####### MAKING A DECISION ON USING WAVELETS // FOURIER ANALYSIS // ARIMA FOR OUR DATASET --------
 
@@ -196,11 +201,101 @@ asv_tab_all_bloo_z_tax_02 #FL dataset
 ## prior to the analysis we need to use CLR transformed data------
 wavelet_02_df <- asv_tab_all_bloo_z_tax |>
   dplyr::filter(fraction == '0.2') |>
-  dplyr::filter(abundance_type == 'zclr') |>
+  dplyr::filter(abundance_type == 'rclr') |>
   dplyr::filter(asv_num %in% bloo_02$value) |>
   dplyr::select(abundance_value, asv_num, decimal_date)
 
-## for the PA fraction we need to calculate again the zCLR transformation afer the interpolation of the missing samples ----
+# ## I run again the wavelets analysis with rCLR values from deconstant function not zcompositions, to use the same transformation for both PA and FL----
+# asv_tab_bbmo_10y_w_02 <- asv_tab_bbmo_10y_l |>
+#   dplyr::filter(str_detect(sample_id, '_0.2_')) |>
+#   left_join(m_02) |>
+#   dplyr::select(asv_num, reads, date) |>
+#   pivot_wider(names_from = 'asv_num', values_from = 'reads', values_fill = 0) |>
+#   as.data.frame()
+# 
+# rownames(asv_tab_bbmo_10y_w_02) <- asv_tab_bbmo_10y_w_02$date
+# 
+# # asv_tab_bbmo_10y_w_02_inter |>
+# #   dim()
+# 
+# asv_tab_bbmo_10y_w_02 <- asv_tab_bbmo_10y_w_02[,-1]
+# 
+# #geometric mean
+# gm <- function(x){
+#   exp(mean(log(x[x>0])))
+# }
+# 
+# ### i use the deconstant function 
+# zclr_df_02 <- decostand(asv_tab_bbmo_10y_w_02, method = 'rclr') |>
+#   as_tibble(rownames = "date") %>%
+#   pivot_longer(cols = starts_with('asv'), names_to = 'asv_num', values_to = 'zclr') 
+# 
+# ## filter it for my bloomers (the one's I want to perform the wavelets analysis on)
+# wavelet_02_df_deconstand <-  zclr_df_02 |>
+#   dplyr::filter(asv_num %in% bloo_02$value) |>
+#   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+#   left_join(m_02, by = c('date')) |>
+#   dplyr::select(decimal_date, asv_num, zclr)
+# 
+# asv_tab_10y_02_zclr_inter_bloo %$%
+#   unique(decimal_date) ## one sample is missing needs to be solved.
+# 
+# ## observe them
+# zclr_df_02 |>
+#   dplyr::filter(asv_num %in% bloo_02$value) |>
+#   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+#   ggplot(aes(date, zclr, group = asv_num))+
+#   geom_line()+
+#   geom_point()+
+#   facet_wrap(vars(asv_num))+
+#   theme_bw()
+# 
+# zclr_df_02  %$%
+#   zclr |>
+#   range()
+# 
+# ### comparison of the results using the zCLR transformation and the deconstand function (observe if there are important differences) ----
+# wavelet_02_df |>
+#   dplyr::filter(asv_num %in% bloo_02$value) |>
+#   #dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+#   ggplot(aes(decimal_date, abundance_value, group = asv_num))+
+#   geom_line()+
+#   geom_point()+
+#   facet_wrap(vars(asv_num))+
+#   theme_bw()
+
+##compare the values obtained using one approximation or the other (we keep the analysis with the pseudcount approximation).-----
+# x <- wavelet_02_df |>
+#   dplyr::filter(asv_num == 'asv237') |>
+#   rename(variable = abundance_value) |>
+#   dplyr::mutate(type = 'zclr_zcomp')
+# 
+# y <- wavelet_02_df_deconstand |>
+#   dplyr::filter(asv_num == 'asv237') |>
+#   rename(variable = zclr) |>
+#   dplyr::mutate(type = 'zclr_deconst')
+# 
+# reads <- asv_tab_bbmo_10y_l |>
+#   dplyr::filter(str_detect(sample_id, '_0.2_')) |>
+#   left_join(m_02) |>
+#   dplyr::select(asv_num, reads, decimal_date) |>
+#   dplyr::filter(asv_num == 'asv237') |>
+#   rename(variable = reads)|>
+#   dplyr::mutate(type = 'reads')
+# 
+# asv237_transfor <- bind_rows(reads, x, y) |>
+#   pivot_wider(id_cols = c(asv_num, decimal_date), names_from = type, values_from = variable)
+
+#write.csv(asv237_transfor, 'data/asv237_transfor.csv')
+
+## I use deconstand in both fractions in the following analysis----
+# wavelet_02_df <- wavelet_02_df_deconstand
+
+##I save both datasets
+#write.csv2(wavelet_02_df, 'data/wavelet_02_df_deconstand.csv') #using the deconstand function (the same we need to use for the PA wavelets)
+#write.csv2(wavelet_02_df, 'data/wavelet_02_df_zclr.csv') #using the zcompositions function which deals with 0 in a more elegant way.
+
+## for the PA fraction we need to calculate again the zCLR transformation after the interpolation of the missing samples ----
 ### i feel that i makes more sense to make the interpolation from relative_abundances therefore I need to convert it's relative abundance interpolated
 ### value to interpolated reads, for this I imagine that they have the total reads that we have in the mean dataset
 
@@ -243,33 +338,39 @@ gm <- function(x){
 
 ## with this transformation I'm losing samples (due to too much 0 in some samples, z.warning set up to 0.99 to keep all samples)
 ### at 0.8 (default) I lose 30 samples which belonged to the years corresponding to harbour remodelation 
-### I don't lose samples but I lose ASVs.
-# zclr_df <- cmultRepl(asv_tab_bbmo_10y_w_3_inter, method = 'CZM', output = 'p-count', z.warning = 0.99
+# ### I don't lose samples but I lose ASVs.
+# zclr_df_inter <- cmultRepl(asv_tab_bbmo_10y_w_3_inter, method = 'CZM', output = 'p-count', z.warning = 0.99
 #                      #adjust = 0.2,    t = 237, s = 7849
 # ) |>
 #   as_tibble(rownames = "sample_id") %>%
-#   pivot_longer(-sample_id) %>%
+#   pivot_longer(-sample_id, names_to = 'asv_num') %>%
 #   group_by(sample_id) %>%
 #   dplyr::mutate(zclr = log(value/gm(value))) %>%
 #   ungroup() %>%
 #   dplyr::select(-value) %>%
 #   pivot_wider(names_from = name, values_from = zclr, values_fill = 0) %>%
 #   column_to_rownames("sample_id")
+# 
+# zclr_df_inter |>
+#   dim()
+# 
+# zclr_df_inter_deconstand |>
+#   dim()
 
-### i use th deconstant function in this case because the cmultRepl was making me lose one sample
-zclr_df_inter <- decostand(asv_tab_bbmo_10y_w_3_inter, method = 'rclr') |>
+### i use the deconstant function in this case because the cmultRepl was making me lose one sample
+zclr_df_inter_deconstand <- decostand(asv_tab_bbmo_10y_w_3_inter, method = 'rclr') |>
   as_tibble(rownames = "date") %>%
-  pivot_longer(cols = starts_with('asv'), names_to = 'asv_num', values_to = 'zclr') 
+  pivot_longer(cols = starts_with('asv'), names_to = 'asv_num', values_to = 'rclr') 
 
 ## filter it for my bloomers (the one's I want to perform the wavelets analysis on)
-wavelet_3_df <- asv_tab_10y_3_zclr_inter_bloo <- zclr_df_inter |>
+wavelet_3_df <-  zclr_df_inter_deconstand |>
   dplyr::filter(asv_num %in% bloo_3$value) |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
   left_join(m_02, by = c('date')) |>
-  dplyr::select(decimal_date, asv_num, zclr)
-
-asv_tab_10y_3_zclr_inter_bloo %$%
-  unique(decimal_date) ## one sample is missing needs to be solved.
+  dplyr::select(decimal_date, asv_num, rclr)
+# 
+# asv_tab_10y_3_zclr_inter_bloo %$%
+#   unique(decimal_date) ## one sample is missing needs to be solved.
 
 ## observe them
  zclr_df_inter |>
@@ -284,6 +385,8 @@ asv_tab_10y_3_zclr_inter_bloo %$%
 zclr_df_inter  %$%
   zclr |>
   range()
+
+#write.csv2(wavelet_3_df, 'data/wavelet_3_df_deconstand.csv') #using the deconstand function (the same we need to use for the PA wavelets)
 
 #### Notice that deconstant robust CLR transformation gives me more negative values than the cmultRepl step
 
@@ -446,7 +549,6 @@ library(GeneCycle)
 ## Autocorrelogram was calculated using the acf function
 
 
-
 ### WAVELETS ANALYSIS-----
 ## need to pick a family of wavelets we want to work with.
 # Here I try to apply the code that is in appendix A of the thesis -----
@@ -603,9 +705,7 @@ modwtasv194_biased <- modwt(abund194, wf = 'la8', boundary = "periodic", n.level
  #### Interpretation of the following plots----
  
  #### MODWTs of CLR transformation of the relative abundance from the potential blooming ASVs. The series d1-d4 are wavelet coefficient
- ### vectors; the series s4 is the scaling coefficient vector at the coarsest scale. Coefficients not enclosed by the red solid lines are
- ### boundary coefficients (coefficients affected by circular filtering). The blue dashed lines are delineate the filter-specific e-folding
- ### distances from the beginning and end of the series (cone-of-influence in Torrence and Compo, 1998).
+ ### vectors; the series s4 is the scaling coefficient vector at the coarsest scale. 
  
  ### d1 is the finest scale and d4 is the coarsest. The s4 depicts the scaling coefficients as a function of time, representing the remainder
  ### of the variability after the finer scales (d1-d4) have been isolated. 
@@ -804,7 +904,18 @@ selected_coefficients <- modwt_result[[selected_level]]
 
 
 #### Another strategy run it for all the ASVs at the same time, we work with two different datasets one for PA and the other FL ------
-  #### 4 steps 
+
+## upload data
+wavelet_3_df <- read.csv2('data/wavelet_3_df_deconstand.csv') |>
+  as_tibble() |>
+  dplyr::select(-X)
+
+wavelet_02_df <- read.csv2('data/wavelet_02_df_deconstand.csv') |>
+  as_tibble() |>
+  dplyr::select(-X)
+
+
+  #### 4 steps APPLY BRICK WALL FUNCTION (REMOVE ALL SAMPLES AFFECTED BY THE MARGINS EFFECT)
 ### 1. modwt computation----
   ## FL fraction
   modwt_results_02 <- wavelet_02_df |>
@@ -1474,13 +1585,17 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
          panel.border = element_blank(), text = element_text(size = 5))
  
  
+ 
  ##### PERFORM WAVELETS ANALYSIS THIS TIME WITHOUT APPLYING THE BRICK WALL FUNCTION WHICH REMOVES VALUES AFFECTED BY MARGINS EFFECTS-----
  #### 4 steps 
  ### 1. modwt computation----
  
+ ##n levels must be a number less or equal to log(length(x))
+ log(120, base = 2) #6.9 max levels we could use.
+ 
  modwt.function.biased <- function(abundance){
    modwt_result <-  abundance |>
-     modwt( wf = 'la8', boundary = "periodic", n.levels = 4) |>
+     modwt( wf = 'la8', boundary = "periodic", n.levels = 4) |> #If boundary=="periodic" the defaulTRUE, then the vector you decompose is assumed to be periodic on its defined interval,
      #brick.wall(wf = 'la8') |> #elimination of all boundary coefficients is accomplished by the function 'brick.wall' prior to the phase shift correction
      phase.shift(wf = 'la8')
    return(modwt_result)
@@ -1493,14 +1608,14 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
  ## PA fraction
  modwt_results_3_biased <- wavelet_3_df |>
    group_by(asv_num) %>%
-   dplyr::summarize(modwt_result = list(modwt.function.biased(zclr)))
+   dplyr::summarize(modwt_result = list(modwt.function.biased(rclr)))
  
  ### 2. e-folding-----
  ###### commmon for all 
  x <- rep(0, 10001) 
  x[5000] <- 1 
  n.levels <- 4 
- len <- length(m_02$sample_id) ##120 (length of my dataset)
+ len <- length(m_02$sample_id) ##120 (length of my dataset) we do not use 3 because they have 3 datapoints less for the metadata 
  temp <- phase.shift(modwt(x, n.levels = n.levels, wf = "la8"), wf = "la8")
  
  ## The positions to the left and to the right of the maximal influence of this spike are recorded in a matrix (left, right) together with the 
@@ -1519,15 +1634,15 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
  boundaries <- data.frame(end = len - (waveExtremes[3, ] - waveExtremes[1, ]), 
                           start = waveExtremes[2, ] - waveExtremes[3, ])
  
- ##### General for the whole dataset
- asv_num_index <- i
- modwt_results <- modwt_results_02$modwt_result[[asv_num_index]]
- 
- i = 1 #i defined it because it was not working, but it should be fixed.
- for (j in 1:(n.levels + 1)) { 
-   is.na(modwt_results[[i]]) <- c(1:boundaries$start[i], boundaries$end[i]:length(modwt_results[[i]])) 
-   
- }
+ ##### General for the whole dataset (this part should be fixed but maybe I do not needed because I remove the boundaries after)
+ # asv_num_index <- i
+ # modwt_results <- modwt_results_02$modwt_result[[asv_num_index]]
+ # 
+ # i = 1 #i defined it because it was not working, but it should be fixed.
+ # for (j in 1:(n.levels + 1)) { 
+ #   is.na(modwt_results[[i]]) <- c(1:boundaries$start[i], boundaries$end[i]:length(modwt_results[[i]])) 
+ #   
+ # }
  
  ### 3. Visualize the results obtained from the modwt transfomation ------
  ### I extract the wavelets results at the same time for ALL ASVs that I have in modwt_results 
@@ -1804,7 +1919,7 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
            text = element_text(size = 5))
    
    # Save the plot as a PDF file
-   pdf_file <- paste0("results/figures/wavelets_plots/biased_red/", asv_num, "_plot_02_biased_red.pdf")
+   pdf_file <- paste0("results/figures/wavelets_plots/biased_red_checked/", asv_num, "_plot_02_biased_red.pdf")
    ggsave(pdf_file, p, width = 6, height = 3, units = "in")
    
    # Print a message indicating the plot has been saved
@@ -1841,7 +1956,7 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
            text = element_text(size = 5))
    
    # Save the plot as a PDF file
-   pdf_file <- paste0("results/figures/wavelets_plots/biased_red/", asv_num, "_plot_3_biased_red.pdf")
+   pdf_file <- paste0("results/figures/wavelets_plots/biased_red_checked/", asv_num, "_plot_3_biased_red.pdf")
    ggsave(pdf_file, p, width = 6, height = 3, units = "in")
    
    # Print a message indicating the plot has been saved
@@ -1864,14 +1979,15 @@ bloo_02_type_biased_red <- wavelets_result_ed_tibble_tax_02_biased_red %>%
                                           max_coeff == 'd2' ~ 'half-yearly', 
                                           max_coeff == 'd3' ~ 'seasonal', 
                                           max_coeff == 'd4' ~ 'year-to-year')) |>
-   left_join(tax, by = 'asv_num')
+   left_join(tax, by = 'asv_num') |>
+   dplyr::mutate(fraction = '0.2')
  
  bloo_02_type_biased_red |>
    ungroup() |>
    dplyr::filter(bloomer_type == 'seasonal') |>
    dplyr::reframe(n = n())
  
- 1/19 ## 15.58% of the free living blooms seem to have a seasonal pattern
+ 1/20 ## 15.58% of the free living blooms seem to have a seasonal pattern
  
  bloo_02_type_tax_biased_red <-  bloo_02_type_biased_red |>
    group_by(bloomer_type, family ) |>
@@ -1890,7 +2006,14 @@ bloo_02_type_biased_red <- wavelets_result_ed_tibble_tax_02_biased_red %>%
                                           max_coeff == 'd2' ~ 'half-yearly', 
                                           max_coeff == 'd3' ~ 'seasonal', 
                                           max_coeff == 'd4' ~ 'year-to-year')) |>
-   left_join(tax, by = 'asv_num')
+   left_join(tax, by = 'asv_num') |>
+   dplyr::mutate(fraction = '3')
+ 
+ ##save a dataframe with the type of bloomer according to the wavelets result highest coefficient
+ bloo_type_biased_all <- bloo_3_type_biased_red |>
+   bind_rows( bloo_02_type_biased_red)
+ 
+ #write.csv2(bloo_type_biased_all, 'data/bloo_type_biased_all_checked.csv')
  
  bloo_3_type_biased_red |>
    ungroup() |>
@@ -1952,6 +2075,28 @@ bloo_02_type_biased_red <- wavelets_result_ed_tibble_tax_02_biased_red %>%
          legend.position = 'bottom', axis.ticks.x = element_blank(),
          panel.border = element_blank(), text = element_text(size = 5))
  
+ 
+ ##i create a table with all the coefficients (I do not decide which is the most important)-----
+ wavelets_result_ed_tibble_tax_3_biased_red_coeff <- wavelets_result_ed_tibble_tax_3_biased_red %>%
+   group_by(asv_num, wavelets_transformation) %>%
+   dplyr::filter(!is.na(wavelets_result_ed)) |>
+   dplyr::summarize(coefficients = sqrt(sum(wavelets_result_ed^2))) |>
+   dplyr::mutate(fraction = '3') |>
+   dplyr::mutate(wavelets_fraction = paste0(wavelets_transformation,'_', fraction)) |>
+   dplyr::select(-fraction, -wavelets_transformation)
+
+ wavelets_result_ed_tibble_tax_02_biased_red_coeff <- wavelets_result_ed_tibble_tax_02_biased_red %>%
+   group_by(asv_num, wavelets_transformation) %>%
+   dplyr::filter(!is.na(wavelets_result_ed)) |>
+   dplyr::summarize(coefficients = sqrt(sum(wavelets_result_ed^2))) |>
+   dplyr::mutate(fraction = '0.2') |>
+   dplyr::mutate(wavelets_fraction = paste0(wavelets_transformation,'_', fraction)) |>
+   dplyr::select(-fraction, -wavelets_transformation)
+ 
+ wavelets_result_ed_tibble_biased_red_coeff_all <-  wavelets_result_ed_tibble_tax_3_biased_red_coeff |>
+ bind_rows(wavelets_result_ed_tibble_tax_02_biased_red_coeff) |>
+   pivot_wider(id_cols = asv_num, values_from = coefficients, names_from = wavelets_fraction, values_fill = 0)
+ 
  ### by order ----
  bloo_02_type_tax_order_biased_red <-  bloo_02_type_biased_red |>
    group_by(bloomer_type, order ) |>
@@ -2006,10 +2151,50 @@ bloo_02_type_biased_red <- wavelets_result_ed_tibble_tax_02_biased_red %>%
    geom_line(aes(group = asv_num))+
    theme_bw()
  
- #write.csv2( wavelets_result_ed_tibble_tax_3_biased_red, 'data/wavelets_result_ed_tibble_tax_3_biased_red.csv')
- #write.csv2( wavelets_result_ed_tibble_tax_02_biased_red, 'data/wavelets_result_ed_tibble_tax_02_biased_red.csv')
+# write.csv2( wavelets_result_ed_tibble_tax_3_biased_red, 'data/wavelets_analysis/wavelets_result_ed_tibble_tax_3_biased_red.csv')
+# write.csv2( wavelets_result_ed_tibble_tax_02_biased_red, 'data/wavelets_analysis/wavelets_result_ed_tibble_tax_02_biased_red.csv')
  
- ### in the biased dataset we should be able to remove some of the margins of the wavelets prior to deciding in which transformation they belong most----
+### variance of the coefficients at different scales for each ASV-----
+ wavelets_result_ed_tibble_tax_02_biased_red <- wavelets_result_ed_tibble_tax_02_biased_red  |>
+   dplyr::mutate(fraction = '0.2')
+ 
+ ### variance of the coefficients at different scales for each ASV-----
+ labs_wavelets <- as_labeller(c('d1' = 'Fine-scale',
+                                'd2' = 'Half-yearly',
+                                'd3' = 'Seasonal',
+                                'd4' = 'Year-to-year',
+                                's4' = 'Inter-annual'))
+ 
+wavelets_variance <-  wavelets_result_ed_tibble_tax_3_biased_red |>
+   dplyr::mutate(fraction = '3') |>
+   bind_rows( wavelets_result_ed_tibble_tax_02_biased_red) |>
+   dplyr::filter(!is.na(wavelets_result_ed)) |>
+   dplyr::group_by(asv_num, wavelets_transformation, class, fraction) |>
+   dplyr::summarize(variance = var(wavelets_result_ed)) |>
+   ungroup() |>
+   ggplot(aes(wavelets_transformation, variance))+
+   geom_line(aes(group = asv_num, color =  class), linewidth = 0.3 )+
+   geom_point(aes(color =  class), size = 0.3)+
+   scale_color_manual(values = palette_class_assigned_bloo)+
+   geom_violin(alpha = 0.3)+
+   facet_wrap(vars(fraction), labeller = labs_fraction, nrow = 2)+
+  scale_x_discrete(labels = labs_wavelets)+
+   theme_bw()+
+   labs(x = 'Wavelet vectors', y = 'Variance', color = 'Class')+
+   scale_y_continuous(expand = c(0,0))+
+   theme(panel.grid = element_blank(), strip.background =  element_blank(),
+         legend.position = 'bottom',
+         text = element_text(size = 5),
+         legend.key.size = unit(2, 'mm'),
+         axis.ticks = element_line(unit(1, 'mm')))
+ 
+ 
+ wavelets_variance
+ 
+ ggsave(wavelets_variance, filename = ' wavelets_variance.pdf',
+        path = 'Results/Figures/',
+        width = 88, height = 100, units = 'mm')
+ 
  
  
  #### GENERAL PLOTS FOR THOSE ASVs THAT ARE ACTUALLY SEASONAL FORM THOSE THAT ARE NOT-----
