@@ -2,8 +2,8 @@
 #'
 #' @param threshold relative abundance at which you would like to set the threshold to consider a blooming event
 #' @param fraction size fraction at which you are working on
-#' @param asv_tab_pseudo table with relative abunances
-#' @param asv_tab_zclr table with z scores for all the taxa at each point of the timeseries
+#' @param asv_tab_pseudo table with relative abundances
+#' @param z_score_tb table with the z_scores for each asv and sample (columns needed asv_num and sample_id)
 #'
 #' @return 
 #' @export
@@ -13,12 +13,12 @@
 #' asv_tab_zclr = asv_tab_10y_02_zclr)
 #' 
 
-conunt_num_bloomers <- function(threshold, fraction, asv_tab_pseudo, asv_tab_zclr) {
+count_num_bloomers <- function(threshold, fraction, asv_tab_pseudo, z_scores_tb) {
+ 
   result <- asv_tab_pseudo |>
-    inner_join(asv_tab_zclr, by = c('sample_id', 'asv_num')) |>
-    group_by(asv_num) |>
-    dplyr::filter(any(relative_abundance >= threshold)) |>
-    dplyr::filter(zclr >= 1.96) |>
+    dplyr::left_join(z_scores_tb, by= c('sample_id', 'asv_num')) |>
+    dplyr::filter(relative_abundance >= threshold &
+                    z_score_ra >= 1.96) |>
     dplyr::distinct(asv_num) |>
     reframe( n = n()) |>
     ungroup() |>
