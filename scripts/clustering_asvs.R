@@ -3,6 +3,7 @@ library(fields) ##add the legend
 library(magrittr)
 library(ggdendro)
 library(gridExtra) ## combine the dendogram and the heatmap
+library(factoextra) ## visualize hierarchical clusters
 
 ### (I'm using this approximation)------
 ## Fuzzy C-Means
@@ -458,21 +459,6 @@ composition_of_plots <- grid.arrange(dendro,
 # Close the PDF device
 dev.off()
 
-## I would like to visualize the clusters and try to identifiy some groups to label them----
-library(factoextra)
-# Cut tree into 4 groups
-sub_grp <- cutree(hc4, k = 6)
-
-# Number of members in each cluster
-table(sub_grp)
-
-df <- time_series_1 |>
-  dplyr::select(-decimal_date) |>
-  na.omit() %>%
-  t()
-
-fviz_cluster(list(data = df , cluster = sub_grp))
-
 ### d2------
 heatmap_data_l <- time_series_2 |>
   dplyr::mutate(sample_num = row_number()) |>
@@ -652,6 +638,44 @@ composition_of_plots <- grid.arrange(dendro,
 
 # Close the PDF device
 dev.off()
+
+
+## Visualize the clusters and try to identify some groups to label them----
+# Cut tree into 4 groups
+sub_grp_1 <- cutree(hc1, k = 6)
+sub_grp_2 <- cutree(hc2, k = 6)
+sub_grp_3 <- cutree(hc3, k = 6)
+sub_grp_4 <- cutree(hc4, k = 6)
+
+# Number of members in each cluster
+table(sub_grp_1)
+table(sub_grp_2)
+table(sub_grp_3)
+table(sub_grp_4)
+
+df_1 <- time_series_1 |>
+  dplyr::select(-decimal_date) |>
+  na.omit() %>%
+  t()
+
+df_2 <- time_series_2 |>
+  dplyr::select(-decimal_date) |>
+  na.omit() %>%
+  t()
+
+df_3 <- time_series_3|>
+  dplyr::select(-decimal_date) |>
+  na.omit() %>%
+  t()
+
+df_4 <- time_series_4|>
+  dplyr::select(-decimal_date) |>
+  na.omit() %>%
+  t()
+
+
+
+fviz_cluster(list(data = df , cluster = sub_grp))
 
 ### The same for the FL fraction----
 time_series_1 <- wavelets_result_tibble_tax_02_biased |>
