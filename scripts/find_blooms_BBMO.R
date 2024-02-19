@@ -29,7 +29,7 @@ harbour_restoration <- tibble(xmin = '2010-03-24', xmax = '2012-06-09') |>
 
 # palettes----
 palette_seasons_4 <- c("winter" = "#002562", 'spring' = "#519741", 'summer' = "#ffb900",'autumn' =  "#96220a")
-
+f
 palette_fraction <- c('0.2' = '#00808F', '3' = '#454545')
 
 ## palettes taxonomy assigned----
@@ -2855,21 +2855,25 @@ bloo_3 <-read.csv('data/detect_bloo/bloo_3.csv') |>
   as_tibble()
 
 ## preparation of the data for the plot
+z_scores_all_red <- z_scores_all |>
+  dplyr::select(asv_num, z_score_ra, sample_id, fraction, date, year)
+
 asv_tab_bloo_rel_abund_z <- asv_tab_all_bloo_z_tax |>
+  dplyr::select(-z_score_ra) |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  left_join(z_scores_all, by = c('sample_id', 'asv_num', 'fraction', 'date', 'year')) |>
   dplyr::filter(abundance_type == 'relative_abundance') |>
-  dplyr::mutate(z_score_ra_ed = case_when(is.na(z_score_ra.x) ~ 0,
-                                   z_score_ra.x == 'NaN' ~ 0,
-                                   z_score_ra.x == Inf ~ 0,
-                                   TRUE ~ z_score_ra.x)) |>
+  left_join(z_scores_all_red, by = c('sample_id', 'asv_num', 'fraction', 'date', 'year')) |>
+  dplyr::mutate(z_score_ra_ed = case_when(is.na(z_score_ra) ~ 0,
+                                   z_score_ra == 'NaN' ~ 0,
+                                   z_score_ra == Inf ~ 0,
+                                   TRUE ~ z_score_ra)) |>
   dplyr::mutate(anomaly_color = if_else(z_score_ra_ed >= 1.96 &
                                           abundance_value >= 0.1,  '#9F0011', '#080808', missing = '#080808')) |>
-
   dplyr::filter(fraction == '0.2' & asv_num %in% bloo_02$value |
                   fraction == '3' & asv_num %in% bloo_3$value)
 
 ## here we plot all potential bloomers for PA or FL and in which sampling points do they present an anomaly
+library(scales)
 asv_tab_bloo_rel_abund_z  |>
   ggplot(aes(date, abundance_value, color = anomaly_color))+  
   scale_x_datetime(expand = c(0,0), 
