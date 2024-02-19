@@ -54,7 +54,7 @@ labs_env <- as_labeller(c("day_length" = 'Day length' ,
                                 "PNF_Micro" = 'Phototrophic nanoflagellates',
                                 "PNF2_5um_Micro"  = 'Phototrophic nanoflagellates (2-5um)',
                                 "PNF_5um_Micro"   = 'Phototrophic nanoflagellates (5um)',
-                                "dryptomonas"   = 'Cryptomonas',
+                                "cryptomonas"   = 'Cryptomonas',
                                 "micromonas"  = 'Micromonas',
                                 "HNF_Micro"  =  'Heterotrophic nanoflagellates',   
                                 "HNF2_5um_Micro" ='Heterotrophic nanoflagellates (2-5um)',
@@ -334,7 +334,7 @@ bbmo_env <- asv_tab_all_bloo_z_tax |>
                 Si, BP_FC1.55,
                 PNF_Micro, PNF2_5um_Micro,
                 PNF_5um_Micro, 
-                dryptomonas, micromonas,
+                cryptomonas, micromonas,
                 HNF_Micro, HNF2_5um_Micro,   
                 HNF_5um_Micro ,  LNA,              
                 HNA,   prochlorococcus_FC,
@@ -357,7 +357,7 @@ bbmo_env <- asv_tab_all_bloo_z_tax |>
            Si, BP_FC1.55,
            PNF_Micro, PNF2_5um_Micro,
            PNF_5um_Micro, 
-           dryptomonas, micromonas,
+           cryptomonas, micromonas,
            HNF_Micro, HNF2_5um_Micro,   
            HNF_5um_Micro ,  LNA,              
            HNA,   prochlorococcus_FC,
@@ -379,7 +379,7 @@ bbmo_env <- asv_tab_all_bloo_z_tax |>
            Si, BP_FC1.55,
            PNF_Micro, PNF2_5um_Micro,
            PNF_5um_Micro, 
-           dryptomonas, micromonas,
+           cryptomonas, micromonas,
            HNF_Micro, HNF2_5um_Micro,   
            HNF_5um_Micro ,  LNA,              
            HNA,   prochlorococcus_FC,
@@ -482,7 +482,7 @@ bbmo_env_z <-
                          Si, BP_FC1.55,
                          PNF_Micro, PNF2_5um_Micro,
                          PNF_5um_Micro, 
-                         dryptomonas, micromonas,
+                         cryptomonas, micromonas,
                          HNF_Micro, HNF2_5um_Micro,   
                          HNF_5um_Micro ,  LNA,              
                          HNA,   prochlorococcus_FC,
@@ -1930,7 +1930,7 @@ env_z_wavelets_df <- env_z_wavelets_df |>
    left_join( decimal_date_tibble) |>
    #left_join(tax, by = c('asv_name' = 'environmental_variable')) |>
    rename(environmental_variable = asv_name) |>
-   dplyr::mutate(wavelets_transformation = str_replace(wavelets_transformation, 'd5', 's5'))
+   dplyr::mutate(wavelets_transformation = str_replace(wavelets_transformation, 'd5', 's4'))
  
  ## I remove the most afected samples by the boundaries it is less biased but still more biased than when applying the brick wall function
  ## as we increase the signal the wavelet gets more affected by the margin effect
@@ -1938,19 +1938,19 @@ env_z_wavelets_df <- env_z_wavelets_df |>
  
  wavelets_result_env_tibble_red <-   wavelets_result_env_tibble |>
    dplyr::mutate(wavelets_result_ed = case_when(wavelets_transformation == 'd1' &
-                                                  sample_num %in% c(1, 119) ~ 'NA',
+                                                  sample_num %in% c(1, 119, 120) ~ 'NA',
                                                 wavelets_transformation == 'd2' &
-                                                  sample_num %in% c(1,2,3,  117, 118, 119) ~ 'NA',
+                                                  sample_num %in% c(1,2,3,  117, 118, 119, 120) ~ 'NA',
                                                 wavelets_transformation == 'd3' &
-                                                  sample_num %in% c(1,2,3,4,5,6, 113,114,115,116,  117, 118, 119) ~ 'NA',
+                                                  sample_num %in% c(1,2,3,4,5,6, 113,114,115,116,  117, 118, 119, 120) ~ 'NA',
                                                 wavelets_transformation == 'd4' &
                                                   sample_num %in% c(1,2,3,4,5,6,7,8,9,10,11,12, 105,106,107,108,109,110,111,112,113,114,
-                                                                    115,116,117, 118, 119) ~ 'NA',
-                                                wavelets_transformation == 'd5' &
+                                                                    115,116,117, 118, 119, 120) ~ 'NA',
+                                                wavelets_transformation == 's4' &
                                                   sample_num %in% c(1,2,3,4,5,6,7,8,9,10,11,12, 
                                                                     13,14,15,16,17,
                                                                     108,109,110,111,112,113,114,
-                                                                    115,116,117, 118, 119) ~ 'NA',
+                                                                    115,116,117, 118, 119, 120) ~ 'NA',
                                                 TRUE ~ as.character(wavelets_result)))
  
 ### PLOT THE WAVELETS TRANSFROMATINS COMPUTED (visually inspect them, to be sure of the results)----
@@ -2021,9 +2021,1072 @@ env_type <-  wavelets_result_env_tibble_red %>%
    group_by(environmental_variable) |>
    top_n(1, wt = coefficients) |>  # Find the level with the maximum magnitude
    rename(max_coeff = wavelets_transformation) |>
-   dplyr::mutate(bloomer_type = case_when(max_coeff == 's5' ~ 'inter-annual',
+   dplyr::mutate(bloomer_type = case_when(max_coeff == 's4' ~ 'inter-annual',
                                           max_coeff == 'd1' ~ 'fine-scale',
                                           max_coeff == 'd2' ~ 'half-yearly', 
                                           max_coeff == 'd3' ~ 'seasonal', 
                                           max_coeff == 'd4' ~ 'year-to-year')) 
+ 
+ 
+# INTERPOLATE MISSING ENVIRONMENTAL VARIALBES TO HAVE A COMPLETE DATASET-------
+ 
+ # data
+ bbmo_env <- asv_tab_all_bloo_z_tax |>
+   dplyr::select(decimal_date,
+                 sample_id,
+                 day_length,
+                 #sampling_time
+                 temperature,
+                 secchi,
+                 salinity,
+                 chla_total,
+                 chla_3um,
+                 PO4,
+                 NH4, NO2, NO3,
+                 Si, BP_FC1.55,
+                 PNF_Micro, PNF2_5um_Micro,
+                 PNF_5um_Micro, 
+                 cryptomonas, micromonas,
+                 HNF_Micro, HNF2_5um_Micro,   
+                 HNF_5um_Micro ,  LNA,              
+                 HNA,   prochlorococcus_FC,
+                 Peuk1,   Peuk2,                 
+                 bacteria_joint, synechococcus) |>
+   dplyr::select(-sample_id) |>
+   dplyr::mutate_if( is.character, as.numeric) |>
+   bind_cols(sample_id) |>
+   rename(sample_id = '...28') |>
+   distinct(decimal_date,
+            sample_id,
+            day_length,
+            #sampling_time
+            temperature,
+            secchi,
+            salinity,
+            chla_total,
+            chla_3um,
+            PO4,
+            NH4, NO2, NO3,
+            Si, BP_FC1.55,
+            PNF_Micro, PNF2_5um_Micro,
+            PNF_5um_Micro, 
+            cryptomonas, micromonas,
+            HNF_Micro, HNF2_5um_Micro,   
+            HNF_5um_Micro ,  LNA,              
+            HNA,   prochlorococcus_FC,
+            Peuk1,   Peuk2,                 
+            bacteria_joint, synechococcus ) |>
+   tidyr::separate(sample_id, into = c('sample_id_ed', 'filter', 'sequencing_num'), sep = '_', remove = FALSE)
+ 
+ date_sample <- asv_tab_bloo_rel_abund_z |>
+   dplyr::filter(str_detect(sample_id, '_0.2_')) |>
+   dplyr::filter(abundance_type == 'relative_abundance') |>
+   dplyr::select(decimal_date, sample_id) |>
+   group_by(decimal_date, sample_id) |>
+   distinct()
+ 
+ bbmo_env_ed <-  bbmo_env |>
+   dplyr::filter(str_detect(sample_id, '_0.2_')) |>
+   left_join(date_sample) |>
+   dplyr::select(-sample_id)
+ 
+ #### we do it with the loess function
+ 
+ # Select data without missing values
+ env_to_fit <- bbmo_env_ed |>
+   select(day_length, decimal_date) %>%
+   filter(!is.na(day_length))
+ 
+ # Select all data including missing values
+ env_fitted <- bbmo_env_ed %>%
+   select(day_length, decimal_date)
+ 
+ # Fit LOESS model
+ fit <- loess(day_length ~ decimal_date, data = env_to_fit, span = 0.1)
+ 
+ # Predict missing values
+ env_fitted$day_length_interpolated <- predict(fit, newdata = env_fitted)
+ 
+ ## plot to observe the predicted values and the previous ones before the fit
+env_fitted |>
+  pivot_longer(cols = !decimal_date) |>
+  ggplot(aes(decimal_date, value))+
+  geom_point()+
+  geom_line()+
+  facet_grid(vars(name))+
+  theme_bw()
+ 
+## I do it for all the environmental variables with missing values ------
+# Function to interpolate missing values for a single variable
+interpolate_missing <- function(data, variable_to_inter, span_value) {
+  
+  env_to_fit <- data |>
+    dplyr::filter(variable == {{variable_to_inter}}) |>
+    dplyr::select(value, decimal_date) |>
+    dplyr::filter(!is.na(value))
+
+  env_fitted <- data %>%
+    dplyr::filter(variable == {{variable_to_inter}}) |>
+    dplyr::select(value, decimal_date)
+  
+  fit <- loess(value ~ decimal_date, data = env_to_fit, span = span_value)
+  
+  env_fitted[[paste0(variable_to_inter, "_interpolated")]] <- predict(fit, newdata = env_fitted)
+  
+  env_fitted <- env_fitted |>
+    rename(!!variable_to_inter := value)
+  
+  return(env_fitted)
+}
+
+# Pivot to long format
+bbmo_env_long <- bbmo_env_ed |>
+  pivot_longer(cols = -decimal_date, names_to = "variable", values_to = "value")
+
+## I count the number of NAs that I have for each environmental variable 
+na_counts <- bbmo_env_long |>
+  group_by(variable) |>
+  summarise(na_count = sum(is.na(value))) |>
+  dplyr::filter(na_count >= 1)
+
+print(na_counts)
+
+no_na_counts <- bbmo_env_long |>
+  group_by(variable) |>
+  summarise(na_count = sum(is.na(value))) |>
+  dplyr::filter(na_count == 0) # I don't need to interpolate data for synechococcus or bacterial abundance
+
+## I will not interpolate data that have many missing values (>10% of the dataset)
+remove <- na_counts |>
+  dplyr::filter(na_count > 12/120*100) #basically the viruses dataset
+
+## between 5%-10% of the dataset missing
+pay_attention <- na_counts |>
+  dplyr::filter(na_count > 6/120*100) |> #basically the viruses dataset
+  dplyr::filter(!variable %in% remove$variable)
+
+## no consecutive missing values ----
+just_one <- bbmo_env_long |>
+  group_by(variable) |>
+  summarise(na_count = sum(is.na(value))) |>
+  dplyr::filter(na_count == 1)
+
+na_consecutive <- bbmo_env_long |>
+  arrange(decimal_date) |>
+  group_by(variable) |>
+  mutate(n_sample = row_number()) |>
+  ungroup() |>
+  dplyr::filter(is.na(value)) |>
+  dplyr::filter(!variable %in% remove$variable) |>
+  dplyr::filter(!variable %in% just_one$variable)
+
+na_consecutive |>
+  distinct(variable)
+
+consecutive_missing_values <- c('chla_3um', 'HNA', 'LNA', 'Peuk1', 'Peuk2', 'prochlorococcus_FC', 
+                                        'salinity')
+
+# Get unique variables (to interpolate)
+variables <- unique(bbmo_env_long$variable) |>
+  as_tibble_col(column_name = 'variable') |>
+  dplyr::filter(!variable %in% remove$variable) |>
+  dplyr::filter(!variable %in% no_na_counts$variable) |>
+  dplyr::filter(!variable %in% consecutive_missing_values) |>
+  dplyr::filter(variable != 'secchi') |> # i remove the secchi because i do not think it makes sense to interpolate the turbidity (no pattern)
+  as_vector()
+
+# Apply interpolation function to each variable ( i do it individually because the span value should be adapted to each environmental variable)------
+
+### day length----
+interpolated_data <- interpolate_missing(bbmo_env_long, variable_to_inter = "day_length",
+                    span_value = 0.1)
+
+interpolated_data |>
+  ggplot(aes(day_length, day_length_interpolated))+
+  geom_point()+
+  geom_smooth(method = 'lm')
+
+## what I do is I substitute the NAs for the interpolated value, but I maintain the real values in the other situations
+interpolated_data |>
+  dplyr::mutate(new_data = case_when(is.na(day_length) ~ day_length_interpolated,
+                                     !is.na(day_length) ~ day_length)) |>
+  ggplot(aes(decimal_date, new_data))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+new_data_with_inter_values_dl <- interpolated_data |>
+  dplyr::mutate(day_length_no_nas = case_when(is.na(day_length) ~ day_length_interpolated,
+                                     !is.na(day_length) ~ day_length)) |>
+  dplyr::select(decimal_date, day_length_no_nas)
+
+
+### temperature----
+interpolated_data <- interpolate_missing(bbmo_env_long, variable_to_inter = "temperature",
+                                         span_value = 0.09)
+
+interpolated_data |>
+  ggplot(aes(temperature, temperature_interpolated))+
+  geom_point()+
+  geom_smooth(method = 'lm')
+
+## what I do is I substitute the NAs for the interpolated value, but I maintain the real values in the other situations
+interpolated_data |>
+  dplyr::mutate(new_data = case_when(is.na(temperature) ~ temperature_interpolated,
+                                     !is.na(temperature) ~ temperature)) |>
+  ggplot(aes(decimal_date, new_data))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+new_data_with_inter_values_t <- interpolated_data |>
+  dplyr::mutate(temperature_no_nas = case_when(is.na(temperature) ~ temperature_interpolated,
+                                              !is.na(temperature) ~ temperature)) |>
+  dplyr::select(decimal_date, temperature_no_nas)
+
+### secchi ----
+# interpolated_data <- interpolate_missing(bbmo_env_long, variable_to_inter = "secchi",
+#                                          span_value = 0.1)
+# 
+# interpolated_data |>
+#   ggplot(aes(secchi, secchi_interpolated))+
+#   geom_point()+
+#   geom_smooth(method = 'lm')
+# 
+# ## what I do is I substitute the NAs for the interpolated value, but I maintain the real values in the other situations
+# interpolated_data |>
+#   dplyr::mutate(new_data = case_when(is.na(secchi) ~ secchi_interpolated,
+#                                      !is.na(secchi) ~ secchi)) |>
+#   ggplot(aes(decimal_date, new_data))+
+#   geom_point()+
+#   geom_line()+
+#   theme_bw()
+# 
+# new_data_with_inter_values_secc <- interpolated_data |>
+#   dplyr::mutate(secchi_no_nas = case_when(is.na(secchi) ~ secchi_interpolated,
+#                                               !is.na(secchi) ~ secchi)) |>
+#   dplyr::select(decimal_date, secchi_no_nas)
+
+### chl-a total ----
+interpolated_data <- interpolate_missing(bbmo_env_long, variable_to_inter = "chla_total",
+                                         span_value = 0.09)
+
+interpolated_data |>
+  ggplot(aes(chla_total, chla_total_interpolated))+
+  geom_point()+
+  geom_smooth(method = 'lm')
+
+## what I do is I substitute the NAs for the interpolated value, but I maintain the real values in the other situations
+interpolated_data |>
+  dplyr::mutate(new_data = case_when(is.na(chla_total) ~ chla_total_interpolated,
+                                     !is.na(chla_total) ~ chla_total)) |>
+  ggplot(aes(decimal_date, new_data))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+new_data_with_inter_values_chla_tot <- interpolated_data |>
+  dplyr::mutate(chla_total_no_nas = case_when(is.na(chla_total) ~ chla_total_interpolated,
+                                              !is.na(chla_total) ~ chla_total)) |>
+  dplyr::select(decimal_date, chla_total_no_nas)
+
+### PO4 ----
+interpolated_data <- interpolate_missing(bbmo_env_long, variable_to_inter = "PO4",
+                                         span_value = 0.085)
+
+interpolated_data |>
+  ggplot(aes(PO4, PO4_interpolated))+
+  geom_point()+
+  geom_smooth(method = 'lm')
+
+## what I do is I substitute the NAs for the interpolated value, but I maintain the real values in the other situations
+interpolated_data |>
+  dplyr::mutate(new_data = case_when(is.na(PO4) ~ PO4_interpolated,
+                                     !is.na(PO4) ~ PO4)) |>
+  ggplot(aes(decimal_date, new_data))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+new_data_with_inter_values_po4 <- interpolated_data |>
+  dplyr::mutate(PO4_no_nas = case_when(is.na(PO4) ~ PO4_interpolated,
+                                              !is.na(PO4) ~ PO4)) |>
+  dplyr::select(decimal_date, PO4_no_nas)
+
+### NH4 ----
+interpolated_data <- interpolate_missing(bbmo_env_long, variable_to_inter = "NH4",
+                                         span_value = 0.1)
+
+interpolated_data |>
+  ggplot(aes(NH4, NH4_interpolated))+
+  geom_point()+
+  geom_smooth(method = 'lm')
+
+## what I do is I substitute the NAs for the interpolated value, but I maintain the real values in the other situations
+interpolated_data |>
+  dplyr::mutate(new_data = case_when(is.na(NH4) ~ NH4_interpolated,
+                                     !is.na(NH4) ~ NH4)) |>
+  ggplot(aes(decimal_date, new_data))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+bbmo_env_long |>
+  dplyr::filter(variable == 'NH4') |>
+  ggplot(aes(decimal_date, value))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+new_data_with_inter_values_nh4 <- interpolated_data |>
+  dplyr::mutate(NH4_no_nas = case_when(is.na(NH4) ~ NH4_interpolated,
+                                              !is.na(NH4) ~ NH4)) |>
+  dplyr::select(decimal_date, NH4_no_nas)
+
+### NO2 total ----
+interpolated_data <- interpolate_missing(bbmo_env_long, variable_to_inter = "NO2",
+                                         span_value = 0.09)
+
+interpolated_data |>
+  ggplot(aes(NO2, NO2_interpolated))+
+  geom_point()+
+  geom_smooth(method = 'lm')
+
+## what I do is I substitute the NAs for the interpolated value, but I maintain the real values in the other situations
+interpolated_data |>
+  dplyr::mutate(new_data = case_when(is.na(NO2) ~ NO2_interpolated,
+                                     !is.na(NO2) ~ NO2)) |>
+  ggplot(aes(decimal_date, new_data))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+bbmo_env_long |>
+  dplyr::filter(variable == 'NO2') |>
+  ggplot(aes(decimal_date, value))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+new_data_with_inter_values_no2 <- interpolated_data |>
+  dplyr::mutate(NO2_no_nas = case_when(is.na(NO2) ~ NO2_interpolated,
+                                              !is.na(NO2) ~ NO2)) |>
+  dplyr::select(decimal_date, NO2_no_nas)
+
+### NO3 total ----
+interpolated_data <- interpolate_missing(bbmo_env_long, variable_to_inter = "NO3",
+                                         span_value = 0.09)
+
+interpolated_data |>
+  ggplot(aes(NO3, NO3_interpolated))+
+  geom_point()+
+  geom_smooth(method = 'lm')
+
+## what I do is I substitute the NAs for the interpolated value, but I maintain the real values in the other situations
+interpolated_data |>
+  dplyr::mutate(new_data = case_when(is.na(NO3) ~ NO3_interpolated,
+                                     !is.na(NO3) ~ NO3)) |>
+  ggplot(aes(decimal_date, new_data))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+bbmo_env_long |>
+  dplyr::filter(variable == 'NO3') |>
+  ggplot(aes(decimal_date, value))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+new_data_with_inter_values_no3 <- interpolated_data |>
+  dplyr::mutate(NO3_no_nas = case_when(is.na(NO3) ~ NO3_interpolated,
+                                              !is.na(NO3) ~ NO3)) |>
+  dplyr::select(decimal_date, NO3_no_nas)
+
+### Si ----
+interpolated_data <- interpolate_missing(bbmo_env_long, variable_to_inter = "Si",
+                                         span_value = 0.09)
+
+interpolated_data |>
+  ggplot(aes(Si, Si_interpolated))+
+  geom_point()+
+  geom_smooth(method = 'lm')
+
+## what I do is I substitute the NAs for the interpolated value, but I maintain the real values in the other situations
+interpolated_data |>
+  dplyr::mutate(new_data = case_when(is.na(Si) ~ Si_interpolated,
+                                     !is.na(Si) ~ Si)) |>
+  ggplot(aes(decimal_date, new_data))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+bbmo_env_long |>
+  dplyr::filter(variable == 'Si') |>
+  ggplot(aes(decimal_date, value))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+new_data_with_inter_values_si <- interpolated_data |>
+  dplyr::mutate(Si_no_nas = case_when(is.na(Si) ~ Si_interpolated,
+                                              !is.na(Si) ~ Si)) |>
+  dplyr::select(decimal_date, Si_no_nas)
+
+### BP_FC1.55 ----
+interpolated_data <- interpolate_missing(bbmo_env_long, variable_to_inter = "BP_FC1.55",
+                                         span_value = 0.09)
+
+interpolated_data |>
+  ggplot(aes(BP_FC1.55, BP_FC1.55_interpolated))+
+  geom_point()+
+  geom_smooth(method = 'lm')
+
+## what I do is I substitute the NAs for the interpolated value, but I maintain the real values in the other situations
+interpolated_data |>
+  dplyr::mutate(new_data = case_when(is.na(BP_FC1.55) ~ BP_FC1.55_interpolated,
+                                     !is.na(BP_FC1.55) ~ BP_FC1.55)) |>
+  ggplot(aes(decimal_date, new_data))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+bbmo_env_long |>
+  dplyr::filter(variable == "BP_FC1.55") |>
+  ggplot(aes(decimal_date, value))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+new_data_with_inter_values_bp <- interpolated_data |>
+  dplyr::mutate(BP_FC1.55_no_nas = case_when(is.na(BP_FC1.55) ~ BP_FC1.55_interpolated,
+                                              !is.na(BP_FC1.55) ~ BP_FC1.55)) |>
+  dplyr::select(decimal_date, BP_FC1.55_no_nas)
+
+### PNF_Micro ----
+interpolated_data <- interpolate_missing(bbmo_env_long, variable_to_inter = "PNF_Micro",
+                                         span_value = 0.09)
+
+interpolated_data |>
+  ggplot(aes(PNF_Micro, PNF_Micro_interpolated))+
+  geom_point()+
+  geom_smooth(method = 'lm')
+
+## what I do is I substitute the NAs for the interpolated value, but I maintain the real values in the other situations
+interpolated_data |>
+  dplyr::mutate(new_data = case_when(is.na(PNF_Micro) ~ PNF_Micro_interpolated,
+                                     !is.na(PNF_Micro) ~ PNF_Micro)) |>
+  ggplot(aes(decimal_date, new_data))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+bbmo_env_long |>
+  dplyr::filter(variable == "PNF_Micro") |>
+  ggplot(aes(decimal_date, value))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+new_data_with_inter_values_PNF_Micro <- interpolated_data |>
+  dplyr::mutate(PNF_Micro_no_nas = case_when(is.na(PNF_Micro) ~ PNF_Micro_interpolated,
+                                              !is.na(PNF_Micro) ~ PNF_Micro)) |>
+  dplyr::select(decimal_date, PNF_Micro_no_nas)
+
+### PNF2_5um_Micro ----
+interpolated_data <- interpolate_missing(bbmo_env_long, variable_to_inter = "PNF2_5um_Micro",
+                                         span_value = 0.09)
+
+interpolated_data |>
+  ggplot(aes(PNF2_5um_Micro, PNF2_5um_Micro_interpolated))+
+  geom_point()+
+  geom_smooth(method = 'lm')
+
+## what I do is I substitute the NAs for the interpolated value, but I maintain the real values in the other situations
+interpolated_data |>
+  dplyr::mutate(new_data = case_when(is.na(PNF2_5um_Micro) ~ PNF2_5um_Micro_interpolated,
+                                     !is.na(PNF2_5um_Micro) ~ PNF2_5um_Micro)) |>
+  ggplot(aes(decimal_date, new_data))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+bbmo_env_long |>
+  dplyr::filter(variable == "PNF2_5um_Micro") |>
+  ggplot(aes(decimal_date, value))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+new_data_with_inter_values_PNF2_5um_Micro <- interpolated_data |>
+  dplyr::mutate(PNF2_5um_Micro_no_nas = case_when(is.na(PNF2_5um_Micro) ~ PNF2_5um_Micro_interpolated,
+                                              !is.na(PNF2_5um_Micro) ~ PNF2_5um_Micro)) |>
+  dplyr::select(decimal_date, PNF2_5um_Micro_no_nas)
+
+### PNF_5um_Micro ----
+interpolated_data <- interpolate_missing(bbmo_env_long, variable_to_inter = "PNF_5um_Micro",
+                                         span_value = 0.09)
+
+interpolated_data |>
+  ggplot(aes(PNF_5um_Micro, PNF_5um_Micro_interpolated))+
+  geom_point()+
+  geom_smooth(method = 'lm')
+
+## what I do is I substitute the NAs for the interpolated value, but I maintain the real values in the other situations
+interpolated_data |>
+  dplyr::mutate(new_data = case_when(is.na(PNF_5um_Micro) ~ PNF_5um_Micro_interpolated,
+                                     !is.na(PNF_5um_Micro) ~ PNF_5um_Micro)) |>
+  ggplot(aes(decimal_date, new_data))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+bbmo_env_long |>
+  dplyr::filter(variable == "PNF_5um_Micro") |>
+  ggplot(aes(decimal_date, value))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+new_data_with_inter_values_PNF_5um_Micro <- interpolated_data |>
+  dplyr::mutate(PNF_5um_Micro_no_nas = case_when(is.na(PNF_5um_Micro) ~ PNF_5um_Micro_interpolated,
+                                              !is.na(PNF_5um_Micro) ~ PNF_5um_Micro)) |>
+  dplyr::select(decimal_date, PNF_5um_Micro_no_nas)
+
+
+### cryptomonas ----
+interpolated_data <- interpolate_missing(bbmo_env_long, variable_to_inter = "cryptomonas",
+                                         span_value = 0.09)
+
+interpolated_data |>
+  ggplot(aes(cryptomonas, cryptomonas_interpolated))+
+  geom_point()+
+  geom_smooth(method = 'lm')
+
+## what I do is I substitute the NAs for the interpolated value, but I maintain the real values in the other situations
+interpolated_data |>
+  dplyr::mutate(new_data = case_when(is.na(cryptomonas) ~ cryptomonas_interpolated,
+                                     !is.na(cryptomonas) ~ cryptomonas)) |>
+  ggplot(aes(decimal_date, new_data))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+bbmo_env_long |>
+  dplyr::filter(variable == "cryptomonas") |>
+  ggplot(aes(decimal_date, value))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+new_data_with_inter_values_cryptomonas <- interpolated_data |>
+  dplyr::mutate(cryptomonas_no_nas = case_when(is.na(cryptomonas) ~ cryptomonas_interpolated,
+                                              !is.na(cryptomonas) ~ cryptomonas)) |>
+  dplyr::select(decimal_date, cryptomonas_no_nas)
+
+### micromonas ----
+interpolated_data <- interpolate_missing(bbmo_env_long, variable_to_inter = "micromonas",
+                                         span_value = 1)
+
+interpolated_data |>
+  ggplot(aes(micromonas, micromonas_interpolated))+
+  geom_point()+
+  geom_smooth(method = 'lm')
+
+## what I do is I substitute the NAs for the interpolated value, but I maintain the real values in the other situations
+interpolated_data |>
+  dplyr::mutate(new_data = case_when(is.na(micromonas) ~ micromonas_interpolated,
+                                     !is.na(micromonas) ~ micromonas)) |>
+  ggplot(aes(decimal_date, new_data))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+bbmo_env_long |>
+  dplyr::filter(variable == "micromonas") |>
+  ggplot(aes(decimal_date, value))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+new_data_with_inter_values_micromonas <- interpolated_data |>
+  dplyr::mutate(micromonas_no_nas = case_when(is.na(micromonas) ~ micromonas_interpolated,
+                                              !is.na(micromonas) ~ micromonas)) |>
+  dplyr::select(decimal_date, micromonas_no_nas)
+
+### HNF_Micro ----
+interpolated_data <- interpolate_missing(bbmo_env_long, variable_to_inter = "HNF_Micro",
+                                         span_value = 0.09)
+
+interpolated_data |>
+  ggplot(aes(HNF_Micro, HNF_Micro_interpolated))+
+  geom_point()+
+  geom_smooth(method = 'lm')
+
+## what I do is I substitute the NAs for the interpolated value, but I maintain the real values in the other situations
+interpolated_data |>
+  dplyr::mutate(new_data = case_when(is.na(HNF_Micro) ~ HNF_Micro_interpolated,
+                                     !is.na(HNF_Micro) ~ HNF_Micro)) |>
+  ggplot(aes(decimal_date, new_data))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+bbmo_env_long |>
+  dplyr::filter(variable == "HNF_Micro") |>
+  ggplot(aes(decimal_date, value))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+new_data_with_inter_values_HNF_Micro <- interpolated_data |>
+  dplyr::mutate(HNF_Micro_no_nas = case_when(is.na(HNF_Micro) ~ HNF_Micro_interpolated,
+                                              !is.na(HNF_Micro) ~ HNF_Micro)) |>
+  dplyr::select(decimal_date, HNF_Micro_no_nas)
+
+### HNF2_5um_Micro ----
+interpolated_data <- interpolate_missing(bbmo_env_long, variable_to_inter = "HNF2_5um_Micro",
+                                         span_value = 0.09)
+
+interpolated_data |>
+  ggplot(aes(HNF2_5um_Micro, HNF2_5um_Micro_interpolated))+
+  geom_point()+
+  geom_smooth(method = 'lm')
+
+## what I do is I substitute the NAs for the interpolated value, but I maintain the real values in the other situations
+interpolated_data |>
+  dplyr::mutate(new_data = case_when(is.na(HNF2_5um_Micro) ~ HNF2_5um_Micro_interpolated,
+                                     !is.na(HNF2_5um_Micro) ~ HNF2_5um_Micro)) |>
+  ggplot(aes(decimal_date, new_data))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+bbmo_env_long |>
+  dplyr::filter(variable == "HNF2_5um_Micro") |>
+  ggplot(aes(decimal_date, value))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+new_data_with_inter_values_HNF2_5um_Micro <- interpolated_data |>
+  dplyr::mutate(HNF2_5um_Micro_no_nas = case_when(is.na(HNF2_5um_Micro) ~ HNF2_5um_Micro_interpolated,
+                                              !is.na(HNF2_5um_Micro) ~ HNF2_5um_Micro)) |>
+  dplyr::select(decimal_date, HNF2_5um_Micro_no_nas)
+
+### HNF_5um_Micro ----
+interpolated_data <- interpolate_missing(bbmo_env_long, variable_to_inter = "HNF_5um_Micro",
+                                         span_value = 0.09)
+
+interpolated_data |>
+  ggplot(aes(HNF_5um_Micro, HNF_5um_Micro_interpolated))+
+  geom_point()+
+  geom_smooth(method = 'lm')
+
+## what I do is I substitute the NAs for the interpolated value, but I maintain the real values in the other situations
+interpolated_data |>
+  dplyr::mutate(new_data = case_when(is.na(HNF_5um_Micro) ~ HNF_5um_Micro_interpolated,
+                                     !is.na(HNF_5um_Micro) ~ HNF_5um_Micro)) |>
+  ggplot(aes(decimal_date, new_data))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+bbmo_env_long |>
+  dplyr::filter(variable == "HNF_5um_Micro") |>
+  ggplot(aes(decimal_date, value))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+new_data_with_inter_values_HNF_5um_Micro <- interpolated_data |>
+  dplyr::mutate(HNF_5um_Micro_no_nas = case_when(is.na(HNF_5um_Micro) ~ HNF_5um_Micro_interpolated,
+                                              !is.na(HNF_5um_Micro) ~ HNF_5um_Micro)) |>
+  dplyr::select(decimal_date, HNF_5um_Micro_no_nas)
+
+
+## new environmental dataset with no missing values-----
+env_data_interpolated_values <- bind_cols(new_data_with_inter_values_t, new_data_with_inter_values_dl, new_data_with_inter_values_chla_tot,
+          new_data_with_inter_values_po4, new_data_with_inter_values_nh4,
+          new_data_with_inter_values_no2, new_data_with_inter_values_no3,
+          new_data_with_inter_values_si, new_data_with_inter_values_bp,
+          new_data_with_inter_values_PNF_Micro, new_data_with_inter_values_PNF2_5um_Micro, # not very sure about the interpolation of PNF data
+          new_data_with_inter_values_PNF_5um_Micro, 
+          new_data_with_inter_values_cryptomonas, 
+          new_data_with_inter_values_micromonas, # not very sure about this interpolation either 
+          new_data_with_inter_values_HNF_Micro, new_data_with_inter_values_HNF2_5um_Micro,
+          new_data_with_inter_values_HNF_5um_Micro)
+
+## add the columns for the environmental data with no missing values---
+no_na_counts$variable
+
+decimal_date <- env_data_interpolated_values$decimal_date...1 |>
+  as_tibble_col(column_name = 'decimal_date')
+
+env_data_interpolated_values_all <- bbmo_env_ed |>
+  dplyr::select(no_na_counts$variable, decimal_date) |>
+  bind_cols(env_data_interpolated_values) |>
+  dplyr::select(-starts_with('decimal_date')) |>
+  bind_cols(decimal_date)
+
+#write.csv2(env_data_interpolated_values_all, 'data/env_data/env_data_interpolated_values_all.csv')
+
+### calculate z-scores for the interpolated data----
+env_data_interpolated_values_all_z_score <- env_data_interpolated_values_all |>
+  pivot_longer(cols = -decimal_date, names_to = 'environmental_variable', values_to = 'env_values') |>
+  dplyr::mutate(env_values = as.numeric(env_values)) |>
+  calculate_z_score(col = 'env_values', name = 'environmental_variable', group = 'environmental_variable')
+
+write.csv2(env_data_interpolated_values_all_z_score, 'data/env_data/env_data_interpolated_values_all_z_score.csv')
+
+
+## visually inspect the results and see if I'm adding weird values----
+env_data_interpolated_values_all_z_score
+
+year_date <- asv_tab_10y_02_pseudo_rclr_bloo |>
+  dplyr::select(decimal_date, year) |>
+  distinct(decimal_date, year)
+
+env_data_interpolated_values_all_z_score_ed <- env_data_interpolated_values_all_z_score |>
+  left_join(year_date) |>
+  arrange(decimal_date) |>
+  group_by(environmental_variable, year) |>
+  dplyr::mutate(consecutive_number = row_number()) |>
+  dplyr::mutate(environmental_variable = str_replace(environmental_variable, "_no_nas", ""))
+
+env_data_interpolated_values_all_z_score |>
+  dplyr::filter(environmental_variable %in% 
+                  c("day_length_no_nas", "temperature_no_nas" , 
+                    "PO4_no_nas",  "NH4_no_nas" ,  "NO2_no_nas" , "NO3_no_nas" , "Si_no_nas" )) %$% 
+  z_score_environmental_variable |>
+  range() ##which is the range of our palette, to have 0 at the middle
+
+## reorder environmental factors ----
+env_data_interpolated_values_all_z_score_ed$environmental_variable <- factor(env_data_interpolated_values_all_z_score_ed$environmental_variable, levels = c("day_length", "temperature" ,"secchi" , "salinity" ,      
+                                                                                                "PO4",  "NH4" ,  "NO2" , "NO3" , "Si" , "BP_FC1.55", "bacteria_joint", "LNA", "HNA", "chla_total" ,  "chla_3um", 
+                                                                                                "synechococcus", "prochlorococcus_FC", 
+                                                                                                "PNF_Micro" , "PNF2_5um_Micro",  "PNF_5um_Micro", "HNF_Micro",         
+                                                                                                "HNF2_5um_Micro", "HNF_5um_Micro", "Peuk1",             
+                                                                                                "Peuk2",
+                                                                                                "dryptomonas", "micromonas",
+                                                                                                
+                                                                                                "low_vlp" ,
+                                                                                                "med_vlp" ,  
+                                                                                                "high_vlp" ,
+                                                                                                "total_vlp"))
+
+phyico_chemical <- env_data_interpolated_values_all_z_score_ed |>
+  dplyr::filter(environmental_variable %in% c("day_length", "temperature" ,
+                                              "PO4",  "NH4" ,  "NO2" , "NO3" , "Si" )) |>
+  ggplot(aes(consecutive_number, fct_rev(environmental_variable), fill = z_score_environmental_variable))+
+  scale_y_discrete(labels = labs_env)+
+  #scale_fill_gradientn( colours = palete_gradient_cb2)+
+  #scale_fill_gradient2(low = palete_gradient_cb2[1], high = palete_gradient_cb2[4], midpoint = 0) +
+  scale_fill_gradientn(colors = palete_gradient_cb5,
+                       breaks=c(-5, 0, 5),
+                       limits=c(-5.9,  5.9)) +
+  # scale_fill_gradient2(low = "#0049B7",
+  #                      high = "#b81131", midpoint = 0)+
+  facet_wrap(.~year, scales = 'free_x', nrow = 1, switch = 'x')+
+  geom_tile(alpha = 1)+
+  geom_vline(xintercept = seq(0.5, 12, by = 12), linetype = "dashed", color = "darkgrey") +
+  #scale_x_datetime(expand = c(0,0))+
+  scale_x_continuous(expand = c(0,0), labels = unique(env_data_interpolated_values_all_z_score_ed$year), 
+                     breaks = unique(env_data_interpolated_values_all_z_score_ed$year))+
+  labs(x = 'Year', y = '', fill = 'z-score')+
+  theme_bw()+
+  theme(panel.grid = element_blank(), text = element_text(size = 5), legend.position = 'bottom',
+        panel.border = element_blank(), strip.background = element_blank(), plot.margin = unit(c(1,3,1,1), "mm"), 
+        legend.key.size = unit(3, "mm"))
+
+ggsave('physico_chem_z_scores_bbmo_interpolated.pdf', phyico_chemical,
+     path = "~/Documentos/Doctorat/BBMO/BBMO_bloomers/Results/Figures/",
+     width = 188,
+     height = 60,
+     units = 'mm')
+
+biological <-
+  env_data_interpolated_values_all_z_score_ed |>
+  dplyr::filter(!(environmental_variable %in% c("day_length", "temperature" ,"secchi" , "salinity" ,
+                                                "PO4",  "NH4" ,  "NO2" , "NO3" , "Si" ))) |>
+  ggplot(aes(consecutive_number, fct_rev(environmental_variable), fill = z_score_environmental_variable))+
+  scale_y_discrete(labels = labs_env)+
+  #scale_fill_gradientn( colours = palete_gradient_cb)+
+  # scale_fill_gradient2(low = "#0049B7",
+  #                      high = "#b81131", midpoint = 0)+
+  # scale_fill_gradient2(colours = palete_gradient_cb2,
+  #                      midpoint = 0  # Set the midpoint value)+
+  scale_fill_gradientn(colors = palete_gradient_cb5,
+                       breaks=c(-6, 0, 6),
+                       limits=c(-6,  6), na.value="#4d009c")+ # I add this since I have one value which is outside the range, to define the color it should have
+  facet_wrap(.~year, scales = 'free_x', nrow = 1, switch = 'x')+
+  geom_tile(alpha = 1)+
+  geom_vline(xintercept = seq(0.5, 12, by = 12), linetype = "dashed", color = "darkgrey") +
+  #scale_x_datetime(expand = c(0,0))+
+  scale_x_continuous(expand = c(0,0), labels = unique(env_data_interpolated_values_all_z_score_ed$year), 
+                     breaks = unique(env_data_interpolated_values_all_z_score_ed$year))+
+  labs(x = 'Year', y = '', fill = 'z-score')+
+  theme_bw()+
+  theme(panel.grid = element_blank(), text = element_text(size = 5), legend.position = 'bottom',
+        panel.border = element_blank(), strip.background = element_blank(), plot.margin = unit(c(0,3,0,1), "mm"), 
+        legend.key.size = unit(3, "mm"))
+
+ggsave('biological_bbmo_interpolated.pdf', biological,
+       path = "~/Documentos/Doctorat/BBMO/BBMO_bloomers/Results/Figures/",
+       width = 188,
+       height = 90,
+       units = 'mm')
+
+
+## scatter plot 
+env_data_interpolated_values_all_z_score |>
+  dplyr::select()
+  pivot_longer(cols = -decimal_date, names_to = 'interpolated', values_to = 'interpolated_values')
+  left_join(bbmo_env_ed)
+
+
+# Apply interpolation function to each variable and store the results in a list-------
+interpolated_data <- lapply(variables, function(var) {
+  interpolate_missing(bbmo_env_long, variable_to_inter = var)
+})
+
+# Combine the interpolated data for all variables
+combined_data <- Reduce(function(x, y) merge(x, y, by = c("decimal_date")), interpolated_data)
+
+# View the combined data
+print(combined_data)
+
+combined_data |>
+  pivot_longer(cols = -decimal_date) |>
+  ggplot(aes(decimal_date, value))+
+  geom_point()+
+  geom_line()+
+  facet_wrap(vars(name), scale = 'free')+
+  theme_bw()
+
+# When we have a blooming event do we observe a general increase in the bacterial production?-----
+ sample_id <- asv_tab_all_bloo_z_tax$sample_id
+ 
+ bbmo_env <- asv_tab_all_bloo_z_tax |>
+   dplyr::select(decimal_date,
+     sample_id,
+                 day_length,
+                 #sampling_time
+                 temperature,
+                 secchi,
+                 salinity,
+                 chla_total,
+                 chla_3um,
+                 PO4,
+                 NH4, NO2, NO3,
+                 Si, BP_FC1.55,
+                 PNF_Micro, PNF2_5um_Micro,
+                 PNF_5um_Micro, 
+                 cryptomonas, micromonas,
+                 HNF_Micro, HNF2_5um_Micro,   
+                 HNF_5um_Micro ,  LNA,              
+                 HNA,   prochlorococcus_FC,
+                 Peuk1,   Peuk2,                 
+                 bacteria_joint, synechococcus) |>
+   dplyr::select(-sample_id) |>
+   dplyr::mutate_if( is.character, as.numeric) |>
+   bind_cols(sample_id) |>
+   rename(sample_id = '...28') |>
+   distinct(decimal_date,
+     sample_id,
+            day_length,
+            #sampling_time
+            temperature,
+            secchi,
+            salinity,
+            chla_total,
+            chla_3um,
+            PO4,
+            NH4, NO2, NO3,
+            Si, BP_FC1.55,
+            PNF_Micro, PNF2_5um_Micro,
+            PNF_5um_Micro, 
+            cryptomonas, micromonas,
+            HNF_Micro, HNF2_5um_Micro,   
+            HNF_5um_Micro ,  LNA,              
+            HNA,   prochlorococcus_FC,
+            Peuk1,   Peuk2,                 
+            bacteria_joint, synechococcus ) |>
+   tidyr::separate(sample_id, into = c('sample_id_ed', 'filter', 'sequencing_num'), sep = '_', remove = FALSE)
+ 
+ bbmo_env |>
+   dplyr::filter(str_detect(sample_id, '_0.2_')) |>
+   ggplot(aes(decimal_date, BP_FC1.55))+
+   geom_point()+
+   scale_y_continuous(expand = c(0,0))+
+   theme_bw()
+ 
+bloo_events_list |>
+   asv_tab_bloo_rel_abund_z |>
+   dplyr::filter()
+
+asv_tab_bloo_rel_abund_z |>
+  colnames()
+
+asv_tab_bloo_rel_abund_z |>
+  dplyr::filter(str_detect(sample_id, '_0.2_')) |>
+  dplyr::filter(abundance_type == 'relative_abundance') |>
+
+  group_by(decimal_date, BP_FC1.55) |>
+  dplyr::summarize(bloom_event = case_when(any(z_score_ra >= 1.96 &
+                                                abundance_value >= 0.1 ) ~ 'bloom',
+                                           TRUE ~ 'no-bloo')) |>
+  ggplot(aes(decimal_date, BP_FC1.55))+
+  geom_point(aes(color = bloom_event))+ 
+  scale_y_continuous(expand = c(0,0))+
+  theme_bw()
+ 
+asv_tab_bloo_rel_abund_z |>
+  dplyr::filter(str_detect(sample_id, '_0.2_')) |>
+  dplyr::filter(abundance_type == 'relative_abundance') |>
+  
+  group_by(decimal_date, BP_FC1.55) |>
+  dplyr::summarize(bloom_event = case_when(any(z_score_ra >= 1.96 &
+                                                 abundance_value >= 0.1 ) ~ 'bloom',
+                                           TRUE ~ 'no-bloo')) |>
+  ggplot(aes(decimal_date, BP_FC1.55))+
+  geom_point(aes(color = bloom_event))+ 
+  scale_y_continuous(expand = c(0,0))+
+  theme_bw()
+
+bloo_events <- asv_tab_bloo_rel_abund_z |>
+  dplyr::filter(str_detect(sample_id, '_0.2_')) |>
+  dplyr::filter(abundance_type == 'relative_abundance') |>
+  group_by(decimal_date, BP_FC1.55) |>
+  dplyr::summarize(bloom_event = case_when(any(z_score_ra >= 1.96 &
+                                                 abundance_value >= 0.1 ) ~ 'bloom',
+                                           TRUE ~ 'no-bloo')) |>
+  left_join(bbmo_env)
+
+asv_tab_bloo_rel_abund_z |>
+  dplyr::filter(str_detect(sample_id, '_0.2_')) |>
+  dplyr::filter(abundance_type == 'relative_abundance') |> 
+  dplyr::select(decimal_date, abundance_value) |>
+  dplyr::group_by(decimal_date) |>
+  dplyr::summarize(max_abundance = max(abundance_value, na.rm = TRUE)) |>
+  left_join(bloo_events) |>
+  ggplot(aes(max_abundance, BP_FC1.55))+
+  geom_point(aes(color = bloom_event))+ 
+  scale_y_continuous(expand = c(0,0))+
+  geom_smooth(method = 'loess')+
+  theme_bw()
+  
+asv_tab_bloo_rel_abund_z |>
+  dplyr::filter(str_detect(sample_id, '_0.2_')) |>
+  dplyr::filter(abundance_type == 'relative_abundance') |> 
+  dplyr::select(decimal_date, abundance_value) |>
+  dplyr::group_by(decimal_date) |>
+  dplyr::summarize(max_abundance = max(abundance_value, na.rm = TRUE)) |>
+  left_join(bloo_events) |>
+  ungroup() |>
+  dplyr::filter(!is.na(BP_FC1.55)) |>
+  ggplot(aes(bloom_event, as.numeric(BP_FC1.55)))+
+  geom_point(aes(size = max_abundance), position = position_jitter(width = 0.05))+ 
+  #scale_y_continuous(expand = c(0,0))+
+  scale_x_discrete(label = c('Bloom', 'No bloom'))+
+  geom_violin(alpha = 0.3, draw_quantiles = T)+
+  stat_summary(fun = "mean",
+               geom = "crossbar", 
+               width = 0.2,
+               colour = "black")+
+  #geom_boxplot(alpha = 0.3)+
+  labs(x = '', y = 'Bacterial production (µgC l-1 d-1)', size = 'Maximal\nrelative\nabundance (%)')+
+  theme_bw()+
+  theme(panel.grid = element_blank(), text = element_text(size = 6))
+
+bloo_events |>
+  colnames()
+
+### When we have a blooming event do we observe a general increase/decrease in some environmental variables?------
+asv_tab_bloo_rel_abund_z |>
+  dplyr::filter(str_detect(sample_id, '_0.2_')) |>
+  dplyr::filter(abundance_type == 'relative_abundance') |> 
+  dplyr::select(decimal_date, abundance_value) |>
+  dplyr::group_by(decimal_date) |>
+  dplyr::summarize(max_abundance = max(abundance_value, na.rm = TRUE)) |>
+  left_join(bloo_events) |>
+  ungroup() |>
+  dplyr::select(decimal_date, bloom_event,  temperature, day_length, secchi, salinity, chla_total, chla_3um, PO4, NH4, NO2, NO3, Si, PNF_Micro,
+                PNF2_5um_Micro, PNF_5um_Micro, cryptomonas, micromonas, HNF_Micro, HNF2_5um_Micro, HNF_5um_Micro, LNA, HNA, prochlorococcus_FC,
+                Peuk1, Peuk2, bacteria_joint, synechococcus, max_abundance) |>
+  pivot_longer(cols = -c(decimal_date, bloom_event, max_abundance)) |>
+  #dplyr::filter(!is.na(BP_FC1.55)) |>
+  ggplot(aes(bloom_event, as.numeric(value)))+
+  geom_point(aes(size = max_abundance), position = position_jitter(width = 0.05))+ 
+  #scale_y_continuous(expand = c(0,0))+
+  scale_x_discrete(label = c('Bloom', 'No bloom'))+
+  #geom_violin(alpha = 0.3, draw_quantiles = T)+
+  stat_summary(fun = "mean",
+               geom = "crossbar", 
+               width = 0.2,
+               colour = "black")+
+  facet_wrap(vars(name), scale = 'free')+
+  geom_boxplot(alpha = 0.3)+
+  labs(x = '', y = '', size = 'Maximal\nrelative\nabundance (%)')+
+  theme_bw()+
+  theme(panel.grid = element_blank(), text = element_text(size = 6))
+
+##same plot but with z-scores
+date_sample <- asv_tab_bloo_rel_abund_z |>
+  dplyr::filter(str_detect(sample_id, '_0.2_')) |>
+  dplyr::filter(abundance_type == 'relative_abundance') |>
+  dplyr::select(decimal_date, sample_id) |>
+  group_by(decimal_date, sample_id) |>
+  distinct()
+
+bbmo_env_z_w <- bbmo_env_z |>
+  dplyr::select(-env_values) |>
+  pivot_wider(id_cols = sample_id, values_from = z_score_environmental_variable, names_from = environmental_variable ) |>
+  left_join(date_sample) |>
+  dplyr::select(-sample_id)
+
+max_abund <- asv_tab_bloo_rel_abund_z |>
+  dplyr::select(decimal_date, abundance_value) |>
+  dplyr::group_by(decimal_date) |>
+  dplyr::summarize(max_abundance = max(abundance_value, na.rm = TRUE))
+
+
+bloom_events_env_variables <-  asv_tab_bloo_rel_abund_z |>
+  dplyr::filter(str_detect(sample_id, '_0.2_')) |>
+  dplyr::filter(abundance_type == 'relative_abundance') |>
+  group_by(decimal_date, BP_FC1.55) |>
+  dplyr::summarize(bloom_event = case_when(any(z_score_ra >= 1.96 &
+                                                 abundance_value >= 0.1 ) ~ 'bloom',
+                                           TRUE ~ 'no-bloo')) |>
+  dplyr::select(-BP_FC1.55) |>
+  left_join(bbmo_env_z_w) |>
+  left_join(max_abund) |>
+  ungroup() |>
+  # dplyr::select(decimal_date, bloom_event,  temperature, day_length, secchi, salinity, chla_total, chla_3um, PO4, NH4, NO2, NO3, Si, PNF_Micro,
+  #               PNF2_5um_Micro, PNF_5um_Micro, cryptomonas, micromonas, HNF_Micro, HNF2_5um_Micro, HNF_5um_Micro, LNA, HNA, prochlorococcus_FC,
+  #               Peuk1, Peuk2, bacteria_joint, synechococcus, max_abundance) |>
+  pivot_longer(cols = -c(decimal_date, bloom_event, max_abundance)) |>
+  #dplyr::filter(!is.na(BP_FC1.55)) |>
+  ggplot(aes(bloom_event, as.numeric(value)))+
+  geom_point(aes(size = max_abundance), position = position_jitter(width = 0.05))+ 
+  #scale_y_continuous(expand = c(0,0))+
+  scale_x_discrete(label = c('Bloom', 'No bloom'))+
+  scale_size_continuous(range = c(0, 2)) + 
+  geom_violin(alpha = 0.3, draw_quantiles = T)+
+  stat_summary(fun = "mean",
+               geom = "crossbar", 
+               width = 0.2,
+               colour = "black")+
+  facet_wrap(vars(name),  labeller = labs_env, ncol = 3)+
+  #geom_boxplot(alpha = 0.3)+
+  labs(x = '', y = 'z-score', size = 'Maximum\nrelative\nabundance (%)')+
+  theme_bw()+
+  theme(panel.grid = element_blank(), text = element_text(size = 6),
+        strip.background = element_blank())
+
+ggsave('bloom_events_env_variables.pdf', bloom_events_env_variables,
+      path = "~/Documentos/Doctorat/BBMO/BBMO_bloomers/Results/Figures/",
+      width = 188,
+      height = 280,
+      units = 'mm')
  
