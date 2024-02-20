@@ -2029,7 +2029,6 @@ env_type <-  wavelets_result_env_tibble_red %>%
  
  
 # INTERPOLATE MISSING ENVIRONMENTAL VARIALBES TO HAVE A COMPLETE DATASET-------
- 
  # data
  bbmo_env <- asv_tab_all_bloo_z_tax |>
    dplyr::select(decimal_date,
@@ -2090,8 +2089,8 @@ env_type <-  wavelets_result_env_tibble_red %>%
    left_join(date_sample) |>
    dplyr::select(-sample_id)
  
+## Interpolation for just one environmental variable-----
  #### we do it with the loess function
- 
  # Select data without missing values
  env_to_fit <- bbmo_env_ed |>
    select(day_length, decimal_date) %>%
@@ -2118,26 +2117,27 @@ env_fitted |>
  
 ## I do it for all the environmental variables with missing values ------
 # Function to interpolate missing values for a single variable
-interpolate_missing <- function(data, variable_to_inter, span_value) {
-  
-  env_to_fit <- data |>
-    dplyr::filter(variable == {{variable_to_inter}}) |>
-    dplyr::select(value, decimal_date) |>
-    dplyr::filter(!is.na(value))
-
-  env_fitted <- data %>%
-    dplyr::filter(variable == {{variable_to_inter}}) |>
-    dplyr::select(value, decimal_date)
-  
-  fit <- loess(value ~ decimal_date, data = env_to_fit, span = span_value)
-  
-  env_fitted[[paste0(variable_to_inter, "_interpolated")]] <- predict(fit, newdata = env_fitted)
-  
-  env_fitted <- env_fitted |>
-    rename(!!variable_to_inter := value)
-  
-  return(env_fitted)
-}
+source('src/interpolate_missing_values.R')
+# interpolate_missing <- function(data, variable_to_inter, span_value) {
+#   
+#   env_to_fit <- data |>
+#     dplyr::filter(variable == {{variable_to_inter}}) |>
+#     dplyr::select(value, decimal_date) |>
+#     dplyr::filter(!is.na(value))
+# 
+#   env_fitted <- data %>%
+#     dplyr::filter(variable == {{variable_to_inter}}) |>
+#     dplyr::select(value, decimal_date)
+#   
+#   fit <- loess(value ~ decimal_date, data = env_to_fit, span = span_value)
+#   
+#   env_fitted[[paste0(variable_to_inter, "_interpolated")]] <- predict(fit, newdata = env_fitted)
+#   
+#   env_fitted <- env_fitted |>
+#     rename(!!variable_to_inter := value)
+#   
+#   return(env_fitted)
+# }
 
 # Pivot to long format
 bbmo_env_long <- bbmo_env_ed |>
@@ -2148,8 +2148,6 @@ na_counts <- bbmo_env_long |>
   group_by(variable) |>
   summarise(na_count = sum(is.na(value))) |>
   dplyr::filter(na_count >= 1)
-
-print(na_counts)
 
 no_na_counts <- bbmo_env_long |>
   group_by(variable) |>
@@ -2215,6 +2213,13 @@ interpolated_data |>
   geom_line()+
   theme_bw()
 
+bbmo_env_long |>
+  dplyr::filter(variable == 'day_length') |>
+  ggplot(aes(decimal_date, value))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
 new_data_with_inter_values_dl <- interpolated_data |>
   dplyr::mutate(day_length_no_nas = case_when(is.na(day_length) ~ day_length_interpolated,
                                      !is.na(day_length) ~ day_length)) |>
@@ -2235,6 +2240,13 @@ interpolated_data |>
   dplyr::mutate(new_data = case_when(is.na(temperature) ~ temperature_interpolated,
                                      !is.na(temperature) ~ temperature)) |>
   ggplot(aes(decimal_date, new_data))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+bbmo_env_long |>
+  dplyr::filter(variable == 'temperature') |>
+  ggplot(aes(decimal_date, value))+
   geom_point()+
   geom_line()+
   theme_bw()
@@ -2285,6 +2297,13 @@ interpolated_data |>
   geom_line()+
   theme_bw()
 
+bbmo_env_long |>
+  dplyr::filter(variable == 'chla_total') |>
+  ggplot(aes(decimal_date, value))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
 new_data_with_inter_values_chla_tot <- interpolated_data |>
   dplyr::mutate(chla_total_no_nas = case_when(is.na(chla_total) ~ chla_total_interpolated,
                                               !is.na(chla_total) ~ chla_total)) |>
@@ -2308,6 +2327,13 @@ interpolated_data |>
   geom_line()+
   theme_bw()
 
+bbmo_env_long |>
+  dplyr::filter(variable == 'PO4') |>
+  ggplot(aes(decimal_date, value))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
 new_data_with_inter_values_po4 <- interpolated_data |>
   dplyr::mutate(PO4_no_nas = case_when(is.na(PO4) ~ PO4_interpolated,
                                               !is.na(PO4) ~ PO4)) |>
@@ -2315,7 +2341,7 @@ new_data_with_inter_values_po4 <- interpolated_data |>
 
 ### NH4 ----
 interpolated_data <- interpolate_missing(bbmo_env_long, variable_to_inter = "NH4",
-                                         span_value = 0.1)
+                                         span_value = 1)
 
 interpolated_data |>
   ggplot(aes(NH4, NH4_interpolated))+
@@ -2345,7 +2371,7 @@ new_data_with_inter_values_nh4 <- interpolated_data |>
 
 ### NO2 total ----
 interpolated_data <- interpolate_missing(bbmo_env_long, variable_to_inter = "NO2",
-                                         span_value = 0.09)
+                                         span_value = 2)
 
 interpolated_data |>
   ggplot(aes(NO2, NO2_interpolated))+
@@ -2405,7 +2431,7 @@ new_data_with_inter_values_no3 <- interpolated_data |>
 
 ### Si ----
 interpolated_data <- interpolate_missing(bbmo_env_long, variable_to_inter = "Si",
-                                         span_value = 0.09)
+                                         span_value = 1)
 
 interpolated_data |>
   ggplot(aes(Si, Si_interpolated))+
@@ -2435,7 +2461,7 @@ new_data_with_inter_values_si <- interpolated_data |>
 
 ### BP_FC1.55 ----
 interpolated_data <- interpolate_missing(bbmo_env_long, variable_to_inter = "BP_FC1.55",
-                                         span_value = 0.09)
+                                         span_value = 1)
 
 interpolated_data |>
   ggplot(aes(BP_FC1.55, BP_FC1.55_interpolated))+
@@ -2495,7 +2521,7 @@ new_data_with_inter_values_PNF_Micro <- interpolated_data |>
 
 ### PNF2_5um_Micro ----
 interpolated_data <- interpolate_missing(bbmo_env_long, variable_to_inter = "PNF2_5um_Micro",
-                                         span_value = 0.09)
+                                         span_value = 0.9)
 
 interpolated_data |>
   ggplot(aes(PNF2_5um_Micro, PNF2_5um_Micro_interpolated))+
@@ -2525,7 +2551,7 @@ new_data_with_inter_values_PNF2_5um_Micro <- interpolated_data |>
 
 ### PNF_5um_Micro ----
 interpolated_data <- interpolate_missing(bbmo_env_long, variable_to_inter = "PNF_5um_Micro",
-                                         span_value = 0.09)
+                                         span_value = 2)
 
 interpolated_data |>
   ggplot(aes(PNF_5um_Micro, PNF_5um_Micro_interpolated))+
@@ -2709,11 +2735,12 @@ new_data_with_inter_values_HNF_5um_Micro <- interpolated_data |>
 env_data_interpolated_values <- bind_cols(new_data_with_inter_values_t, new_data_with_inter_values_dl, new_data_with_inter_values_chla_tot,
           new_data_with_inter_values_po4, new_data_with_inter_values_nh4,
           new_data_with_inter_values_no2, new_data_with_inter_values_no3,
-          new_data_with_inter_values_si, new_data_with_inter_values_bp,
-          new_data_with_inter_values_PNF_Micro, new_data_with_inter_values_PNF2_5um_Micro, # not very sure about the interpolation of PNF data
+          new_data_with_inter_values_si, #it creates a peak which could be true or artefactual just one point.
+          new_data_with_inter_values_bp,
+          new_data_with_inter_values_PNF_Micro, new_data_with_inter_values_PNF2_5um_Micro, # nit creates a peak which could be true or artefactual just one point in PNF2-5
           new_data_with_inter_values_PNF_5um_Micro, 
           new_data_with_inter_values_cryptomonas, 
-          new_data_with_inter_values_micromonas, # not very sure about this interpolation either 
+          new_data_with_inter_values_micromonas, # it creates a peak which could be true or artefactual just one point.
           new_data_with_inter_values_HNF_Micro, new_data_with_inter_values_HNF2_5um_Micro,
           new_data_with_inter_values_HNF_5um_Micro)
 
@@ -2737,8 +2764,7 @@ env_data_interpolated_values_all_z_score <- env_data_interpolated_values_all |>
   dplyr::mutate(env_values = as.numeric(env_values)) |>
   calculate_z_score(col = 'env_values', name = 'environmental_variable', group = 'environmental_variable')
 
-write.csv2(env_data_interpolated_values_all_z_score, 'data/env_data/env_data_interpolated_values_all_z_score.csv')
-
+#write.csv2(env_data_interpolated_values_all_z_score, 'data/env_data/env_data_interpolated_values_all_z_score.csv')
 
 ## visually inspect the results and see if I'm adding weird values----
 env_data_interpolated_values_all_z_score
@@ -2768,7 +2794,7 @@ env_data_interpolated_values_all_z_score_ed$environmental_variable <- factor(env
                                                                                                 "PNF_Micro" , "PNF2_5um_Micro",  "PNF_5um_Micro", "HNF_Micro",         
                                                                                                 "HNF2_5um_Micro", "HNF_5um_Micro", "Peuk1",             
                                                                                                 "Peuk2",
-                                                                                                "dryptomonas", "micromonas",
+                                                                                                "cryptomonas", "micromonas",
                                                                                                 
                                                                                                 "low_vlp" ,
                                                                                                 "med_vlp" ,  
@@ -2799,11 +2825,11 @@ phyico_chemical <- env_data_interpolated_values_all_z_score_ed |>
         panel.border = element_blank(), strip.background = element_blank(), plot.margin = unit(c(1,3,1,1), "mm"), 
         legend.key.size = unit(3, "mm"))
 
-ggsave('physico_chem_z_scores_bbmo_interpolated.pdf', phyico_chemical,
-     path = "~/Documentos/Doctorat/BBMO/BBMO_bloomers/Results/Figures/",
-     width = 188,
-     height = 60,
-     units = 'mm')
+# ggsave('physico_chem_z_scores_bbmo_interpolated.pdf', phyico_chemical,
+#      path = "~/Documentos/Doctorat/BBMO/BBMO_bloomers/Results/Figures/",
+#      width = 188,
+#      height = 60,
+#      units = 'mm')
 
 biological <-
   env_data_interpolated_values_all_z_score_ed |>
@@ -2831,38 +2857,11 @@ biological <-
         panel.border = element_blank(), strip.background = element_blank(), plot.margin = unit(c(0,3,0,1), "mm"), 
         legend.key.size = unit(3, "mm"))
 
-ggsave('biological_bbmo_interpolated.pdf', biological,
-       path = "~/Documentos/Doctorat/BBMO/BBMO_bloomers/Results/Figures/",
-       width = 188,
-       height = 90,
-       units = 'mm')
-
-
-## scatter plot 
-env_data_interpolated_values_all_z_score |>
-  dplyr::select()
-  pivot_longer(cols = -decimal_date, names_to = 'interpolated', values_to = 'interpolated_values')
-  left_join(bbmo_env_ed)
-
-
-# Apply interpolation function to each variable and store the results in a list-------
-interpolated_data <- lapply(variables, function(var) {
-  interpolate_missing(bbmo_env_long, variable_to_inter = var)
-})
-
-# Combine the interpolated data for all variables
-combined_data <- Reduce(function(x, y) merge(x, y, by = c("decimal_date")), interpolated_data)
-
-# View the combined data
-print(combined_data)
-
-combined_data |>
-  pivot_longer(cols = -decimal_date) |>
-  ggplot(aes(decimal_date, value))+
-  geom_point()+
-  geom_line()+
-  facet_wrap(vars(name), scale = 'free')+
-  theme_bw()
+# ggsave('biological_bbmo_interpolated.pdf', biological,
+#        path = "~/Documentos/Doctorat/BBMO/BBMO_bloomers/Results/Figures/",
+#        width = 188,
+#        height = 90,
+#        units = 'mm')
 
 # When we have a blooming event do we observe a general increase in the bacterial production?-----
  sample_id <- asv_tab_all_bloo_z_tax$sample_id
@@ -3090,3 +3089,5 @@ ggsave('bloom_events_env_variables.pdf', bloom_events_env_variables,
       height = 280,
       units = 'mm')
  
+
+## Do the same but separating no-bloom / bloom / super blooming events------
