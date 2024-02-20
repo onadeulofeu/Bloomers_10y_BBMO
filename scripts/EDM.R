@@ -26,7 +26,6 @@ library(rEDM)
 ### is still underway.
 
 ### We need occurrence and relative abundance - rank table-----
-
 asv_tab_all_bloo_z_tax <- read_csv2('data/asv_tab_all_bloo_z_tax.csv') |>
   as_tibble()
 
@@ -299,7 +298,7 @@ m_bbmo_10y_sim_ed <- m_bbmo_10y |>
 asv_tab_10y_rel_occ_filt_w_env <- asv_tab_10y_rel_occ_filt_w |>
   left_join(m_bbmo_10y_sim_ed, by = c('Year' = 'Year', 'Month' = 'Month', 'Day' = 'Day'))
 
-write.csv2(asv_tab_10y_rel_occ_filt_w_env, file = '../../EDM_carmen/asv_tab_10y_rel_occ_filt_w_env.csv')
+#write.csv2(asv_tab_10y_rel_occ_filt_w_env, file = '../../EDM_carmen/asv_tab_10y_rel_occ_filt_w_env.csv')
 
 ##prepare taxonomy information
 asv_tab_10y_l_rel_occ_filt |>
@@ -399,11 +398,29 @@ asv_tab_bbmo_10y_rclr_occ_filt <- asv_tab_bbmo_10y_rclr |>
   left_join(m_bbmo_10y_sim_ed, by = c('Year' = 'Year', 'Month' = 'Month', 'Day' = 'Day')) ## add metadata at the end of the tibble 
   
 
-  write.csv(asv_tab_bbmo_10y_rclr_occ_filt, '../../EDM_carmen/asv_tab_bbmo_10y_rclr_occ_filt.csv')
+  #write.csv(asv_tab_bbmo_10y_rclr_occ_filt, '../../EDM_carmen/asv_tab_bbmo_10y_rclr_occ_filt.csv')
   
   asv_tab_bbmo_10y_rclr_occ_filt |>
     dim()
   
   asv_tab_10y_rel_occ_filt_w_env |>
     dim()
+  
+  
+  # Creation of a new dataset that has less missing environmental variables and less of them, I send them to Carmen ----- 
+  env_data_interpolated_values_all_z_score_red <- read.csv2( 'data/env_data/env_data_interpolated_values_all_z_score.csv') |>
+    as_tibble() |>
+    dplyr::select(-X, -env_values) |>
+    dplyr::mutate(environmental_variable = str_replace(environmental_variable, '_no_nas', ''))
+    
+  
+ write.csv2(asv_tab_10y_rel_occ_filt_w_env, file = '../../EDM_carmen/asv_tab_10y_rel_occ_filt_w_env.csv')
+  
+  
+  
+  
+  #### EXPLORE EDM RESULTS------
+  #### Si tienes tiempo, puedes hacer boxplots de causalidad intra e inter clase taxonómica por ejemplo y también ver un poco si las relaciones causales tops (primeros en cada ranking de las scatter plots que te mandé) tienen sentido
+  
+  
   
