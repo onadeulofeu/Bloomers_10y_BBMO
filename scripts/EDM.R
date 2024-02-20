@@ -26,7 +26,7 @@ library(rEDM)
 ### is still underway.
 
 ### We need occurrence and relative abundance - rank table-----
-asv_tab_all_bloo_z_tax <- read_csv2('data/asv_tab_all_bloo_z_tax.csv') |>
+asv_tab_all_bloo_z_tax <- read_csv2('data/detect_bloo/asv_tab_all_bloo_z_tax_new_assign_checked.csv') |>
   as_tibble()
 
 asv_tab_all_bloo_z_tax |>
@@ -34,7 +34,7 @@ asv_tab_all_bloo_z_tax |>
 
 asv_tab_all_bloo_z_tax |>
   group_by(asv_num) |>
-  distinct(asv_num) #58 potential bloomers in my dataset
+  distinct(asv_num) #61 potential bloomers in my dataset
 
 occurrence_bloo_bbmo <- asv_tab_all_bloo_z_tax |>
   dplyr::filter(abundance_type == 'relative_abundance') |>
@@ -51,13 +51,13 @@ occurrence_bloo_bbmo_summary <-  occurrence_bloo_bbmo |>
   dplyr::select(-sample_id, -total_reads, -day, -day_of_year, -abundance_value, -n_occurrence) |>
   group_by(fraction, asv_num, seq, occurrence_perc) |>
   distinct() |>
-  dplyr::filter(occurrence_perc > 2/3) 
+  dplyr::filter(occurrence_perc >= 2/3) 
 
 occurrence_bloo_bbmo_summary |>
   group_by(asv_num) |>
-  distinct(asv_num) #13 ASVs with an occurrence >66% in the dataset.
+  distinct(asv_num) #12 ASVs with an occurrence >66% in the dataset.
 
-write.csv(occurrence_bloo_bbmo, 'occurrence_bloo_bbmo.csv')
+#write.csv(occurrence_bloo_bbmo, 'data/occurrence_bloo_bbmo.csv')
 
 ###plots -----
 library(scales)
@@ -83,18 +83,22 @@ occurrence_bloo_bbmo |>
                 abundance_value = as.numeric(abundance_value)) |>
   group_by(asv_num) |>
   dplyr::slice_max(order_by = abundance_value, n = 1)|>
-  ggplot(aes(abundance_value, occurrence_perc, color = family))+
-  geom_point(aes(size = abundance_value, color = family, alpha = 0.8))+
+  ggplot(aes(abundance_value, occurrence_perc, color = order))+
+  geom_point(aes(size = abundance_value, color = order, alpha = 0.8))+
   scale_y_continuous(labels = percent_format())+
+  scale_x_continuous(labels = percent_format())+
+  scale_color_manual(values = palette_order_assigned_bloo)+
+  geom_smooth(method = 'loess', aes(abundance_value, occurrence_perc, group = domain), se = F)+
+  labs(size = 'Relative\nabundance (%)', color = 'Order', alpha = '', x = 'Relative abundance (%)', y = 'Occurrence')+
   #facet_wrap(vars(phylum))+
   #scale_x_datetime()+
-  scale_color_manual(values = palette_family_assigned_bloo)+
-  theme_bw()
-
-
+  theme_bw()+
+  theme(text = element_text(size = 6),
+        panel.grid = element_blank(),
+        legend.position = 'bottom')
 
 ##upload occurrence data -----
-occurrence_bloo_bbmo <- read.delim2('occurrence_bloo_bbmo.csv', sep = ',')
+occurrence_bloo_bbmo <- read.delim2('data/occurrence_bloo_bbmo.csv', sep = ',')
 occurrence_bloo_bbmo |>
   head()
 
@@ -122,7 +126,7 @@ m_bbmo_10y <- bbmo_10y@sam_data |>
   as_tibble()
 
 #new taxonomy created with the database SILVA 138
-new_tax <-  readRDS('03_tax_assignation/devotes_all_tax_assignation.rds') |>
+new_tax <-  readRDS('03_tax_assignation/devotes_all_assign_tax_assignation_v2.rds') |>
   as_tibble(rownames = 'sequence')
 
 tax_bbmo_10y_new <- tax_bbmo_10y_old |>
@@ -141,7 +145,7 @@ colnames(asv_tab_bbmo_10y_l) <- c('asv_num', "sample_id", 'reads')
 colnames(tax_bbmo_10y_old) <- c("asv_num", "kingdom", "phylum", "class", "order", "family", "genus",
                                 "species", "curated", "otu_corr","seq")
 
-colnames(m_bbmo_10y) <- c("sample_id", "project", "location", "code",             
+colnames(m_bbmo_10y) <- c( "project", "location", "code",             
                           "type", "samname", "fraction", "run",               
                           "date", "basics", "julian_day", "day_of_year",       
                           "decimal_date", "position", "sampling_time", "day_length",        
@@ -152,7 +156,7 @@ colnames(m_bbmo_10y) <- c("sample_id", "project", "location", "code",
                           "HNF_Micro", "HNF2_5um_Micro", "HNF_5um_Micro", "LNA",               
                           "HNA", "prochlorococcus_FC", "Peuk1",  "Peuk2",          
                           "Year", "Month", "Day", "season",            
-                          "bacteria_joint", "synechococcus", "depth", "name_complete")
+                          "bacteria_joint", "synechococcus", "depth", "sample_id")
 
 
 ## Divide metadata into FL and PA----
@@ -200,6 +204,7 @@ m_3 <- m_3 |>
 #   facet_grid(vars(fraction))
 
 # Calculate relative abundance----
+library(Bloomers)
 asv_tab_10y_l_rel <- asv_tab_bbmo_10y_l |>
   calculate_rel_abund(group_cols = sample_id)
 
@@ -222,9 +227,10 @@ asv_tab_bbmo_10y_rclr <- asv_tab_bbmo_10y_l |>
   bind_cols(sample_id)
 
 #Calculate occurrence----
-## Occurence by fraction (0.2 - 3)
+## Occurrence by fraction (0.2 - 3)
 asv_tab_10y_l_rel |> 
   colnames()
+
 m_bbmo_10y_sim <- m_bbmo_10y |>
   dplyr::select(fraction, sample_id, Year, Month, Day)
 
@@ -284,6 +290,7 @@ asv_tab_10y_l_rel_occ_filt |>
 ##add metadata at the last cols of the dataset
 m_bbmo_10y |>
   colnames()
+
 m_bbmo_10y_sim |>
   dim()
 
@@ -323,7 +330,7 @@ tax_occ_filt_bbmo <- asv_tab_10y_l_rel_occ_filt |>
   dplyr::mutate(bloom = case_when(asv_num %in% bloo$asv_num ~ '1',
                                   !asv_num %in% bloo$asv_num ~ '0'))
 
-write.csv(tax_occ_filt_bbmo, '../../EDM_carmen/tax_occ_filt_bbmo.csv')
+#write.csv(tax_occ_filt_bbmo, '../../EDM_carmen/tax_occ_filt_bbmo_ed.csv')
   
 occ_asv <- asv_tab_10y_l_rel_occ_filt |>
   ungroup() |>
@@ -407,20 +414,38 @@ asv_tab_bbmo_10y_rclr_occ_filt <- asv_tab_bbmo_10y_rclr |>
     dim()
   
   
-  # Creation of a new dataset that has less missing environmental variables and less of them, I send them to Carmen ----- 
-  env_data_interpolated_values_all_z_score_red <- read.csv2( 'data/env_data/env_data_interpolated_values_all_z_score.csv') |>
-    as_tibble() |>
-    dplyr::select(-X, -env_values) |>
-    dplyr::mutate(environmental_variable = str_replace(environmental_variable, '_no_nas', ''))
-    
+# Creation of a new dataset that has less missing environmental variables and less of them, I send them to Carmen ----- 
+## recover the columns of year, month, day to add them to the metadata
+  y_m_d <- m_bbmo_10y |>
+    dplyr::select(Year, Month, Day, decimal_date) |>
+    distinct(Year, Month, Day, decimal_date)
   
- write.csv2(asv_tab_10y_rel_occ_filt_w_env, file = '../../EDM_carmen/asv_tab_10y_rel_occ_filt_w_env.csv')
+env_data_interpolated_values_all_z_score_red <- read.csv2( '../data/env_data/env_data_interpolated_values_all_z_score.csv') |>
+  as_tibble() |>
+  dplyr::select(-X, -env_values) |>
+  dplyr::mutate(environmental_variable = str_replace(environmental_variable, '_no_nas', '')) |>
+  pivot_wider(id_cols = 'decimal_date', names_from = 'environmental_variable', values_from = 'z_score_environmental_variable') |>
+  right_join(y_m_d ) |>
+  dplyr::select(-decimal_date) 
   
+asv_tab_10y_rel_occ_filt_w_env_inter <- asv_tab_10y_rel_occ_filt_w |>
+  left_join(env_data_interpolated_values_all_z_score_red)
   
+#write.csv(asv_tab_10y_rel_occ_filt_w_env_inter, file = '../../EDM_carmen/asv_tab_10y_rel_occ_filt_w_env_inter.csv')
   
-  
-  #### EXPLORE EDM RESULTS------
-  #### Si tienes tiempo, puedes hacer boxplots de causalidad intra e inter clase taxonómica por ejemplo y también ver un poco si las relaciones causales tops (primeros en cada ranking de las scatter plots que te mandé) tienen sentido
+asv_tab_bbmo_10y_rclr_occ_filt |>
+  colnames()
+
+asv_tab_bbmo_10y_rclr_occ_filt_inter <- asv_tab_bbmo_10y_rclr_occ_filt |>
+  left_join(env_data_interpolated_values_all_z_score_red)
+
+#write.csv(asv_tab_bbmo_10y_rclr_occ_filt_inter, '../../EDM_carmen/asv_tab_bbmo_10y_rclr_occ_filt_inter.csv')
+
+
+
+
+#### EXPLORE EDM RESULTS------
+#### Si tienes tiempo, puedes hacer boxplots de causalidad intra e inter clase taxonómica por ejemplo y también ver un poco si las relaciones causales tops (primeros en cada ranking de las scatter plots que te mandé) tienen sentido
   
   
   
