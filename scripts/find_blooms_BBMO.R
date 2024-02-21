@@ -1,4 +1,5 @@
 
+
 # packages----
 library(readxl)
 library(tidyverse)
@@ -13,6 +14,7 @@ library(EcolUtils) #rarefaction
 library(ggplot2)
 library(scales)
 library(zCompositions)
+library(grateful) ## To cite the packages used.
 
 #labels----
 labs_fraction <- as_labeller(c('0.2' = 'Free living (0.2-3 um)',
@@ -29,7 +31,7 @@ harbour_restoration <- tibble(xmin = '2010-03-24', xmax = '2012-06-09') |>
 
 # palettes----
 palette_seasons_4 <- c("winter" = "#002562", 'spring' = "#519741", 'summer' = "#ffb900",'autumn' =  "#96220a")
-f
+
 palette_fraction <- c('0.2' = '#00808F', '3' = '#454545')
 
 ## palettes taxonomy assigned----
@@ -107,8 +109,9 @@ palette_class_assigned_bloo <- c('Gammaproteobacteria' = '#FFA737', 'Alphaproteo
 #   left_join(tax_bbmo_10y, by = c('taxonomy' = 'family')) |>
 #   distinct(taxonomy, order)
 
-# asv_tab_all_bloo_z_tax$order |>
-#   unique()
+asv_tab_all_bloo_z_tax |>
+  group_by(order, class) |>
+  distinct(order, class)
 
  # asv_tab_all_bloo_z_tax |>
  #  dplyr::filter(order == 'Synechococcales') |>
@@ -120,30 +123,40 @@ palette_class_assigned_bloo <- c('Gammaproteobacteria' = '#FFA737', 'Alphaproteo
 #   dplyr::filter(order_f %in% c('Oceanospirillales', 'Opitutales')) |>
 #   distinct()
 
-palette_order_assigned_bloo <-  c('Thiotrichales' = '#BB4430', "Alteromonadales" =  '#A63B00',  
-                                  "Vibrionales" = '#F2AC5D', "Enterobacterales" = '#FFA200',
-                                  "Cellvibrionales"   = '#F35900',  "Pseudomonadales"  = '#FF8E00', 
-                                  #"SAR86 clade" = '#FFBF45',
-                                  "SAR11 clade" =  '#B0413E',  "Rhodobacterales" = '#C55E5C',
-                                  "Sphingomonadales"  = '#8C000A', "Puniceispirillales" = '#931F1D',  'Rhizobiales' = '#B31722',
+palette_order_assigned_bloo <-  c("SAR11 clade" =  '#B0413E',
                                   "Rhodospirillales"  = '#FFA197', 
+                                  "Sphingomonadales"  = '#8C000A', 
+                                  "Puniceispirillales" = '#931F1D',
+                                  'Rhizobiales' = '#B31722',
+                                  "Rhodobacterales" = '#C55E5C',
+                                  "Verrucomicrobiales"= '#005c69',
+                                  "Opitutales"   =   '#74B9C8',
+                                  "Phycisphaerales"  = '#e3a6ce', 
+                                  "Flavobacteriales"   =  '#0051BF', 
+                                  'Chitinophagales' = '#92ABFF', 
                                   "Synechococcales"  = '#009F6A', 
-                                  "Flavobacteriales"   =  '#0051BF',  'Chitinophagales' = '#92ABFF', 
-                                  "Verrucomicrobiales"= '#005c69', "Opitutales"   =   '#74B9C8',
-                                  "Phycisphaerales"  = '#e3a6ce',  
-                                  "Bacteriovoracales" = '#8C789D'
-                                  #"Oceanospirillales" =  '#A05C00'
+                                  "Bacteriovoracales" = '#8C789D',
+                                  "Pseudomonadales"  = '#FF8E00', 
+                                  "Enterobacterales" = '#FFA200',
+                                  'Thiotrichales' = '#FFBF45'
 ) # NA ==  "#000000",
+                                  
+                                  #"Alteromonadales" =   '#BB4430', ,  
+                                  #"Vibrionales" = '', 
+                                  #"Cellvibrionales"   = '',  
+                                  #"SAR86 clade" = '#FFBF45',
+                                  #"Oceanospirillales" =  '#A05C00'
 
-# asv_tab_all_bloo_z_tax$family_f |>
-# unique()
+asv_tab_all_bloo_z_tax |>
+  group_by(order, family) |>
+  distinct(order, family)
 
 # asv_tab_all_bloo_z_tax |>
 #   dplyr::filter(family == "Puniceicoccaceae") |>
 #   dplyr::select(order) |>
 #   distinct()
 
-palette_family_assigned_bloo <- c("Thiotrichaceae" = '#BB4430',  
+palette_family_assigned_bloo <- c("Thiotrichaceae" = '#FFBF45',  
                                   "Marinobacteraceae" =  '#DE6931',  "Alcanivoracaceae1"  =  '#A05C00',  "Moraxellaceae"  =  '#FF8E00', #pseudomonadales
                                   "Halieaceae" = '#F35900', "SAR86 clade" = '#FFBA00', #pseudomonadales
                                   "Vibrionaceae"      = '#F2AC5D',   "Yersiniaceae"  = '#FFA200',    #enterobacterales    
@@ -315,10 +328,6 @@ colnames(m_bbmo_10y) <- c("sample_id", "project", "location", "code",
                           "HNA", "prochlorococcus_FC", "Peuk1",  "Peuk2",          
                           "year", "month", "day", "season",            
                           "bacteria_joint", "synechococcus", "depth", "name_complete")
-
-##updated tax with SILVA 138 and DECIPHER (it has many NAs, even at Phylum taxonomic level)
-# new_tax <-  readRDS('data/03_tax_assignation/devotes_all_tax_assignation.rds') |>
-#   as_tibble(rownames = 'sequence')
 
 #new taxonomy created with the database SILVA 138.1 using Assign tax at 50 (default)
 new_tax <-  readRDS('data/03_tax_assignation/devotes_all_assign_tax_assignation_v2.rds') |>
@@ -590,6 +599,7 @@ gm <- function(x){
 ### after checking the results from the different approximations we keep the rCLR transformation.
 
 rclr_df <- decostand(asv_tab_bbmo_10y_w, method = 'rclr' )
+#clr_df <- decostand(asv_tab_bbmo_10y_w, method = 'clr' , pseudocount = 1)
 
 # clr_df_pseudocount <- decostand(asv_tab_bbmo_10y_w, method = 'clr',
 #                                  pseudocount = 1)
@@ -611,7 +621,17 @@ asv_tab_10y_3_rclr <- rclr_df |>
   pivot_longer(cols = starts_with('asv'), names_to = 'asv_num', values_to = 'rclr') |>
   dplyr::filter(str_detect(sample_id, '_3_'))
 
-###check differences between CLR and rCLR-----
+# asv_tab_10y_02_rclr_pseudocount <- rclr_df |>
+#   rownames_to_column(var = 'sample_id') |>
+#   pivot_longer(cols = starts_with('asv'), names_to = 'asv_num', values_to = 'rclr') |>
+#   dplyr::filter(str_detect(sample_id, '_0.2_')) 
+# 
+# asv_tab_10y_3_rclr_pseudocount <- rclr_df |>
+#   rownames_to_column(var = 'sample_id') |>
+#   pivot_longer(cols = starts_with('asv'), names_to = 'asv_num', values_to = 'rclr') |>
+#   dplyr::filter(str_detect(sample_id, '_3_'))
+# 
+# ###check differences between CLR and rCLR-----
 # asv_tab_10y_02_rclr <- rclr_df |>
 #   rownames_to_column(var = 'sample_id') |>
 #   pivot_longer(cols = starts_with('asv'), names_to = 'asv_num', values_to = 'rclr') |>
@@ -624,19 +644,19 @@ asv_tab_10y_3_rclr <- rclr_df |>
 #   dplyr::filter(str_detect(sample_id, '_3_')) |>
 #   dplyr::mutate(method = 'rclr')
 # 
-# asv_tab_10y_02_rclr_pseudocount <- rclr_df_pseudocount |>
+# asv_tab_10y_02_rclr_pseudocount <- clr_df |>
 #   rownames_to_column(var = 'sample_id') |>
 #   pivot_longer(cols = starts_with('asv'), names_to = 'asv_num', values_to = 'rclr') |>
 #   dplyr::filter(str_detect(sample_id, '_0.2_')) |>
 #   dplyr::mutate(method = 'pseudocount')
 # 
-# asv_tab_10y_3_rclr_pseudocount <- rclr_df_pseudocount |>
+# asv_tab_10y_3_rclr_pseudocount <- clr_df |>
 #   rownames_to_column(var = 'sample_id') |>
 #   pivot_longer(cols = starts_with('asv'), names_to = 'asv_num', values_to = 'rclr') |>
 #   dplyr::filter(str_detect(sample_id, '_3_')) |>
 #   dplyr::mutate(method = 'pseudocount')
 # 
-# ## general correlation between both approximations
+# ## general correlation between both approximations----
 # asv_tab_10y_02_rclr |>
 #   bind_rows(asv_tab_10y_02_rclr_pseudocount) |>
 #   pivot_wider(id_cols = c(sample_id, asv_num), values_from = rclr, names_from = method) |>
@@ -1183,6 +1203,16 @@ bloo_02 <- asv_tab_10y_02_pseudo |>
   dplyr::distinct(asv_num) |>
   as_vector()
 
+## investigate why do we have different number of bloomers in the two strategies (remember in the anom search we do not check that anomaly and relative abundance happen at the same time)
+# bloo_02_ed <- bloo_02 |>
+#   as_tibble_col(column_name = 'asv_num')
+# 
+# asv_anom_02 |>
+#   as_tibble_col(column_name = 'asv_num') |>
+#   anti_join(bloo_02_ed)
+
+## the problem is the asv18, z-score > 1.96 & relative abundance > 0.1 do not happen at the same time. 
+
 #write_csv2(as_tibble(bloo_02), 'data/detect_bloo/bloo_02.csv')
 
 z_scores_3_red <- z_scores_3 |>
@@ -1297,7 +1327,7 @@ asv_tab_all_bloo |>
 asv_tab_all_bloo |>
   group_by(asv_num) |>
   dplyr::summarize(n = n()) |>
-  dplyr::summarize(n_num = n()) #62 ASVs
+  dplyr::summarize(n_num = n()) #61 ASVs
 
 # asv_tab_all_perc_filt_3_long_filt |>
 #   group_by(sample_id) |>
@@ -1415,9 +1445,16 @@ z_scores_ev <- z_scores_div_02_ev |>
   bind_rows(z_scores_div_3_ev)
 
 # Dataset with all information ----
+asv_tab_all_bloo |>
+  colnames()
+
+z_scores_all_red <- z_scores_all |>
+  dplyr::select(asv_num, fraction, decimal_date, z_score_ra) |>
+  dplyr::filter(!is.na(z_score_ra))
+
 asv_tab_all_bloo_z_tax <- asv_tab_all_bloo |>
-  left_join(z_scores_all) |> 
-  left_join(tax_bbmo_10y_new, by = 'asv_num') 
+  left_join(z_scores_all_red) |> 
+  left_join(tax_bbmo_10y_new, by = 'asv_num')
 
 #write.csv2(asv_tab_all_bloo_z_tax, 'data/asv_tab_all_bloo_z_tax_new_assign.csv')
 #write.csv2(asv_tab_all_bloo_z_tax, 'data/detect_bloo/asv_tab_all_bloo_z_tax_new_assign_checked.csv')
@@ -1436,7 +1473,7 @@ asv_tab_all_bloo_z_tax |>
 asv_tab_all_bloo_z_tax <- read.csv2('data/detect_bloo/asv_tab_all_bloo_z_tax_new_assign_checked.csv') |> ##using dada2 classifier assign tax with silva 138.1 and correctly identifying bloomers
   as_tibble() |>
   dplyr::select(-X)
-  
+
 ##upload diversity data----
 ## Rarefied dataset to calculate Community Evenness----
 source('~/Documentos/Doctorat/Bloomers/R/community_evenness.R')
