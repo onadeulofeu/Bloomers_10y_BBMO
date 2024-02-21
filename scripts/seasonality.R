@@ -386,7 +386,7 @@ zclr_df_inter  %$%
   zclr |>
   range()
 
-#write.csv2(wavelet_3_df, 'data/wavelet_3_df_deconstand.csv') #using the deconstand function (the same we need to use for the PA wavelets)
+write.csv(wavelet_3_df, 'data/wavelet_3_df_deconstand.csv') #using the deconstand function (the same we need to use for the PA wavelets)
 
 #### Notice that deconstant robust CLR transformation gives me more negative values than the cmultRepl step
 
@@ -903,9 +903,11 @@ selected_coefficients <- modwt_result[[selected_level]]
 
 
 
-#### Another strategy run it for all the ASVs at the same time, we work with two different datasets one for PA and the other FL ------
+# WAVELETS ANALYSIS FOR ALL THE ASVs AT THE SAME TIME----
+## PERFORM WAVELETS ANALYSIS APPLYING THE BRICK WALL FUNCTION WHICH REMOVES ALL VALUES AFFECTED BY MARGINS EFFECTS----
 
 ## upload data
+### we work with two different datasets one for FL and the other for PA
 wavelet_3_df <- read.csv2('data/wavelet_3_df_deconstand.csv') |>
   as_tibble() |>
   dplyr::select(-X)
@@ -914,16 +916,17 @@ wavelet_02_df <- read.csv2('data/wavelet_02_df_deconstand.csv') |>
   as_tibble() |>
   dplyr::select(-X)
 
-
   #### 4 steps APPLY BRICK WALL FUNCTION (REMOVE ALL SAMPLES AFFECTED BY THE MARGINS EFFECT)
 ### 1. modwt computation----
   ## FL fraction
   modwt_results_02 <- wavelet_02_df |>
+  arrange(decimal_date) |>
     group_by(asv_num) %>%
     summarize(modwt_result = list(modwt.function(abundance_value)))
   
   ## PA fraction
   modwt_results_3 <- wavelet_3_df |>
+    arrange(decimal_date) |>
     group_by(asv_num) %>%
     dplyr::summarize(modwt_result = list(modwt.function(zclr)))
   
@@ -1586,7 +1589,7 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
  
  
  
- ##### PERFORM WAVELETS ANALYSIS THIS TIME WITHOUT APPLYING THE BRICK WALL FUNCTION WHICH REMOVES VALUES AFFECTED BY MARGINS EFFECTS-----
+## PERFORM WAVELETS ANALYSIS THIS TIME WITHOUT APPLYING THE BRICK WALL FUNCTION WHICH REMOVES VALUES AFFECTED BY MARGINS EFFECTS-----
  #### 4 steps 
  ### 1. modwt computation----
  
@@ -1600,13 +1603,16 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
      phase.shift(wf = 'la8')
    return(modwt_result)
  }
+ 
  ## FL fraction
  modwt_results_02_biased <- wavelet_02_df |>
+   arrange(decimal_date) |>
    group_by(asv_num) %>%
    summarize(modwt_result = list(modwt.function.biased(abundance_value)))
  
  ## PA fraction
  modwt_results_3_biased <- wavelet_3_df |>
+   arrange(decimal_date) |>
    group_by(asv_num) %>%
    dplyr::summarize(modwt_result = list(modwt.function.biased(rclr)))
  
@@ -1778,7 +1784,8 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
  # Combine all the tibbles into one
  final_tibble <- bind_rows(all_tibbles)
  
- decimal_date_tibble <-  wavelet_3_df %$%
+ decimal_date_tibble <-  wavelet_3_df  |>
+   arrange(as.numeric(decimal_date)) %$%
    decimal_date |>
    unique() |>
    as_tibble_col(column_name = 'decimal_date') |>
@@ -1797,7 +1804,7 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
  
  wavelets_result_tibble_tax_3_biased_red <-  wavelets_result_tibble_tax_3_biased |>
    dplyr::mutate(wavelets_result_ed = case_when(wavelets_transformation == 'd1' &
-                                                  sample_num %in% c(1, 120) ~ 'NA',
+                                                  sample_num %in% c(1, 119, 120) ~ 'NA',
                                                 wavelets_transformation == 'd2' &
                                                   sample_num %in% c(1,2,3,  117, 118, 119, 120) ~ 'NA',
                                                 wavelets_transformation == 'd3' &
@@ -1888,7 +1895,7 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
  
  ### create a loop to save all the wavelets transformations computed and visually inspect them
  # Create a folder to save the PDF files
- dir.create("results/figures/wavelets_plots/biased_red", showWarnings = FALSE)
+ dir.create("../results/figures/wavelets_plots/biased_red", showWarnings = FALSE)
  
  ### FL----
  # Get unique asv_num values
@@ -1956,7 +1963,7 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
            text = element_text(size = 5))
    
    # Save the plot as a PDF file
-   pdf_file <- paste0("results/figures/wavelets_plots/biased_red_checked/", asv_num, "_plot_3_biased_red.pdf")
+   pdf_file <- paste0("../results/figures/wavelets_plots/biased_red_checked/", asv_num, "_plot_3_biased_red.pdf")
    ggsave(pdf_file, p, width = 6, height = 3, units = "in")
    
    # Print a message indicating the plot has been saved
@@ -2013,7 +2020,7 @@ bloo_02_type_biased_red <- wavelets_result_ed_tibble_tax_02_biased_red %>%
  bloo_type_biased_all <- bloo_3_type_biased_red |>
    bind_rows( bloo_02_type_biased_red)
  
- #write.csv2(bloo_type_biased_all, 'data/bloo_type_biased_all_checked.csv')
+ #write.csv(bloo_type_biased_all, '../data/bloo_type_biased_all_checked.csv')
  
  bloo_3_type_biased_red |>
    ungroup() |>
@@ -2074,7 +2081,6 @@ bloo_02_type_biased_red <- wavelets_result_ed_tibble_tax_02_biased_red %>%
    theme(panel.grid = element_blank(), strip.background = element_blank(),
          legend.position = 'bottom', axis.ticks.x = element_blank(),
          panel.border = element_blank(), text = element_text(size = 5))
- 
  
  ##i create a table with all the coefficients (I do not decide which is the most important)-----
  wavelets_result_ed_tibble_tax_3_biased_red_coeff <- wavelets_result_ed_tibble_tax_3_biased_red %>%
@@ -2140,19 +2146,21 @@ bloo_02_type_biased_red <- wavelets_result_ed_tibble_tax_02_biased_red %>%
  
  wavelets_result_ed_tibble_tax_3_biased_red <-  wavelets_result_ed_tibble_tax_3_biased_red |>
    dplyr::mutate(fraction = '3')
- 
+
  wavelets_result_ed_tibble_tax_02_biased_red <-  wavelets_result_ed_tibble_tax_02_biased_red |>
    dplyr::mutate(fraction = '0.2')
+ 
+ ## labs fraction and wavelets 
  
  wavelets_result_ed_tibble_tax_02_biased_red |>
    bind_rows(wavelets_result_ed_tibble_tax_3_biased_red) |>
    ggplot(aes(decimal_date, wavelets_result_ed))+
-   facet_grid(wavelets_transformation~fraction)+
+   facet_grid(wavelets_transformation~fraction)+ #, labeller = labs_wavelets_fract
    geom_line(aes(group = asv_num))+
    theme_bw()
  
-# write.csv2( wavelets_result_ed_tibble_tax_3_biased_red, 'data/wavelets_analysis/wavelets_result_ed_tibble_tax_3_biased_red.csv')
-# write.csv2( wavelets_result_ed_tibble_tax_02_biased_red, 'data/wavelets_analysis/wavelets_result_ed_tibble_tax_02_biased_red.csv')
+ #write.csv( wavelets_result_ed_tibble_tax_3_biased_red, '../data/wavelets_analysis/wavelets_result_ed_tibble_tax_3_biased_red.csv')
+ #write.csv( wavelets_result_ed_tibble_tax_02_biased_red, '../data/wavelets_analysis/wavelets_result_ed_tibble_tax_02_biased_red.csv')
  
 ### variance of the coefficients at different scales for each ASV-----
  wavelets_result_ed_tibble_tax_02_biased_red <- wavelets_result_ed_tibble_tax_02_biased_red  |>
@@ -2188,14 +2196,11 @@ wavelets_variance <-  wavelets_result_ed_tibble_tax_3_biased_red |>
          legend.key.size = unit(2, 'mm'),
          axis.ticks = element_line(unit(1, 'mm')))
  
- 
  wavelets_variance
  
  ggsave(wavelets_variance, filename = ' wavelets_variance.pdf',
-        path = 'Results/Figures/',
+        path = '../results/figures/',
         width = 88, height = 100, units = 'mm')
- 
- 
  
  #### GENERAL PLOTS FOR THOSE ASVs THAT ARE ACTUALLY SEASONAL FORM THOSE THAT ARE NOT-----
  ##reorder taxonomy as factors ----
@@ -2423,7 +2428,6 @@ wavelets_variance <-  wavelets_result_ed_tibble_tax_3_biased_red |>
          legend.position = 'bottom', axis.text.y = element_text(size = 8),
          axis.title = element_text(size = 8), strip.background = element_blank(), 
          legend.text = element_text(size = 7), legend.title = element_text(size = 8), strip.placement = 'outside')
- 
  
  
  ## EXPLORE PA RESULTS ----

@@ -1610,31 +1610,31 @@ asv_tab_all_bloo_z_tax$asv_num_f <-  factor(asv_tab_all_bloo_z_tax$asv_num_f,
                                                                                                  asv_tab_all_bloo_z_tax$family_f)]), 
                                             ordered=TRUE)
 
-asv_tab_all_bloo_z_tax |>
-  dplyr::filter(asv_num == 'asv38') |>
-  dplyr::filter(abundance_type == 'relative_abundance') |>
-  dplyr::select(z_score_ra, date, asv_num, abundance_value, location, fraction) |>
-  dplyr::mutate(infinit_color = if_else(z_score_ra == 'Inf',  '#9F0011', '#080808', missing = '#080808')) |>
-  ggplot(aes(date, abundance_value, color = infinit_color))+
-  scale_color_identity()+
-  geom_line(aes(date, abundance_value, group = location))+
-  geom_point(aes(color = infinit_color))+
-  facet_wrap(vars(fraction))+
-  theme_bw()+
-  theme(legend.position = 'rigth')
-
-asv_tab_all_bloo_z_tax |>
-  dplyr::filter(asv_num == 'asv1') |>
-  dplyr::filter(abundance_type == 'relative_abundance') |>
-  dplyr::select(z_score_ra, date, asv_num, abundance_value, location, fraction) |>
-  dplyr::mutate(infinit_color = if_else(z_score_ra == 'Inf',  '#9F0011', '#080808', missing = '#080808')) |>
-  ggplot(aes(date, abundance_value, color = infinit_color))+
-  scale_color_identity()+
-  geom_line(aes(date, abundance_value, group = location))+
-  geom_point(aes(color = infinit_color))+
-  facet_wrap(vars(fraction))+
-  theme_bw()+
-  theme(legend.position = 'rigth')
+# asv_tab_all_bloo_z_tax |>
+#   dplyr::filter(asv_num == 'asv38') |>
+#   dplyr::filter(abundance_type == 'relative_abundance') |>
+#   dplyr::select(z_score_ra, date, asv_num, abundance_value, location, fraction) |>
+#   dplyr::mutate(infinit_color = if_else(z_score_ra == 'Inf',  '#9F0011', '#080808', missing = '#080808')) |>
+#   ggplot(aes(date, abundance_value, color = infinit_color))+
+#   scale_color_identity()+
+#   geom_line(aes(date, abundance_value, group = location))+
+#   geom_point(aes(color = infinit_color))+
+#   facet_wrap(vars(fraction))+
+#   theme_bw()+
+#   theme(legend.position = 'rigth')
+# 
+# asv_tab_all_bloo_z_tax |>
+#   dplyr::filter(asv_num == 'asv1') |>
+#   dplyr::filter(abundance_type == 'relative_abundance') |>
+#   dplyr::select(z_score_ra, date, asv_num, abundance_value, location, fraction) |>
+#   dplyr::mutate(infinit_color = if_else(z_score_ra == 'Inf',  '#9F0011', '#080808', missing = '#080808')) |>
+#   ggplot(aes(date, abundance_value, color = infinit_color))+
+#   scale_color_identity()+
+#   geom_line(aes(date, abundance_value, group = location))+
+#   geom_point(aes(color = infinit_color))+
+#   facet_wrap(vars(fraction))+
+#   theme_bw()+
+#   theme(legend.position = 'rigth')
 
 asv_tab_all_bloo_z_tax$season <- asv_tab_all_bloo_z_tax$season |>
   factor(levels = c('winter', 'spring', 'summer', 'autumn'))
@@ -2008,7 +2008,7 @@ asv_tab_all_bloo_z_tax |>
 
 library(ggforce)
 library(scales)
-bloomers_b
+
 bmo <- asv_tab_all_bloo_z_tax |>
   #left_join(m_3, by = 'sample_id') |>
   #left_join(tax_bbmo_10y, by = 'asv_num') |>
@@ -2029,7 +2029,7 @@ bmo <- asv_tab_all_bloo_z_tax |>
   geom_line(aes(group = fraction, color = class))+
   geom_point(aes(color = class, shape = fraction), size = 0.9)+
   scale_y_continuous(labels = percent_format())+
-  labs(x = 'Time', y = 'Relative abundance (%)', color = 'Class', shape = 'Fraction')+
+  labs(x = 'Time', y = 'Relative <- (%)', color = 'Class', shape = 'Fraction')+
   scale_color_manual(values = palette_class_assigned_bloo)+
   #facet_grid(fraction~abundance_type, scales = 'free')+
   #facet_grid(asv_num~fraction)+
@@ -2046,13 +2046,13 @@ bmo <- asv_tab_all_bloo_z_tax |>
 #         path = 'Results/Figures/',
 #         width = 180, height = 230, units = 'mm')
 
-n <- n_pages(bloomers_bbmo)
-
-pdf('bloomers_bbmo_2.pdf', paper= 'A4', w= 210/25.4, 297/25.4)
-for(i in 1:n){
-  print(bloomers_bbmo + facet_wrap_paginate(vars(family_asv_num), ncol = 2, nrow = 3, page = i))
-}
-dev.off()
+# n <- n_pages(bloomers_bbmo)
+# 
+# pdf('bloomers_bbmo_2.pdf', paper= 'A4', w= 210/25.4, 297/25.4)
+# for(i in 1:n){
+#   print(bloomers_bbmo + facet_wrap_paginate(vars(family_asv_num), ncol = 2, nrow = 3, page = i))
+# }
+# dev.off()
 
 ### Plot blooming events with geom_area during the whole timeseries----
 asv_tab_all_bloo_z_tax <- asv_tab_all_bloo_z_tax |>
@@ -2254,13 +2254,70 @@ bbmo_bloo_ev_order <- asv_tab_all_bloo_z_tax |>
         panel.grid.major = element_blank(), strip.text = element_text(size = 7),
         legend.position = 'bottom', axis.text.y = element_text(size = 8),
         axis.title = element_text(size = 8), strip.background = element_blank(), 
-        legend.text = element_text(size = 7), legend.title = element_text(size = 8), strip.placement = 'outside')  
+        legend.text = element_text(size = 7), legend.title = element_text(size = 8), strip.placement = 'outside',
+        plot.margin = margin(2,5,0,5))  
 
 # ggsave('bbmo_bloo_ev_order.pdf', bbmo_bloo_ev_order,
 #        path = '~/Documentos/Doctorat/BBMO/BBMO_bloomers/Results/Figures/',
 #        width = 230,
 #        height = 180,
 #        units = 'mm')
+
+## I would like to add some information to the Order plot
+#### where are the blooming events
+# library(forcats)
+bloom_event <- asv_tab_all_bloo_z_tax |>
+  dplyr::mutate(bloom_event = case_when(abundance_type == 'relative_abundance' &
+                  abundance_value >= 0.1 &
+                  z_score_ra > 1.96 ~ 1,
+                  TRUE ~ 0)) |>
+  filter(bloom_event != 0) |>
+  ggplot(aes(date, fct_rev(fraction)))+
+  geom_point(aes(size = bloom_event))+
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0)
+                   #limits = c(min(asv_tab_all_bloo_z_tax$date), max(asv_tab_all_bloo_z_tax$date),
+                   #limits = c(as.POSIXct(2004-01-26, origin = '2004-01-26'), as.POSIXct(2014-01-01, origin = '2014-01-01'))
+  )+
+  scale_size_continuous(breaks = c(0, 1), range = c(0,0.5))+
+  scale_y_discrete(labels = labs_fraction)+
+  labs(y = 'Fraction', x =  'Time', size = 'Bloom event')+
+  theme_bw()+
+  theme(axis.text.y = element_text(angle = 90, hjust = 0.5), legend.position = 'none',
+        panel.grid = element_blank(), panel.border = element_blank(),
+        plot.margin = margin(0,20,0,20),
+        text = element_text(size = 6))
+
+
+abundance <- asv_tab_all_bloo_z_tax |>
+dplyr::select(date, bacteria_joint) |>
+  ggplot(aes(date, bacteria_joint))+
+ # geom_point()+
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0)
+                   #limits = c(min(asv_tab_all_bloo_z_tax$date), max(asv_tab_all_bloo_z_tax$date),
+                   #limits = c(as.POSIXct(2004-01-26, origin = '2004-01-26'), as.POSIXct(2014-01-01, origin = '2014-01-01'))
+  )+
+ geom_line()+
+  scale_y_continuous(labels = label_scientific())+
+  labs(y = 'Total abundance', x =  'Time', size = 'Bloom event')+
+  theme_bw()+
+  theme(axis.text.y = element_text(angle = 90, hjust = 0.5), legend.position = 'bottom',
+        panel.grid = element_blank(), panel.border = element_blank(),
+        plot.margin = margin(0,20,0,20),
+        text = element_text(size = 6))
+  
+
+composition_of_plots <- grid.arrange(bbmo_bloo_ev_order,
+                                     bloom_event,
+                                     abundance,
+                                     ncol = 1,
+                                     nrow = 5,
+                                     heights = c(3, 1, 1, 1, 1))
+
+# ggsave(composition_of_plots, 
+#       file = 'results/figures/bloo_events_order_abund.pdf',
+#       width = 230,
+#              height = 250,
+#              units = 'mm')
 
 ##same plot divided by classes----
 bbmo_bloo_ev_order_facet <- asv_tab_all_bloo_z_tax |>

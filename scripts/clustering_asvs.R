@@ -5,7 +5,7 @@ library(ggdendro)
 library(gridExtra) ## combine the dendogram and the heatmap
 library(factoextra) ## visualize hierarchical clusters
 
-### (I'm using this approximation)------
+### (I'm not using this approximation)------
 ## Fuzzy C-Means
 ### FCM is a soft clustering alogrithm proposed by Bezdek. Unlike K-means algorithm in which each data object is the
 ### the member of only one cluster, a data object is the member of all clusters with varyinh degrees of fuzzy membership
@@ -264,6 +264,7 @@ library(factoextra) ## visualize hierarchical clusters
 #                                               "Cluster 4" > "Clutser 1" & "Cluster 4" > "Clutser 2" & "Cluster 4" > "Clutser 3" ~ 'cluster_4'))
 
 
+
 ### Another way of clustering could be using the Wavelet results----
 ### Using the Euclidean distances then the Ward Hierarchical clustering using the results obtained from the wavelets and then cross correlate them----
 ## Cross-correlation functions provide a measure of association between signals. When two time series data sets are cross-correlated, a measure
@@ -277,8 +278,8 @@ library(factoextra) ## visualize hierarchical clusters
 # I use the dataset that has the results with wavelets analysis without removing all samples that could be affected by the margin effects but some were
 ## trying to reduce the bias but not completely
 
-wavelets_result_tibble_tax_3_biased <- read.csv2('data/wavelets_analysis/wavelets_result_ed_tibble_tax_3_biased_red.csv')
-wavelets_result_tibble_tax_02_biased <- read.csv2('data/wavelets_analysis/wavelets_result_ed_tibble_tax_02_biased_red.csv')
+wavelets_result_tibble_tax_3_biased <- read.csv('../data/wavelets_analysis/wavelets_result_ed_tibble_tax_3_biased_red.csv')
+wavelets_result_tibble_tax_02_biased <- read.csv('../data/wavelets_analysis/wavelets_result_ed_tibble_tax_02_biased_red.csv')
 
 asv_tab_all_bloo_z_tax <- read.csv2('data/detect_bloo/asv_tab_all_bloo_z_tax_new_assign_checked.csv') ##using dada2 classifier assign tax with silva 138.1
 
@@ -639,19 +640,20 @@ composition_of_plots <- grid.arrange(dendro,
 # Close the PDF device
 dev.off()
 
-
 ## Visualize the clusters and try to identify some groups to label them----
 # Cut tree into 4 groups
 sub_grp_1 <- cutree(hc1, k = 6)
 sub_grp_2 <- cutree(hc2, k = 6)
 sub_grp_3 <- cutree(hc3, k = 6)
 sub_grp_4 <- cutree(hc4, k = 6)
+sub_grp_5 <- cutree(hc4, k = 6)
 
 # Number of members in each cluster
 table(sub_grp_1)
 table(sub_grp_2)
 table(sub_grp_3)
 table(sub_grp_4)
+table(sub_grp_5)
 
 df_1 <- time_series_1 |>
   dplyr::select(-decimal_date) |>
@@ -673,9 +675,76 @@ df_4 <- time_series_4|>
   na.omit() %>%
   t()
 
+df_5 <- time_series_5|>
+  dplyr::select(-decimal_date) |>
+  na.omit() %>%
+  t()
+
+palette_clustering <- c("#ffe37e",
+"#ff7763",
+"#e5a0be",
+"#c23939",
+"#4cb76a",
+"#518535",
+"#804c90",
+"#6c97c3",
+"#2b347a")
+
+fviz_cluster(list(data = df_1, cluster = sub_grp_1))+
+  scale_color_manual(values = palette_clustering)+
+  scale_fill_manual(values = palette_clustering)+
+  theme_bw()+
+  labs(title = '')+
+  theme(text = element_text(size = 6))
+
+fviz_cluster(list(data = df_2 , cluster = sub_grp_2))+
+  scale_color_manual(values = palette_clustering)+
+  scale_fill_manual(values = palette_clustering)+
+  theme_bw()+
+  labs(title = '')+
+  theme(text = element_text(size = 6))
+
+fviz_cluster(list(data = df_3 , cluster = sub_grp_3))+
+  scale_color_manual(values = palette_clustering)+
+  scale_fill_manual(values = palette_clustering)+
+  theme_bw()+
+  labs(title = '')+
+  theme(text = element_text(size = 6))
+
+fviz_cluster(list(data = df_4 , cluster = sub_grp_4))+
+  scale_color_manual(values = palette_clustering)+
+  scale_fill_manual(values = palette_clustering)+
+  theme_bw()+
+  labs(title = '')+
+  theme(text = element_text(size = 6))
+
+fviz_cluster(list(data = df_5 , cluster = sub_grp_5))+
+  scale_color_manual(values = palette_clustering)+
+  scale_fill_manual(values = palette_clustering)+
+  theme_bw()+
+  labs(title = '')+
+  theme(text = element_text(size = 6))
 
 
-fviz_cluster(list(data = df , cluster = sub_grp))
+###table with the label corresponding to their signals-------
+### for each transformation used each bloomer has a different label only if it gives a clear strong signal 
+#### this table will contain the asv num + for each transformation which label did it got
+
+###The most important signals for our dataset have been the d1, d3, and s5 they are the ones that we will use for 
+### labeling the bloomers.
+df_5 |>
+  str()
+
+sub_grp_5 |>
+  str()
+
+
+## With this analysis we will pick a representative of each group to perform the random tree analysis-----
+
+
+
+
+
 
 ### The same for the FL fraction----
 time_series_1 <- wavelets_result_tibble_tax_02_biased |>
@@ -1027,6 +1096,82 @@ composition_of_plots <- grid.arrange(dendro,
 # Close the PDF device
 dev.off()
 
+## Visualize the clusters and try to identify some groups to label them----
+# Cut tree into 4 groups
+sub_grp_1 <- cutree(hc1, k = 6)
+sub_grp_2 <- cutree(hc2, k = 6)
+sub_grp_3 <- cutree(hc3, k = 6)
+sub_grp_4 <- cutree(hc4, k = 6)
+sub_grp_5 <- cutree(hc4, k = 6)
+
+# Number of members in each cluster
+table(sub_grp_1)
+table(sub_grp_2)
+table(sub_grp_3)
+table(sub_grp_4)
+table(sub_grp_5)
+
+df_1 <- time_series_1 |>
+  dplyr::select(-decimal_date) |>
+  na.omit() %>%
+  t()
+
+df_2 <- time_series_2 |>
+  dplyr::select(-decimal_date) |>
+  na.omit() %>%
+  t()
+
+df_3 <- time_series_3|>
+  dplyr::select(-decimal_date) |>
+  na.omit() %>%
+  t()
+
+df_4 <- time_series_4|>
+  dplyr::select(-decimal_date) |>
+  na.omit() %>%
+  t()
+
+df_5 <- time_series_5|>
+  dplyr::select(-decimal_date) |>
+  na.omit() %>%
+  t()
+
+fviz_cluster(list(data = df_1, cluster = sub_grp_1))+
+  scale_color_manual(values = palette_clustering)+
+  scale_fill_manual(values = palette_clustering)+
+  theme_bw()+
+  labs(title = '')+
+  theme(text = element_text(size = 6))
+
+fviz_cluster(list(data = df_2 , cluster = sub_grp_2))+
+  scale_color_manual(values = palette_clustering)+
+  scale_fill_manual(values = palette_clustering)+
+  theme_bw()+
+  labs(title = '')+
+  theme(text = element_text(size = 6))
+
+fviz_cluster(list(data = df_3 , cluster = sub_grp_3))+
+  scale_color_manual(values = palette_clustering)+
+  scale_fill_manual(values = palette_clustering)+
+  theme_bw()+
+  labs(title = '')+
+  theme(text = element_text(size = 6))
+
+fviz_cluster(list(data = df_4 , cluster = sub_grp_4))+
+  scale_color_manual(values = palette_clustering)+
+  scale_fill_manual(values = palette_clustering)+
+  theme_bw()+
+  labs(title = '')+
+  theme(text = element_text(size = 6))
+
+fviz_cluster(list(data = df_5 , cluster = sub_grp_5))+
+  scale_color_manual(values = palette_clustering)+
+  scale_fill_manual(values = palette_clustering)+
+  theme_bw()+
+  labs(title = '')+
+  theme(text = element_text(size = 6))
+
+
 ## Cross-correlation for the PA fraction----
 ## data preparation rows are observations and columns are variables----
 time_series_1 <- wavelets_result_tibble_tax_3_biased |>
@@ -1053,6 +1198,15 @@ time_series_3 <- wavelets_result_tibble_tax_3_biased |>
   dplyr::mutate(asv_f = paste0(family,'.',asv_num)) |>
   dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus)) |>
   dplyr::filter(wavelets_transformation == 'd3' ) |>
+  dplyr::select(-wavelets_transformation) |>
+  pivot_wider(names_from = asv_f, values_from = wavelets_result_ed)
+
+time_series_4 <- wavelets_result_tibble_tax_3_biased |>
+  dplyr::select(decimal_date, wavelets_result_ed, asv_num, wavelets_transformation) |>
+  left_join(tax_bbmo_10y_new, by = 'asv_num') |>
+  dplyr::mutate(asv_f = paste0(family,'.',asv_num)) |>
+  dplyr::select(-c(family, asv_num, seq, class, order, family, domain, phylum, genus)) |>
+  dplyr::filter(wavelets_transformation == 'd4' ) |>
   dplyr::select(-wavelets_transformation) |>
   pivot_wider(names_from = asv_f, values_from = wavelets_result_ed)
 
@@ -1636,7 +1790,10 @@ for (taxon in unique_taxa) {
 }
 
 
+
 ##### CLUSTERING ENVIRONMENTAL VARIABLES AND CROSSCOREATE THEM WITH ASVs (USING WAVELETS RESULTS)------
+wavelets_result_env_tibble_red <- wavelets_result_env_tibble_red |>
+  dplyr::mutate(environmental_variable = str_replace(environmental_variable,'_no_nas',''))
 
 ### Prepare the environmental data----
 time_series_env_1 <- wavelets_result_env_tibble_red |>
@@ -1745,11 +1902,12 @@ heatmap_data_l$env_var <- factor(x = heatmap_data_l$env_var,
 
 heatmap_plot <- heatmap_data_l |>
   ggplot( aes(x = as.numeric(sample_num), y = env_var)) +
-  geom_tile(aes(fill = value)) +
+  geom_tile(aes(fill = as.numeric(value))) +
   scale_fill_gradient2(low = "navy", mid = "white", high = "red", midpoint = 0)+
   theme(axis.text.y = element_text(size = 6))+
   scale_x_continuous(expand = c(0, 0), breaks = c(1,   13,   25,   37,   49,   61,   73,   85,   97,  109), 
                      labels =  year_labels) +
+  scale_y_discrete(labels = labs_env)+
   labs(x = 'Time (Years)', y = '', fill = 'Wavelet\nresult')+
   theme_bw()+
   theme(panel.grid = element_blank(), legend.position = 'right',
@@ -1773,19 +1931,20 @@ heatmap_data_l$env_var <- factor(x = heatmap_data_l$env_var,
 
 heatmap_plot <- heatmap_data_l |>
   ggplot( aes(x = as.numeric(sample_num), y = env_var)) +
-  geom_tile(aes(fill = value)) +
+  geom_tile(aes(fill = as.numeric(value))) +
   scale_fill_gradient2(low = "navy", mid = "white", high = "red", midpoint = 0)+
   theme(axis.text.y = element_text(size = 6))+
   scale_x_continuous(expand = c(0, 0), breaks = c(1,   13,   25,   37,   49,   61,   73,   85,   97,  109), 
                      labels =  year_labels) +
   labs(x = 'Time (Years)', y = '', fill = 'Wavelet\nresult')+
+  scale_y_discrete(labels = labs_env)+
   theme_bw()+
   theme(panel.grid = element_blank(), legend.position = 'right',
         axis.text.y = element_text(size = 5), text = element_text(size = 5),
         panel.border = element_blank(),  legend.key.size = unit(4, 'mm'))
 
 ### d3------
-heatmap_data_l <- time_series_env_1 |>
+heatmap_data_l <- time_series_env_3 |>
   dplyr::mutate(sample_num = row_number()) |>
   pivot_longer(cols = -c(decimal_date, sample_num), names_to = 'env_var')
 
@@ -1801,19 +1960,20 @@ heatmap_data_l$env_var <- factor(x = heatmap_data_l$env_var,
 
 heatmap_plot <- heatmap_data_l |>
   ggplot( aes(x = as.numeric(sample_num), y = env_var)) +
-  geom_tile(aes(fill = value)) +
+  geom_tile(aes(fill = as.numeric(value))) +
   scale_fill_gradient2(low = "navy", mid = "white", high = "red", midpoint = 0)+
   theme(axis.text.y = element_text(size = 6))+
   scale_x_continuous(expand = c(0, 0), breaks = c(1,   13,   25,   37,   49,   61,   73,   85,   97,  109), 
                      labels =  year_labels) +
   labs(x = 'Time (Years)', y = '', fill = 'Wavelet\nresult')+
+  scale_y_discrete(labels = labs_env)+
   theme_bw()+
   theme(panel.grid = element_blank(), legend.position = 'right',
         axis.text.y = element_text(size = 5), text = element_text(size = 5),
         panel.border = element_blank(),  legend.key.size = unit(4, 'mm'))
 
 ### d4------
-heatmap_data_l <- time_series_env_1 |>
+heatmap_data_l <- time_series_env_4 |>
   dplyr::mutate(sample_num = row_number()) |>
   pivot_longer(cols = -c(decimal_date, sample_num), names_to = 'env_var')
 
@@ -1829,19 +1989,20 @@ heatmap_data_l$env_var <- factor(x = heatmap_data_l$env_var,
 
 heatmap_plot <- heatmap_data_l |>
   ggplot( aes(x = as.numeric(sample_num), y = env_var)) +
-  geom_tile(aes(fill = value)) +
+  geom_tile(aes(fill = as.numeric(value))) +
   scale_fill_gradient2(low = "navy", mid = "white", high = "red", midpoint = 0)+
   theme(axis.text.y = element_text(size = 6))+
   scale_x_continuous(expand = c(0, 0), breaks = c(1,   13,   25,   37,   49,   61,   73,   85,   97,  109), 
                      labels =  year_labels) +
   labs(x = 'Time (Years)', y = '', fill = 'Wavelet\nresult')+
+  scale_y_discrete(labels = labs_env)+
   theme_bw()+
   theme(panel.grid = element_blank(), legend.position = 'right',
         axis.text.y = element_text(size = 5), text = element_text(size = 5),
         panel.border = element_blank(),  legend.key.size = unit(4, 'mm'))
 
 ### s4------
-heatmap_data_l <- time_series_env_1 |>
+heatmap_data_l <- time_series_env_5 |>
   dplyr::mutate(sample_num = row_number()) |>
   pivot_longer(cols = -c(decimal_date, sample_num), names_to = 'env_var')
 
@@ -1857,125 +2018,493 @@ heatmap_data_l$env_var <- factor(x = heatmap_data_l$env_var,
 
 heatmap_plot <- heatmap_data_l |>
   ggplot( aes(x = as.numeric(sample_num), y = env_var)) +
-  geom_tile(aes(fill = value)) +
+  geom_tile(aes(fill = as.numeric(value))) +
   scale_fill_gradient2(low = "navy", mid = "white", high = "red", midpoint = 0)+
   theme(axis.text.y = element_text(size = 6))+
   scale_x_continuous(expand = c(0, 0), breaks = c(1,   13,   25,   37,   49,   61,   73,   85,   97,  109), 
                      labels =  year_labels) +
   labs(x = 'Time (Years)', y = '', fill = 'Wavelet\nresult')+
+  scale_y_discrete(labels = labs_env)+
   theme_bw()+
   theme(panel.grid = element_blank(), legend.position = 'right',
         axis.text.y = element_text(size = 5), text = element_text(size = 5),
         panel.border = element_blank(),  legend.key.size = unit(4, 'mm'))
 
 
+# PERFORM THE CROSS-CORRELATIONS BETWEEN ENVIRONMENTAL VARIABLES AND ASVs AT DIFFERENT TRANSFORMATIONS-----
 
+## FL----
+time_series_fl_1 <- time_series_1 
 
-## CREAE A LOOP TO PERFORM THE CROSS-CORRELATIONS BETWEEN ENVIRONMENTAL VARIABLES AND ASVs AT DIFFERENT TRANSFORMATIONS-----
+time_series_fl_2 <- time_series_2
 
-## first we do it for just two matrices d1-d1_env for example 
+time_series_fl_3 <- time_series_3 
 
-## if I do it without calculating the distances it works but if I use the Euclidean distances then it doesn't work (maybe it is related to the dimensions)
-## Try to understand why.
+time_series_fl_4 <- time_series_4 
 
-#### we sure that the tibbles are ordered in the same way. 
-time_series_1_mat <- time_series_1 |>
-  dplyr::select(-decimal_date) |>
-  dplyr::filter(if_all(everything(), ~ !is.na(.))) |>
-  as.matrix()
+time_series_fl_5 <- time_series_5 
 
-time_series_env_1_mat <- time_series_env_1 |>
-  dplyr::select(-decimal_date) |>
-  dplyr::filter(!is.na(any())) %>%
-  dplyr::filter(rowSums(is.na(.)) == NA)) |>
-  as.matrix()
+### D1 comparison-----
+time_series_1$decimal_date == time_series_env_1$decimal_date # we sure that the tibbles are ordered in the same way. 
 
-cross_correlation_matrices <- cor(time_series_1_mat, time_series_env_1_mat)
-
-# distances_env_1 <- time_series_env_1 |>
-#   #dplyr::select(-decimal_date) |>
-#   stats::dist( method = "euclidean")
-# 
-# distances_1 <- time_series_1 |>
-#   #dplyr::select(-decimal_date) |>
-#   #t() |>
-#   stats::dist( method = "euclidean")
-# 
-# distances_env_2 <- time_series_env_2 |>
-#   #dplyr::select(-decimal_date) |>
-#   stats::dist( method = "euclidean")
-# 
-# distances_2 <- time_series_2 |>
-#   #dplyr::select(-decimal_date) |>
-#   stats::dist( method = "euclidean")
-# 
-# distances_env_2 <- time_series_env_2 |>
-#   #dplyr::select(-decimal_date) |>
-#   stats::dist( method = "euclidean")
-# 
-# distances_2 <- time_series_2 |>
-#   #dplyr::select(-decimal_date) |>
-#   stats::dist( method = "euclidean")
-
-# 
-# distances_1 <- distances_1 |>
-#   as.matrix()
-#   
-# distances_env_1 <- distances_env_1 |>
-#   as.matrix() 
-# 
-# distances_2 <- distances_2 |>
+# time_series_1_mat <- time_series_1 |>
+#   dplyr::select(-decimal_date) |>
+#   dplyr::filter(if_all(everything(), ~ !is.na(.))) |>
 #   as.matrix()
 # 
-# distances_env_2 <- distances_env_2 |>
-#   as.matrix()
+# time_series_env_1 <- time_series_env_1 |>
+#   mutate_if(is.character, as.numeric) 
 # 
-# distances_env_3 <- distances_env_3 |>
+# time_series_env_1_mat <- time_series_env_1 |>
+#   dplyr::select(-decimal_date) |>
+#   mutate_if(is.character, as.numeric) |>
+#   dplyr::filter(if_all(everything(), ~ !is.na(.))) |>
 #   as.matrix()
-# 
-# distances_env_4 <- distances_env_4  |>
-#   as.matrix()
-# 
-# distances_env_5 <- distances_env_5 |>
-#   as.matrix()
-
-
-
-hc_list <- hclust(as.dist(1 - cross_correlation_matrices), method = "ward.D")
 
 time_series_env_1_ed <-  time_series_env_1 |>
-  dplyr::select(-decimal_date)
+  mutate_if(is.character, as.numeric) |>
+  dplyr::select(-decimal_date) |>
+  dplyr::filter(if_all(everything(), ~ !is.na(.)))
 
-time_series_1_ed <- time_series_1 |>
-  dplyr::select(-decimal_date)
+time_series_fl_1_ed <- time_series_fl_1 |>
+  dplyr::select(-decimal_date) |>
+  dplyr::filter(if_all(everything(), ~ !is.na(.)))
 
-cor_1 <- cor(time_series_1_ed, time_series_env_1_ed) |>
+dim(time_series_env_1_ed) == dim(time_series_fl_1_ed) ##the first needs to be true
+
+cor_1 <- cor(time_series_fl_1_ed, time_series_env_1_ed) |>
   melt()
 
-dim(cor_1)
+cross_correlation_matrices <- cor(time_series_fl_1_ed, time_series_env_1_ed)
 
-clust <- hclust(distances_1, method = 'ward.D') |>
-  as.dendrogram()
+pdf(file = "results/figures/cross_corr_wavelets_env/cross_corr_env_fl_d1.pdf", width = 14, height = 14)  # Adjust width and height as needed
 
-asv_order <- order.dendrogram(clust)
+cross_corr_env_fl_d1 <- heatmap(cross_correlation_matrices, 
+                                Rowv = as.dendrogram(hc_fl_1), 
+                                Colv = as.dendrogram(hc1_env),
+                                col = colorRampPalette(c("navy", "white", "red"))(25),
+                                scale = "none",
+                                #labCol = labs_env, 
+                                #main = paste("Cross-correlation (0.2)", name),
+                                xlab = '', 
+                                ylab = '',
+                                margins = c(6, 12),
+                                cexRow = 0.8,  # Adjust the size of row labels
+                                cexCol = 0.8)  # Adjust the size of column labels
 
-dendro <- ggdendrogram(data = clust)+
-  scale_y_reverse()+
-  theme(axis.text.y = element_text(size = 0), text = element_text(size = 5))
+dev.off()
 
-cor_1$Var1 <- factor(x = cor_1$Var1,
-                                 levels = cor_1$Var1[asv_order], 
-                                 ordered = TRUE)
+# Add color legend
+# image.plot(x = c(-1, 1), y = c(-1, 1), z = matrix(seq(-1, 1, length.out = 10), nrow = 1),
+#            col = colorRampPalette(c("navy", "white", "red"))(100),
+#            zlim = c(-1, 1),
+#            legend.only = TRUE, legend.shrink = 0.6, legend.width = 0.5,
+#            legend.mar = 5, legend.lab = "Correlation values")
 
-heatmap_plot <- ggplot(cor_1, aes(x = Var1, y = Var2, fill = value))+
-  geom_tile()+
-  scale_fill_gradient2(low = "navy", mid = "white", high = "red", midpoint = 0, limits = c(-1, 1))+
-  theme(axis.text.y = element_text(size = 6))+
-  theme_bw()+
-  theme(panel.grid = element_blank(), legend.position = 'right',
-        axis.text.y = element_text(size = 5), text = element_text(size = 5),
-        panel.border = element_blank(),  legend.key.size = unit(4, 'mm'),
-        axis.text.x = element_text(angle = 45, hjust = 1))
-  
 
-grid.arrange(heatmap_plot, dendro)
+#### D2 comparison----
+time_series_fl_2$decimal_date == time_series_env_2$decimal_date # we sure that the tibbles are ordered in the same way. 
+
+time_series_env_2_ed <-  time_series_env_2 |>
+  dplyr::select(-decimal_date) |>
+  mutate_if(is.character, as.numeric) |>
+  dplyr::filter(if_all(everything(), ~ !is.na(.)))
+
+time_series_fl_2_ed <- time_series_fl_2 |>
+  dplyr::select(-decimal_date) |>
+  dplyr::filter(if_all(everything(), ~ !is.na(.)))
+
+dim(time_series_env_2_ed) == dim(time_series_fl_2_ed) ##the first needs to be true
+
+cor_2 <- cor(time_series_fl_2_ed, time_series_env_2_ed) |>
+  melt()
+
+cross_correlation_matrices <- cor(time_series_fl_2_ed, time_series_env_2_ed)
+
+heatmap(cross_correlation_matrices, Rowv = as.dendrogram(hc_fl_2), Colv = as.dendrogram(hc2_env),
+        col = colorRampPalette(c("navy", "white", "red"))(25),
+        scale = "none",
+        #labCol = labs_env, 
+        #main = paste("Cross-correlation (0.2)", name),
+        xlab = '', ylab = '')
+
+pdf(file = "results/figures/cross_corr_wavelets_env/cross_corr_env_fl_d2.pdf", width = 14, height = 14)  # Adjust width and height as needed
+
+cross_corr_env_fl_d2 <- heatmap(cross_correlation_matrices, 
+                                Rowv = as.dendrogram(hc_fl_2), 
+                                Colv = as.dendrogram(hc2_env),
+                                col = colorRampPalette(c("navy", "white", "red"))(25),
+                                scale = "none",
+                                #labCol = labs_env, 
+                                #main = paste("Cross-correlation (0.2)", name),
+                                xlab = '', 
+                                ylab = '',
+                                margins = c(6, 12),
+                                cexRow = 0.8,  # Adjust the size of row labels
+                                cexCol = 0.8)  # Adjust the size of column labels
+dev.off()
+
+#### D3 comparison----
+time_series_fl_3$decimal_date == time_series_env_3$decimal_date # we sure that the tibbles are ordered in the same way. 
+
+time_series_env_3_ed <-  time_series_env_3 |>
+  dplyr::select(-decimal_date) |>
+  mutate_if(is.character, as.numeric) |>
+  dplyr::filter(if_all(everything(), ~ !is.na(.)))
+
+time_series_fl_3_ed <- time_series_fl_3 |>
+  dplyr::select(-decimal_date) |>
+  dplyr::filter(if_all(everything(), ~ !is.na(.)))
+
+dim(time_series_env_3_ed) == dim(time_series_fl_3_ed) ##the first needs to be true
+
+cor_3 <- cor(time_series_fl_3_ed, time_series_env_3_ed) |>
+  melt()
+
+cross_correlation_matrices <- cor(time_series_fl_3_ed, time_series_env_3_ed)
+
+heatmap(cross_correlation_matrices, Rowv = as.dendrogram(hc_fl_3), Colv = as.dendrogram(hc3_env),
+        col = colorRampPalette(c("navy", "white", "red"))(35),
+        scale = "none",
+        #labCol = labs_env, 
+        #main = paste("Cross-correlation (0.3)", name),
+        xlab = '', ylab = '')
+
+pdf(file = "../results/figures/cross_corr_wavelets_env/cross_corr_env_fl_d3.pdf", width = 14, height = 14)  # Adjust width and height as needed
+
+cross_corr_env_fl_d3 <- heatmap(cross_correlation_matrices, 
+                                Rowv = as.dendrogram(hc_fl_3), 
+                                Colv = as.dendrogram(hc3_env),
+                                col = colorRampPalette(c("navy", "white", "red"))(25),
+                                scale = "none",
+                                #labCol = labs_env, 
+                                #main = paste("Cross-correlation (0.2)", name),
+                                xlab = '', 
+                                ylab = '',
+                                margins = c(6, 12),
+                                cexRow = 0.8,  # Adjust the size of row labels
+                                cexCol = 0.8)  # Adjust the size of column labels
+dev.off()
+
+#### D4 comparison----
+time_series_fl_4$decimal_date == time_series_env_4$decimal_date # we sure that the tibbles are ordered in the same way. 
+
+time_series_env_4_ed <-  time_series_env_4 |>
+  dplyr::select(-decimal_date) |>
+  mutate_if(is.character, as.numeric) |>
+  dplyr::filter(if_all(everything(), ~ !is.na(.)))
+
+time_series_fl_4_ed <- time_series_fl_4 |>
+  dplyr::select(-decimal_date) |>
+  dplyr::filter(if_all(everything(), ~ !is.na(.)))
+
+dim(time_series_env_4_ed) == dim(time_series_fl_4_ed) ##the first needs to be true
+
+cor_4 <- cor(time_series_fl_4_ed, time_series_env_4_ed) |>
+  melt()
+
+cross_correlation_matrices <- cor(time_series_fl_4_ed, time_series_env_4_ed)
+
+heatmap(cross_correlation_matrices, Rowv = as.dendrogram(hc_fl_4), Colv = as.dendrogram(hc4_env),
+        col = colorRampPalette(c("navy", "white", "red"))(45),
+        scale = "none",
+        #labCol = labs_env, 
+        #main = paste("Cross-correlation (0.4)", name),
+        xlab = '', ylab = '')+
+  theme(text = element_text(size = 6))+
+  theme_bw()
+
+pdf(file = "../results/figures/cross_corr_wavelets_env/cross_corr_env_fl_d4.pdf", width = 14, height = 14)  # Adjust width and height as needed
+
+cross_corr_env_fl_d4 <- heatmap(cross_correlation_matrices, 
+                                Rowv = as.dendrogram(hc_fl_4), 
+                                Colv = as.dendrogram(hc4_env),
+                                col = colorRampPalette(c("navy", "white", "red"))(25),
+                                scale = "none",
+                                #labCol = labs_env, 
+                                #main = paste("Cross-correlation (0.2)", name),
+                                xlab = '', 
+                                ylab = '',
+                                margins = c(6, 12),
+                                cexRow = 0.8,  # Adjust the size of row labels
+                                cexCol = 0.8)  # Adjust the size of column labels
+dev.off()
+
+#### D5 comparison----
+time_series_fl_5$decimal_date == time_series_env_5$decimal_date # we sure that the tibbles are ordered in the same way. 
+
+time_series_env_5_ed <-  time_series_env_5 |>
+  dplyr::select(-decimal_date) |>
+  mutate_if(is.character, as.numeric) |>
+  dplyr::filter(if_all(everything(), ~ !is.na(.)))
+
+time_series_fl_5_ed <- time_series_fl_5 |>
+  dplyr::select(-decimal_date) |>
+  dplyr::filter(if_all(everything(), ~ !is.na(.)))
+
+dim(time_series_env_5_ed) == dim(time_series_fl_5_ed) ##the first needs to be true
+
+cor_5 <- cor(time_series_fl_5_ed, time_series_env_5_ed) |>
+  melt()
+
+cross_correlation_matrices <- cor(time_series_fl_5_ed, time_series_env_5_ed)
+
+heatmap(cross_correlation_matrices, Rowv = as.dendrogram(hc_fl_5), Colv = as.dendrogram(hc5_env),
+        col = colorRampPalette(c("navy", "white", "red"))(55),
+        scale = "none",
+        #labCol = labs_env, 
+        #main = paste("Cross-correlation (0.5)", name),
+        xlab = '', ylab = '')+
+  theme(text = element_text(size = 6))+
+  theme_bw()
+
+pdf(file = "../results/figures/cross_corr_wavelets_env/cross_corr_env_fl_s5.pdf", width = 14, height = 14)  # Adjust width and height as needed
+
+cross_corr_env_fl_s5 <- heatmap(cross_correlation_matrices, 
+                                Rowv = as.dendrogram(hc_fl_5), 
+                                Colv = as.dendrogram(hc5_env),
+                                col = colorRampPalette(c("navy", "white", "red"))(25),
+                                scale = "none",
+                                #labCol = labs_env, 
+                                #main = paste("Cross-correlation (0.2)", name),
+                                xlab = '', 
+                                ylab = '',
+                                margins = c(6, 12),
+                                cexRow = 0.8,  # Adjust the size of row labels
+                                cexCol = 0.8)  # Adjust the size of column labels
+dev.off()
+
+
+## PA----
+time_series_pa_1 <- time_series_1 
+
+time_series_pa_2 <- time_series_2
+
+time_series_pa_3 <- time_series_3 
+
+time_series_pa_4 <- time_series_4 
+
+time_series_pa_5 <- time_series_5 
+
+#### D1 comparison----
+time_series_pa_1$decimal_date == time_series_env_1$decimal_date # we sure that the tibbles are ordered in the same way. 
+
+time_series_env_1_ed <-  time_series_env_1 |>
+  arrange(decimal_date) |>
+  mutate_if(is.character, as.numeric) |>
+  dplyr::select(-decimal_date) |>
+  dplyr::filter(if_all(everything(), ~ !is.na(.)))
+
+time_series_pa_1_ed <- time_series_pa_1 |>
+  dplyr::select(-decimal_date) |>
+  mutate_if(is.character, as.numeric) |>
+  dplyr::filter(if_all(everything(), ~ !is.na(.)))
+
+dim(time_series_env_1_ed) == dim(time_series_pa_1_ed) ##the first needs to be true
+
+cor_1 <- cor(time_series_pa_1_ed, time_series_env_1_ed) |>
+  melt()
+
+cross_correlation_matrices <- cor(time_series_pa_1_ed, time_series_env_1_ed)
+
+heatmap(cross_correlation_matrices, Rowv = as.dendrogram(hc_pa_1), Colv = as.dendrogram(hc1_env),
+        col = colorRampPalette(c("navy", "white", "red"))(25),
+        scale = "none",
+        #labCol = labs_env, 
+        #main = paste("Cross-correlation (0.2)", name),
+        xlab = '', ylab = '')
+
+# Add color legend
+image.plot(x = c(-1, 1), y = c(-1, 1), z = matrix(seq(-1, 1, length.out = 10), nrow = 1),
+           col = colorRampPalette(c("navy", "white", "red"))(100),
+           zlim = c(-1, 1),
+           legend.only = TRUE, legend.shrink = 0.6, legend.width = 0.5,
+           legend.mar = 5, legend.lab = "Correlation values")
+
+pdf(file = "results/figures/cross_corr_wavelets_env/cross_corr_env_pa_d1.pdf", width = 14, height = 14)  # Adjust width and height as needed
+
+cross_corr_env_pa_d1 <- heatmap(cross_correlation_matrices, 
+                                Rowv = as.dendrogram(hc_pa_1), 
+                                Colv = as.dendrogram(hc1_env),
+                                col = colorRampPalette(c("navy", "white", "red"))(25),
+                                scale = "none",
+                                #labCol = labs_env, 
+                                #main = paste("Cross-correlation (0.2)", name),
+                                xlab = '', 
+                                ylab = '',
+                                margins = c(6, 12),
+                                cexRow = 0.8,  # Adjust the size of row labels
+                                cexCol = 0.8)  # Adjust the size of column labels
+dev.off()
+
+#### D2 comparison----
+time_series_pa_2$decimal_date == time_series_env_2$decimal_date # we sure that the tibbles are ordered in the same way. 
+
+time_series_env_2_ed <-  time_series_env_2 |>
+  dplyr::select(-decimal_date) |>
+  mutate_if(is.character, as.numeric) |>
+  dplyr::filter(if_all(everything(), ~ !is.na(.)))
+
+time_series_pa_2_ed <- time_series_pa_2 |>
+  dplyr::select(-decimal_date) |>
+  dplyr::filter(if_all(everything(), ~ !is.na(.)))
+
+dim(time_series_env_2_ed) == dim(time_series_pa_2_ed) ##the first needs to be true
+
+cor_2 <- cor(time_series_pa_2_ed, time_series_env_2_ed) |>
+  melt()
+
+cross_correlation_matrices <- cor(time_series_pa_2_ed, time_series_env_2_ed)
+
+heatmap(cross_correlation_matrices, Rowv = as.dendrogram(hc_pa_2), Colv = as.dendrogram(hc2_env),
+        col = colorRampPalette(c("navy", "white", "red"))(25),
+        scale = "none",
+        #labCol = labs_env, 
+        #main = paste("Cross-correlation (0.2)", name),
+        xlab = '', ylab = '')
+
+pdf(file = "../results/figures/cross_corr_wavelets_env/cross_corr_env_pa_d2.pdf", width = 14, height = 14)  # Adjust width and height as needed
+
+cross_corr_env_pa_d2 <- heatmap(cross_correlation_matrices, 
+                                Rowv = as.dendrogram(hc_pa_2), 
+                                Colv = as.dendrogram(hc2_env),
+                                col = colorRampPalette(c("navy", "white", "red"))(25),
+                                scale = "none",
+                                #labCol = labs_env, 
+                                #main = paste("Cross-correlation (0.2)", name),
+                                xlab = '', 
+                                ylab = '',
+                                margins = c(6, 12),
+                                cexRow = 0.8,  # Adjust the size of row labels
+                                cexCol = 0.8)  # Adjust the size of column labels
+dev.off()
+
+#### D3 comparison----
+time_series_pa_3$decimal_date == time_series_env_3$decimal_date # we sure that the tibbles are ordered in the same way. 
+
+time_series_env_3_ed <-  time_series_env_3 |>
+  dplyr::select(-decimal_date) |>
+  mutate_if(is.character, as.numeric) |>
+  dplyr::filter(if_all(everything(), ~ !is.na(.)))
+
+time_series_pa_3_ed <- time_series_pa_3 |>
+  dplyr::select(-decimal_date) |>
+  dplyr::filter(if_all(everything(), ~ !is.na(.)))
+
+dim(time_series_env_3_ed) == dim(time_series_pa_3_ed) ##the first needs to be true
+
+cor_3 <- cor(time_series_pa_3_ed, time_series_env_3_ed) |>
+  melt()
+
+cross_correlation_matrices <- cor(time_series_pa_3_ed, time_series_env_3_ed)
+
+heatmap(cross_correlation_matrices, Rowv = as.dendrogram(hc_pa_3), Colv = as.dendrogram(hc3_env),
+        col = colorRampPalette(c("navy", "white", "red"))(35),
+        scale = "none",
+        #labCol = labs_env, 
+        #main = paste("Cross-correlation (0.3)", name),
+        xlab = '', ylab = '')
+pdf(file = "../results/figures/cross_corr_wavelets_env/cross_corr_env_pa_d3.pdf", width = 14, height = 14)  # Adjust width and height as needed
+
+cross_corr_env_pa_d3 <- heatmap(cross_correlation_matrices, 
+                                Rowv = as.dendrogram(hc_pa_3), 
+                                Colv = as.dendrogram(hc3_env),
+                                col = colorRampPalette(c("navy", "white", "red"))(25),
+                                scale = "none",
+                                #labCol = labs_env, 
+                                #main = paste("Cross-correlation (0.2)", name),
+                                xlab = '', 
+                                ylab = '',
+                                margins = c(6, 12),
+                                cexRow = 0.8,  # Adjust the size of row labels
+                                cexCol = 0.8)  # Adjust the size of column labels
+dev.off()
+
+
+#### D4 comparison----
+time_series_pa_4$decimal_date == time_series_env_4$decimal_date # we sure that the tibbles are ordered in the same way. 
+
+time_series_env_4_ed <-  time_series_env_4 |>
+  dplyr::select(-decimal_date) |>
+  mutate_if(is.character, as.numeric) |>
+  dplyr::filter(if_all(everything(), ~ !is.na(.)))
+
+time_series_pa_4_ed <- time_series_pa_4 |>
+  dplyr::select(-decimal_date) |>
+  dplyr::filter(if_all(everything(), ~ !is.na(.)))
+
+dim(time_series_env_4_ed) == dim(time_series_pa_4_ed) ##the first needs to be true
+
+cor_4 <- cor(time_series_pa_4_ed, time_series_env_4_ed) |>
+  melt()
+
+cross_correlation_matrices <- cor(time_series_pa_4_ed, time_series_env_4_ed)
+
+heatmap(cross_correlation_matrices, Rowv = as.dendrogram(hc_pa_4), Colv = as.dendrogram(hc4_env),
+        col = colorRampPalette(c("navy", "white", "red"))(45),
+        scale = "none",
+        #labCol = labs_env, 
+        #main = paste("Cross-correlation (0.4)", name),
+        xlab = '', ylab = '')+
+  theme(text = element_text(size = 6))+
+  theme_bw()
+
+pdf(file = "results/figures/cross_corr_wavelets_env/cross_corr_env_pa_d4.pdf", width = 14, height = 14)  # Adjust width and height as needed
+
+cross_corr_env_pa_d4 <- heatmap(cross_correlation_matrices, 
+                                Rowv = as.dendrogram(hc_pa_4), 
+                                Colv = as.dendrogram(hc4_env),
+                                col = colorRampPalette(c("navy", "white", "red"))(25),
+                                scale = "none",
+                                #labCol = labs_env, 
+                                #main = paste("Cross-correlation (0.2)", name),
+                                xlab = '', 
+                                ylab = '',
+                                margins = c(6, 12),
+                                cexRow = 0.8,  # Adjust the size of row labels
+                                cexCol = 0.8)  # Adjust the size of column labels
+dev.off()
+
+#### S5 comparison----
+time_series_pa_5$decimal_date == time_series_env_5$decimal_date # we sure that the tibbles are ordered in the same way. 
+
+time_series_env_5_ed <-  time_series_env_5 |>
+  dplyr::select(-decimal_date) |>
+  mutate_if(is.character, as.numeric) |>
+  dplyr::filter(if_all(everything(), ~ !is.na(.)))
+
+time_series_pa_5_ed <- time_series_pa_5 |>
+  dplyr::select(-decimal_date) |>
+  dplyr::filter(if_all(everything(), ~ !is.na(.)))
+
+dim(time_series_env_5_ed) == dim(time_series_pa_5_ed) ##the first needs to be true
+
+cor_5 <- cor(time_series_pa_5_ed, time_series_env_5_ed) |>
+  melt()
+
+cross_correlation_matrices <- cor(time_series_pa_5_ed, time_series_env_5_ed)
+
+heatmap(cross_correlation_matrices, Rowv = as.dendrogram(hc_pa_5), Colv = as.dendrogram(hc5_env),
+        col = colorRampPalette(c("navy", "white", "red"))(55),
+        scale = "none",
+        #labCol = labs_env, 
+        #main = paste("Cross-correlation (0.5)", name),
+        xlab = '', ylab = '')+
+  theme(text = element_text(size = 6))+
+  theme_bw()
+
+pdf(file = "../results/figures/cross_corr_wavelets_env/cross_corr_env_pa_s5.pdf", width = 14, height = 14)  # Adjust width and height as needed
+
+cross_corr_env_pa_s5 <- heatmap(cross_correlation_matrices, 
+                                Rowv = as.dendrogram(hc_pa_5), 
+                                Colv = as.dendrogram(hc5_env),
+                                col = colorRampPalette(c("navy", "white", "red"))(25),
+                                scale = "none",
+                                #labCol = labs_env, 
+                                #main = paste("Cross-correlation (0.2)", name),
+                                xlab = '', 
+                                ylab = '',
+                                margins = c(6, 12),
+                                cexRow = 0.8,  # Adjust the size of row labels
+                                cexCol = 0.8)  # Adjust the size of column labels
+dev.off()

@@ -3089,5 +3089,262 @@ ggsave('bloom_events_env_variables.pdf', bloom_events_env_variables,
       height = 280,
       units = 'mm')
  
-
 ## Do the same but separating no-bloom / bloom / super blooming events------
+
+## Wavelets analysis with environmental data (NO MISSING VALUES) and cross correlate ------
+library(waveslim)
+
+## dataset with al the environmental values interpolated
+env_data_interpolated_values_all_z_score 
+
+## input data
+### we need environmental variables z-scores----
+sample_id_dec_date <- asv_tab_all_bloo_z_tax_02 |>
+  dplyr::select(sample_id, decimal_date) |>
+  distinct() 
+
+env_z_wavelets_df <- env_data_interpolated_values_all_z_score |>
+  dplyr::select(-env_values) #|>
+#pivot_wider(id_cols = decimal_date, names_from = environmental_variable, values_from = z_score_environmental_variable)
+
+#### 4 steps 
+### 1. modwt computation----
+
+modwt_results_env <- env_z_wavelets_df  |>
+  group_by(environmental_variable) %>%
+  summarize(modwt_result = list(modwt.function.biased(z_score_environmental_variable)))
+
+### 2. e-folding-----
+###### commmon for all 
+x <- rep(0, 10001) 
+x[5000] <- 1 
+n.levels <- 4 
+len <- 120 ##120 (length of my dataset)
+temp <- phase.shift(modwt(x, n.levels = n.levels, wf = "la8"), wf = "la8")
+
+## The positions to the left and to the right of the maximal influence of this spike are recorded in a matrix (left, right) together with the 
+## position of the maximum itself (top).
+waveExtremes <- matrix(nrow = 3, ncol = n.levels + 1) 
+colnames(waveExtremes) <- c(paste("d", 1:n.levels, sep = ""), paste("s", n.levels,  sep = "")) 
+rownames(waveExtremes) <- c("left", "right", "top")
+
+## The distance to the maximum from both sides of the influence is determined as 1/e2 times the maximum within a specific coefficient vector.
+for (i in 1:(n.levels + 1)) waveExtremes[, i] <- c(range(which(abs(temp[[i]]) 
+                                                               >= max(abs(temp[[i]]))/(exp(2)))), which.max(abs(temp[[i]])))
+
+## The positions (waveExtremes) are used to calculate the distances to the left and to the right of the influence maximum. 
+## The distance to the left of the maximum is called "right" because it will serve to calculate the distance at the end of the series.
+
+boundaries <- data.frame(end = len - (waveExtremes[3, ] - waveExtremes[1, ]), 
+                         start = waveExtremes[2, ] - waveExtremes[3, ])
+
+### 3. Visualize the results obtained from the modwt transfomation ------
+
+### I extract the wavelets results at the same time for ALL environmental variables that I have in modwt_results -----
+
+# Initialize a list to store tibbles
+all_tibbles <- list()
+
+# Loop through the rows of modwt_results_env
+for (i in seq_len(nrow(modwt_results_env))) {
+  # Extract the current row
+  current_row <- modwt_results_env[i, ]
+  current_asv_row.number <- current_row |>
+    dplyr::mutate(row_number_asv = row_number()) |>
+    dplyr::select(row_number_asv) 
+  
+  current_asv_row.number <- current_asv_row.number$row_number_asv[1]
+  
+  # Extract environmental_variable and modwt_result list
+  current_environmental_variable <- current_row$environmental_variable
+  current_modwt_result <- current_row$modwt_result
+  
+  # Initialize a list to store tibbles for the current environmental_variable
+  d_tibbles <- list()
+  
+  # Loop through modwt_result
+  for (j in 1:5) {
+    # Extract the environmental_variable tibble
+    d_tibbles[[j]] <- current_modwt_result[[current_asv_row.number]][[j]] %>%
+      as_tibble_col(column_name = paste0("d", j))
+  }
+  
+  ##create a column with the environmental_variable
+  current_row <- current_environmental_variable %>%
+    as_tibble() |>
+    mutate(asv_name = list(rep(value, each = 120))) |>
+    unnest(asv_name) |>
+    dplyr::select(-value)
+  
+  # Combine the tibbles for the current environmental_variable
+  if (length(d_tibbles) > 0) {
+    all_tibbles[[current_environmental_variable]] <- bind_cols(d_tibbles) %>%
+      dplyr::mutate(sample_num = row_number()) %>%
+      bind_cols(current_row)
+  }
+}
+
+# Combine all the tibbles into one
+final_tibble <- bind_rows(all_tibbles)
+
+decimal_date_tibble <-  env_z_wavelets_df %$%
+  decimal_date |>
+  unique() |>
+  as_tibble_col(column_name = 'decimal_date') |>
+  dplyr::mutate(sample_num = row_number())
+
+# tax <- asv_tab_all_bloo_z_tax |>
+#   dplyr::select(environmental_variable, phylum, class, order, family, genus) |>
+#   distinct()
+
+wavelets_result_env_tibble  <-  final_tibble |>
+  pivot_longer(cols = !c(asv_name, sample_num), values_to = 'wavelets_result', names_to = 'wavelets_transformation') |>
+  left_join( decimal_date_tibble) |>
+  #left_join(tax, by = c('asv_name' = 'environmental_variable')) |>
+  rename(environmental_variable = asv_name) |>
+  dplyr::mutate(wavelets_transformation = str_replace(wavelets_transformation, 'd5', 's4'))
+
+## I remove the most afected samples by the boundaries it is less biased but still more biased than when applying the brick wall function
+## as we increase the signal the wavelet gets more affected by the margin effect
+boundaries 
+
+wavelets_result_env_tibble_red <-   wavelets_result_env_tibble |>
+  dplyr::mutate(wavelets_result_ed = case_when(wavelets_transformation == 'd1' &
+                                                 sample_num %in% c(1, 119, 120) ~ 'NA',
+                                               wavelets_transformation == 'd2' &
+                                                 sample_num %in% c(1,2,3,  117, 118, 119, 120) ~ 'NA',
+                                               wavelets_transformation == 'd3' &
+                                                 sample_num %in% c(1,2,3,4,5,6, 113,114,115,116,  117, 118, 119, 120) ~ 'NA',
+                                               wavelets_transformation == 'd4' &
+                                                 sample_num %in% c(1,2,3,4,5,6,7,8,9,10,11,12, 105,106,107,108,109,110,111,112,113,114,
+                                                                   115,116,117, 118, 119, 120) ~ 'NA',
+                                               wavelets_transformation == 's4' &
+                                                 sample_num %in% c(1,2,3,4,5,6,7,8,9,10,11,12, 
+                                                                   13,14,15,16,17,
+                                                                   108,109,110,111,112,113,114,
+                                                                   115,116,117, 118, 119, 120) ~ 'NA',
+                                               TRUE ~ as.character(wavelets_result)))
+
+### PLOT THE WAVELETS TRANSFROMATINS COMPUTED (visually inspect them, to be sure of the results)----
+wavelets_result_env_tibble_red |>
+  str()
+
+wavelets_result_env_tibble_red |>
+  ggplot(aes(as.numeric(decimal_date), as.numeric(wavelets_result_ed)))+
+  geom_col()+
+  #ggtitle(paste0(unique(wavelets_result_tibble_tax$asv_name), ' ', unique( wavelets_result_tibble_tax$family))) +
+  labs(x = 'Decimal date', y = 'Wavelets results')+
+  facet_grid(wavelets_transformation~environmental_variable)+
+  scale_x_continuous(expand = c(0,0))+
+  theme_bw()+
+  theme(panel.grid = element_blank(), strip.background = element_blank(),
+        #aspect.ratio = 4/10,
+        text = element_text(size = 5))
+
+### create a loop to save all the wavelets transformations computed and visually inspect them
+# Create a folder to save the PDF files
+dir.create("../results/figures/wavelets_plots_env/", showWarnings = T)
+
+### ENVIRONMENTAL VARIABLES
+# Get unique environmental_variable values
+environmental_variables <- unique(wavelets_result_env_tibble_red$environmental_variable)
+
+for (environmental_variable in environmental_variables) {
+  # Filter data for the current environmental_variable
+  plot_data <- wavelets_result_env_tibble %>%
+    dplyr::filter(environmental_variable == !!environmental_variable)  # Use !! to unquote environmental_variable
+  
+  title_plot <- plot_data |>
+    group_by(environmental_variable) |>
+    dplyr::reframe(title_ed = paste0(environmental_variable)) |>
+    distinct() |>
+    dplyr::select(title_ed) |>
+    as.character()
+  
+  # Create the plot
+  p <- ggplot(plot_data, aes(decimal_date, wavelets_result)) +
+    geom_col() +
+    labs(x = 'Decimal date', y = 'Wavelets results') +
+    facet_grid(vars(wavelets_transformation)) +
+    scale_x_continuous(expand = c(0,0)) +
+    labs(title = title_plot)+
+    theme_bw() +
+    theme(panel.grid = element_blank(), strip.background = element_blank(),
+          aspect.ratio = 4/10,
+          text = element_text(size = 5))
+  
+  # Save the plot as a PDF file
+  pdf_file <- paste0("../results/figures/wavelets_plots_env/", environmental_variable, "_plot_env.pdf")
+  ggsave(pdf_file, p, width = 6, height = 3, units = "in")
+  
+  # Print a message indicating the plot has been saved
+  cat("Plot for", environmental_variable, "saved as", pdf_file, "\n")
+}
+
+dev.off()
+
+### 4. Magnitude (coefficients) observe were they got the highest coefficients for the wavelet analysis--------
+
+#### Wavelet coefficient magnitude indicates how strongly the data are correlated with the mother wavelet at a given frequency and distance.
+
+env_type <-  wavelets_result_env_tibble_red %>%
+  group_by(environmental_variable, wavelets_transformation) %>%
+  dplyr::filter(!is.na(wavelets_result)) |>
+  dplyr::summarize(coefficients = sqrt(sum(wavelets_result^2))) |>  # Calculate the magnitude of coefficients for each level
+  group_by(environmental_variable) |>
+  top_n(2, wt = coefficients) |>  # Find the level with the maximum magnitude
+  rename(max_coeff = wavelets_transformation) |>
+  dplyr::mutate(bloomer_type = case_when(max_coeff == 's4' ~ 'inter-annual',
+                                         max_coeff == 'd1' ~ 'fine-scale',
+                                         max_coeff == 'd2' ~ 'half-yearly', 
+                                         max_coeff == 'd3' ~ 'seasonal', 
+                                         max_coeff == 'd4' ~ 'year-to-year')) 
+
+##i create a table with all the coefficients (I do not decide which is the most important)-----
+wavelets_result_env_tibble_red_coeff <- wavelets_result_env_tibble_red %>%
+  dplyr::mutate(wavelets_result_ed = as.numeric(wavelets_result_ed)) |>
+  dplyr::filter(!is.na(wavelets_result_ed)) |>
+  group_by(environmental_variable, wavelets_transformation) %>%
+  dplyr::summarize(coefficients = sqrt(sum(wavelets_result_ed^2))) 
+  #dplyr::mutate(wavelets_fraction = paste0(wavelets_transformation,'_', fraction)) |>
+  #dplyr::select( -wavelets_transformation)
+
+wavelets_result_env_tibble_red_coeff <- wavelets_result_env_tibble_red_coeff |>
+  dplyr::mutate(environmental_variable = str_replace(environmental_variable,'_no_nas',''))
+
+wavelets_result_env_tibble_red_coeff$environmental_variable <- factor(wavelets_result_env_tibble_red_coeff$environmental_variable, levels = c("day_length", "temperature" ,"secchi" , "salinity" ,      
+                                                                                          "PO4",  "NH4" ,  "NO2" , "NO3" , "Si" ,  "chla_total" ,  "chla_3um", "synechococcus", "prochlorococcus_FC", 
+                                                                                          "bacteria_joint", "LNA", "HNA", "Peuk1",             
+                                                                                          "Peuk2",
+                                                                                          "BP_FC1.55", "PNF_Micro" , "PNF2_5um_Micro",  "PNF_5um_Micro", "cryptomonas", "micromonas","HNF_Micro",         
+                                                                                          "HNF2_5um_Micro", "HNF_5um_Micro",
+                                                                                          "low_vlp" ,
+                                                                                          "med_vlp" ,  
+                                                                                          "high_vlp" ,
+                                                                                          "total_vlp"))
+
+labs_wavelets <- as_labeller(c('d1' = 'Fine-scale',
+                               'd2' = 'Half-yearly',
+                               'd3' = 'Seasonal',
+                               'd4' = 'Year-to-year',
+                               's4' = 'Inter-annual'))
+
+
+
+wavelets_result_env_tibble_red_coeff_plot <- wavelets_result_env_tibble_red_coeff |>
+  ggplot(aes( wavelets_transformation, environmental_variable, fill = coefficients))+
+  geom_tile()+
+  scale_y_discrete(labels = labs_env)+
+  scale_fill_gradientn(colors = palette_gradient_bw)+
+  scale_x_discrete(labels = labs_wavelets)+
+  theme_bw()+
+  labs(x = 'Wavelet vectors', y = 'Environmental variables', fill = 'Coefficient')+
+  theme(panel.border = element_blank(), text = element_text(size = 4))
+  
+wavelets_result_env_tibble_red_coeff_plot
+
+ggsave('wavelets_result_env_tibble_red_coeff.pdf', wavelets_result_env_tibble_red_coeff_plot,
+     path = "~/Documentos/Doctorat/BBMO/BBMO_bloomers/Results/Figures/wavelets_plots/",
+     width = 88,
+     height = 100,
+     units = 'mm')
