@@ -147,7 +147,7 @@ palette_order_assigned_bloo <-  c("SAR11 clade" =  '#B0413E',
                                   #"SAR86 clade" = '#FFBF45',
                                   #"Oceanospirillales" =  '#A05C00'
 
-asv_tab_all_bloo_z_tax |>
+x <- asv_tab_all_bloo_z_tax |>
   group_by(order, family) |>
   distinct(order, family)
 
@@ -156,24 +156,32 @@ asv_tab_all_bloo_z_tax |>
 #   dplyr::select(order) |>
 #   distinct()
 
-palette_family_assigned_bloo <- c("Thiotrichaceae" = '#FFBF45',  
-                                  "Marinobacteraceae" =  '#DE6931',  "Alcanivoracaceae1"  =  '#A05C00',  "Moraxellaceae"  =  '#FF8E00', #pseudomonadales
-                                  "Halieaceae" = '#F35900', "SAR86 clade" = '#FFBA00', #pseudomonadales
-                                  "Vibrionaceae"      = '#F2AC5D',   "Yersiniaceae"  = '#FFA200',    #enterobacterales    
-                                  "Alteromonadaceae"   =  '#A63B00',     
-                                  "Clade II" = '#B0413E',  "Clade I" = '#CD7F78', "Rhodobacteraceae" = '#C55E5C',
-                                  "Sphingomonadaceae"   = '#8C000A',  "SAR116 clade"  ='#931F1D', "Stappiaceae" = '#B31722',
-                                  "AEGEAN-169 marine group" =  '#690000', 
-                                  "Cyanobiaceae"  = '#009F6A', 
-                                  "NS7 marine group" =  '#92ABFF',
-                                  "NS9 marine group"  =  '#3B52A3',   "Cryomorphaceae" = '#002A8E',
-                                  "Saprospiraceae" = '#5F7CCB',
-                                  "Flavobacteriaceae"   =  '#0051BF',  
-                                  "Rubritaleaceae"  =  '#005c69',       
-                                  "DEV007" = '#74B9C8',  "Puniceicoccaceae"   = '#29335C',     
-                                  "Phycisphaeraceae"   = '#e3a6ce',    
-                                  "Bacteriovoracaceae" =  '#8C789D' 
-                                 )  # NA == "#000000" 
+palette_family_assigned_bloo <- c(##gammaproteobacteria
+  "Thiotrichaceae" = '#FFBF45',  
+  "Marinobacteraceae" =  '#B5A9A4',  
+  "Alcanivoracaceae1"  =  '#F2DA00',  
+  "Moraxellaceae"  =  '#FF8E00', #pseudomonadales
+  "Halieaceae" = '#FF7B38', "SAR86 clade" = '#FFA200', #pseudomonadales
+  "Vibrionaceae"      = '#1C1B1A',   "Yersiniaceae"  = '#89584D',    #enterobacterales    
+  "Alteromonadaceae"   =  '#5D5B59',    
+  ##alphaproteobacteria
+  "Clade II" = '#B0413E',  "Clade I" = '#CD7F78', 
+  "Rhodobacteraceae" = '#C55E5C',
+  "Sphingomonadaceae"   = '#8C000A',  
+  "SAR116 clade"  ='#931F1D', 
+  "Stappiaceae" = '#B31722',
+  "AEGEAN-169 marine group" =  '#3D0000', 
+  "Cyanobiaceae"  = '#009F6A', 
+  "NS7 marine group" =  '#92ABFF',
+  "NS9 marine group"  =  '#3B52A3', "Cryomorphaceae" = '#002A8E',
+  "Saprospiraceae" = '#5F7CCB',
+  "Flavobacteriaceae"   =  '#0051BF',  
+  "Rubritaleaceae"  =  '#005c69',  "DEV007" = '#74B9C8', 
+  
+  "Puniceicoccaceae"   = '#29335C',     
+  "Phycisphaeraceae"   = '#e3a6ce',    
+  "Bacteriovoracaceae" =  '#8C789D' 
+)  # NA == "#000000" 
 ## add genus color 
 # asv_tab_all_bloo_z_tax |>
 #   dplyr::filter(genus == "Roseibacillus") |>
@@ -2791,10 +2799,6 @@ asv_tab_all_bloo_z_tax |>
   dplyr::filter(abundance_type != 'rclr') |>
   dplyr::mutate(family_asv_num = paste(family_f,'',asv_num_f)) |>
   arrange(class_f) |>
-  #ungroup() |>
-  #left_join(m_bbmo_10y, by = 'sample_id') |>
-  #left_join(tax, by = c('asv_num' = 'asv')) |>
-  #dplyr::filter(class != is.na(class)) |> ##Raro tenir NAs a Class i que no estiguin filtrats?
   ggplot(aes(day_of_year, abundance_value, shape = ifelse(z_score_ra >= 1.96, '8', '19')))+ #, color = 'Class' 
   #scale_x_datetime()+
   #facet_wrap(vars(class), scales = 'free')+
@@ -2829,7 +2833,7 @@ asv_tab_all_bloo_z_tax |>
   #facet_wrap(vars(class), scales = 'free')+
   geom_line(aes(group = fraction, color = class_f))+
   geom_point(aes(color = class_f))+
-  scale_y_continuous(labels = percent_format())+
+  #scale_y_continuous(labels = percent_format())+
   labs(x = 'Day of the year', y = 'abundance CLR transformed', color = 'Class')+
   scale_color_manual(values = palette_class_assigned_bloo)+
   facet_wrap(vars(family_asv_num), scales = 'free')+
@@ -2871,7 +2875,6 @@ asv_tab_all_bloo_z_tax |>
 
 
 ### Identify those that are seasonal from those that are not seasonal----
-
 asv_tab_all_bloo_z_tax$season <- asv_tab_all_bloo_z_tax$season |>
   factor(levels = c('winter', 'spring', 'summer', 'autumn'))
 
@@ -2891,15 +2894,12 @@ asv_tab_all_bloo_z_tax$season <- asv_tab_all_bloo_z_tax$season |>
 #         axis.ticks = element_blank(), legend.position = 'Bottom', axis.text.y = element_text(size = 12),
 #         axis.title.y = element_text(size = 14), strip.background = element_blank())
   
-
 ##color anomaly----
 ### I would like to recover information from 0.2 and 3 for those ASVs that presented anomalies along the dataset.
-x <- asv_anom_3 |>
-  as_tibble()
+x <- asv_anom_3_tb
 
-y <- asv_anom_02 |>
-  as_tibble()
-
+y <- asv_anom_02_tb 
+  
 asv_anom_all <- x |>
   bind_rows(y) |>
   as_tibble() |>
@@ -2952,23 +2952,23 @@ bloo_3 <-read.csv('data/detect_bloo/bloo_3.csv') |>
 z_scores_all_red <- z_scores_all |>
   dplyr::select(asv_num, z_score_ra, sample_id, fraction, date, year)
 
-asv_tab_bloo_rel_abund_z <- asv_tab_all_bloo_z_tax |>
-  dplyr::select(-z_score_ra) |>
-  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::filter(abundance_type == 'relative_abundance') |>
-  left_join(z_scores_all_red, by = c('sample_id', 'asv_num', 'fraction', 'date', 'year')) |>
-  dplyr::mutate(z_score_ra_ed = case_when(is.na(z_score_ra) ~ 0,
-                                   z_score_ra == 'NaN' ~ 0,
-                                   z_score_ra == Inf ~ 0,
-                                   TRUE ~ z_score_ra)) |>
-  dplyr::mutate(anomaly_color = if_else(z_score_ra_ed >= 1.96 &
-                                          abundance_value >= 0.1,  '#9F0011', '#080808', missing = '#080808')) |>
-  dplyr::filter(fraction == '0.2' & asv_num %in% bloo_02$value |
-                  fraction == '3' & asv_num %in% bloo_3$value)
+# asv_tab_bloo_rel_abund_z <- asv_tab_all_bloo_z_tax |>
+#   dplyr::select(-z_score_ra) |>
+#   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+#   dplyr::filter(abundance_type == 'relative_abundance') |>
+#   left_join(z_scores_all_red, by = c('sample_id', 'asv_num', 'fraction', 'date', 'year')) |>
+#   dplyr::mutate(z_score_ra_ed = case_when(is.na(z_score_ra) ~ 0,
+#                                    z_score_ra == 'NaN' ~ 0,
+#                                    z_score_ra == Inf ~ 0,
+#                                    TRUE ~ z_score_ra)) |>
+#   dplyr::mutate(anomaly_color = if_else(z_score_ra_ed >= 1.96 &
+#                                           abundance_value >= 0.1,  '#9F0011', '#080808', missing = '#080808')) |>
+#   dplyr::filter(fraction == '0.2' & asv_num %in% bloo_02$value |
+#                   fraction == '3' & asv_num %in% bloo_3$value)
 
 ## here we plot all potential bloomers for PA or FL and in which sampling points do they present an anomaly
-library(scales)
-asv_tab_bloo_rel_abund_z  |>
+blooming_events_rel_abund <- asv_tab_bloo_rel_abund_z  |>
+  dplyr::filter(abundance_type == 'relative_abundance') |>
   ggplot(aes(date, abundance_value, color = anomaly_color))+  
   scale_x_datetime(expand = c(0,0), 
                    breaks = seq(min(asv_tab_bloo_rel_abund_z$date), 
@@ -2976,8 +2976,9 @@ asv_tab_bloo_rel_abund_z  |>
                    date_labels = "%Y")+
   geom_hline(yintercept = 0.1, color = '#8B8989')+
   geom_line(aes(group = asv_num), color = '#5B5A5A')+ #, color = '#3D3B3B'
-  geom_point(data = asv_tab_bloo_rel_abund_z |>
-               dplyr::filter(z_score_ra_ed >= 1.96 &
+  geom_point(data = asv_tab_all_bloo_z_tax |>
+               dplyr::filter(abundance_type == 'relative_abundance' &
+                 z_score_ra >= 1.96 &
                                abundance_value >= 0.1),  
              aes(date, abundance_value, color =  '#9F0011', alpha = 1))+ #size = z_score_ra
   scale_y_continuous(labels = percent_format(), expand = c(0,0))+
@@ -2992,6 +2993,11 @@ asv_tab_bloo_rel_abund_z  |>
         axis.ticks = element_blank(), legend.position = 'Bottom', axis.text.y = element_text(size = 7),
         axis.title.y = element_text(size = 7), strip.background = element_blank(),
         panel.border = element_blank())
+# ggsave('blooming_events_rel_abund.pdf', blooming_events_rel_abund,
+#        path = '~/Documentos/Doctorat/BBMO/BBMO_bloomers/Results/Figures/',
+#        width = 250,
+#        height = 200,
+#        units = 'mm')
 
 ## I plot rclr instead of relative abundances----
 ## preparation of the data for the plot
@@ -3053,6 +3059,7 @@ asv_tab_bloo_pseudo_02 <- asv_tab_all_bloo_z_tax |>
 
 asv_tab_bloo_pseudo_anom <- asv_tab_bloo_pseudo_02 |>
   dplyr::filter(anomaly_color == '#9F0011')
+
 
 ## here we plot all potential bloomers for FL and in which sampling points do they present an anomaly
 # asv_tab_bloo_pseudo_02   |>

@@ -162,7 +162,7 @@ heatmap <- gheatmap(tree_plot, detect_both, offset=7, width = .1, color=NA, font
 print(heatmap)
 
 #### Based on wavelets analysis I create a label for each taxa and add the information to the phylogenetic tree----
-bloo_type_biased_all ##here I have their maximum coefficient. Maaybe the lowest ones are not significant and other criteria need to be followed to decide what do we trust
+bloo_type_biased_all ##here I have their maximum coefficient. Maybe the lowest ones are not significant and other criteria need to be followed to decide what do we trust
 
 ## I prepare a table similar to the one I have for the fraction at which they bloom or not bloom.
 type_bloo <- bloo_type_biased_all |>
@@ -246,6 +246,9 @@ tree_plot <- ggtree(tree, branch.length='none') %<+%
         legend.text = element_text(size = 5))
 
 # Create the first heatmap
+wavelets_result_ed_tibble_biased_red_coeff_all_red <- wavelets_result_ed_tibble_biased_red_coeff_all_red |>
+column_to_rownames(var = 'asv_num') 
+
 heatmap1 <- gheatmap(tree_plot, wavelets_result_ed_tibble_biased_red_coeff_all_red, offset=8, width = 1, color=NA, font.size = 2) + 
   scale_x_discrete(labels = labs_wavelets_fract) + 
   scale_fill_gradientn(colours = palette_gradient_bw,
@@ -328,7 +331,7 @@ tree_plot <- ggtree(tree, branch.length='none') %<+%
 heatmap1 <- gheatmap(tree_plot, wavelets_variance, offset=8, width = 1, color=NA, font.size = 2) + 
   scale_x_discrete(labels = labs_wavelets_fract) + 
   scale_fill_gradientn(colours = palette_gradient_bw,
-                       name="Bloomer's\nwavelets\ncoefficients\nmagnitude")+
+                       name="Bloomer's\nwavelets\ncoefficients\nvariance")+
   
   #geom_text(data ="Particle attached (3-20 um)")+
   #annotate(geom = "Particle attached (3-20 um)", x = 0.5,   hjust = 0.5) +  # Adjust x position as needed
@@ -338,13 +341,14 @@ heatmap1 <- gheatmap(tree_plot, wavelets_variance, offset=8, width = 1, color=NA
 # Print the combined plot
 print(heatmap1)
 
-ggsave(heatmap1, filename = 'phylogenetic_tree_wavelets_coeff_variance.pdf',
-       path = 'Results/Figures/',
-       width = 230, height = 200, units = 'mm')
+# ggsave(heatmap1, filename = 'phylogenetic_tree_wavelets_coeff_variance.pdf',
+#        path = 'Results/Figures/',
+#        width = 230, height = 200, units = 'mm')
 
 ## I analyse the relationship between different types of bloomers and phylogeny-----
 ### For this I use the phylogenetic tree and hierarchical clutsering analysis from the wavelets
 library(dendextend)
+library(ape)
 
 # Define the taxa to be removed (replace "taxon1", "taxon2", etc. with actual taxon names)
 taxa_to_remove <- bloo_02 |>
@@ -540,7 +544,6 @@ tanglegram(dend_ed_fl, hc_fl_1,
            lwd = 2,
            main = paste("entanglement =", round(entanglement(dend_list), 2)))
 
-
 # Plot tanglegram
 dend_list <- dendlist(dend_ed_fl, hc_fl_2)
 tanglegram(dend_ed_fl, hc_fl_2, 
@@ -572,7 +575,6 @@ tanglegram(dend_ed_fl, hc_fl_4,
            lwd = 2,
            main = paste("entanglement =", round(entanglement(dend_list), 2)))
 
-
 # Plot tanglegram
 dend_list <- dendlist(dend_ed_fl, hc_fl_5)
 tanglegram(dend_ed_fl, hc_fl_5, 
@@ -583,6 +585,112 @@ tanglegram(dend_ed_fl, hc_fl_5,
            lwd = 2, 
            main = paste("entanglement =", round(entanglement(dend_list), 2)))
 
+##Phylogenetic tree with the category of each bloomer-----
+
+bloo_all_types_summary <- read.csv( 'results/tables/bloo_all_types_summary.csv')
+
+## I prepare the table with the category of each blooming event
+bloo_all_types_summary_ed_02 <- bloo_all_types_summary |>
+  dplyr::select(-occurence, -X) |>
+  dplyr::filter(fraction == '0.2') 
+
+#### i can not change the labs names because they are in the column names not as a variable
+labs_wavelets_fract <- as_labeller(c('d1_3' = 'Fine-scale PA',
+                                     #'d2_3' = 'Half-yearly',
+                                     'd3_3' = 'Seasonal',
+                                     #'d4_3' = 'Year-to-year',
+                                     's4_3' = 'Inter-annual',
+                                     'd1_0.2' = 'Fine-scale',
+                                     #'d2_0.2' = 'Half-yearly',
+                                     'd3_0.2' = 'Seasonal',
+                                     #'d4_0.2' = 'Year-to-year',
+                                     's4_0.2' = 'Inter-annual'))
+
+heatmap1 |>
+  scale_x_discrete(labels = c('d1_3' = 'Fine-scale',
+                              'd2_3' = 'Half-yearly',
+                              'd3_3' = 'Seasonal',
+                              'd4_3' = 'Year-to-year',
+                              's4_3' = 'Inter-annual',
+                              'd1_0.2' = 'Fine-scale',
+                              'd2_0.2' = 'Half-yearly',
+                              'd3_0.2' = 'Seasonal',
+                              'd4_0.2' = 'Year-to-year',
+                              's4_0.2' = 'Inter-annual'))
+
+# Define the taxa to be removed (replace "taxon1", "taxon2", etc. with actual taxon names)
+taxa_to_remove <- bloo_3 |>
+  anti_join(bloo_02) |>
+  as_vector()
+
+# Prune the phylogenetic tree to remove the specified taxa
+pruned_phylo_tree <- drop.tip(tree, taxa_to_remove)
+
+# Plot the pruned phylogenetic tree
+plot(pruned_phylo_tree)
+
+# Convert phylogenetic tree to dendrogram
+# Extract branch lengths from the phylogenetic tree
+branch_lengths <- cophenetic(pruned_phylo_tree)
+
+# Create a dendrogram object using the branch lengths
+dend <- as.dendrogram(hclust(as.dist(branch_lengths)))
+
+## edit the labels that we have in the phylogenetic tree so that they match the ones we have in the hierarchical clustering 
+old_label_factor <- factor(c(  "asv163" , "asv69"  , "asv80"  , "asv237" , "asv563" , "asv182" , "asv58"  , "asv126" , "asv223" , "asv116" , "asv105" , "asv249" , "asv62"  , "asv219" , "asv471" , "asv752" , "asv72"  , "asv27"  , "asv385",
+                               "asv84"  , "asv43"  , "asv192" , "asv17"  , "asv77"  , "asv153" , "asv311" , "asv555" , "asv118" , "asv8"   , "asv38"  , "asv225" , "asv3"   , "asv15"  , "asv2"   , "asv264" , "asv200" , "asv5"   , "asv276",
+                               "asv49"  , "asv42"  , "asv113" , "asv511" , "asv302" , "asv317" , "asv114" , "asv11"  , "asv559" , "asv282" , "asv100" , "asv22"  , "asv194" , "asv178" , "asv179" , "asv25"  , "asv23"  , "asv85"  , "asv7" , 
+                               "asv1"   , "asv4"   , "asv31"  , "asv28"),
+                           levels = c(
+                             "asv163", "asv69", "asv80", "asv237", "asv563", "asv182", "asv58", "asv126", "asv223", "asv116",
+                             "asv105", "asv249", "asv62", "asv219", "asv471", "asv752", "asv72", "asv27", "asv385", "asv84",
+                             "asv43", "asv192", "asv17", "asv77", "asv153", "asv311", "asv555", "asv118", "asv8", "asv38",
+                             "asv225", "asv3", "asv15", "asv2", "asv264", "asv200", "asv5", "asv276", "asv49", "asv42",
+                             "asv113", "asv511", "asv302", "asv317", "asv114", "asv11", "asv559", "asv282", "asv100", "asv22",
+                             "asv194", "asv178", "asv179", "asv25", "asv23", "asv85", "asv7", "asv1", "asv4", "asv31", "asv28"
+                           )) 
+
+old_label_factor <- droplevels(old_label_factor[!old_label_factor %in% taxa_to_remove])
+
+tax_phylo_tree <- tax |>
+  dplyr::mutate(asv_f = case_when(!is.na(family) ~ paste0(family,'.',asv_num),
+                                  is.na(family) & !is.na(order) ~ paste0(order, '.', asv_num),
+                                  is.na(family) & is.na(order) ~ paste0(class, '.', asv_num),
+                                  is.na(family) & is.na(order) & is.na(class) ~ paste0(phylum, '.', asv_num))) |>
+  arrange(factor(asv_num, levels = levels(old_label_factor))) |>
+  dplyr::filter(!asv_num %in% taxa_to_remove)
+
+# Create a tibble with old and new labels
+label_changes <- tibble(
+  old_label = old_label_factor,  # Replace with actual old labels
+  new_label = tax_phylo_tree$asv_f   # Replace with corresponding new labels
+)
+
+dend_ed_fl <- dend |>
+  set("labels", label_changes$new_label)
+
+# Print the updated dendrogram
+hc1 |>
+  plot()
+
+print(dend_ed)
+
+dend_ed |>
+  labels()
+
+hc1 |>
+  labels()
+
+heatmap(bloo_all_types_summary_ed_02)
+
+bloo_all_types_summary_ed_02 |>
+  dplyr::select(asv_num, cluster_fr, fraction) 
+
+
+
+# ggsave(heatmap1, filename = 'phylogenetic_tree_wavelets_coeff_variance.pdf',
+#        path = 'Results/Figures/',
+#        width = 230, height = 200, units = 'mm')
 
 
 

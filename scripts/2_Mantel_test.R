@@ -3091,6 +3091,9 @@ ggsave('bloom_events_env_variables.pdf', bloom_events_env_variables,
  
 ## Do the same but separating no-bloom / bloom / super blooming events------
 
+
+### other idea from Marta
+##### y has probado haciendo distancia euclidea de vbles ambientales respecto al tiempo anterior y ver si hay relación con los blooms? aunque quizá eso ya te lo dice el análisis de Carmen?
 ## Wavelets analysis with environmental data (NO MISSING VALUES) and cross correlate ------
 library(waveslim)
 

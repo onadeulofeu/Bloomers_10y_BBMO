@@ -17,6 +17,9 @@ library(caret)
 ### I pick representatives of different clusters and see how it goes
 
 ### asv11 (Glaciecola)
+## asv62
 
 
 ## ideas data that I should add here: diatoms, ciliates, dinophlgellates, 
+
+## do we add diversity in the random forest?

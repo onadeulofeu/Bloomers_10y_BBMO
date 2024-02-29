@@ -2142,25 +2142,83 @@ bloo_02_type_biased_red <- wavelets_result_ed_tibble_tax_02_biased_red %>%
          panel.border = element_blank(), text = element_text(size = 5))
  
  
- ## General plots for observing different patterns at different periods of blooming ASVs----
- 
  wavelets_result_ed_tibble_tax_3_biased_red <-  wavelets_result_ed_tibble_tax_3_biased_red |>
    dplyr::mutate(fraction = '3')
 
  wavelets_result_ed_tibble_tax_02_biased_red <-  wavelets_result_ed_tibble_tax_02_biased_red |>
    dplyr::mutate(fraction = '0.2')
  
- ## labs fraction and wavelets 
- 
- wavelets_result_ed_tibble_tax_02_biased_red |>
-   bind_rows(wavelets_result_ed_tibble_tax_3_biased_red) |>
-   ggplot(aes(decimal_date, wavelets_result_ed))+
-   facet_grid(wavelets_transformation~fraction)+ #, labeller = labs_wavelets_fract
-   geom_line(aes(group = asv_num))+
-   theme_bw()
- 
  #write.csv( wavelets_result_ed_tibble_tax_3_biased_red, '../data/wavelets_analysis/wavelets_result_ed_tibble_tax_3_biased_red.csv')
  #write.csv( wavelets_result_ed_tibble_tax_02_biased_red, '../data/wavelets_analysis/wavelets_result_ed_tibble_tax_02_biased_red.csv')
+ 
+ ## General plots for observing different patterns at different periods of blooming ASVs----
+ ## labs fraction and wavelets 
+ labs_wavelets_fraction <- as_labeller(c('d1' = 'Fine-scale',
+                                'd2' = 'Half-yearly',
+                                'd3' = 'Seasonal',
+                                'd4' = 'Year-to-year',
+                                's4' = 'Inter-annual',
+                                '3' = 'Particle attached (3-20 (um)',
+                                '0.2' = 'Free living (0.2 - 3 (um)'))
+ 
+ wavelets_result_ed_tibble_tax_02_biased_red_all <-  wavelets_result_ed_tibble_tax_02_biased_red |>
+   bind_rows(wavelets_result_ed_tibble_tax_3_biased_red)
+ 
+ wavelets_result_ed_tibble_tax_02_biased_red_all <- wavelets_result_ed_tibble_tax_02_biased_red_all |>
+   dplyr::mutate(phylum_f = as_factor(phylum),
+                 family_f = as_factor(family),
+                 order_f = as_factor(order),
+                 class_f = as_factor(class),
+                 asv_num_f = as_factor(asv_num))
+ 
+ wavelets_result_ed_tibble_tax_02_biased_red_all$class_f <-  factor(wavelets_result_ed_tibble_tax_02_biased_red_all$class_f, 
+                                           levels=unique(wavelets_result_ed_tibble_tax_02_biased_red_all$class_f[order(wavelets_result_ed_tibble_tax_02_biased_red_all$phylum_f)]), 
+                                           ordered=TRUE)
+ 
+ wavelets_result_ed_tibble_tax_02_biased_red_all$order_f <-  factor(wavelets_result_ed_tibble_tax_02_biased_red_all$order_f, 
+                                           levels=unique(wavelets_result_ed_tibble_tax_02_biased_red_all$order_f[order(wavelets_result_ed_tibble_tax_02_biased_red_all$phylum_f,
+                                                                                              wavelets_result_ed_tibble_tax_02_biased_red_all$class_f)]), 
+                                           ordered=TRUE)
+ 
+ wavelets_result_ed_tibble_tax_02_biased_red_all$family_f <-  factor(wavelets_result_ed_tibble_tax_02_biased_red_all$family_f, 
+                                            levels=unique(wavelets_result_ed_tibble_tax_02_biased_red_all$family_f[order(wavelets_result_ed_tibble_tax_02_biased_red_all$phylum_f,
+                                                                                                wavelets_result_ed_tibble_tax_02_biased_red_all$class_f,
+                                                                                                wavelets_result_ed_tibble_tax_02_biased_red_all$order_f)]), 
+                                            ordered=TRUE)
+ 
+ 
+ wavelets_result_ed_tibble_tax_02_biased_red_all$asv_num_f <-  factor(wavelets_result_ed_tibble_tax_02_biased_red_all$asv_num_f, 
+                                             levels=unique(wavelets_result_ed_tibble_tax_02_biased_red_all$asv_num_f[order(wavelets_result_ed_tibble_tax_02_biased_red_all$phylum_f,
+                                                                                                  wavelets_result_ed_tibble_tax_02_biased_red_all$class_f,
+                                                                                                  wavelets_result_ed_tibble_tax_02_biased_red_all$order_f,
+                                                                                                  wavelets_result_ed_tibble_tax_02_biased_red_all$family_f)]), 
+                                             ordered=TRUE)
+ 
+ most_important_transformations <- wavelets_result_ed_tibble_tax_02_biased_red_all |>
+   group_by(asv_num, wavelets_transformation, fraction) %>%
+   dplyr::filter(!is.na(wavelets_result_ed)) |>
+   dplyr::summarize(coefficients = sqrt(sum(wavelets_result_ed^2))) |>  # Calculate the magnitude of coefficients for each level
+   group_by(asv_num, fraction) |>
+   top_n(2, wt = coefficients) |>
+   dplyr::mutate(asv_w_f = paste0(asv_num, wavelets_transformation, fraction))
+ 
+ wavelets_transformation_summary_top2 <- wavelets_result_ed_tibble_tax_02_biased_red_all |>
+   dplyr::mutate(asv_w_f = paste0(asv_num, wavelets_transformation, fraction)) |>
+   dplyr::filter(asv_w_f %in%  most_important_transformations$asv_w_f) |>
+   ggplot(aes(decimal_date, wavelets_result_ed))+
+   labs(x = 'Date', y = 'Wavelet coefficient', color = 'Order')+
+   facet_grid(wavelets_transformation~fraction, labeller = labs_wavelets_fraction)+
+   geom_line(aes(group = asv_num, color = order))+
+   scale_color_manual(values = palette_order_assigned_bloo)+
+   theme_bw()+
+   theme(panel.grid = element_blank(), strip.background = element_blank(),
+         legend.position = 'bottom', text = element_text(size = 8),
+         legend.key.width = unit(1, "lines"))+
+   guides(color = guide_legend(override.aes = list(size = 4)))
+ 
+ ggsave(wavelets_transformation_summary_top2, filename = 'wavelets_transformation_summary_top2.pdf',
+        path = 'results/figures/',
+        width = 188, height = 230, units = 'mm')
  
 ### variance of the coefficients at different scales for each ASV-----
  wavelets_result_ed_tibble_tax_02_biased_red <- wavelets_result_ed_tibble_tax_02_biased_red  |>
@@ -2198,8 +2256,8 @@ wavelets_variance <-  wavelets_result_ed_tibble_tax_3_biased_red |>
  
  wavelets_variance
  
- ggsave(wavelets_variance, filename = ' wavelets_variance.pdf',
-        path = '../results/figures/',
+ ggsave(wavelets_variance, filename = 'wavelets_variance.pdf',
+        path = 'results/figures/',
         width = 88, height = 100, units = 'mm')
  
  #### GENERAL PLOTS FOR THOSE ASVs THAT ARE ACTUALLY SEASONAL FORM THOSE THAT ARE NOT-----
@@ -2777,4 +2835,37 @@ wavelets_variance <-  wavelets_result_ed_tibble_tax_3_biased_red |>
  
  
  
+ 
+ 
+ ## Strong s4 signal 
+ most_important_transformations <- wavelets_result_ed_tibble_tax_02_biased_red_all |>
+   group_by(asv_num, wavelets_transformation, fraction) %>%
+   dplyr::filter(!is.na(wavelets_result_ed)) |>
+   dplyr::summarize(coefficients = sqrt(sum(wavelets_result_ed^2))) |>  # Calculate the magnitude of coefficients for each level
+   group_by(asv_num, fraction) |>
+   top_n(2, wt = coefficients) |>
+   dplyr::mutate(asv_w_f = paste0(asv_num, wavelets_transformation, fraction))
+ 
+ wavelets_transformation_summary_top3_s4 <- wavelets_result_ed_tibble_tax_02_biased_red_all |>
+   dplyr::filter(wavelets_transformation == 's4') |>
+   left_join(bloo_all_types_summary, by = c('asv_num', 'fraction')) |>
+   dplyr::mutate(asv_w_f = paste0(asv_num, wavelets_transformation, fraction)) |>
+   dplyr::filter(asv_w_f %in%  most_important_transformations$asv_w_f) |>
+   ggplot(aes(decimal_date, wavelets_result_ed))+
+   labs(x = 'Date', y = 'Wavelet coefficient', color = 'Family')+
+   facet_wrap(fraction~clustering_group)+ #, labeller = labs_clusters_pa_fl
+   scale_x_continuous(expand = c(0,0))+
+   #geom_line(aes(group = asv_num, color = order))+
+   geom_smooth(aes(group = asv_num, color = family_f), span = 1)+
+   scale_color_manual(values = palette_family_assigned_bloo)+
+   theme_bw()+
+   theme(panel.grid = element_blank(), strip.background = element_blank(),
+         legend.position = 'bottom', text = element_text(size = 8),
+         legend.key.width = unit(1, "lines"))+
+   guides(color = guide_legend(override.aes = list(size = 4)))
+ 
+ 
+ ggsave( wavelets_transformation_summary_top3_s4, filename = ' wavelets_transformation_summary_top2_s4.pdf',
+        path = 'results/figures/',
+        width = 188, height = 150, units = 'mm')
  
