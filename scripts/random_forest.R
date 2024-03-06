@@ -16,9 +16,8 @@ library(caret)
 
 ### I pick representatives of different clusters and see how it goes
 
-### asv11 (Glaciecola)
-## asv62
-
+##EXAMPLES FOR EACH TYPE OF BLOOM 
+### 'asv17', 'asv23', 'asv11', 'asv84', 'asv62', 'asv58', 'asv555', 'asv558')
 
 ## ideas data that I should add here: diatoms, ciliates, dinophlgellates, 
 

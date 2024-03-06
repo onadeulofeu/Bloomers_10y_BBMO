@@ -1610,7 +1610,6 @@ asv_tab_all_bloo_z_tax$family_f <-  factor(asv_tab_all_bloo_z_tax$family_f,
                                                                                                asv_tab_all_bloo_z_tax$order_f)]), 
                                            ordered=TRUE)
 
-
 asv_tab_all_bloo_z_tax$asv_num_f <-  factor(asv_tab_all_bloo_z_tax$asv_num_f, 
                                             levels=unique(asv_tab_all_bloo_z_tax$asv_num_f[order(asv_tab_all_bloo_z_tax$phylum_f,
                                                                                                  asv_tab_all_bloo_z_tax$class_f,
@@ -2220,9 +2219,115 @@ asv_tab_all_bloo_z_tax |>
         legend.text = element_text(size = 7), legend.title = element_text(size = 8), strip.placement = 'outside')  
 
 ##color by order
-bbmo_bloo_ev_order <- asv_tab_all_bloo_z_tax |>
+# bbmo_bloo_ev_order <- asv_tab_all_bloo_z_tax |>
+#   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+#   dplyr::filter(abundance_type == 'relative_abundance') |>
+#   group_by(date, fraction) |>
+#   dplyr::mutate(max_abund = sum(abundance_value)) |>
+#   ungroup() |>
+#   group_by(date, fraction, order_f) |>
+#   dplyr::mutate(abund_order = sum(abundance_value)) |>
+#   ungroup() |>
+#   #dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+#   ggplot(aes(date, max_abund))+
+#   #geom_line(aes(date, max_abund))+
+#   #geom_segment(aes(x = '2005-01-01', y = 0, xend = '2005-01-02', yend =0.57),color="black")+
+#   scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0)
+#                    #limits = c(min(asv_tab_all_bloo_z_tax$date), max(asv_tab_all_bloo_z_tax$date),
+#                    #limits = c(as.POSIXct(2004-01-26, origin = '2004-01-26'), as.POSIXct(2014-01-01, origin = '2014-01-01'))
+#   )+
+#   geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
+#                                                     ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
+#   
+#   #geom_stream(aes(fill = class_f, group = class_f), type = "ridge", bw=1)+
+#   geom_area(aes(date, abund_order, fill = order_f, group = order_f), alpha = 0.8,  position='stack')+
+#   #geom_line(data = bray_curtis_rar_all_m, aes(date, bray_curtis_result))+
+#   geom_line(data = community_eveness_all_m, aes(date, community_eveness_rar/1.6), color = '#2D2A2B', alpha = 0.8)+
+#   geom_point(data = community_eveness_all_m |>
+#                dplyr::filter(anomaly_color == '#9F0011'),  
+#              aes(date, community_eveness_rar/1.6, color = anomaly_color, alpha = 0.8))+
+#   scale_y_continuous(labels = percent_format(), expand = c(0,0), limits = c(0,1),
+#                      sec.axis = sec_axis(~.* 1 , name = 'Community Evenness'))+
+#   scale_color_identity()+
+#   scale_fill_manual(values = palette_order_assigned_bloo, na.value = "#000000")+
+#   labs(x = 'Time', y = 'Relative abundance (%)', fill = 'Order')+
+#   facet_wrap(vars(fraction), dir = 'v', scales = 'free_y',  labeller = labs_fraction)+
+#   #facet_wrap(fraction~phylum_f, dir = 'v', scales = 'free_y',  labeller = labs_fraction)+
+#   guides(fill = guide_legend(ncol = 6, size = 10,
+#                              override.aes = aes(label = '')),
+#          alpha = 'none')+
+#   theme_bw()+
+#   theme(axis.text.x = element_text(size = 7), panel.grid.minor = element_blank(),
+#         panel.grid.major = element_blank(), strip.text = element_text(size = 7),
+#         legend.position = 'bottom', axis.text.y = element_text(size = 8),
+#         axis.title = element_text(size = 8), strip.background = element_blank(), 
+#         legend.text = element_text(size = 7), legend.title = element_text(size = 8), strip.placement = 'outside',
+#         plot.margin = margin(2,5,0,5))  
+
+# ggsave('bbmo_bloo_ev_order.pdf', bbmo_bloo_ev_order,
+#        path = '~/Documentos/Doctorat/BBMO/BBMO_bloomers/Results/Figures/',
+#        width = 230,
+#        height = 180,
+#        units = 'mm')
+
+##color by order
+# bbmo_bloo_ev_order_no_sar <- asv_tab_all_bloo_z_tax |>
+#   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+#   dplyr::filter(abundance_type == 'relative_abundance') |>
+#   dplyr::filter(order != 'SAR11 clade') |>
+#   group_by(date, fraction) |>
+#   dplyr::mutate(max_abund = sum(abundance_value)) |>
+#   ungroup() |>
+#   group_by(date, fraction, order_f) |>
+#   dplyr::mutate(abund_order = sum(abundance_value)) |>
+#   ungroup() |>
+#   #dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+#   ggplot(aes(date, max_abund))+
+#   #geom_line(aes(date, max_abund))+
+#   #geom_segment(aes(x = '2005-01-01', y = 0, xend = '2005-01-02', yend =0.57),color="black")+
+#   scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0)
+#                    #limits = c(min(asv_tab_all_bloo_z_tax$date), max(asv_tab_all_bloo_z_tax$date),
+#                    #limits = c(as.POSIXct(2004-01-26, origin = '2004-01-26'), as.POSIXct(2014-01-01, origin = '2014-01-01'))
+#   )+
+#   geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
+#                                                     ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
+#   #geom_stream(aes(fill = class_f, group = class_f), type = "ridge", bw=1)+
+#   geom_area(aes(date, abund_order, fill = order_f, group = order_f), alpha = 0.8,  position='stack')+
+#   #geom_line(data = bray_curtis_rar_all_m, aes(date, bray_curtis_result))+
+#   geom_line(data = community_eveness_all_m, aes(date, community_eveness_rar/1.6), color = '#2D2A2B', alpha = 0.8)+
+#   geom_point(data = community_eveness_all_m |>
+#                dplyr::filter(anomaly_color == '#9F0011'),  
+#              aes(date, community_eveness_rar/1.6, color = anomaly_color, alpha = 0.8))+
+#   scale_y_continuous(labels = percent_format(), expand = c(0,0), limits = c(0,1),
+#                      sec.axis = sec_axis(~.* 1 , name = 'Community Evenness'))+
+#   scale_color_identity()+
+#   scale_fill_manual(values = palette_order_assigned_bloo, na.value = "#000000")+
+#   labs(x = 'Time', y = 'Relative abundance (%)', fill = 'Order')+
+#   facet_wrap(vars(fraction), dir = 'v', scales = 'free_y',  labeller = labs_fraction)+
+#   #facet_wrap(fraction~phylum_f, dir = 'v', scales = 'free_y',  labeller = labs_fraction)+
+#   guides(fill = guide_legend(ncol = 6, size = 10,
+#                              override.aes = aes(label = '')),
+#          alpha = 'none')+
+#   theme_bw()+
+#   theme(axis.text.x = element_text(size = 7), panel.grid.minor = element_blank(),
+#         panel.grid.major = element_blank(), strip.text = element_text(size = 7),
+#         legend.position = 'bottom', axis.text.y = element_text(size = 8),
+#         axis.title = element_text(size = 8), strip.background = element_blank(), 
+#         legend.text = element_text(size = 7), legend.title = element_text(size = 8), strip.placement = 'outside',
+#         plot.margin = margin(2,5,0,5))  
+
+# ggsave('bbmo_bloo_ev_order_no_sar.pdf', bbmo_bloo_ev_order_no_sar,
+#        path = '~/Documentos/Doctorat/BBMO/BBMO_bloomers/Results/Figures/',
+#        width = 230,
+#        height = 180,
+#        units = 'mm')
+
+##color by order
+## I remove the 4 ASVs that clustered together in the seasonality analysis but not others that could be potential blooms
+bbmo_bloo_ev_order_no_sar_cluster <- asv_tab_all_bloo_z_tax |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
   dplyr::filter(abundance_type == 'relative_abundance') |>
+  dplyr::filter(!asv_num_f %in% c('asv2', 'asv3', 'asv5', 'asv8')) |>
   group_by(date, fraction) |>
   dplyr::mutate(max_abund = sum(abundance_value)) |>
   ungroup() |>
@@ -2239,7 +2344,6 @@ bbmo_bloo_ev_order <- asv_tab_all_bloo_z_tax |>
   )+
   geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
                                                     ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
-  
   #geom_stream(aes(fill = class_f, group = class_f), type = "ridge", bw=1)+
   geom_area(aes(date, abund_order, fill = order_f, group = order_f), alpha = 0.8,  position='stack')+
   #geom_line(data = bray_curtis_rar_all_m, aes(date, bray_curtis_result))+
@@ -2265,7 +2369,58 @@ bbmo_bloo_ev_order <- asv_tab_all_bloo_z_tax |>
         legend.text = element_text(size = 7), legend.title = element_text(size = 8), strip.placement = 'outside',
         plot.margin = margin(2,5,0,5))  
 
-# ggsave('bbmo_bloo_ev_order.pdf', bbmo_bloo_ev_order,
+# ggsave('bbmo_bloo_ev_order_no_sar_cluster.pdf', bbmo_bloo_ev_order_no_sar_cluster,
+#        path = '~/Documentos/Doctorat/BBMO/BBMO_bloomers/Results/Figures/',
+#        width = 230,
+#        height = 180,
+#        units = 'mm')
+
+bbmo_bloo_ev_order_no_sar_cluster <- asv_tab_all_bloo_z_tax |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(abundance_type == 'rclr') |>
+  dplyr::filter(!asv_num_f %in% c('asv2', 'asv3', 'asv5', 'asv8')) |>
+  group_by(date, fraction) |>
+  dplyr::mutate(max_abund = sum(abundance_value)) |>
+  ungroup() |>
+  group_by(date, fraction, order_f) |>
+  dplyr::mutate(abund_order = sum(abundance_value)) |>
+  ungroup() |>
+  #dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  ggplot(aes(date, max_abund))+
+  #geom_line(aes(date, max_abund))+
+  #geom_segment(aes(x = '2005-01-01', y = 0, xend = '2005-01-02', yend =0.57),color="black")+
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0)
+                   #limits = c(min(asv_tab_all_bloo_z_tax$date), max(asv_tab_all_bloo_z_tax$date),
+                   #limits = c(as.POSIXct(2004-01-26, origin = '2004-01-26'), as.POSIXct(2014-01-01, origin = '2014-01-01'))
+  )+
+  geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
+                                                    ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
+  #geom_stream(aes(fill = class_f, group = class_f), type = "ridge", bw=1)+
+  geom_area(aes(date, abund_order, fill = order_f, group = order_f), alpha = 0.8,  position='stack')+
+  #geom_line(data = bray_curtis_rar_all_m, aes(date, bray_curtis_result))+
+  geom_line(data = community_eveness_all_m, aes(date, community_eveness_rar*25), color = '#2D2A2B', alpha = 0.8)+
+  geom_point(data = community_eveness_all_m |>
+               dplyr::filter(anomaly_color == '#9F0011'),  
+             aes(date, community_eveness_rar*25, color = anomaly_color, alpha = 0.8))+
+  scale_y_continuous( expand = c(0,0), limits = c(-5, 50),
+                     sec.axis = sec_axis(~. /45 , name = 'Community Evenness'))+
+  scale_color_identity()+
+  scale_fill_manual(values = palette_order_assigned_bloo, na.value = "#000000")+
+  labs(x = 'Time', y = 'Relative abundance (%)', fill = 'Order')+
+  facet_wrap(vars(fraction), dir = 'v', scales = 'free_y',  labeller = labs_fraction)+
+  #facet_wrap(fraction~phylum_f, dir = 'v', scales = 'free_y',  labeller = labs_fraction)+
+  guides(fill = guide_legend(ncol = 6, size = 10,
+                             override.aes = aes(label = '')),
+         alpha = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 7), panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(), strip.text = element_text(size = 7),
+        legend.position = 'bottom', axis.text.y = element_text(size = 8),
+        axis.title = element_text(size = 8), strip.background = element_blank(), 
+        legend.text = element_text(size = 7), legend.title = element_text(size = 8), strip.placement = 'outside',
+        plot.margin = margin(2,5,0,5))  
+
+# ggsave('bbmo_bloo_ev_order_no_sar_cluster_rclr.pdf', bbmo_bloo_ev_order_no_sar_cluster,
 #        path = '~/Documentos/Doctorat/BBMO/BBMO_bloomers/Results/Figures/',
 #        width = 230,
 #        height = 180,

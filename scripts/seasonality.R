@@ -2200,9 +2200,10 @@ bloo_02_type_biased_red <- wavelets_result_ed_tibble_tax_02_biased_red %>%
    dplyr::summarize(coefficients = sqrt(sum(wavelets_result_ed^2))) |>  # Calculate the magnitude of coefficients for each level
    group_by(asv_num, fraction) |>
    top_n(2, wt = coefficients) |>
+   dplyr::filter(wavelets_transformation != 'd2') |>
    dplyr::mutate(asv_w_f = paste0(asv_num, wavelets_transformation, fraction))
  
- wavelets_transformation_summary_top2 <- wavelets_result_ed_tibble_tax_02_biased_red_all |>
+ wavelets_transformation_summary_top2_nod2 <- wavelets_result_ed_tibble_tax_02_biased_red_all |>
    dplyr::mutate(asv_w_f = paste0(asv_num, wavelets_transformation, fraction)) |>
    dplyr::filter(asv_w_f %in%  most_important_transformations$asv_w_f) |>
    ggplot(aes(decimal_date, wavelets_result_ed))+
@@ -2216,9 +2217,70 @@ bloo_02_type_biased_red <- wavelets_result_ed_tibble_tax_02_biased_red %>%
          legend.key.width = unit(1, "lines"))+
    guides(color = guide_legend(override.aes = list(size = 4)))
  
- ggsave(wavelets_transformation_summary_top2, filename = 'wavelets_transformation_summary_top2.pdf',
+ # ggsave(wavelets_transformation_summary_top2_nod2, filename = 'wavelets_transformation_summary_top2_nod2.pdf',
+ #        path = 'results/figures/',
+ #        width = 188, height = 230, units = 'mm')
+ 
+ wavelets_transformation_summary_top2_nod2 <- wavelets_result_ed_tibble_tax_02_biased_red_all |>
+   dplyr::mutate(asv_w_f = paste0(asv_num, wavelets_transformation, fraction)) |>
+   dplyr::filter(asv_w_f %in%  most_important_transformations$asv_w_f) |>
+   dplyr::filter(!asv_num %in% c('asv2', 'asv3', 'asv5', 'asv8')) |>
+   ggplot(aes(decimal_date, wavelets_result_ed))+
+   labs(x = 'Date', y = 'Wavelet coefficient', color = 'Order')+
+   facet_grid(wavelets_transformation~fraction, labeller = labs_wavelets_fraction)+
+   geom_line(aes(group = asv_num))+
+   #scale_color_manual(values = palette_order_assigned_bloo)+
+   theme_bw()+
+   theme(panel.grid = element_blank(), strip.background = element_blank(),
+         legend.position = 'bottom', text = element_text(size = 12),
+         legend.key.width = unit(1, "lines"))+
+   guides(color = guide_legend(override.aes = list(size = 4)))
+ 
+ # ggsave(wavelets_transformation_summary_top2_nod2, filename = 'wavelets_transformation_summary_top2_nod2_bw_nosar11_cluster.pdf',
+        # path = 'results/figures/',
+        # width = 188, height = 230, units = 'mm')
+        # 
+ 
+abundance_asv7 <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(abundance_type == 'rclr') |>
+   #dplyr::filter(asv_w_f %in%  most_important_transformations$asv_w_f) |>
+   dplyr::filter(asv_num %in% c('asv7')) |>
+   ggplot(aes(decimal_date, abundance_value))+
+   labs(x = 'Date', y = 'rCLR', color = 'Order')+
+   facet_wrap(vars(fraction), labeller = labs_wavelets_fraction)+
+   geom_line(aes(group = asv_num))+
+  scale_y_continuous()+
+   #scale_color_manual(values = palette_order_assigned_bloo)+
+   theme_bw()+
+   theme(panel.grid = element_blank(), strip.background = element_blank(),
+         legend.position = 'bottom', text = element_text(size = 12),
+         legend.key.width = unit(1, "lines"))+
+   guides(color = guide_legend(override.aes = list(size = 4)))
+
+ggsave( abundance_asv7, filename = 'abundance_asv7_rclr.pdf',
+       path = 'results/figures/',
+       width = 188, height = 88, units = 'mm')
+ 
+ wavelets_transformation_summary_top2_nod2_asv7 <- wavelets_result_ed_tibble_tax_02_biased_red_all |>
+   dplyr::mutate(asv_w_f = paste0(asv_num, wavelets_transformation, fraction)) |>
+   dplyr::filter(!wavelets_transformation %in% c('d2', 'd4')) |>
+   #dplyr::filter(asv_w_f %in%  most_important_transformations$asv_w_f) |>
+   dplyr::filter(asv_num %in% c('asv7')) |>
+   ggplot(aes(decimal_date, wavelets_result_ed))+
+   labs(x = 'Date', y = 'Wavelet coefficient', color = 'Order')+
+   facet_grid(wavelets_transformation~fraction, labeller = labs_wavelets_fraction)+
+   geom_line(aes(group = asv_num))+
+   #scale_color_manual(values = palette_order_assigned_bloo)+
+   theme_bw()+
+   theme(panel.grid = element_blank(), strip.background = element_blank(),
+         legend.position = 'bottom', text = element_text(size = 12),
+         legend.key.width = unit(1, "lines"))+
+   guides(color = guide_legend(override.aes = list(size = 4)))
+ 
+ ggsave(wavelets_transformation_summary_top2_nod2_asv7, filename = 'wavelets_transformation_summary_top2_nod2_bw_asv7.pdf',
         path = 'results/figures/',
         width = 188, height = 230, units = 'mm')
+
  
 ### variance of the coefficients at different scales for each ASV-----
  wavelets_result_ed_tibble_tax_02_biased_red <- wavelets_result_ed_tibble_tax_02_biased_red  |>
@@ -2486,7 +2548,6 @@ wavelets_variance <-  wavelets_result_ed_tibble_tax_3_biased_red |>
          legend.position = 'bottom', axis.text.y = element_text(size = 8),
          axis.title = element_text(size = 8), strip.background = element_blank(), 
          legend.text = element_text(size = 7), legend.title = element_text(size = 8), strip.placement = 'outside')
- 
  
  ## EXPLORE PA RESULTS ----
  asv_tab_all_bloo_z_tax |>
@@ -2864,8 +2925,7 @@ wavelets_variance <-  wavelets_result_ed_tibble_tax_3_biased_red |>
          legend.key.width = unit(1, "lines"))+
    guides(color = guide_legend(override.aes = list(size = 4)))
  
- 
- ggsave( wavelets_transformation_summary_top3_s4, filename = ' wavelets_transformation_summary_top2_s4.pdf',
+ ggsave( wavelets_transformation_summary_top3_s4, filename = 'wavelets_transformation_summary_top2_s4.pdf',
         path = 'results/figures/',
         width = 188, height = 150, units = 'mm')
  

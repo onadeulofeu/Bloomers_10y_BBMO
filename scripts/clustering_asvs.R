@@ -25,20 +25,94 @@ palette_clustering <- c("#FFE355",
                         "#ca6094"
                         )
 
-palette_clustering_assigned <- c('cl_5_3'= '#2466BF', 'cl_8_3' =  '#5B9B57', 'cl_9_3' = '#FFD700', 
-                                 'asv27_3'=  '#C73F4E' , 'asv28_3'= '#AD7CE6',
+palete_seasonal_bloo <- c('#2466BF', '#5B9B57', '#FFD700', '#C73F4E', '#AD7CE6')
+
+palette_clustering_assigned <- c('cl_9_3' ="#FFD700",
+                                 "#EF8D00",
+                                 "#ffd2f1",
+                                 "#2b347a",
+                                 "#c23939",
+                                 'cl_8_3' = "#4cb76a",
+                                 "#804c90",
+                                 'cl_5_3'= '#2466BF',
+                                 'cl_3_0.2' = '#2466BF', 
+                                 'cl_5_3'= "#518535",
+                                 "#2d373b",
+                                 "#6a6964",
+                                 "#57a9a8",
+                                 "#c9acb8",
+                                 "#8289ba",
+                                 "#bec735",
+                                 "#c5ebff",
+                                 "#ca6094",
+                                 'asv27_3'=  '#C73F4E' , 
+                                 'asv28_3'= '#AD7CE6',
                                  'asv27_0.2'=  '#C73F4E' , 
-                                 'cl_3_0.2' = '#2466BF', '
-                                 asv62_0.2' = '#5B9B57' , 'asv1_0.2'= '#2F2F2C',
-                                 )
+                                
+                                 'asv62_0.2' = '#5B9B57' , 
+                                 'asv1_0.2'= '#2F2F2C')
+
+## List of my clusters and which ASVs belong in there ----
+## (cl_1 = 'habor restoration 1' ('asv311', 'asv302', 'asv511')
+#                                   cl_2 = 'habor restoration 2', c('asv194', 'asv105', 'asv559')
+#                                   cl_3 = 'habor restoration 3', c('asv22', 'asv85', 'asv163', 'asv219', 'asv80', 'asv192', 'asv49')
+#                                   cl_4 = 'harbor restoration 4', c('asv276', 'asv264', 'asv223', 'asv471', 'asv752')
+#                                   cl_5 = 'seasonal 1', c('asv7', 'asv15')
+#                                   cl_6 = 'harbor restoration 5', c('asv317', 'asv200', 'asv113')
+#                                   cl_7 = 'recurrent random', c('asv116', 'asv182', 'asv84')
+#                                   cl_8 = 'seasonal 2', c('asv100', 'asv25', 'asv72', 'asv42')
+#                                   cl_9 = 'seasonal 3', c('asv23', 'asv1', 'asv31', 'asv4')
+#                                   cl_10 = 'harbor restoration 6', c('asv69', 'asv225')
+#                                   cl_11 = 'harbor restoration 7', c('asv153', 'asv77')
+#                                   unclear = 'ungruped' asv179, asv11, asv385, asv27, asv17, asv43, asv118, asv126, asv28
+# cl_1_0.2 = 'recurrent random', c('asv58', 'asv178')
+# cl_2_0.2 = 'ephemeral random', c('asv555', 'asv114', 'asv249', 'asv237', 'asv563', 'asv282')
+# cl_3_0.2 = 'seasonal 1', c('asv15', 'asv7')
+# cl_4_0.2 = 'SAR11 cluster', c('asv2', 'asv3', 'asv5', 'asv8') 
+# unclear_0.2 = 'ungrouped' 'asv11' 'asv27' 'asv38' 'asv1' 'asv17' 'asv62'
 
 palete_seasonal_bloo <- c('cl_5_3'= '#2466BF', 'cl_8_3' =  '#5B9B57','cl_9_3' = '#FFD700', 'asv27_3'=  '#C73F4E' , 'asv28_3'= '#AD7CE6',
                           'asv27_0.2'=  '#C73F4E' , 'cl_3_0.2' = '#2466BF', 'asv62_0.2' = '#5B9B57' , 'asv1_0.2'= '#2F2F2C')
+
+labs_clusters_pa_fl <-   as_labeller(c(cl_1_3 = 'habor restoration 1', ## clusters meaning
+                                       cl_2_3 = 'habor restoration 2',
+                                       cl_3_3 = 'habor restoration 3',
+                                       cl_4_3 = 'harbor restoration 4',
+                                       cl_5_3 = 'seasonal 1',
+                                       cl_6_3 = 'harbor restoration 5', 
+                                       cl_7_3 = 'recurrent random',
+                                       cl_8_3 = 'seasonal 2',
+                                       cl_9_3 = 'seasonal 3',
+                                       cl_10_3 = 'harbor restoration 6',
+                                       cl_11_3 = 'harbor restoration 7',
+                                       unclear_3 = 'ungruped', 
+                                       cl_1_0.2 = 'recurrent random', 
+                                       cl_2_0.2 = 'ephemeral random',
+                                       cl_3_0.2 = 'seasonal 1',
+                                       cl_4_0.2 = 'SAR11 cluster',
+                                       unclear_0.2 = 'ungrouped'))
 
 ## labels----
 year_labels <- c("2004", "2005", "2006", '2007', '2008', '2009', '2010',
                  '2011', '2012', '2013') ## create the labels with correspond with the sample num
 
+## upload some datasets that I will need for the plots----
+##upload occurrence data -----
+occurrence_bloo_bbmo <- read.delim2('data/occurrence_bloo_bbmo.csv', sep = ',')
+occurrence_bloo_bbmo |>
+  head()
+
+occurence_perc_3 <- occurrence_bloo_bbmo |>
+  dplyr::filter(fraction == '3') |>
+  dplyr::select(asv_num, fraction, occurrence_perc) |>
+  distinct(asv_num, fraction, occurrence_perc)
+
+occurence_perc_02 <- occurrence_bloo_bbmo |>
+  dplyr::filter(fraction == '0.2') |>
+  dplyr::select(asv_num, fraction, occurrence_perc) |>
+  distinct(asv_num, fraction, occurrence_perc)
+
+bloo_all_types_summary_tb <- read.csv('results/tables/bloo_all_types_summary_tb.csv')
 
 ### (I'm not using this approximation)------
 ## Fuzzy C-Means
@@ -460,6 +534,7 @@ asv_order <- order.dendrogram(hc1)
 dendro <- ggdendrogram(data = hc1, rotate = T)+
   scale_y_reverse(expand = c(0,0))+
   scale_x_discrete(expand = c(0,0))+
+  geom_hline(yintercept = 10, linetype = 'dashed', color = 'grey')+
   labs(y = 'Distance')+
   theme(axis.text.y = element_text(size = 0), text = element_text(size = 5),
         plot.margin = unit(c(6, 0.1, 6, 5), "mm"))
@@ -484,7 +559,7 @@ heatmap_plot <- heatmap_data_l |>
         plot.margin = unit(c(5, 1, 5, 0), "mm"))
 
 # Create a new page
-pdf("results/figures/hierarchical_clustering_scales/clust_d1_PA.pdf", width = 8, height = 4)  # Adjust width and height as needed
+pdf("results/figures/hierarchical_clustering_scales/clust_d1_PA_line.pdf", width = 8, height = 4)  # Adjust width and height as needed
 
 # Arrange and print the plots
 composition_of_plots <- grid.arrange(dendro, 
@@ -504,6 +579,7 @@ asv_order <- order.dendrogram(hc2)
 
 dendro <- ggdendrogram(data = hc2, rotate = T)+
   scale_y_reverse(expand = c(0,0))+
+  geom_hline(yintercept = 10, linetype = 'dashed', color = 'grey')+
   scale_x_discrete(expand = c(0,0))+
   labs(y = 'Distance')+
   theme(axis.text.y = element_text(size = 0), text = element_text(size = 5),
@@ -529,7 +605,7 @@ heatmap_plot <- heatmap_data_l |>
         plot.margin = unit(c(5, 1, 5, 0), "mm"))
 
 # Create a new page
-pdf("results/figures/hierarchical_clustering_scales/clust_d2_PA.pdf", width = 8, height = 4)  # Adjust width and height as needed
+pdf("results/figures/hierarchical_clustering_scales/clust_d2_PA_line.pdf", width = 8, height = 4)  # Adjust width and height as needed
 
 # Arrange and print the plots
 composition_of_plots <- grid.arrange(dendro, 
@@ -549,6 +625,7 @@ asv_order <- order.dendrogram(hc3)
 
 dendro <- ggdendrogram(data = hc3, rotate = T)+
   scale_y_reverse(expand = c(0,0))+
+  geom_hline(yintercept = 10, linetype = 'dashed', color = 'grey')+
   scale_x_discrete(expand = c(0,0))+
   labs(y = 'Distance')+
   theme(axis.text.y = element_text(size = 0), text = element_text(size = 5),
@@ -574,7 +651,7 @@ heatmap_plot <- heatmap_data_l |>
         plot.margin = unit(c(5, 1, 5, 0), "mm"))
 
 # Create a new page
-pdf("results/figures/hierarchical_clustering_scales/clust_d3_PA.pdf", width = 8, height = 4)  # Adjust width and height as needed
+pdf("results/figures/hierarchical_clustering_scales/clust_d3_PA_line.pdf", width = 8, height = 4)  # Adjust width and height as needed
 
 # Arrange and print the plots
 composition_of_plots <- grid.arrange(dendro, 
@@ -595,6 +672,7 @@ asv_order <- order.dendrogram(hc4)
 dendro <- ggdendrogram(data = hc4, rotate = T)+
   scale_y_reverse(expand = c(0,0))+
   scale_x_discrete(expand = c(0,0))+
+  geom_hline(yintercept = 10, linetype = 'dashed', color = 'grey')+
   labs(y = 'Distance')+
   theme(axis.text.y = element_text(size = 0), text = element_text(size = 5),
         plot.margin = unit(c(6, 0.1, 6, 5), "mm"))
@@ -619,7 +697,7 @@ heatmap_plot <- heatmap_data_l |>
         plot.margin = unit(c(5, 1, 5, 0), "mm"))
 
 # Create a new page
-pdf("results/figures/hierarchical_clustering_scales/clust_d4_PA.pdf", width = 8, height = 4)  # Adjust width and height as needed
+pdf("results/figures/hierarchical_clustering_scales/clust_d4_PA_line.pdf", width = 8, height = 4)  # Adjust width and height as needed
 
 # Arrange and print the plots
 composition_of_plots <- grid.arrange(dendro, 
@@ -639,7 +717,9 @@ asv_order <- order.dendrogram(hc5)
 
 dendro <- ggdendrogram(data = hc5, rotate = T)+
   scale_y_reverse(expand = c(0,0))+
+  geom_hline(yintercept = 10, linetype = 'dashed', color = 'grey')+
   scale_x_discrete(expand = c(0,0))+
+  geom_hline(yintercept = 10, linetype = 'dashed', color = 'grey')+
   labs(y = 'Distance')+
   theme(axis.text.y = element_text(size = 0), text = element_text(size = 5),
         plot.margin = unit(c(6, 0.1, 6, 5), "mm"))
@@ -664,7 +744,7 @@ heatmap_plot <- heatmap_data_l |>
         plot.margin = unit(c(5, 1, 5, 0), "mm"))
 
 # Create a new page
-pdf("results/figures/hierarchical_clustering_scales/clust_s4_PA.pdf", width = 8, height = 4)  # Adjust width and height as needed
+pdf("results/figures/hierarchical_clustering_scales/clust_s4_PA_line.pdf", width = 8, height = 4)  # Adjust width and height as needed
 
 # Arrange and print the plots
 composition_of_plots <- grid.arrange(dendro, 
@@ -677,12 +757,12 @@ dev.off()
 
 
 ## Visualize the clusters and try to identify some groups to label them----
-# Cut tree into 4 groups
-sub_grp_1 <- cutree(hc1, k = 6)
+# Cut tree into groups
+sub_grp_1 <- cutree(hc1, k = 13)
 sub_grp_2 <- cutree(hc2, k = 7)
-sub_grp_3 <- cutree(hc3, k = 5)
+sub_grp_3 <- cutree(hc3, k = 9)
 sub_grp_4 <- cutree(hc4, k = 6)
-sub_grp_5 <- cutree(hc4, k = 7)
+sub_grp_5 <- cutree(hc4, k = 11)
 
 # Number of members in each cluster
 table(sub_grp_1)
@@ -1028,7 +1108,6 @@ asv_tab_all_bloo_z_tax |>
         legend.text = element_text(size = 7), legend.title = element_text(size = 8), strip.placement = 'outside',
         plot.margin = margin(2,5,0,5)) 
 
-
 ## ephemeral
 asv_tab_all_bloo_z_tax |>
   dplyr::filter(asv_num %in% c('asv317', 'asv200', 'asv113')) |>
@@ -1297,78 +1376,75 @@ bloo_3_types_summary <- bloo_3 |>
                            asv_num == 'asv28'~ 'yes'
                            
     ),
-    frequency = case_when(#asv_num %in% c('asv15', 'asv7', 'asv16', 'asv116', 'asv182', 'asv84', 'asv100', 'asv25', 'asv72', 'av42') ~ 'seasonal',
-      asv_num %in% c('asv311', 'asv302', 'asv511') ~ 'stochastic',
-      asv_num %in% c('asv194', 'asv105', 'asv559') ~ 'stochastic',
-      asv_num %in% c('asv276', 'asv264', 'asv223', 'asv471', 'asv752') ~ 'stochastic',
-      asv_num %in% c('asv22', 'asv85', 'asv163', 'asv219', 'asv80', 'asv192', 'asv49')  ~ 'stochastic',
-      asv_num %in% c('asv7', 'asv15') ~ 'seasonal',
-      asv_num %in% c('asv317', 'asv200', 'asv113') ~ 'stochastic',
-      asv_num %in% c('asv116', 'asv182', 'asv84') ~ 'stochastic',
-      asv_num %in% c('asv100', 'asv25', 'asv72', 'asv42') ~ 'seasonal',
-      asv_num %in% c('asv23', 'asv1', 'asv31', 'asv4')  ~ 'seasonal',
-      asv_num %in% c('asv69', 'asv225') ~ 'stochastic',
-      asv_num %in% c('asv153', 'asv77') ~ 'stochastic',
-      asv_num == 'asv179'~ 'stochastic',
-      asv_num == 'asv11'~ 'stochastic',
-      asv_num == 'asv385'~ 'stochastic',
-      asv_num == 'asv27'~ 'seasonal',
-      asv_num == 'asv17'~ 'stochastic',
-      asv_num == 'asv43'~ 'stochastic',
-      asv_num == 'asv118'~ 'stochastic',
-      asv_num == 'asv126'~ 'stochastic',
-      asv_num == 'asv28'~ 'seasonal'
-      ),
-      type_of_bloom = case_when(asv_num %in% c('asv311', 'asv302', 'asv511') ~ 'persistent',
-                                asv_num %in% c('asv194', 'asv105', 'asv559') ~ 'persistent',
-                                asv_num %in% c('asv22', 'asv85', 'asv163', 'asv219', 'asv80', 'asv192', 'asv49')  ~ 'ephemeral',
-                                asv_num %in% c('asv276', 'asv264', 'asv223', 'asv471', 'asv752') ~ 'ephemeral',
-                                asv_num %in% c('asv7', 'asv15') ~ 'persistent',
-                                asv_num %in% c('asv317', 'asv200', 'asv113') ~ 'ephemeral',
-                                asv_num %in% c('asv116', 'asv182', 'asv84') ~ 'persistent',
-                                asv_num %in% c('asv100', 'asv25', 'asv72', 'asv42') ~ 'persistent',
-                                asv_num %in% c('asv23', 'asv1', 'asv31', 'asv4') ~ 'persistent',
-                                asv_num %in% c('asv69', 'asv225') ~ 'ephemeral',
-                                asv_num %in% c('asv153', 'asv77') ~ 'persistent',
-                                asv_num == 'asv179'~ 'ephemeral',
-                                asv_num == 'asv11'~ 'ephemeral',
-                                asv_num == 'asv385'~ 'ephemeral',
-                                asv_num == 'asv27'~ 'persistent',
-                                asv_num == 'asv17'~ 'persistent',
-                                asv_num == 'asv43'~ 'ephemeral',
-                                asv_num == 'asv118'~ 'persistent',
-                                asv_num == 'asv126'~ 'persistent',
-                                asv_num == 'asv28'~ 'persistent'
-      ),
-      clustering_group = case_when(asv_num %in% c('asv311', 'asv302', 'asv511') ~ 'cl_1',
-                                   asv_num %in% c('asv194', 'asv105', 'asv559') ~ 'cl_2',
-                                   asv_num %in% c('asv22', 'asv85', 'asv163', 'asv219', 'asv80', 'asv192', 'asv49')  ~ 'cl_3',
-                                   asv_num %in% c('asv276', 'asv264', 'asv223', 'asv471', 'asv752') ~ 'cl_4',
-                                   asv_num %in% c('asv7', 'asv15')  ~ 'cl_5',
-                                   asv_num %in% c('asv317', 'asv200', 'asv113') ~ 'cl_6',
-                                   asv_num %in% c('asv116', 'asv182', 'asv84') ~ 'cl_7',
-                                   asv_num %in% c('asv100', 'asv25', 'asv72', 'asv42') ~ 'cl_8',
-                                   asv_num %in% c('asv23', 'asv1', 'asv31', 'asv4') ~ 'cl_9',
-                                   asv_num %in% c('asv69', 'asv225') ~ 'cl_10',
-                                   asv_num %in% c('asv153', 'asv77') ~ 'cl_11',
-                                   asv_num == 'asv179'~ 'unclear',
-                                   asv_num == 'asv11'~ 'unclear',
-                                   asv_num == 'asv385'~ 'unclear',
-                                   asv_num == 'asv27'~ 'unclear',
-                                   asv_num == 'asv17'~ 'unclear',
-                                   asv_num == 'asv43'~ 'unclear',
-                                   asv_num == 'asv118'~ 'unclear',
-                                   asv_num == 'asv126'~ 'unclear',
-                                   asv_num == 'asv28'~ 'unclear'
-                                   )
-    )
+    frequency = case_when(asv_num %in% c('asv311', 'asv302', 'asv511') ~ 'stochastic',
+                          asv_num %in% c('asv194', 'asv105', 'asv559') ~ 'stochastic',
+                          asv_num %in% c('asv276', 'asv264', 'asv223', 'asv471', 'asv752') ~ 'stochastic',
+                          asv_num %in% c('asv22', 'asv85', 'asv163', 'asv219', 'asv80', 'asv192', 'asv49')  ~ 'stochastic',
+                          asv_num %in% c('asv7', 'asv15') ~ 'seasonal',
+                          asv_num %in% c('asv317', 'asv200', 'asv113') ~ 'stochastic',
+                          asv_num %in% c('asv116', 'asv182', 'asv84') ~ 'stochastic',
+                          asv_num %in% c('asv100', 'asv25', 'asv72', 'asv42') ~ 'seasonal',
+                          asv_num %in% c('asv23', 'asv1', 'asv31', 'asv4')  ~ 'seasonal',
+                          asv_num %in% c('asv69', 'asv225') ~ 'stochastic',
+                          asv_num %in% c('asv153', 'asv77') ~ 'stochastic',
+                          asv_num == 'asv179'~ 'stochastic',
+                          asv_num == 'asv11'~ 'stochastic',
+                          asv_num == 'asv385'~ 'stochastic',
+                          asv_num == 'asv27'~ 'seasonal',
+                          asv_num == 'asv17'~ 'stochastic',
+                          asv_num == 'asv43'~ 'stochastic',
+                          asv_num == 'asv118'~ 'stochastic',
+                          asv_num == 'asv126'~ 'stochastic',
+                          asv_num == 'asv28'~ 'seasonal'
+    ),
+    type_of_bloom = case_when(asv_num %in% c('asv311', 'asv302', 'asv511') ~ 'persistent',
+                              asv_num %in% c('asv194', 'asv105', 'asv559') ~ 'persistent',
+                              asv_num %in% c('asv22', 'asv85', 'asv163', 'asv219', 'asv80', 'asv192', 'asv49')  ~ 'ephemeral',
+                              asv_num %in% c('asv276', 'asv264', 'asv223', 'asv471', 'asv752') ~ 'ephemeral',
+                              asv_num %in% c('asv7', 'asv15') ~ 'persistent',
+                              asv_num %in% c('asv317', 'asv200', 'asv113') ~ 'ephemeral',
+                              asv_num %in% c('asv116', 'asv182', 'asv84') ~ 'persistent',
+                              asv_num %in% c('asv100', 'asv25', 'asv72', 'asv42') ~ 'persistent',
+                              asv_num %in% c('asv23', 'asv1', 'asv31', 'asv4') ~ 'persistent',
+                              asv_num %in% c('asv69', 'asv225') ~ 'ephemeral',
+                              asv_num %in% c('asv153', 'asv77') ~ 'persistent',
+                              asv_num == 'asv179'~ 'ephemeral',
+                              asv_num == 'asv11'~ 'ephemeral',
+                              asv_num == 'asv385'~ 'ephemeral',
+                              asv_num == 'asv27'~ 'persistent',
+                              asv_num == 'asv17'~ 'persistent',
+                              asv_num == 'asv43'~ 'ephemeral',
+                              asv_num == 'asv118'~ 'persistent',
+                              asv_num == 'asv126'~ 'persistent',
+                              asv_num == 'asv28'~ 'persistent'
+    ),
+    clustering_group = case_when(asv_num %in% c('asv311', 'asv302', 'asv511') ~ 'cl_1',
+                                 asv_num %in% c('asv194', 'asv105', 'asv559') ~ 'cl_2',
+                                 asv_num %in% c('asv22', 'asv85', 'asv163', 'asv219', 'asv80', 'asv192', 'asv49')  ~ 'cl_3',
+                                 asv_num %in% c('asv276', 'asv264', 'asv223', 'asv471', 'asv752') ~ 'cl_4',
+                                 asv_num %in% c('asv7', 'asv15')  ~ 'cl_5',
+                                 asv_num %in% c('asv317', 'asv200', 'asv113') ~ 'cl_6',
+                                 asv_num %in% c('asv116', 'asv182', 'asv84') ~ 'cl_7',
+                                 asv_num %in% c('asv100', 'asv25', 'asv72', 'asv42') ~ 'cl_8',
+                                 asv_num %in% c('asv23', 'asv1', 'asv31', 'asv4') ~ 'cl_9',
+                                 asv_num %in% c('asv69', 'asv225') ~ 'cl_10',
+                                 asv_num %in% c('asv153', 'asv77') ~ 'cl_11',
+                                 asv_num == 'asv179'~ 'unclear',
+                                 asv_num == 'asv11'~ 'unclear',
+                                 asv_num == 'asv385'~ 'unclear',
+                                 asv_num == 'asv27'~ 'unclear',
+                                 asv_num == 'asv17'~ 'unclear',
+                                 asv_num == 'asv43'~ 'unclear',
+                                 asv_num == 'asv118'~ 'unclear',
+                                 asv_num == 'asv126'~ 'unclear',
+                                 asv_num == 'asv28'~ 'unclear'
+    ))
 
 bloo_3_types_summary <- bloo_3_types_summary |>
   dplyr::left_join(occurence_perc_3) |>
-  dplyr::mutate(occurrence_category = case_when(occurence_perc > 0.75 ~ 'broad',
-                                                occurence_perc < 0.1 ~ 'narrow',
+  dplyr::mutate(occurrence_category = case_when(occurrence_perc > 0.75 ~ 'broad',
+                                                occurrence_perc < 0.1 ~ 'narrow',
                                                 TRUE ~ 'intermidiate'))
-
 ## clusters meaning ----
 labs_clusters_pa <- as_labeller(c(cl_1 = 'habor restoration 1', 
                                   cl_2 = 'habor restoration 2',
@@ -1381,8 +1457,7 @@ labs_clusters_pa <- as_labeller(c(cl_1 = 'habor restoration 1',
                                cl_9 = 'seasonal 3',
                                 cl_10 = 'harbor restoration 6',
                                cl_11 = 'harbor restoration 7',
-                               unclear = 'ungruped'
-                                ))
+                               unclear = 'ungruped'))
 
 ##add the occurrence and the relative abundance of this taxa----
 occurrence_bloo_bbmo |>
@@ -1486,7 +1561,7 @@ asv_tab_all_bloo_z_tax |>
         legend.text = element_text(size = 7), legend.title = element_text(size = 8), strip.placement = 'outside',
         plot.margin = margin(2,5,0,5))
 
-##estudio els exemples per tipus----
+## explore the examples by the different types ----
 asv_tab_all_bloo_z_tax |>
   dplyr::filter(asv_num %in% bloo_3$value) |>
   dplyr::filter(!asv_num %in% asvs_3_with_cluster$asv_num) |>
@@ -1501,12 +1576,7 @@ asv_tab_all_bloo_z_tax |>
   group_by(date, fraction, type_of_bloom, occurrence_category) |>
   dplyr::mutate(max_abund = sum(abundance_value)) |>
   ggplot(aes(date, max_abund))+
-  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0)
-                   #limits = c(min(asv_tab_all_bloo_z_tax$date), max(asv_tab_all_bloo_z_tax$date),
-                   #limits = c(as.POSIXct(2004-01-26, origin = '2004-01-26'), as.POSIXct(2014-01-01, origin = '2014-01-01'))
-  )+
-  # geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
-  # ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
   scale_y_continuous(labels = percent_format(), expand = c(0,0))+ #, limits = c(0,0.25)
   geom_area(aes(date, abundance_value, fill = family_f), alpha = 0.8,  position='stack')+
   scale_fill_manual(values = palette_family_assigned_bloo)+
@@ -1540,8 +1610,6 @@ asv_tab_all_bloo_z_tax |>
                    #limits = c(min(asv_tab_all_bloo_z_tax$date), max(asv_tab_all_bloo_z_tax$date),
                    #limits = c(as.POSIXct(2004-01-26, origin = '2004-01-26'), as.POSIXct(2014-01-01, origin = '2014-01-01'))
   )+
-  # geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
-  # ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
   scale_y_continuous(labels = percent_format(), expand = c(0,0))+ #, limits = c(0,0.25)
   geom_area(aes(date, abundance_value, fill = family_f), alpha = 0.8,  position='stack')+
   scale_fill_manual(values = palette_family_assigned_bloo)+
@@ -1595,8 +1663,6 @@ asv_tab_all_bloo_z_tax |>
         plot.margin = margin(2,5,0,5))
 
 #### SEASONAL BLOOMERS -----
-palete_seasonal_bloo <- c('#2466BF', '#5B9B57', '#FFD700', '#C73F4E', '#AD7CE6')
-
 seasonal_clusters_labs <- as_labeller(c( cl_5 = 'first bloom type 1',
                                                              cl_8 = 'second bloom',
                                                              cl_9 = 'third bloom',
@@ -1749,13 +1815,13 @@ asv_tab_all_bloo_z_tax |>
         legend.text = element_text(size = 7), legend.title = element_text(size = 8), strip.placement = 'outside',
         plot.margin = margin(2,5,0,5))
 
-
 # PICK EXAMPLE FOR EACH TYPE OF BLOOM-----
 ## recurrent - seasonal - persistent maybe asv23?
 
 ### The same for the FL fraction----
 time_series_1 <- wavelets_result_tibble_tax_02_biased |>
   dplyr::select(decimal_date, wavelets_result_ed, asv_num, wavelets_transformation) |>
+  dplyr::filter(!asv_num %in% c('asv2', 'asv3', 'asv5', 'asv8')) |> # I remove the SAR11 cluster from the analyisis as they as discarded as true bloomers
   left_join(tax_bbmo_10y_new, by = 'asv_num') |>
   dplyr::mutate(asv_f = case_when(!is.na(family) ~ paste0(family,'.',asv_num),
                                   is.na(family) & !is.na(order) ~ paste0(order, '.', asv_num),
@@ -1768,6 +1834,7 @@ time_series_1 <- wavelets_result_tibble_tax_02_biased |>
 
 time_series_2 <- wavelets_result_tibble_tax_02_biased |>
   dplyr::select(decimal_date, wavelets_result_ed, asv_num, wavelets_transformation) |>
+  dplyr::filter(!asv_num %in% c('asv2', 'asv3', 'asv5', 'asv8')) |> # I remove the SAR11 cluster from the analyisis as they as discarded as true bloomers
   left_join(tax_bbmo_10y_new, by = 'asv_num') |>
   dplyr::mutate(asv_f = case_when(!is.na(family) ~ paste0(family,'.',asv_num),
                                   is.na(family) & !is.na(order) ~ paste0(order, '.', asv_num),
@@ -1780,6 +1847,7 @@ time_series_2 <- wavelets_result_tibble_tax_02_biased |>
 
 time_series_3 <- wavelets_result_tibble_tax_02_biased |>
   dplyr::select(decimal_date, wavelets_result_ed, asv_num, wavelets_transformation) |>
+  dplyr::filter(!asv_num %in% c('asv2', 'asv3', 'asv5', 'asv8')) |> # I remove the SAR11 cluster from the analyisis as they as discarded as true bloomers
   left_join(tax_bbmo_10y_new, by = 'asv_num') |>
   dplyr::mutate(asv_f = case_when(!is.na(family) ~ paste0(family,'.',asv_num),
                                   is.na(family) & !is.na(order) ~ paste0(order, '.', asv_num),
@@ -1792,6 +1860,7 @@ time_series_3 <- wavelets_result_tibble_tax_02_biased |>
 
 time_series_4 <- wavelets_result_tibble_tax_02_biased |>
   dplyr::select(decimal_date, wavelets_result_ed, asv_num, wavelets_transformation) |>
+  dplyr::filter(!asv_num %in% c('asv2', 'asv3', 'asv5', 'asv8')) |> # I remove the SAR11 cluster from the analyisis as they as discarded as true bloomers
   left_join(tax_bbmo_10y_new, by = 'asv_num') |>
   dplyr::mutate(asv_f = case_when(!is.na(family) ~ paste0(family,'.',asv_num),
                                   is.na(family) & !is.na(order) ~ paste0(order, '.', asv_num),
@@ -1804,6 +1873,7 @@ time_series_4 <- wavelets_result_tibble_tax_02_biased |>
 
 time_series_5 <- wavelets_result_tibble_tax_02_biased |>
   dplyr::select(decimal_date, wavelets_result_ed, asv_num, wavelets_transformation) |>
+  dplyr::filter(!asv_num %in% c('asv2', 'asv3', 'asv5', 'asv8')) |> # I remove the SAR11 cluster from the analyisis as they as discarded as true bloomers
   left_join(tax_bbmo_10y_new, by = 'asv_num') |>
   dplyr::mutate(asv_f = case_when(!is.na(family) ~ paste0(family,'.',asv_num),
                                   is.na(family) & !is.na(order) ~ paste0(order, '.', asv_num),
@@ -1879,6 +1949,7 @@ asv_order <- order.dendrogram(hc1)
 
 dendro <- ggdendrogram(data = hc1, rotate = T)+
   scale_y_reverse(expand = c(0,0))+
+  geom_hline(yintercept = 10, linetype = 'dashed', color = 'grey')+
   scale_x_discrete(expand = c(0,0))+
   labs(y = 'Distance')+
   theme(axis.text.y = element_text(size = 0), text = element_text(size = 5),
@@ -1904,7 +1975,7 @@ heatmap_plot <- heatmap_data_l |>
         plot.margin = unit(c(5, 1, 5, 0), "mm"))
 
 # Create a new page
-pdf("results/figures/hierarchical_clustering_scales/clust_d1_FL.pdf", width = 8, height = 4)  # Adjust width and height as needed
+pdf("results/figures/hierarchical_clustering_scales/clust_d1_FL_no_sar11_cluster_line.pdf", width = 8, height = 4)  # Adjust width and height as needed
 
 # Arrange and print the plots
 composition_of_plots <- grid.arrange(dendro, 
@@ -1924,6 +1995,7 @@ asv_order <- order.dendrogram(hc2)
 
 dendro <- ggdendrogram(data = hc2, rotate = T)+
   scale_y_reverse(expand = c(0,0))+
+  geom_hline(yintercept = 10, linetype = 'dashed', color = 'grey')+
   scale_x_discrete(expand = c(0,0))+
   labs(y = 'Distance')+
   theme(axis.text.y = element_text(size = 0), text = element_text(size = 5),
@@ -1949,7 +2021,7 @@ heatmap_plot <- heatmap_data_l |>
         plot.margin = unit(c(5, 1, 5, 0), "mm"))
 
 # Create a new page
-pdf("results/figures/hierarchical_clustering_scales/clust_d2_FL.pdf", width = 8, height = 4)  # Adjust width and height as needed
+pdf("results/figures/hierarchical_clustering_scales/clust_d2_FL_no_sar11_cluster_line.pdf", width = 8, height = 4)  # Adjust width and height as needed
 
 # Arrange and print the plots
 composition_of_plots <- grid.arrange(dendro, 
@@ -1969,6 +2041,7 @@ asv_order <- order.dendrogram(hc3)
 
 dendro <- ggdendrogram(data = hc3, rotate = T)+
   scale_y_reverse(expand = c(0,0))+
+  geom_hline(yintercept = 10, linetype = 'dashed', color = 'grey')+
   scale_x_discrete(expand = c(0,0))+
   labs(y = 'Distance')+
   theme(axis.text.y = element_text(size = 0), text = element_text(size = 5),
@@ -1994,7 +2067,7 @@ heatmap_plot <- heatmap_data_l |>
         plot.margin = unit(c(5, 1, 5, 0), "mm"))
 
 # Create a new page
-pdf("results/figures/hierarchical_clustering_scales/clust_d3_FL.pdf", width = 8, height = 4)  # Adjust width and height as needed
+pdf("results/figures/hierarchical_clustering_scales/clust_d3_FL_no_sar11_cluster_line.pdf", width = 8, height = 4)  # Adjust width and height as needed
 
 # Arrange and print the plots
 composition_of_plots <- grid.arrange(dendro, 
@@ -2014,6 +2087,7 @@ asv_order <- order.dendrogram(hc4)
 
 dendro <- ggdendrogram(data = hc4, rotate = T)+
   scale_y_reverse(expand = c(0,0))+
+  geom_hline(yintercept = 10, linetype = 'dashed', color = 'grey')+
   scale_x_discrete(expand = c(0,0))+
   labs(y = 'Distance')+
   theme(axis.text.y = element_text(size = 0), text = element_text(size = 5),
@@ -2039,7 +2113,7 @@ heatmap_plot <- heatmap_data_l |>
         plot.margin = unit(c(5, 1, 5, 0), "mm"))
 
 # Create a new page
-pdf("results/figures/hierarchical_clustering_scales/clust_d4_FL.pdf", width = 8, height = 4)  # Adjust width and height as needed
+pdf("results/figures/hierarchical_clustering_scales/clust_d4_FL_no_sar11_cluster_line.pdf", width = 8, height = 4)  # Adjust width and height as needed
 
 # Arrange and print the plots
 composition_of_plots <- grid.arrange(dendro, 
@@ -2064,6 +2138,7 @@ asv_order <- order.dendrogram(hc5)
 
 dendro <- ggdendrogram(data = hc5, rotate = T)+
   scale_y_reverse(expand = c(0,0))+
+  geom_hline(yintercept = 10, linetype = 'dashed', color = 'grey')+
   scale_x_discrete(expand = c(0,0))+
   labs(y = 'Distance')+
   theme(axis.text.y = element_text(size = 0), text = element_text(size = 5),
@@ -2089,7 +2164,7 @@ heatmap_plot <- heatmap_data_l |>
         plot.margin = unit(c(5, 1, 5, 0), "mm"))
 
 # Create a new page
-pdf("results/figures/hierarchical_clustering_scales/clust_s4_FL.pdf", width = 8, height = 4)  # Adjust width and height as needed
+pdf("results/figures/hierarchical_clustering_scales/clust_s4_FL_no_sar11_cluster_line.pdf", width = 8, height = 4)  # Adjust width and height as needed
 
 # Arrange and print the plots
 composition_of_plots <- grid.arrange(dendro, 
@@ -2101,13 +2176,14 @@ composition_of_plots <- grid.arrange(dendro,
 dev.off()
 
 
+
 ## Visualize the clusters and try to identify some groups to label them----
 # Cut tree into 4 groups
 sub_grp_1 <- cutree(hc1, k = 6)
 sub_grp_2 <- cutree(hc2, k = 6)
-sub_grp_3 <- cutree(hc3, k = 6)
+sub_grp_3 <- cutree(hc3, k = 5)
 sub_grp_4 <- cutree(hc4, k = 6)
-sub_grp_5 <- cutree(hc4, k = 3)
+sub_grp_5 <- cutree(hc4, k = 4)
 
 # Number of members in each cluster
 table(sub_grp_1)
@@ -2196,9 +2272,9 @@ fviz_cluster(list(data = df_5 , cluster = sub_grp_5),
 # Cut tree into 4 groups
 sub_grp_1 <- cutree(hc1, k = 6)
 sub_grp_2 <- cutree(hc2, k = 5)
-sub_grp_3 <- cutree(hc3, k = 7)
+sub_grp_3 <- cutree(hc3, k = 5)
 sub_grp_4 <- cutree(hc4, k = 9)
-sub_grp_5 <- cutree(hc4, k = 3)
+sub_grp_5 <- cutree(hc4, k = 4)
 
 # Number of members in each cluster
 table(sub_grp_1)
@@ -2504,8 +2580,6 @@ asv_tab_all_bloo_z_tax |>
                    #limits = c(min(asv_tab_all_bloo_z_tax$date), max(asv_tab_all_bloo_z_tax$date),
                    #limits = c(as.POSIXct(2004-01-26, origin = '2004-01-26'), as.POSIXct(2014-01-01, origin = '2014-01-01'))
   )+
-  # geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
-  # ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
   facet_wrap(vars(asv_num_f))+
   scale_y_continuous(labels = percent_format(), expand = c(0,0), limits = c(0,0.25))+
   geom_area(aes(date, abundance_value, fill = family_f, group = asv_num_f), alpha = 0.8,  position='stack')+
@@ -2652,12 +2726,22 @@ wavelets_result_ed_tibble_tax_02_biased_red |>
         legend.text = element_text(size = 7), legend.title = element_text(size = 8), strip.placement = 'outside',
         plot.margin = margin(2,5,0,5))  
 
-###table with the label corresponding to their signals-------
+
+###table with the label corresponding to their signals for FL and PA -------
+
 ### for each transformation used each bloomer has a different label only if it gives a clear strong signal 
 #### this table will contain the asv num + for each transformation which label did it got
-
 ###The most important signals for our dataset have been the d1, d3, and s5 they are the ones that we will use for 
 ### labeling the bloomers.
+
+bloo_all_types_summary_tb <- bloo_all_types_summary |>
+  group_by(recurrency, frequency, type_of_bloom, clustering_group, fraction, occurrence_category) %>%
+  mutate(group_asv = paste(asv_num, collapse = ", ")) %>%
+  ungroup() |>
+  dplyr::select(-asv_num, -occurrence_perc) |>
+  distinct(recurrency, frequency, type_of_bloom, clustering_group, fraction, occurrence_category, group_asv)
+
+#write.csv(bloo_all_types_summary_tb, 'results/tables/bloo_all_types_summary_tb.csv')
 
 ## With this analysis we will pick a representative of each group to perform the random tree analysis-----
 ## asvs with less clear clutser asv179, asv11, asv385, asv27, asv17, asv43, asv118, asv126, asv28
@@ -2705,7 +2789,7 @@ bloo_02_types_summary <- bloo_02 |>
                               asv_num %in% c('asv555', 'asv114', 'asv249', 'asv237', 'asv563', 'asv282') ~ 'ephemeral',
                               asv_num %in% c('asv15', 'asv7')  ~ 'persistent',
                               asv_num %in% c('asv2', 'asv3', 'asv5', 'asv8') ~ 'persistent',
-                              asv_num == 'asv11' ~ 'persistent',
+                              asv_num == 'asv11' ~ 'ephemeral',
                               asv_num == 'asv27' ~ 'persistent',
                               asv_num == 'asv38' ~ 'persistent',
                               asv_num == 'asv1' ~ 'persistent',
@@ -2727,8 +2811,8 @@ bloo_02_types_summary <- bloo_02 |>
 
 bloo_02_types_summary <- bloo_02_types_summary |>
   dplyr::left_join(occurence_perc_02) |>
-  dplyr::mutate(occurrence_category = case_when(occurence_perc > 0.75 ~ 'broad',
-                                                occurence_perc < 0.1 ~ 'narrow',
+  dplyr::mutate(occurrence_category = case_when(occurrence_perc > 0.75 ~ 'broad',
+                                                occurrence_perc < 0.1 ~ 'narrow',
                                                 TRUE ~ 'intermidiate'))
 
 ## clusters meaning ----
@@ -2988,6 +3072,7 @@ asv_tab_all_bloo_z_tax |>
                   asv_num %in% bloo_02$value &
                   fraction == '0.2') |>
   dplyr::filter(abundance_type == 'relative_abundance') |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
   dplyr::left_join(bloo_all_types_summary, by = c('asv_num_f' = 'asv_num','fraction')) |>
   group_by(date, clustering_group, fraction, cluster_fr) |>
   dplyr::reframe(abundance_cluster = sum(abundance_value)) |>
@@ -2996,12 +3081,7 @@ asv_tab_all_bloo_z_tax |>
   scale_x_datetime(expand = c(0,0))+
   geom_area(aes(date, y = abundance_cluster, group = cluster_fr, fill = cluster_fr), alpha = 0.8,  position= 'stack')+
   scale_fill_manual(values = palette_clustering, labels = labs_clusters_pa_fl)+
-  #geom_area(aes(day_of_year,max_abund), alpha = 0.5,  position='identity')+
-  #scale_color_manual(values = palete_seasonal_bloo)+
-  #geom_point(aes(color = clustering_group, y = abundance_value), alpha = 0.2)+
-  #geom_smooth(aes(color = clustering_group, y = abundance_value), span = 0.8)+
-  #geom_smooth(aes(group = clustering_group), method = 'loess', se = F, span = 0.6)+
-  facet_grid(vars(fraction), labeller = labs_fraction)+ #, labels = labs_fraction
+
   labs(x = 'Day of the year', y = 'Relative abundance (%)', fill = 'Clustering group')+
   guides(fill = guide_legend(ncol = 6, size = 10,
                              override.aes = aes(label = '')),
@@ -3069,16 +3149,11 @@ asv_tab_all_bloo_z_tax_cl$facet_variable <- factor(asv_tab_all_bloo_z_tax_cl$fac
                                                                                                 ))
   
 bloo_bbmo_clusters <- asv_tab_all_bloo_z_tax_cl |>  
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
   ggplot(aes(date, abundance_cluster))+
   scale_y_continuous(labels = percent_format(), expand = c(0,0))+ #, limits = c(0,0.25)
   geom_area(aes(date, y = abundance_value, group = asv_num_f, fill = family_f),   position= 'stack')+
-  #scale_fill_manual(values = palette_clustering, labels = labs_clusters_pa_fl)+
   scale_fill_manual(values = palette_family_assigned_bloo)+
-  #geom_area(aes(day_of_year,max_abund), alpha = 0.5,  position='identity')+
-  #scale_color_manual(values = palete_seasonal_bloo)+
-  #geom_point(aes(color = clustering_group, y = abundance_value), alpha = 0.2)+
-  #geom_smooth(aes(color = clustering_group, y = abundance_value), span = 0.8)+
-  #geom_smooth(aes(group = clustering_group), method = 'loess', se = F, span = 0.6)+
   scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
   facet_wrap(facet_variable~fraction, 
              labeller = labs_clusters_pa_fl, ncol = 3)+ #, labels = labs_fraction
@@ -3100,10 +3175,132 @@ bloo_bbmo_clusters <- asv_tab_all_bloo_z_tax_cl |>
 #        path = 'results/figures/',
 #        width = 188, height = 220, units = 'mm')
 
+## clusters without SAR11
+bloo_bbmo_clusters_no_sar_cluster <- asv_tab_all_bloo_z_tax_cl |>  
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  #dplyr::filter(order != 'SAR11 clade') |>
+  dplyr::filter(cluster_fr != 'cl_4_0.2') |> #no sar11 clade but the others yes
+  ggplot(aes(date, abundance_cluster))+
+  scale_y_continuous(labels = percent_format(), expand = c(0,0))+ #, limits = c(0,0.25)
+  geom_area(aes(date, y = abundance_value, group = asv_num_f, fill = family_f),   position= 'stack')+
+  #scale_fill_manual(values = palette_clustering, labels = labs_clusters_pa_fl)+
+  scale_fill_manual(values = palette_family_assigned_bloo)+
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
+  facet_wrap(facet_variable~fraction, 
+             labeller = labs_clusters_pa_fl, ncol = 3)+ #, labels = labs_fraction
+  labs(x = 'Date', y = 'Relative abundance (%)', fill = 'Family')+
+  guides(fill = guide_legend(ncol = 7, size = 8,
+                             override.aes = aes(label = '')),
+         color = 'none',
+         alpha = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 4), panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 5, margin = margin(0, 0, 2, 0)),
+        legend.position = 'bottom', axis.text.y = element_text(size = 4),
+        axis.title = element_text(size = 7), strip.background = element_blank(), 
+        legend.text = element_text(size = 5), legend.title = element_text(size = 7), strip.placement = 'outside',
+        plot.margin = margin(2,5,0,5),
+        legend.key.size = unit(3, 'mm'))
+
+ggsave(filename = 'bloo_bbmo_clusters_no_sar_cluster.pdf', plot = bloo_bbmo_clusters_no_sar_cluster,
+       path = 'results/figures/',
+       width = 188, height = 200, units = 'mm')
+
+
+## plot rclr not relative abundance ----
+asv_tab_all_bloo_z_tax_cl <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(asv_num %in% bloo_3$value &
+                  fraction == '3' |
+                  asv_num %in% bloo_02$value &
+                  fraction == '0.2') |>
+  dplyr::filter(abundance_type == 'rclr') |>
+  dplyr::left_join(bloo_all_types_summary, by = c('asv_num_f' = 'asv_num','fraction')) |>
+  group_by(date, clustering_group, fraction, cluster_fr, family_f) |>
+  dplyr::mutate(abundance_cluster = sum(abundance_value)) |>
+  dplyr::mutate(facet_variable = case_when(
+    !str_detect(cluster_fr, 'unclear') ~ cluster_fr,
+    str_detect(cluster_fr, 'unclear') ~ paste0(frequency, '_', fraction) 
+  )) 
+
+asv_tab_all_bloo_z_tax_cl$facet_variable |>
+  unique()
+
+asv_tab_all_bloo_z_tax_cl$facet_variable <- factor(asv_tab_all_bloo_z_tax_cl$facet_variable, levels = c(     
+  "cl_5_3" , "cl_8_3", "cl_9_3", "cl_3_0.2"  ,   ##seasonal
+  "cl_4_0.2"  , "seasonal_3" , "seasonal_0.2",
+  "cl_7_3"  ,   "cl_1_0.2" ,  "cl_2_0.2" , #stochastic
+  "cl_1_3",    "cl_2_3", "cl_3_3" , 
+  "cl_4_3" , "cl_6_3",
+  "cl_10_3" ,   "cl_11_3" , #harbor restoration clusters
+  "stochastic_3" , "stochastic_0.2" 
+))
+
+bloo_bbmo_clusters <- asv_tab_all_bloo_z_tax_cl |>  
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  ggplot(aes(date, abundance_cluster))+
+  scale_y_continuous( expand = c(0,0))+ #, limits = c(0,0.25)
+  geom_area(aes(date, y = abundance_value, group = asv_num_f, fill = family_f),   position= 'stack')+
+  scale_fill_manual(values = palette_family_assigned_bloo)+
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
+  facet_wrap(facet_variable~fraction, 
+             labeller = labs_clusters_pa_fl, ncol = 3)+ #, labels = labs_fraction
+  labs(x = 'Date', y = 'rCLR', fill = 'Family')+
+  guides(fill = guide_legend(ncol = 7, size = 8,
+                             override.aes = aes(label = '')),
+         color = 'none',
+         alpha = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 4), panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 5, margin = margin(0, 0, 2, 0)),
+        legend.position = 'bottom', axis.text.y = element_text(size = 4),
+        axis.title = element_text(size = 7), strip.background = element_blank(), 
+        legend.text = element_text(size = 5), legend.title = element_text(size = 7), strip.placement = 'outside',
+        plot.margin = margin(2,5,0,5),
+        legend.key.size = unit(3, 'mm'))
+
+bloo_bbmo_clusters_no_sar_cluster <- asv_tab_all_bloo_z_tax_cl |>  
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  #dplyr::filter(order != 'SAR11 clade') |>
+  dplyr::filter(cluster_fr != 'cl_4_0.2') |> #no sar11 clade but the others yes
+  ggplot(aes(date, abundance_cluster))+
+  scale_y_continuous(expand = c(0,0))+ #, limits = c(0,0.25)
+  geom_area(aes(date, y = abundance_value, group = asv_num_f, fill = family_f),   position= 'stack')+
+  #scale_fill_manual(values = palette_clustering, labels = labs_clusters_pa_fl)+
+  scale_fill_manual(values = palette_family_assigned_bloo)+
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
+  facet_wrap(facet_variable~fraction, 
+             labeller = labs_clusters_pa_fl, ncol = 3)+ #, labels = labs_fraction
+  labs(x = 'Date', y = 'Relative abundance (%)', fill = 'Family')+
+  guides(fill = guide_legend(ncol = 7, size = 8,
+                             override.aes = aes(label = '')),
+         color = 'none',
+         alpha = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 4), panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 5, margin = margin(0, 0, 2, 0)),
+        legend.position = 'bottom', axis.text.y = element_text(size = 4),
+        axis.title = element_text(size = 7), strip.background = element_blank(), 
+        legend.text = element_text(size = 5), legend.title = element_text(size = 7), strip.placement = 'outside',
+        plot.margin = margin(2,5,0,5),
+        legend.key.size = unit(3, 'mm'))
+
+ggsave(filename = 'bloo_bbmo_clusters_no_sar_cluster_rclr.pdf', plot = bloo_bbmo_clusters_no_sar_cluster,
+       path = 'results/figures/',
+       width = 188, height = 200, units = 'mm')
+
 ## Is SAR11 clade a real bloom or are they responding to compositional constrictions? -----
 asv_tab_all_bloo_z_tax_cl |>
   colnames()
 
+asv15_seq <- common_bloomers_tax |>
+  dplyr::filter(value == 'asv15') |>
+  dplyr::select(seq) |>
+  as.vector()
+
+asv2_seq <- common_bloomers_tax |>
+  dplyr::filter(value == 'asv2') |>
+  dplyr::select(seq) |>
+  as.vector()
 
 bloo_bbmo_sar11_cluster <- asv_tab_all_bloo_z_tax_cl |> 
   dplyr::filter(fraction == '0.2') |>
@@ -3115,23 +3312,79 @@ bloo_bbmo_sar11_cluster <- asv_tab_all_bloo_z_tax_cl |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
   ggplot(aes(date, blooms_abund))+
   scale_y_continuous(labels = percent_format(), expand = c(0,0), limits = c(0,0.75))+ #, limits = c(0,0.25)
-  #geom_area(aes(date, y = blooms_abund, group = blooms, fill = blooms),   position= 'stack')+
-  #scale_fill_manual(values = palette_clustering, labels = labs_clusters_pa_fl)+
   scale_color_manual(values = c('SAR11_cluster' = '#C73F4E', 'Other blooms' = 'black'))+
   scale_linetype_discrete()+
   geom_line(aes(group = blooms, color = blooms, linetype = blooms), linewidth = 0.25)+
-  #geom_area(aes(day_of_year,max_abund), alpha = 0.5,  position='identity')+
-  #scale_color_manual(values = palete_seasonal_bloo)+
-  #geom_point(aes(color = clustering_group, y = abundance_value), alpha = 0.2)+
-  #geom_smooth(aes(color = clustering_group, y = abundance_value), span = 0.8)+
-  #geom_smooth(aes(group = clustering_group), method = 'loess', se = F, span = 0.6)+
   scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
-  # facet_wrap(vars(fraction),
-  #            labeller = labs_clusters_pa_fl, ncol = 3)+ #, labels = labs_fraction
   labs(x = 'Date', y = 'Relative abundance (%)', color = '', linetype = '')+
   guides(fill = guide_legend(ncol = 7, size = 8,
                              override.aes = aes(label = '')),
-        
+         
+         alpha = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 4), panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 5, margin = margin(0, 0, 2, 0)),
+        legend.position = 'bottom', axis.text.y = element_text(size = 4),
+        axis.title = element_text(size = 7), strip.background = element_blank(), 
+        legend.text = element_text(size = 5), legend.title = element_text(size = 7), strip.placement = 'outside',
+        plot.margin = margin(2,5,0,5),
+        legend.key.size = unit(3, 'mm'))
+
+bloo_bbmo_sar11_cluster 
+# ggsave(filename = 'bloo_bbmo_sar11_cluster.pdf', plot = bloo_bbmo_sar11_cluster ,
+#        path = 'results/figures/',
+#        width = 88, height = 60, units = 'mm')
+
+##not only SAR clade but all SAR11
+bloo_bbmo_sar11_order <- asv_tab_all_bloo_z_tax_cl |> 
+  dplyr::filter(fraction == '0.2') |>
+  # dplyr::mutate(blooms = case_when(cluster_fr == 'cl_4_0.2' ~ 'SAR11_cluster',
+  #                                  cluster_fr != 'cl_4_0.2' ~ 'Other blooms')) |>
+  dplyr::mutate(blooms = case_when(order == 'SAR11 clade' ~ 'SAR11_cluster',
+                                   order != 'SAR11 clade' ~ 'Other blooms')) |>
+  dplyr::group_by(blooms, date) |>
+  dplyr::reframe(blooms_abund = sum(abundance_value)) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  ggplot(aes(date, blooms_abund))+
+  scale_y_continuous(labels = percent_format(), expand = c(0,0), limits = c(0,0.75))+ #, limits = c(0,0.25)
+  scale_color_manual(values = c('SAR11_cluster' = '#C73F4E', 'Other blooms' = 'black'))+
+  scale_linetype_discrete()+
+  geom_line(aes(group = blooms, color = blooms, linetype = blooms), linewidth = 0.25)+
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
+  labs(x = 'Date', y = 'Relative abundance (%)', color = '', linetype = '')+
+  guides(fill = guide_legend(ncol = 7, size = 8,
+                             override.aes = aes(label = '')),
+         
+         alpha = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 4), panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 5, margin = margin(0, 0, 2, 0)),
+        legend.position = 'bottom', axis.text.y = element_text(size = 4),
+        axis.title = element_text(size = 7), strip.background = element_blank(), 
+        legend.text = element_text(size = 5), legend.title = element_text(size = 7), strip.placement = 'outside',
+        plot.margin = margin(2,5,0,5),
+        legend.key.size = unit(3, 'mm'))
+
+asv_tab_all_bloo_z_tax_cl |> 
+  dplyr::filter(fraction == '0.2') |>
+  # dplyr::mutate(blooms = case_when(cluster_fr == 'cl_4_0.2' ~ 'SAR11_cluster',
+  #                                  cluster_fr != 'cl_4_0.2' ~ 'Other blooms')) |>
+  dplyr::mutate(blooms = case_when(order == 'SAR11 clade' ~ 'SAR11 clade',
+                                   order != 'SAR11 clade' ~ 'Other blooms')) |>
+  dplyr::group_by(blooms, date) |>
+  dplyr::reframe(blooms_abund = sum(abundance_value)) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  ggplot(aes(date, blooms_abund))+
+  geom_area(aes(fill = blooms), position = 'stack')+
+  scale_y_continuous(labels = percent_format(), expand = c(0,0), limits = c(0,0.75))+ #, limits = c(0,0.25)
+  scale_fill_manual(values = c('SAR11 clade' = '#C73F4E', 'Other blooms' = 'black'))+
+  scale_linetype_discrete()+
+  #geom_line(aes(group = blooms, color = blooms, linetype = blooms), linewidth = 0.25)+
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
+  labs(x = 'Date', y = 'Relative abundance (%)', color = '', linetype = '')+
+  guides(fill = guide_legend(ncol = 7, size = 8,
+                             override.aes = aes(label = '')),
+         
          alpha = 'none')+
   theme_bw()+
   theme(axis.text.x = element_text(size = 4), panel.grid.minor = element_blank(),
@@ -3143,11 +3396,109 @@ bloo_bbmo_sar11_cluster <- asv_tab_all_bloo_z_tax_cl |>
         legend.key.size = unit(3, 'mm'))
 
 
-bloo_bbmo_sar11_cluster 
-ggsave(filename = 'bloo_bbmo_sar11_cluster.pdf', plot = bloo_bbmo_sar11_cluster ,
-       path = 'results/figures/',
-       width = 88, height = 60, units = 'mm')
+asv_tab_all_bloo_z_tax_cl |> 
+  dplyr::filter(fraction == '0.2') |>
+  dplyr::mutate(blooms = case_when(cluster_fr == 'cl_4_0.2' ~ 'SAR11_cluster',
+                                   cluster_fr != 'cl_4_0.2' ~ 'Other blooms')) |>
+  # dplyr::mutate(blooms = case_when(order == 'SAR11 clade' ~ 'SAR11_cluster',
+  #                                  order != 'SAR11 clade' ~ 'Other blooms')) |>
+  dplyr::group_by(blooms, date) |>
+  dplyr::reframe(blooms_abund = sum(abundance_value)) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  ggplot(aes(date, blooms_abund))+
+  geom_area(aes(fill = blooms), position = 'stack')+
+  scale_y_continuous(labels = percent_format(), expand = c(0,0), limits = c(0,0.75))+ #, limits = c(0,0.25)
+  scale_fill_manual(values = c('SAR11_cluster' = '#C73F4E', 'Other blooms' = 'black'))+
+  scale_linetype_discrete()+
+  #geom_line(aes(group = blooms, color = blooms, linetype = blooms), linewidth = 0.25)+
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
+  labs(x = 'Date', y = 'Relative abundance (%)', color = '', linetype = '')+
+  guides(fill = guide_legend(ncol = 7, size = 8,
+                             override.aes = aes(label = '')),
+         
+         alpha = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 4), panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 5, margin = margin(0, 0, 2, 0)),
+        legend.position = 'bottom', axis.text.y = element_text(size = 4),
+        axis.title = element_text(size = 7), strip.background = element_blank(), 
+        legend.text = element_text(size = 5), legend.title = element_text(size = 7), strip.placement = 'outside',
+        plot.margin = margin(2,5,0,5),
+        legend.key.size = unit(3, 'mm'))
 
+asv_tab_all_bloo_z_tax_cl |> 
+  dplyr::filter(fraction == '0.2') |>
+  dplyr::mutate(blooms = case_when(cluster_fr == 'cl_4_0.2' ~ 'SAR11_cluster',
+                                   cluster_fr != 'cl_4_0.2' ~ 'Other blooms')) |>
+  # dplyr::mutate(blooms = case_when(order == 'SAR11 clade' ~ 'SAR11_cluster',
+  #                                  order != 'SAR11 clade' ~ 'Other blooms')) |>
+  dplyr::group_by(blooms, date) |>
+  dplyr::reframe(blooms_abund = sum(abundance_value)) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  ggplot(aes(date, blooms_abund))+
+  geom_area(aes(fill = blooms), position = 'stack')+
+  scale_y_continuous(labels = percent_format(), expand = c(0,0), limits = c(0,0.75))+ #, limits = c(0,0.25)
+  scale_fill_manual(values = c('SAR11_cluster' = '#C73F4E', 'Other blooms' = 'black'))+
+  scale_linetype_discrete()+
+  #geom_line(aes(group = blooms, color = blooms, linetype = blooms), linewidth = 0.25)+
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
+  labs(x = 'Date', y = 'Relative abundance (%)', color = '', linetype = '')+
+  guides(fill = guide_legend(ncol = 7, size = 8,
+                             override.aes = aes(label = '')),
+         
+         alpha = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 4), panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 5, margin = margin(0, 0, 2, 0)),
+        legend.position = 'bottom', axis.text.y = element_text(size = 4),
+        axis.title = element_text(size = 7), strip.background = element_blank(), 
+        legend.text = element_text(size = 5), legend.title = element_text(size = 7), strip.placement = 'outside',
+        plot.margin = margin(2,5,0,5),
+        legend.key.size = unit(3, 'mm'))
+
+bloo_all_types_summary_tax <- bloo_all_types_summary |>
+  left_join(bloo_taxonomy, by = c('asv_num' = 'asv_num_f'))
+
+### We have different SAR11 the group that is clustered in the SAR11 clade and the ones that are not clustered in there explore and decide if I need to remove all of them or just
+### those that were in the SAR11 cluster
+
+## SAR11 clade ASVs study them in detail 
+# 1   asv38
+# 2    asv8 (cluster SAR11)
+# 3  asv225
+# 4  asv264
+# 5    asv5 (cluster SAR11)
+# 6  asv200
+# 7    asv3 (cluster SAR11)
+# 8    asv2(cluster SAR11)
+# 9   asv15
+
+asv_tab_all_bloo_z_tax_cl |>  
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(order == 'SAR11 clade') |>
+  ggplot(aes(date, abundance_value))+
+  scale_y_continuous(labels = percent_format(), expand = c(0,0))+ #, limits = c(0,0.25)
+  #geom_area(aes(date, y = abundance_value, group = asv_num_f, fill = family_f),   position= 'stack')+
+  geom_line(aes(y = abundance_value, group = asv_num_f, color = family_f))+
+  geom_line(aes(y = bacteria_joint/10^8))+
+  #scale_fill_manual(values = palette_clustering, labels = labs_clusters_pa_fl)+
+  scale_color_manual(values = palette_family_assigned_bloo)+
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
+  facet_wrap(facet_variable~fraction~asv_num, 
+             ncol = 3)+ #, labels = labs_fraction  labeller = labs_clusters_pa_fl
+  labs(x = 'Date', y = 'Relative abundance (%)', fill = 'Family')+
+  guides(fill = guide_legend(ncol = 7, size = 8,
+                             override.aes = aes(label = '')),
+         color = 'none',
+         alpha = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 4), panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 5, margin = margin(0, 0, 2, 0)),
+        legend.position = 'bottom', axis.text.y = element_text(size = 4),
+        axis.title = element_text(size = 7), strip.background = element_blank(), 
+        legend.text = element_text(size = 5), legend.title = element_text(size = 7), strip.placement = 'outside',
+        plot.margin = margin(2,5,0,5),
+        legend.key.size = unit(3, 'mm'))
 
 ### Seasonal  -----
 palete_seasonal_bloo <- c('cl_5_3'= '#2466BF', 'cl_8_3' =  '#5B9B57','cl_9_3' = '#FFD700', 'asv27_3'=  '#C73F4E' , 'asv28_3'= '#AD7CE6',
@@ -3176,7 +3527,6 @@ seasonal_clusters_labs <- as_labeller(c( cl_5_3 = '1st bloom (ASV15, ASV7)',
                                          '3' = 'Particle attached (3-20 um)'))
 
 #### add which ASVs belong to each cluster
-
 ##geom line for seasonal blooms
 data <- asv_tab_all_bloo_z_tax |>
   dplyr::filter(asv_num %in% bloo_3$value &
@@ -3294,7 +3644,6 @@ labs_clustering_tax <- as_labeller(c(cl_3 = '1st bloom (ASV15, ASV7)',
                                   cl_8 = '2nbloom (ASV72, ASV25, ASV100, ASV42)',
                                   cl_9 = '3rd bloom (ASV23, ASV1, ASV4, ASV31)' ))
 
-
 seasonal_tax <- data |>
   group_by(asv_num, clustering_group, family_f, fraction) |>
   distinct(asv_num, facet_variable) |>
@@ -3321,7 +3670,6 @@ seasonal_tax <- data |>
 #        path = 'results/figures/',
 #        width = 88, height = 88, units = 'mm')
 
-
 ## how many different types of blooming events do i have?----
 distinct_bloo_events <- bloo_all_types_summary |>
   group_by(recurrency, occurrence_category, frequency, type_of_bloom) |>
@@ -3331,7 +3679,23 @@ distinct_bloo_events <- bloo_all_types_summary |>
 #install.packages("ggpattern")
 library(ggpattern)
 
-write.csv(bloo_all_types_summary, 'results/tables/bloo_all_types_summary.csv')
+#write.csv(bloo_all_types_summary, 'results/tables/bloo_all_types_summary.csv')
+
+bloo_all_types_summary |>
+  dplyr::mutate(present = 1) |>
+  ungroup() |>
+  dplyr::select(-clustering_group, -recurrency, -type_of_bloom, -frequency, -fraction) |>
+  pivot_wider( values_from = present, names_from = asv_num)
+
+bloo_all_types_summary |>
+  dplyr::mutate(present = 1) |>
+  ungroup() |>
+  dplyr::select(-asv_num) |>
+  distinct(cluster_fr, recurrency, type_of_bloom, frequency, occurrence_category) |>
+  pivot_wider( values_from = present, names_from = asv_num)
+
+bloo_all_types_summary <- bloo_all_types_summary |>
+  dplyr::mutate(type_of_bloom = str_replace(type_of_bloom, 'ephimeral', 'ephemeral'))
 
 bloo_all_types_summary_tab <- bloo_all_types_summary |>
   group_by(recurrency, occurrence_category, frequency, type_of_bloom, fraction) |>
@@ -3340,17 +3704,15 @@ bloo_all_types_summary_tab <- bloo_all_types_summary |>
   pivot_wider(id_cols = c(recurrency, occurrence_category, frequency, type_of_bloom), names_from = fraction, values_from = n, values_fill = 0)
 
 #write.csv(bloo_all_types_summary_tab, 'results/tables/bloo_all_types_summary.csv')
-
-bloo_all_types_summary |>
-  ggplot(aes(type_of_bloom, occurrence_category, pattern = recurrency))+
-  scale_pattern_manual(values = c(
-    "Texture1" = "stripe",
-    "Texture2" = "crosshatch"
-  ))+
-  geom_tile(aes(fill = n))+
-  facet_grid(frequency~fraction)
-
-
+# 
+# bloo_all_types_summary |>
+#   ggplot(aes(type_of_bloom, occurrence_category, pattern = recurrency))+
+#   scale_pattern_manual(values = c(
+#     "Texture1" = "stripe",
+#     "Texture2" = "crosshatch"
+#   ))+
+#   geom_tile(aes(fill = n))+
+#   facet_grid(frequency~fraction)
 
 ####stream graph-----
 #remotes::install_github("hrbrmstr/streamgraph")
@@ -3373,8 +3735,771 @@ bloo_all_types_summary |>
 #   streamgraph(data = data, key = clustering_group, value = cluster_abund, date = date, offset="zero") %>%
 #   sg_fill_brewer("BuPu")
 
+#####PLOT FOR EACH EXAMPLE OF TYPE OF BLOOM-------
 
+##before the examples for the presentation of the blooms----
+asv_tab_all_bloo_z_tax_examples <- asv_tab_all_bloo_z_tax |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num %in% bloo_3$value &
+                  fraction == '3' |
+                  asv_num %in% bloo_02$value &
+                  fraction == '0.2') |>
+  dplyr::filter(abundance_type == 'relative_abundance') |>
+  dplyr::left_join(bloo_all_types_summary, by = c('asv_num_f' = 'asv_num','fraction')) |>
+  dplyr::filter(order != 'SAR11 clade') |>
+  #dplyr::filter(asv_num_f %in% c('asv17', 'asv23', 'asv11', 'asv84', 'asv62', 'asv58', 'asv555', 'asv559')) |>
+  filter((asv_num_f %in% c('asv17', 'asv23', 'asv11', 'asv84', 'asv62', 'asv58', 'asv555', 'asv559') & fraction == '3') |
+           (asv_num_f %in% c('asv62', 'asv58', 'asv555') & fraction == '0.2') |
+           (asv_num_f == 'asv11' & fraction == '0.2')) |>
+  dplyr::mutate(type_of_bloom = str_replace(type_of_bloom, 'ephimeral', 'ephemeral')) |>
+  dplyr::mutate(facet_variable_2 = paste0(occurrence_category, '.', recurrency, '.', frequency, '.', type_of_bloom)) |>
+  dplyr::mutate(facet_var_3 = paste0(occurrence_category, '-', frequency),
+                facet_var_4 = paste0(type_of_bloom, '-', recurrency)) |>
+  dplyr::mutate(facet_var_5 = paste0( recurrency, '-', frequency),
+                facet_var_6 = paste0(type_of_bloom)) |>
+  dplyr::mutate(bloom = case_when (z_score_ra >= 1.96 &
+                                     abundance_value >= 0.1~ 'Bloom',
+                                   TRUE ~ 'No-bloom')) |>
+  dplyr::mutate(bloom = as.factor(bloom))
+  
+  asv_summary_bloom <- asv_tab_all_bloo_z_tax_examples |>
+  distinct(asv_num, occurrence_category, type_of_bloom, recurrency, frequency) |>
+  left_join(bloo_taxonomy, by = c('asv_num' = 'asv_num_f'))
 
+asv_tab_all_bloo_z_tax_examples$asv_num |>
+  unique() 
+
+asv_tab_all_bloo_z_tax_examples |>
+  ungroup() |>
+  select(facet_variable_2, asv_num_f) |>
+  distinct()
+
+asv_tab_all_bloo_z_tax_examples$facet_variable_2  <- factor(asv_tab_all_bloo_z_tax_examples$facet_variable_2, levels = c(     
+  "broad.no.stochastic.persistent" ,
+  "broad.yes.seasonal.persistent" ,
+  "intermidiate.no.stochastic.ephemeral" ,
+  "intermidiate.yes.seasonal.persistent",
+  "intermidiate.yes.stochastic.persistent",
+  "intermidiate.no.stochastic.persistent" ,
+    "narrow.no.stochastic.ephemeral"     ,    
+    "narrow.no.stochastic.persistent"  
+))
+
+labels_type_bloom  <- as_labeller(c(     
+  broad.no.stochastic.persistent = 'Broad Stochastic Persistent',
+  broad.yes.seasonal.persistent = 'Broad Recurrent Seasonal Persistent',
+  intermidiate.no.stochastic.ephemeral = 'Intermediate Seasonal Ephemeral',
+  intermidiate.yes.seasonal.persistent = 'Intermediate Recurrent Seasonal Persistent',
+  intermidiate.yes.stochastic.persistent = 'Intermediate Recurrent Stochastic Persistent',
+  intermidiate.no.stochastic.persistent = 'Intermediate Stochastic Persistent',
+  narrow.no.stochastic.ephemeral = 'Narrow Stochastic ephemeral'   ,    
+  narrow.no.stochastic.persistent  = 'Narrow Stochastic persistent'
+))
+
+asv_tab_all_bloo_z_tax_examples <- asv_tab_all_bloo_z_tax_examples |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d")))
+
+# bloo_bbmo_clusters_asv <- asv_tab_all_bloo_z_tax_examples |> 
+#   # dplyr::filter(facet_variable_2 %in% c(#"broad.no.stochastic.persistent"# ,
+#   #   #"narrow.no.stochastic.persistent"
+#   #   #
+#   #   'intermidiate.yes.stochastic.persistent'
+#   #                                       )) |>
+#   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+#   ggplot(aes(date, abundance_value))+
+#   geom_area(aes(date, y = abundance_value, group = fraction, fill = family_f),   position= 'stack')+
+#   geom_line(aes(group = fraction), linewidth = 0.25)+
+#   scale_linetype_discrete()+
+#   # geom_point(data = asv_tab_all_bloo_z_tax_examples |>
+#   #              dplyr::filter(z_score_ra >= 1.96 &
+#   #                              abundance_value >= 0.1),  
+#   #            aes(date, abundance_value, color =  '#9F0011', alpha = 1))+ 
+#   scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
+#   scale_fill_manual(values = palette_family_assigned_bloo)+
+#   facet_wrap(vars(asv_num_f), 
+#              ncol = 3, labeller = labels_type_bloom)+ #, labels = labs_fraction
+#   scale_y_continuous(labels = percent_format(), expand = c(0,0))+ #, limits = c(0,0.25)
+#   labs(x = 'Date', y = 'Relative abundance (%)', fill = 'Family')+
+#   guides(fill = guide_legend(ncol = 7, size = 8,
+#                              override.aes = aes(label = '')),
+#          color = 'none',
+#          alpha = 'none')+
+#   theme_bw()+
+#   theme(axis.text.x = element_text(size = 4), panel.grid.minor = element_blank(),
+#         panel.grid.major.y = element_blank(), strip.text = element_text(size = 8, margin = margin(0, 0, 2, 0)),
+#         legend.position = 'bottom', axis.text.y = element_text(size = 4),
+#         axis.title = element_text(size = 7), strip.background = element_blank(), 
+#         legend.text = element_text(size = 5), legend.title = element_text(size = 7), strip.placement = 'outside',
+#         plot.margin = margin(2,5,0,5),
+#         legend.key.size = unit(3, 'mm'))
+
+# ggsave(filename = 'bloo_bbmo_clusters.pdf', plot = bloo_bbmo_clusters,
+#        path = 'results/figures/',
+#        width = 188, height = 220, units = 'mm')
+
+## SAR11 clade ASVs study them in detail 
+# asv_num
+# 1   asv38
+# 2    asv8
+# 3  asv225
+# 4  asv264
+# 5    asv5
+# 6  asv200
+# 7    asv3
+# 8    asv2
+# 9   asv15
+
+examples_of_blooms <- asv_tab_all_bloo_z_tax_examples |>  
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  #dplyr::filter(asv_num_f %in% c('asv17', 'asv23', 'asv11', 'asv84', 'asv62', 'asv58', 'asv555', 'asv558')) |>
+  ggplot(aes(date, abundance_value))+
+  scale_y_continuous(labels = percent_format(), expand = c(0,0))+ #, limits = c(0,0.25)
+  #scale_y_log10( expand = c(0,0))+ #, limits = c(0,0.25)
+  geom_area(aes(date, y = abundance_value, group = asv_num_f, fill = 'grey'),   position= 'stack')+
+  geom_point(data = asv_tab_all_bloo_z_tax_examples |>
+               dplyr::filter(z_score_ra >= 1.96 &
+                               abundance_value >= 0.1),
+             aes(date, abundance_value, color =  '#9F0011', alpha = 1))+
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
+  # facet_wrap(vars(facet_variable_2), 
+  #            ncol = 2, labeller = labels_type_bloom,
+  #            scales = 'free')+ #, labels = labs_fraction  labeller = labs_clusters_pa_fl,
+  facet_grid(facet_var_3~facet_var_4, 
+              #labeller = labels_type_bloom,
+             scales = 'free',
+              drop = T)+ #, labels = labs_fraction  labeller = labs_clusters_pa_fl,
+  scale_fill_manual(values = palette_family_assigned_bloo)+
+  geom_hline(yintercept = 0.1, linetype = 'dashed')+
+  labs(x = 'Date', y = 'Relative abundance (%)', fill = 'Family')+
+  guides(fill = guide_legend(ncol = 7, size = 8,
+                             override.aes = aes(label = '')),
+         colour = 'none',
+         alpha = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 5), panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 6, margin = margin(0, 0, 2, 0)),
+        legend.position = 'bottom', axis.text.y = element_text(size = 5),
+        axis.title = element_text(size = 7), #strip.background = element_blank(), 
+        legend.text = element_text(size = 5), legend.title = element_text(size = 7), strip.placement = 'outside',
+        plot.margin = margin(2,5,0,5),
+        legend.key.size = unit(3, 'mm'))
+
+examples_of_blooms
+
+examples_of_blooms_no_occurrence <- asv_tab_all_bloo_z_tax_examples |>  
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  #dplyr::filter(asv_num_f %in% c('asv17', 'asv23', 'asv11', 'asv84', 'asv62', 'asv58', 'asv555', 'asv558')) |>
+  ggplot(aes(date, abundance_value))+
+  scale_y_continuous(labels = percent_format(), expand = c(0,0))+ #, limits = c(0,0.25)
+  geom_area(aes(date, y = abundance_value, group = asv_num_f, fill = 'grey'),   position= 'identity')+
+  geom_point(data = asv_tab_all_bloo_z_tax_examples |>
+               dplyr::filter(z_score_ra >= 1.96 &
+                               abundance_value >= 0.1),
+             aes(date, abundance_value, color =  '#9F0011', alpha = 1))+
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
+  # facet_wrap(vars(facet_variable_2), 
+  #            ncol = 2, labeller = labels_type_bloom,
+  #            scales = 'free')+ #, labels = labs_fraction  labeller = labs_clusters_pa_fl,
+  facet_grid(facet_var_5~facet_var_6, 
+             #labeller = labels_type_bloom,
+             scales = 'free',
+             drop = T)+ #, labels = labs_fraction  labeller = labs_clusters_pa_fl,
+  scale_fill_manual(values = palette_family_assigned_bloo)+
+  geom_hline(yintercept = 0.1, linetype = 'dashed')+
+  labs(x = 'Date', y = 'Relative abundance (%)', fill = 'Family')+
+  guides(fill = guide_legend(ncol = 7, size = 8,
+                             override.aes = aes(label = '')),
+         colour = 'none',
+         alpha = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 5), panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 12, margin = margin(4, 4, 4, 4)),
+        legend.position = 'bottom', axis.text.y = element_text(size = 5),
+        axis.title = element_text(size = 7), #strip.background = element_blank(), 
+        legend.text = element_text(size = 5), legend.title = element_text(size = 7), strip.placement = 'outside',
+        plot.margin = margin(2,5,0,5),
+        legend.key.size = unit(3, 'mm'))
+
+examples_of_blooms_no_occurrence
+
+bloo_all_types_summary_tab |>
+  dplyr::mutate(asv_example = )
+
+### CONCEPTUAL FIGURE OF THE TYPES OF BLOOMERS THAT WE IDENTIFIED IN THE BBMO------
+### i will prepare each graph individually so that I can organize them in a tidy way easy to follow 
+
+palette_occurrence <- c(narrow = "#ffd2f1",
+                        intermidiate = "#3e3e3e",
+                        broad = "#57a9a8")
+
+labs_occurrence <- as_labeller(c(narrow = "Narrow (<25%)",
+                                 intermidiate = "Intermediate (25-75%)",
+                                 broad = "Broad (>75%)"))
+
+##plot1 
+plot1 <- asv_tab_all_bloo_z_tax_examples |>  
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num_f %in% c('asv23')) |>
+  ggplot(aes(date, abundance_value))+
+  geom_hline(yintercept = 0.1, linetype = 'dashed', size = 0.3)+
+  scale_y_continuous(labels = percent_format(), expand = c(0,0), limits = c(0,0.3))+ #, limits = c(0,0.25)
+  geom_area(aes(date, y = abundance_value, group = asv_num_f, fill = 'grey'),   position= 'identity')+
+  geom_point(data = asv_tab_all_bloo_z_tax_examples |>
+               dplyr::filter(bloom == 'Bloom' &
+                               asv_num == 'asv23'), aes(color = bloom), size = 1) +  # Specify shape aesthetic for points
+  scale_color_manual(values = c( 'Bloom' = '#9F0011', 'No-bloom' = 'white')) +
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
+  facet_wrap(vars(occurrence_category), 
+             #labeller = labels_type_bloom,
+             scales = 'free',
+             drop = T)+ #, labels = labs_fraction  labeller = labs_clusters_pa_fl,
+  scale_fill_manual(values = palette_family_assigned_bloo)+
+  labs(x = 'Time (Y)', y = 'Relative abundance (%)', fill = 'Family')+ #, title = 'Recurrents'
+  guides(fill = guide_legend(ncol = 7, size = 8,
+                             override.aes = aes(label = '')),
+         colour = 'none',
+         alpha = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 0), panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 0, margin = margin(4, 4, 4, 4)),
+        legend.position = 'bottom', axis.text.y = element_text(size = 5),
+        axis.title = element_text(size = 7), strip.background = element_rect(fill = "#57a9a8",color = "#57a9a8" ), #strip.text.x = element_blank(),
+        legend.text = element_text(size = 5), legend.title = element_text(size = 7),# strip.placement = 'outside',
+        plot.margin = margin(5,5,5,5),
+        legend.key.size = unit(3, 'mm'), aspect.ratio = 4/5, title = element_text(size = 8))
+
+##plot2
+plot2 <- asv_tab_all_bloo_z_tax_examples |>  
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num_f %in% c('asv62')) |>
+  ggplot(aes(date, abundance_value))+
+  geom_hline(yintercept = 0.1, linetype = 'dashed', size = 0.3)+
+  scale_y_continuous(labels = percent_format(), expand = c(0,0), limits = c(0,0.2))+ #, limits = c(0,0.25)
+  geom_area(aes(date, y = abundance_value, group = asv_num_f, fill = 'grey'),   position= 'identity')+
+  geom_point(data = asv_tab_all_bloo_z_tax_examples |>
+               dplyr::filter(bloom == 'Bloom' &
+                               asv_num == 'asv62'), aes(color = bloom), size = 1) +  # Specify shape aesthetic for points
+  scale_color_manual(values = c( 'Bloom' = '#9F0011', 'No-bloom' = 'white')) +
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
+  facet_wrap(vars(occurrence_category), 
+             #labeller = labels_type_bloom,
+             scales = 'free',
+             drop = T)+ #, labels = labs_fraction  labeller = labs_clusters_pa_fl,
+  scale_fill_manual(values = palette_family_assigned_bloo)+
+  labs(x = 'Time (Y)', y = 'Relative abundance (%)', fill = 'Family')+
+  guides(fill = guide_legend(ncol = 7, size = 8,
+                             override.aes = aes(label = '')),
+         colour = 'none',
+         alpha = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 0), panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 0, margin = margin(4, 4, 4, 4)),
+        legend.position = 'bottom', axis.text.y = element_text(size = 5),
+        axis.title = element_text(size = 7), strip.background = element_rect(fill = "#3e3e3e",color = "#3e3e3e" ),
+        legend.text = element_text(size = 5), legend.title = element_text(size = 7),# strip.placement = 'outside',
+        plot.margin = margin(5,5,5,5),
+        legend.key.size = unit(3, 'mm'), aspect.ratio = 4/5)
+
+# plot 3
+plot3 <- asv_tab_all_bloo_z_tax_examples |>  
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num_f %in% c('asv58')) |>
+  ggplot(aes(date, abundance_value))+
+  scale_y_continuous(labels = percent_format(), expand = c(0,0), limits = c(0,0.2))+ #, limits = c(0,0.25)
+  geom_hline(yintercept = 0.1, linetype = 'dashed', size = 0.3)+
+  geom_area(aes(date, y = abundance_value, group = asv_num_f, fill = 'grey'),   position= 'identity')+
+  geom_point(data = asv_tab_all_bloo_z_tax_examples |>
+               dplyr::filter(bloom == 'Bloom' &
+                               asv_num == 'asv58'), aes(color = bloom), size = 1) +  # Specify shape aesthetic for points
+  scale_color_manual(values = c( 'Bloom' = '#9F0011', 'No-bloom' = 'white')) +
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
+  facet_wrap(vars(occurrence_category), 
+             #labeller = labels_type_bloom,
+             scales = 'free',
+             drop = T)+ #, labels = labs_fraction  labeller = labs_clusters_pa_fl,
+  scale_fill_manual(values = palette_family_assigned_bloo)+
+  labs(x = 'Time (Y)', y = 'Relative abundance (%)', fill = 'Family')+
+  guides(fill = guide_legend(ncol = 7, size = 8,
+                             override.aes = aes(label = '')),
+         colour = 'none',
+         alpha = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 0), panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 0, margin = margin(4, 4, 4, 4)),
+        legend.position = 'bottom', axis.text.y = element_text(size = 5),
+        axis.title = element_text(size = 7), strip.background = element_rect(fill = "#3e3e3e",color = "#3e3e3e" ),
+        legend.text = element_text(size = 5), legend.title = element_text(size = 7),# strip.placement = 'outside',
+        plot.margin = margin(5,5,5,5),
+        legend.key.size = unit(3, 'mm'), aspect.ratio = 4/5)
+
+# plot 4
+plot4 <- asv_tab_all_bloo_z_tax_examples |>  
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num_f %in% c('asv17')) |>
+  ggplot(aes(date, abundance_value))+
+  geom_hline(yintercept = 0.1, linetype = 'dashed', size = 0.3)+
+  scale_y_continuous(labels = percent_format(), expand = c(0,0), limits = c(0,0.35))+ #, limits = c(0,0.25)
+  geom_area(aes(date, y = abundance_value, group = asv_num_f, fill = 'grey'),   position= 'identity')+
+  geom_point(data = asv_tab_all_bloo_z_tax_examples |>
+               dplyr::filter(bloom == 'Bloom' &
+                               asv_num == 'asv17'), aes(color = bloom), size = 1) +  # Specify shape aesthetic for points
+  scale_color_manual(values = c( 'Bloom' = '#9F0011', 'No-bloom' = 'white')) +
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
+  facet_wrap(vars(occurrence_category), 
+             #labeller = labels_type_bloom,
+             scales = 'free',
+             drop = T)+ #, labels = labs_fraction  labeller = labs_clusters_pa_fl,
+  scale_fill_manual(values = palette_family_assigned_bloo)+
+  labs(x = 'Time (Y)', y = 'Relative abundance (%)', fill = 'Family')+ #, title = 'Non-Recurrents'
+  guides(fill = guide_legend(ncol = 7, size = 8,
+                             override.aes = aes(label = '')),
+         colour = 'none',
+         alpha = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 0), panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 0, margin = margin(4, 4, 4, 4)),
+        legend.position = 'bottom', axis.text.y = element_text(size = 5),
+        axis.title = element_text(size = 7), strip.background = element_rect(fill = "#57a9a8", color = "#57a9a8" ),
+        legend.text = element_text(size = 5), legend.title = element_text(size = 7),# strip.placement = 'outside',
+        plot.margin = margin(5,5,5,5),
+        legend.key.size = unit(3, 'mm'), aspect.ratio = 4/5)
+
+# plot 5
+plot5 <- asv_tab_all_bloo_z_tax_examples |>  
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num_f %in% c('asv84')) |>
+  ggplot(aes(date, abundance_value))+
+  scale_y_continuous(labels = percent_format(), expand = c(0,0), limits = c(0,0.2))+ #, limits = c(0,0.25)
+  geom_hline(yintercept = 0.1, linetype = 'dashed', size = 0.3)+
+  geom_area(aes(date, y = abundance_value, group = asv_num_f, fill = 'grey'),   position= 'identity')+
+  geom_point(data = asv_tab_all_bloo_z_tax_examples |>
+               dplyr::filter(bloom == 'Bloom' &
+                               asv_num == 'asv84'), aes(color = bloom), size = 1) +  # Specify shape aesthetic for points
+  scale_color_manual(values = c( 'Bloom' = '#9F0011', 'No-bloom' = 'white')) +
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
+  facet_wrap(vars(occurrence_category), 
+             #labeller = labels_type_bloom,
+             scales = 'free',
+             drop = T)+ #, labels = labs_fraction  labeller = labs_clusters_pa_fl,
+  scale_fill_manual(values = palette_family_assigned_bloo)+
+  labs(x = 'Time (Y)', y = 'Relative abundance (%)', fill = 'Family')+
+  guides(fill = guide_legend(ncol = 7, size = 8,
+                             override.aes = aes(label = '')),
+         colour = 'none',
+         alpha = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 0), panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 0, margin = margin(4, 4, 4, 4)),
+        legend.position = 'bottom', axis.text.y = element_text(size = 5),
+        axis.title = element_text(size = 7), strip.background = element_rect(fill = "#3e3e3e",color = "#3e3e3e" ),
+        legend.text = element_text(size = 5), legend.title = element_text(size = 7),# strip.placement = 'outside',
+        plot.margin = margin(5,5,5,5),
+        legend.key.size = unit(3, 'mm'), aspect.ratio = 4/5)
+
+# plot 6
+plot6 <- asv_tab_all_bloo_z_tax_examples |>  
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num_f %in% c('asv559')) |>
+  ggplot(aes(date, abundance_value))+
+  scale_y_continuous(labels = percent_format(), expand = c(0,0), limits = c(0,0.15))+ #, limits = c(0,0.25)
+  geom_hline(yintercept = 0.1, linetype = 'dashed', size = 0.3)+
+  geom_area(aes(date, y = abundance_value, group = asv_num_f, fill = 'grey'),   position= 'identity')+
+  geom_point(data = asv_tab_all_bloo_z_tax_examples |>
+               dplyr::filter(bloom == 'Bloom' &
+                               asv_num == 'asv559'), aes(color = bloom), size = 1) +  # Specify shape aesthetic for points
+  scale_color_manual(values = c( 'Bloom' = '#9F0011', 'No-bloom' = 'white')) +
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
+  facet_wrap(vars(occurrence_category), 
+             #labeller = labels_type_bloom,
+             scales = 'free',
+             drop = T)+ #, labels = labs_fraction  labeller = labs_clusters_pa_fl,
+  scale_fill_manual(values = palette_family_assigned_bloo)+
+  labs(x = 'Time (Y)', y = 'Relative abundance (%)', fill = 'Family')+
+  guides(fill = guide_legend(ncol = 7, size = 8,
+                             override.aes = aes(label = '')),
+         colour = 'none',
+         alpha = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 0), panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 0, margin = margin(4, 4, 4, 4)),
+        legend.position = 'bottom', axis.text.y = element_text(size = 5),
+        axis.title = element_text(size = 7), strip.background = element_rect(fill = "#ffd2f1", color = "#ffd2f1"),
+        legend.text = element_text(size = 5), legend.title = element_text(size = 7),# strip.placement = 'outside',
+        plot.margin = margin(5,5,5,5),
+        legend.key.size = unit(3, 'mm'), aspect.ratio = 4/5)
+
+# plot 7
+plot7 <- asv_tab_all_bloo_z_tax_examples |>  
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num_f %in% c('asv11')) |>
+  ggplot(aes(date, abundance_value))+
+  geom_hline(yintercept = 0.1, linetype = 'dashed', size = 0.3)+
+  scale_y_continuous(labels = percent_format(), expand = c(0,0), limits = c(0,0.5))+ #, limits = c(0,0.25)
+  geom_area(aes(date, y = abundance_value, group = asv_num_f, fill = 'grey'),   position= 'identity')+
+  geom_point(data = asv_tab_all_bloo_z_tax_examples |>
+               dplyr::filter(bloom == 'Bloom' &
+                               asv_num == 'asv11'), aes(color = bloom), size = 1) +  # Specify shape aesthetic for points
+  scale_color_manual(values = c( 'Bloom' = '#9F0011', 'No-bloom' = 'white')) +
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
+  facet_wrap(vars(occurrence_category), 
+             #labeller = labels_type_bloom,
+             scales = 'free',
+             drop = T)+ #, labels = labs_fraction  labeller = labs_clusters_pa_fl,
+  scale_fill_manual(values = palette_family_assigned_bloo)+
+  labs(x = 'Time (Y)', y = 'Relative abundance (%)', fill = 'Family')+ #, title = 'Ephemeral'
+  guides(fill = guide_legend(ncol = 7, size = 8,
+                             override.aes = aes(label = '')),
+         colour = 'none',
+         alpha = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 0), panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 0, margin = margin(4, 4, 4, 4)),
+        legend.position = 'bottom', axis.text.y = element_text(size = 5),
+        axis.title = element_text(size = 7), strip.background = element_rect(fill = "#3e3e3e", color = "#3e3e3e"),
+        legend.text = element_text(size = 5), legend.title = element_text(size = 7),# strip.placement = 'outside',
+        plot.margin = margin(5,5,5,5),
+        legend.key.size = unit(3, 'mm'), aspect.ratio = 4/5)
+
+# plot 8
+plot8 <- asv_tab_all_bloo_z_tax_examples |>  
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num_f %in% c('asv555')) |>
+  ggplot(aes(date, abundance_value))+
+  scale_y_continuous(labels = percent_format(), expand = c(0,0), limits = c(0,0.2))+ #, limits = c(0,0.25)
+  geom_hline(yintercept = 0.1, linetype = 'dashed', size = 0.3)+
+  geom_area( aes(date, y = abundance_value, group = asv_num_f, fill = 'grey'),   position= 'identity')+
+  geom_point(data = asv_tab_all_bloo_z_tax_examples |>
+               dplyr::filter(bloom == 'Bloom' &
+                               asv_num == 'asv555'), aes(color = bloom), size = 1) +  # Specify shape aesthetic for points
+  scale_color_manual(values = c( 'Bloom' = '#9F0011', 'No-bloom' = 'white')) +
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
+  facet_wrap(vars(occurrence_category), 
+             #labeller = labels_type_bloom,
+             scales = 'free',
+             drop = T)+ #, labels = labs_fraction  labeller = labs_clusters_pa_fl,
+  scale_fill_manual(values = palette_family_assigned_bloo)+
+  labs(x = 'Time (Y)', y = 'Relative abundance (%)', fill = 'Family')+
+  guides(fill = guide_legend(ncol = 7, size = 8,
+                             override.aes = aes(label = '')),
+         colour = 'none',
+         alpha = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 0), panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 0, margin = margin(4, 4, 4, 4)),
+        legend.position = 'bottom', axis.text.y = element_text(size = 5),
+        axis.title = element_text(size = 7), strip.background = element_rect(fill = "#ffd2f1", color = "#ffd2f1"),
+        legend.text = element_text(size = 5), legend.title = element_text(size = 7),# strip.placement = 'outside',
+        plot.margin = margin(5,5,5,5),
+        legend.key.size = unit(3, 'mm'), aspect.ratio = 4/5)
+
+# legend
+legend_plot <- asv_tab_all_bloo_z_tax_examples |>  
+  dplyr::mutate(bloom = case_when (z_score_ra >= 1.96 &
+                  abundance_value >= 0.1~ 'Bloom',
+                  TRUE ~ 'No-bloom')) |>
+  dplyr::mutate(bloom = as.factor(bloom)) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  ggplot(aes(date, abundance_value)) +
+  scale_y_continuous(labels = scales::percent_format(), expand = c(0, 0), limits = c(0, 0.2)) +
+  geom_area(aes(group = asv_num_f, fill = occurrence_category), position = 'identity') +
+  geom_point(aes(color = bloom), size = 1) +  # Specify shape aesthetic for points
+  scale_color_manual(values = c( 'Bloom' = '#9F0011', 'No-bloom' = 'white')) +
+  scale_fill_manual(values = palette_occurrence, labels = labs_occurrence) +
+  geom_hline(yintercept = 0.1, linetype = 'dashed')+
+  labs(x = 'Time (Y)', y = 'Relative abundance (%)', fill = 'Occurrence category', color = 'Bloom')+
+  guides(fill = guide_legend(ncol = 1, size = 6),
+         color = guide_legend(ncol = 1, size = 6),  # Hide points in the color legend
+         alpha = 'none') +
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 0), panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 0, margin = margin(4, 4, 4, 4)),
+        legend.position = 'right', axis.text.y = element_text(size = 5),
+        axis.title = element_text(size = 7), strip.background = element_rect(fill = "#ffd2f1", color = "transparent"),
+        legend.text = element_text(size = 5), legend.title = element_text(size = 7),# strip.placement = 'outside',
+        plot.margin = margin(5,5,5,5),
+        legend.key.size = unit(3, 'mm'))
+
+legend_only  <- cowplot::get_legend(legend_plot)
+
+asv_summary_bloom
+
+#library(cowplot)
+#library(gridExtra)
+examples_bloomers_types_titles <- grid.arrange(plot1, plot2, plot3,
+             plot4, plot5, plot6,
+             legend_only, plot7, plot8,
+             ncol = 3)
+
+# # Add text to the combined plot
+# text1 <- textGrob("Non-recurrent", x = 0.05, y = 1, gp = gpar(fontsize = 8))
+# text2 <- textGrob("Non-recurrent", x = 0.4, y = 1, gp = gpar(fontsize = 8))
+# text3 <- textGrob("Non-recurrent", x = 0.7, y = 1, gp = gpar(fontsize = 8))
+# 
+# # Add text to the combined plot
+# examples_bloomers_types_with_text <- examples_bloomers_types +
+#   annotate("text", x = c(0.05, 0.38, 0.71), y = 1, label = c("Non-recurrent", "Non-recurrent", "Non-recurrent"), 
+#            vjust = 1, size = 3.5)
+
+#Save the combined plot
+ggsave(filename = 'examples_bloomers_types.pdf', plot = examples_bloomers_types_titles,
+       path = 'results/figures/',
+       width = 188, height = 160, units = 'mm')
+
+### EXAMPLES OF BLOOMING EVENTS ---- 
+labs_blooming_events <-  as_labeller(c('0.2' = 'Free living (0.2-3 um)',
+                                       '3' = 'Particle attached (3-20 um)',
+                                       seasonal = 'Seasonal',
+                                       stochastic = 'Stochastic'))
+
+bloom_events_bbmo_description <- asv_tab_all_bloo_z_tax |>
+  plyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num %in% bloo_3$value &
+                  fraction == '3' |
+                  asv_num %in% bloo_02$value &
+                  fraction == '0.2') |>
+  dplyr::filter(abundance_type == 'relative_abundance') |>
+  dplyr::left_join(bloo_all_types_summary, by = c('asv_num_f' = 'asv_num','fraction')) |>
+  dplyr::filter(!asv_num_f %in% c('asv2', 'asv3', 'asv5', 'asv8')) |>
+  dplyr::mutate(type_of_bloom = str_replace(type_of_bloom, 'ephimeral', 'ephemeral')) |>
+  dplyr::mutate(bloom = case_when (z_score_ra >= 1.96 &
+                                     abundance_value >= 0.1~ 'Bloom',
+                                   TRUE ~ 'No-bloom')) |>
+  dplyr::mutate(bloom = as.factor(bloom)) |>
+  dplyr::filter(bloom == 'Bloom') |>
+  group_by(date, recurrency, frequency, fraction) |>
+  dplyr::reframe(bloom_abund = sum(abundance_value)) |>
+  ggplot(aes(date, bloom_abund))+
+  facet_grid(fraction~frequency, labeller = labs_blooming_events)+
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
+  geom_smooth(method = 'loess', span = 0.7, color = 'black')+
+  labs(x = 'Time (Y)', y = 'Relative abundance (%)')+ #, fill = 'Occurrence category', color = 'Bloom'
+  scale_y_continuous(labels = scales::percent_format(), expand = c(0, 0)) +
+  geom_col()+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 4), panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(), #strip.text = element_text(size = 0, margin = margin(4, 4, 4, 4)),
+        legend.position = 'right', axis.text.y = element_text(size = 5),
+        axis.title = element_text(size = 7), strip.background = element_rect(fill = "white", color = "transparent"),
+        legend.text = element_text(size = 5), legend.title = element_text(size = 7),# strip.placement = 'outside',
+        plot.margin = margin(5,5,5,5),
+        legend.key.size = unit(3, 'mm'))
+
+# ggsave(filename = 'bloom_events_bbmo_description.pdf', plot = bloom_events_bbmo_description,
+#        path = 'results/figures/',
+#        width = 188, height = 130, units = 'mm')
+
+bloom_events_bbmo_description <- asv_tab_all_bloo_z_tax |>
+  plyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num %in% bloo_3$value &
+                  fraction == '3' |
+                  asv_num %in% bloo_02$value &
+                  fraction == '0.2') |>
+  dplyr::filter(abundance_type == 'rclr') |>
+  dplyr::left_join(bloo_all_types_summary, by = c('asv_num_f' = 'asv_num','fraction')) |>
+  dplyr::filter(!asv_num_f %in% c('asv2', 'asv3', 'asv5', 'asv8')) |>
+  dplyr::mutate(type_of_bloom = str_replace(type_of_bloom, 'ephimeral', 'ephemeral')) |>
+  dplyr::mutate(bloom = case_when (z_score_ra >= 1.96 &
+                                     abundance_value >= 0.1~ 'Bloom',
+                                   TRUE ~ 'No-bloom')) |>
+  dplyr::mutate(bloom = as.factor(bloom)) |>
+  dplyr::filter(bloom == 'Bloom') |>
+  group_by(date, recurrency, frequency, fraction) |>
+  dplyr::reframe(bloom_abund = sum(abundance_value)) |>
+  ggplot(aes(date, bloom_abund))+
+  facet_grid(fraction~frequency, labeller = labs_blooming_events)+
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
+  geom_smooth(method = 'loess', span = 0.7, color = 'black')+
+  labs(x = 'Time (Y)', y = 'rCLR')+ #, fill = 'Occurrence category', color = 'Bloom'
+  scale_y_continuous(expand = c(0, 0)) +
+  geom_col()+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 4), panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(), #strip.text = element_text(size = 0, margin = margin(4, 4, 4, 4)),
+        legend.position = 'right', axis.text.y = element_text(size = 5),
+        axis.title = element_text(size = 7), strip.background = element_rect(fill = "white", color = "transparent"),
+        legend.text = element_text(size = 5), legend.title = element_text(size = 7),# strip.placement = 'outside',
+        plot.margin = margin(5,5,5,5),
+        legend.key.size = unit(3, 'mm'))
+
+### ASV11 is persistent in FL and ephemeral in PA go a little bit further------
+#### It is always ephemeral
+asv_tab_all_bloo_z_tax_cl |> 
+  dplyr::filter(asv_num_f == 'asv11') |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  ggplot(aes(date, abundance_value))+
+  scale_y_continuous(labels = percent_format(), expand = c(0,0), limits = c(0,0.6))+ #, limits = c(0,0.25)
+  scale_color_manual(values = palette_fraction)+
+  scale_linetype_discrete()+
+  geom_line(aes(group = fraction, color = fraction, linetype = fraction), linewidth = 0.25)+
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
+  labs(x = 'Date', y = 'Relative abundance (%)', color = '', linetype = '')+
+  guides(fill = guide_legend(ncol = 7, size = 8,
+                             override.aes = aes(label = '')),
+         
+         alpha = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 4), panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 5, margin = margin(0, 0, 2, 0)),
+        legend.position = 'bottom', axis.text.y = element_text(size = 4),
+        axis.title = element_text(size = 7), strip.background = element_blank(), 
+        legend.text = element_text(size = 5), legend.title = element_text(size = 7), strip.placement = 'outside',
+        plot.margin = margin(2,5,0,5),
+        legend.key.size = unit(3, 'mm'))
+
+## Interesting ASVs blooming together-----
+### asv7 and asv15 cluster----
+asv7_asv15_cluster <- asv_tab_all_bloo_z_tax |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num %in% c('asv7', 'asv15')) |>
+  dplyr::filter(abundance_type == 'relative_abundance') |>
+  # group_by(date, fraction) |>
+  # dplyr::mutate(max_abund = sum(abundance_value)) |>
+  ungroup() |>
+  ggplot(aes(date, abundance_value))+
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0)
+                   #limits = c(min(asv_tab_all_bloo_z_tax$date), max(asv_tab_all_bloo_z_tax$date),
+                   #limits = c(as.POSIXct(2004-01-26, origin = '2004-01-26'), as.POSIXct(2014-01-01, origin = '2014-01-01'))
+  )+
+  # geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
+  # ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
+  scale_y_continuous(labels = percent_format(), expand = c(0,0))+
+  geom_area(aes(date, abundance_value, fill = family_f, group = asv_num_f), alpha = 0.8,  position='stack')+
+  scale_color_manual(values = palette_family_assigned_bloo)+
+  scale_fill_manual(values = palette_family_assigned_bloo)+
+  #geom_line(aes(color = family_f, group = asv_num_f))+
+  facet_wrap(vars(fraction), labeller = labs_fraction, scales = 'free')+
+  labs(x = 'Time', y = 'Relative abundance (%)', fill = 'Family')+
+  guides(fill = guide_legend(ncol = 6, size = 10,
+                             override.aes = aes(label = '')),
+         alpha = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 7), panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 7),
+        legend.position = 'bottom', axis.text.y = element_text(size = 8),
+        axis.title = element_text(size = 8), strip.background = element_blank(), 
+        legend.text = element_text(size = 7), legend.title = element_text(size = 8), strip.placement = 'outside',
+        plot.margin = margin(5,15,5,15)) 
+
+asv7_asv15_cluster
+# ggsave(filename = 'asv7_asv15_cluster_ed.pdf', plot = asv7_asv15_cluster,
+#        path = 'results/figures/',
+#        width = 188, height = 80, units = 'mm')
+
+asv7_asv15_cluster <- asv_tab_all_bloo_z_tax |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num %in% c('asv7', 'asv15')) |>
+  dplyr::filter(abundance_type == 'rclr') |>
+  # group_by(date, fraction) |>
+  # dplyr::mutate(max_abund = sum(abundance_value)) |>
+  ungroup() |>
+  ggplot(aes(date, abundance_value))+
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0)
+                   #limits = c(min(asv_tab_all_bloo_z_tax$date), max(asv_tab_all_bloo_z_tax$date),
+                   #limits = c(as.POSIXct(2004-01-26, origin = '2004-01-26'), as.POSIXct(2014-01-01, origin = '2014-01-01'))
+  )+
+  # geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
+  # ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
+  scale_y_continuous( expand = c(0,0))+
+  geom_area(aes(date, abundance_value, fill = family_f, group = asv_num_f), alpha = 1,  position='stack')+
+  scale_color_manual(values = palette_family_assigned_bloo)+
+  scale_fill_manual(values = palette_family_assigned_bloo)+
+  #geom_line(aes(color = family_f, group = asv_num_f))+
+  facet_wrap(vars(fraction), labeller = labs_fraction)+
+  labs(x = 'Time', y = 'rCLR', fill = 'Family')+
+  guides(fill = guide_legend(ncol = 6, size = 10,
+                             override.aes = aes(label = '')),
+         alpha = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 7), panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 7),
+        legend.position = 'bottom', axis.text.y = element_text(size = 8),
+        axis.title = element_text(size = 8), strip.background = element_blank(), 
+        legend.text = element_text(size = 7), legend.title = element_text(size = 8), strip.placement = 'outside',
+        plot.margin = margin(5,15,5,15)) 
+
+asv7_asv15_cluster
+# ggsave(filename = 'asv7_asv15_cluster_ed_rclr.pdf', plot = asv7_asv15_cluster,
+#        path = 'results/figures/',
+#        width = 188, height = 80, units = 'mm')
+
+##cluster seasonal 2 in the PA----
+c('asv100', 'asv25', 'asv72', 'asv42')
+
+seasonal2_cluster_pa <- asv_tab_all_bloo_z_tax |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num %in% c('asv100', 'asv25', 'asv72', 'asv42')) |>
+  dplyr::filter(abundance_type == 'relative_abundance') |>
+  # group_by(date, fraction) |>
+  # dplyr::mutate(max_abund = sum(abundance_value)) |>
+  ungroup() |>
+  ggplot(aes(date, abundance_value))+
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0)
+                   #limits = c(min(asv_tab_all_bloo_z_tax$date), max(asv_tab_all_bloo_z_tax$date),
+                   #limits = c(as.POSIXct(2004-01-26, origin = '2004-01-26'), as.POSIXct(2014-01-01, origin = '2014-01-01'))
+  )+
+  # geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
+  # ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
+  scale_y_continuous(labels = percent_format(), expand = c(0,0))+
+  geom_area(aes(date, abundance_value, fill = family_f, group = asv_num_f), alpha = 0.8,  position='stack')+
+  scale_color_manual(values = palette_family_assigned_bloo)+
+  scale_fill_manual(values = palette_family_assigned_bloo)+
+  #geom_line(aes(color = family_f, group = asv_num_f))+
+  facet_wrap(vars(fraction), labeller = labs_fraction)+
+  labs(x = 'Time', y = 'Relative abundance (%)', fill = 'Family')+
+  guides(fill = guide_legend(ncol = 6, size = 10,
+                             override.aes = aes(label = '')),
+         alpha = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 7), panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 7),
+        legend.position = 'bottom', axis.text.y = element_text(size = 8),
+        axis.title = element_text(size = 8), strip.background = element_blank(), 
+        legend.text = element_text(size = 7), legend.title = element_text(size = 8), strip.placement = 'outside',
+        plot.margin = margin(5,15,5,15)) 
+
+seasonal2_cluster_pa
+# 
+# ggsave(filename = 'seasonal2_cluster_pa_ed.pdf', plot = seasonal2_cluster_pa,
+#        path = 'results/figures/',
+#        width = 188, height = 80, units = 'mm')
+
+seasonal2_cluster_pa <- asv_tab_all_bloo_z_tax |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num %in% c('asv100', 'asv25', 'asv72', 'asv42')) |>
+  dplyr::filter(abundance_type == 'rclr') |>
+  # group_by(date, fraction) |>
+  # dplyr::mutate(max_abund = sum(abundance_value)) |>
+  ungroup() |>
+  ggplot(aes(date, abundance_value))+
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0)
+                   #limits = c(min(asv_tab_all_bloo_z_tax$date), max(asv_tab_all_bloo_z_tax$date),
+                   #limits = c(as.POSIXct(2004-01-26, origin = '2004-01-26'), as.POSIXct(2014-01-01, origin = '2014-01-01'))
+  )+
+  # geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
+  # ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
+  scale_y_continuous( expand = c(0,0))+
+  geom_area(aes(date, abundance_value, fill = family_f, group = asv_num_f), alpha = 1,  position='stack')+
+  scale_color_manual(values = palette_family_assigned_bloo)+
+  scale_fill_manual(values = palette_family_assigned_bloo)+
+  #geom_line(aes(color = family_f, group = asv_num_f))+
+  facet_wrap(vars(fraction), labeller = labs_fraction)+
+  labs(x = 'Time', y = 'rCLR', fill = 'Family')+
+  guides(fill = guide_legend(ncol = 6, size = 10,
+                             override.aes = aes(label = '')),
+         alpha = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 7), panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 7),
+        legend.position = 'bottom', axis.text.y = element_text(size = 8),
+        axis.title = element_text(size = 8), strip.background = element_blank(), 
+        legend.text = element_text(size = 7), legend.title = element_text(size = 8), strip.placement = 'outside',
+        plot.margin = margin(5,15,5,15)) 
+
+seasonal2_cluster_pa
+# 
+# ggsave(filename = 'seasonal2_cluster_pa_ed_rclr.pdf', plot = seasonal2_cluster_pa,
+#        path = 'results/figures/',
+#        width = 188, height = 80, units = 'mm')
 
 #### SUMMARY OF TYPES OF BLOOMS AND THE CLUSTER THEY BELONG TO FOR PA AND FL----
   
@@ -3409,8 +4534,9 @@ library(ggridges)
     group_by(asv_num) |>
     dplyr::mutate(relative_abundance_category = case_when(mean(abundance_value) > 0.01 ~ 'abundant',
                                                           mean(abundance_value) <= 0.01 ~ 'rare')) |>
+   ungroup() |>
     dplyr::left_join(bloo_02_types_summary)
-  
+ 
  asv_tab_all_bloo_z_tax_summary_3 <- asv_tab_all_bloo_z_tax |>
     dplyr::filter(asv_num %in% bloo_3$value) |>
     dplyr::filter(abundance_type == 'relative_abundance' &
@@ -3418,12 +4544,19 @@ library(ggridges)
     group_by(asv_num) |>
     dplyr::mutate(relative_abundance_category = case_when(mean(abundance_value) > 0.01 ~ 'abundant',
                                                           mean(abundance_value) <= 0.01 ~ 'rare')) |>
+   ungroup() |>
     dplyr::left_join(bloo_3_types_summary)
-
- asv_tab_all_bloo_z_tax_summary_all <- asv_tab_all_bloo_z_tax_summary_02 |>
-   bind_rows(asv_tab_all_bloo_z_tax_summary_3)
  
-# write_csv(asv_tab_all_bloo_z_tax_summary_all, 'data/asv_tab_all_bloo_z_tax_summary.csv')
+ asv_tab_all_bloo_z_tax_summary_3 <-  asv_tab_all_bloo_z_tax_summary_3 |>
+   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d")))
+
+ asv_tab_all_bloo_z_tax_summary_02  <- asv_tab_all_bloo_z_tax_summary_02  |>
+   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d")))
+   
+asv_tab_all_bloo_z_tax_summary_all <- asv_tab_all_bloo_z_tax_summary_02 |>
+   bind_rows(asv_tab_all_bloo_z_tax_summary_3)
+  
+ # write_csv(asv_tab_all_bloo_z_tax_summary_all, 'data/asv_tab_all_bloo_z_tax_summary.csv')
  
  #### ANSWERING DIFFERENT QUESTIONS DEPENDING ON THE TYPE OF BLOOM THAT THEY ARE-----
 bloo_02_types_summary <- bloo_02_types_summary |>
@@ -3456,6 +4589,8 @@ bloo_all_types_summary |>
   dplyr::reframe(n = n())
 
 ## check if bloomers have the same behavior in both size fractions-----
+
+### look at Marta's script differential_abundance_corncob_forONA.Rmd to do it more quantiatively!
 shared_blooms <- bloo_all_types_summary |>
   dplyr::filter(duplicated(asv_num)) 
 
@@ -3528,9 +4663,9 @@ exclusive_02_in_3_plot <- asv_tab_10y_02_rel |>
         legend.title = element_text(size = 5),
         aspect.ratio = 3/7)
 
-ggsave(filename = 'exclusive_02_in_3_plot.pdf', plot = exclusive_02_in_3_plot,
-       path = 'results/figures/relationship_bloo_02_3/',
-       width = 188, height = 150, units = 'mm')
+# ggsave(filename = 'exclusive_02_in_3_plot.pdf', plot = exclusive_02_in_3_plot,
+#        path = 'results/figures/relationship_bloo_02_3/',
+#        width = 188, height = 150, units = 'mm')
 
 exclusive_3_in_02 <- asv_tab_10y_02_rel |>
   dplyr::mutate(fraction = '0.2') |>
@@ -3647,8 +4782,6 @@ exclusive_3_in_02_plot_3 <- asv_tab_10y_3_rel |>
 
 ## strong signal on s4 understand why -----
 
-
-
 ### Compare two dendograms----
 
 # Custom these kendo, and place them in a list
@@ -3718,7 +4851,6 @@ pheatmap(distances_3,scale="row", #annotation_col = dfh,
 
 pheatmap(distances_5,scale="row", #annotation_col = dfh,
          color=colorRampPalette(c("navy", "white", "red"))(25))
-
 
 ## Cross-correlation for the PA fraction----
 ## data preparation rows are observations and columns are variables----

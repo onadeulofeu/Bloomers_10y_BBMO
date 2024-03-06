@@ -3351,3 +3351,49 @@ ggsave('wavelets_result_env_tibble_red_coeff.pdf', wavelets_result_env_tibble_re
      width = 88,
      height = 100,
      units = 'mm')
+
+
+### Boxplot to explain that the BBMO is a highly oligotrohpic environment ----
+bbmo_env |>
+  colnames()
+
+bbmo_env_dates <- asv_tab_all_bloo |>
+  dplyr::filter(str_detect(sample_id, '0.2_')) |>
+  dplyr::select(sample_id, date) |>
+  distinct(sample_id, date)
+
+nutrients <-
+  bbmo_env |>
+  dplyr::filter(str_detect(sample_id, '0.2_')) |>
+  dplyr::select("PO4",  "NH4" ,  "NO2" , "NO3" , "Si" ,  sample_id) |>
+  left_join(bbmo_env_dates) |>
+  pivot_longer(cols = c("PO4",  "NH4" ,  "NO2" , "NO3" , "Si" ), values_to = 'env_values', names_to = 'environmental_variable') |>
+  ggplot(aes(environmental_variable, env_values))+
+  scale_x_discrete(labels = labs_env)+
+  geom_point(position = position_jitter(width = 0.1), size = 0.5)+
+  geom_boxplot(alpha = 0.4)+
+  #scale_fill_gradientn( colours = palete_gradient_cb)+
+  # scale_fill_gradient2(low = "#0049B7",
+  #                      high = "#b81131", midpoint = 0)+
+  # scale_fill_gradient2(colours = palete_gradient_cb2,
+  #                      midpoint = 0  # Set the midpoint value)+
+  # scale_fill_gradientn(colors = palete_gradient_cb5,
+  #                      breaks=c(-6, 0, 6),
+  #                      limits=c(-6,  6), na.value="#4d009c")+ # I add this since I have one value which is outside the range, to define the color it should have
+  #facet_wrap(.~year, scales = 'free_x', nrow = 1, switch = 'x')+
+  #geom_tile(alpha = 1)+
+  #geom_vline(xintercept = seq(0.5, 12, by = 12), linetype = "dashed", color = "darkgrey") +
+  #scale_x_datetime(expand = c(0,0))+
+  #scale_x_continuous(expand = c(0,0), labels = unique(bbmo_env_z_ed$year), breaks = unique(bbmo_env_z_ed$year))+
+  labs(x = '', y = '[uM]')+
+  theme_bw()+
+  theme(panel.grid = element_blank(), text = element_text(size = 8), legend.position = 'bottom',
+        #panel.border = element_blank(), 
+        strip.background = element_blank(), plot.margin = unit(c(0,3,0,1), "mm"), 
+        legend.key.size = unit(3, "mm"))
+
+# ggsave('nutrients.pdf', nutrients,
+#        path = "~/Documentos/Doctorat/BBMO/BBMO_bloomers/Results/Figures/",
+#        width = 88,
+#        height = 88,
+#        units = 'mm')
