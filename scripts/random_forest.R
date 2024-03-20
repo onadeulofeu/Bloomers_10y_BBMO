@@ -1,6 +1,9 @@
 #packages----
-library(caret)
-library(forcats)
+library(caret) #random forest
+library(forcats) #reorder in ggplot2
+library(pdp) #partial dependence analysis
+library(tidyverse)
+library(stringr)
 
 ## we need to create a wide dataset with environmental variables and each ASV that we consider it is a potential bloomer
 ## do we need to normalize environmental variables to z-scores? No need
@@ -191,7 +194,6 @@ diff_rclr_time_tb_env <- diff_time_tb_env |>
            Si_no_nas, BP_FC1.55_no_nas, PNF_Micro_no_nas, cryptomonas_no_nas, micromonas_no_nas, HNF_Micro_no_nas)
 
 ## I would like to add evenness as explanatory variable-------
-
 asv_tab_bbmo_10y_w_rar <- read.csv2('data/asv_tab_bbmo_10y_w_rar.csv') |>
   as_tibble()|> 
   rename('sample_id' = 'X') 
@@ -211,7 +213,6 @@ community_eveness_02 <- asv_tab_bbmo_10y_w_rar |>
   #ungroup() |>
   dplyr::reframe(community_eveness_rar_02 = community_evenness(abundances = reads_rar, index = 'Pielou'))
 
-
 ##for the PA dataset I need the interpolated values and then rarefy
 #### #write.csv(asv_tab_bbmo_10y_w_3_inter, 'data/asv_tab_bbmo_10y_w_3_inter_reads.csv')
 
@@ -228,10 +229,10 @@ min_n_seqs <- asv_tab_bbmo_10y_w_3_inter |>
 
 # we use rarefaction (which repeats the subsampling step many times)
 # perform this a 1000 times to get an empirical diversity values calculating the mean value for each timepoint.
-asv_tab_bbmo_10y_w_rar_3_inter <- rrarefy.perm(round(asv_tab_bbmo_10y_w_3_inter),
-                                       sample = min_n_seqs,
-                                       n = 1000,
-                                       round.out = T)
+# asv_tab_bbmo_10y_w_rar_3_inter <- rrarefy.perm(round(asv_tab_bbmo_10y_w_3_inter),
+#                                        sample = min_n_seqs,
+#                                        n = 1000,
+#                                        round.out = T)
 
 #write.csv(asv_tab_bbmo_10y_w_rar_3_inter, file = 'asv_tab_bbmo_10y_w_rar_3_inter.csv')
 
@@ -291,7 +292,7 @@ residuals <- residuals(fit)
 acf_res <- acf(residuals, main = "Autocorrelation Function of Residuals")
 ## synechococcus----
 #fit the loess model
-fit <- loess( synechococcus ~ decimal_date, data = diff_rclr_time_tb_env, span = 0.15)
+fit <- loess( synechococcus ~ decimal_date, data = diff_rclr_time_tb_env, span = 0.1)
 
 # predict the fited values
 predicted_values <- predict(fit)
@@ -309,7 +310,7 @@ synechococcus_sm <- predicted_values |>
 
 ## bacteria_joint----
 #fit the loess model
-fit <- loess( bacteria_joint ~ decimal_date, data = diff_rclr_time_tb_env, span = 0.2)
+fit <- loess( bacteria_joint ~ decimal_date, data = diff_rclr_time_tb_env, span = 0.22)
 
 # predict the fited values
 predicted_values <- predict(fit)
@@ -360,7 +361,7 @@ chla_total_sm <- predicted_values |>
 
 ## PO4_no_nas----
 #fit the loess model
-fit <- loess(PO4_no_nas ~ decimal_date, data = diff_rclr_time_tb_env, span = 0.2)
+fit <- loess(PO4_no_nas ~ decimal_date, data = diff_rclr_time_tb_env, span = 0.22)
 
 # predict the fited values
 predicted_values <- predict(fit)
@@ -377,7 +378,7 @@ PO4_sm <- predicted_values |>
 
 ## NH4_no_nas----
 #fit the loess model
-fit <- loess(NH4_no_nas ~ decimal_date, data = diff_rclr_time_tb_env, span = 0.2)
+fit <- loess(NH4_no_nas ~ decimal_date, data = diff_rclr_time_tb_env, span = 0.22)
 
 # predict the fited values
 predicted_values <- predict(fit)
@@ -394,7 +395,7 @@ NH4_sm <- predicted_values |>
  
 ## NO2_no_nas----
 #fit the loess model
-fit <- loess(NO2_no_nas ~ decimal_date, data = diff_rclr_time_tb_env, span = 0.2)
+fit <- loess(NO2_no_nas ~ decimal_date, data = diff_rclr_time_tb_env, span = 0.22)
 
 # predict the fited values
 predicted_values <- predict(fit)
@@ -411,7 +412,7 @@ NO2_sm <- predicted_values |>
 
 ## NO3_no_nas----
 #fit the loess model
-fit <- loess(NO3_no_nas ~ decimal_date, data = diff_rclr_time_tb_env, span = 0.15)
+fit <- loess(NO3_no_nas ~ decimal_date, data = diff_rclr_time_tb_env, span = 0.18)
 
 # predict the fited values
 predicted_values <- predict(fit)
@@ -428,7 +429,7 @@ NO3_sm <- predicted_values |>
 
 ## Si_no_nas----
 #fit the loess model
-fit <- loess(Si_no_nas ~ decimal_date, data = diff_rclr_time_tb_env, span = 0.15)
+fit <- loess(Si_no_nas ~ decimal_date, data = diff_rclr_time_tb_env, span = 0.17)
 
 # predict the fited values
 predicted_values <- predict(fit)
@@ -445,7 +446,7 @@ Si_sm <- predicted_values |>
 
 ## BP_FC1.55_no_nas----
 #fit the loess model
-fit <- loess(BP_FC1.55_no_nas ~ decimal_date, data = diff_rclr_time_tb_env, span = 0.2)
+fit <- loess(BP_FC1.55_no_nas ~ decimal_date, data = diff_rclr_time_tb_env, span = 0.22)
 
 # predict the fited values
 predicted_values <- predict(fit)
@@ -462,7 +463,7 @@ BP_FC1.55_sm <- predicted_values |>
 
 ## PNF_no_nas----
 #fit the loess model
-fit <- loess(PNF_Micro_no_nas ~ decimal_date, data = diff_rclr_time_tb_env, span = 0.15)
+fit <- loess(PNF_Micro_no_nas ~ decimal_date, data = diff_rclr_time_tb_env, span = 0.16)
 
 # predict the fited values
 predicted_values <- predict(fit)
@@ -479,7 +480,7 @@ PNF_sm <- predicted_values |>
 
 ## cryptomonas_no_nas----
 #fit the loess model
-fit <- loess(cryptomonas_no_nas ~ decimal_date, data = diff_rclr_time_tb_env, span = 0.2)
+fit <- loess(cryptomonas_no_nas ~ decimal_date, data = diff_rclr_time_tb_env, span = 0.22)
 
 # predict the fited values
 predicted_values <- predict(fit)
@@ -496,7 +497,7 @@ cryptomonas_sm <- predicted_values |>
 
 ## micromonas_no_nas----
 #fit the loess model
-fit <- loess(micromonas_no_nas ~ decimal_date, data = diff_rclr_time_tb_env, span = 0.15)
+fit <- loess(micromonas_no_nas ~ decimal_date, data = diff_rclr_time_tb_env, span = 0.16)
 
 # predict the fited values
 predicted_values <- predict(fit)
@@ -530,7 +531,7 @@ HNF_sm <- predicted_values |>
 
 ## Community evenness 02----
 #fit the loess model
-fit <- loess( community_eveness_rar_02 ~ decimal_date, data = diff_rclr_time_tb_env, span = 0.18)
+fit <- loess( community_eveness_rar_02 ~ decimal_date, data = diff_rclr_time_tb_env, span = 0.22)
 
 # predict the fited values
 predicted_values <- predict(fit)
@@ -611,15 +612,21 @@ diff_rclr_time_tb_env_l <- diff_rclr_time_tb_env |>
   separate(env_variable, into = c('env_variable', 'type', 'another'), sep = '_') |>
   dplyr::mutate(type_value = 'original')
 
+community_evenness_all_l <- community_evenness_all |>
+  dplyr::select(ev02 = community_eveness_rar_02 , decimal_date, ev3 = community_eveness_rar_3) |>
+  pivot_longer(cols = !decimal_date, names_to = 'env_variable', values_to = 'value')|>
+  dplyr::mutate(type_value = 'original')
+
 env_data_new_l |>
   bind_rows(diff_rclr_time_tb_env_l) |>
+  bind_rows(community_evenness_all_l) |>
   ggplot(aes(decimal_date, value))+
   geom_point(aes(shape = type_value))+
   geom_line(aes(color = type_value))+
   facet_wrap(vars(env_variable), scales = 'free')+
   theme_bw()
 
-## Model with some smoothed env variables-----
+## Model with some smoothed env variables -----
 
 #prepare the env data
 env_data_new_red <- env_data_new |>
@@ -976,16 +983,17 @@ summary(linear_fit)
 
 
 
+
 #### SMOOTH MY RESPONSE VARIABLE TOO-----
 ## dataset with just clr variables to smooth them
-rclr_time_tb_3 <- diff_time_tb_env |>
+rclr_time_tb_3 <- diff_time_tb_env |> 
   ungroup() |>
   dplyr::select(abundance_value, fraction, asv_num_f, decimal_date) |>
   dplyr::filter(fraction == '3') |>
   pivot_wider(names_from = 'asv_num_f', id_cols = c('decimal_date', 'fraction'), values_from = abundance_value) |>
   arrange(decimal_date)
 
-rclr_time_tb_3 <- diff_time_tb_env |>
+rclr_time_tb_02 <- diff_time_tb_env |>
   ungroup() |>
   dplyr::select(abundance_value, fraction, asv_num_f, decimal_date) |>
   dplyr::filter(fraction == '0.2') |>
@@ -1004,7 +1012,7 @@ fraction_date_3 <- rclr_time_tb_3 |>
 #### 3 (asv23, as72, asv17)----
 
 #fit the loess model
-fit <- loess(asv23 ~ decimal_date, data = rclr_time_tb_3, span = 0.15)
+fit <- loess(asv23 ~ decimal_date, data = rclr_time_tb_3, span = 0.09)
 
 # predict the fited values
 predicted_values <- predict(fit)
@@ -1029,10 +1037,13 @@ rclr_time_tb_3 |>
   left_join(asv23_sm) |>
   pivot_longer(cols = c('rclr', 'fitted_rclr'), names_to = 'approx', values_to = 'abundance_value') |>
   ggplot(aes(decimal_date, abundance_value))+
-  geom_line(aes(group = approx))
+  geom_line(aes(group = approx, color = approx))+
+  scale_color_manual(values = c('black', 'grey'))+
+  theme_bw()+
+  theme(panel.grid = element_blank())
 
 #fit the loess model
-fit <- loess(asv72 ~ decimal_date, data = rclr_time_tb_3, span = 0.15)
+fit <- loess(asv72 ~ decimal_date, data = rclr_time_tb_3, span = 0.09)
 
 # predict the fited values
 predicted_values <- predict(fit)
@@ -1057,10 +1068,13 @@ rclr_time_tb_3 |>
   left_join(asv72_sm) |>
   pivot_longer(cols = c('rclr', 'fitted_rclr'), names_to = 'approx', values_to = 'abundance_value') |>
   ggplot(aes(decimal_date, abundance_value))+
-  geom_line(aes(group = approx))
+  geom_line(aes(group = approx, color = approx))+
+  scale_color_manual(values = c('black', 'grey'))+
+  theme_bw()+
+  theme(panel.grid = element_blank())
 
 #fit the loess model
-fit <- loess(asv17 ~ decimal_date, data = rclr_time_tb_3, span = 0.15)
+fit <- loess(asv17 ~ decimal_date, data = rclr_time_tb_3, span = 0.09)
 
 # predict the fited values
 predicted_values <- predict(fit)
@@ -1085,7 +1099,10 @@ rclr_time_tb_3 |>
   left_join(asv17_sm) |>
   pivot_longer(cols = c('rclr', 'fitted_rclr'), names_to = 'approx', values_to = 'abundance_value') |>
   ggplot(aes(decimal_date, abundance_value))+
-  geom_line(aes(group = approx))
+  geom_line(aes(group = approx, color = approx))+
+  scale_color_manual(values = c('black', 'grey'))+
+  theme_bw()+
+  theme(panel.grid = element_blank())
 
 ### 02 (asv62, asv11, asv555)----
 
@@ -1115,10 +1132,13 @@ rclr_time_tb_02 |>
   left_join(asv62_sm) |>
   pivot_longer(cols = c('rclr', 'fitted_rclr'), names_to = 'approx', values_to = 'abundance_value') |>
   ggplot(aes(decimal_date, abundance_value))+
-  geom_line(aes(group = approx))
+  geom_line(aes(group = approx, color = approx))+
+  scale_color_manual(values = c('black', 'grey'))+
+  theme_bw()+
+  theme(panel.grid = element_blank())
 
 #fit the loess model
-fit <- loess(asv11 ~ decimal_date, data = rclr_time_tb_02, span = 0.15)
+fit <- loess(asv11 ~ decimal_date, data = rclr_time_tb_02, span = 0.09)
 
 # predict the fited values
 predicted_values <- predict(fit)
@@ -1143,10 +1163,13 @@ rclr_time_tb_02 |>
   left_join(asv11_sm) |>
   pivot_longer(cols = c('rclr', 'fitted_rclr'), names_to = 'approx', values_to = 'abundance_value') |>
   ggplot(aes(decimal_date, abundance_value))+
-  geom_line(aes(group = approx))
+  geom_line(aes(group = approx, color = approx))+
+  scale_color_manual(values = c('black', 'grey'))+
+  theme_bw()+
+  theme(panel.grid = element_blank())
 
 #fit the loess model
-fit <- loess(asv555 ~ decimal_date, data = rclr_time_tb_02, span = 0.15)
+fit <- loess(asv555 ~ decimal_date, data = rclr_time_tb_02, span = 0.13)
 
 # predict the fited values
 predicted_values <- predict(fit)
@@ -1171,7 +1194,10 @@ rclr_time_tb_02 |>
   left_join(asv555_sm) |>
   pivot_longer(cols = c('rclr', 'fitted_rclr'), names_to = 'approx', values_to = 'abundance_value') |>
   ggplot(aes(decimal_date, abundance_value))+
-  geom_line(aes(group = approx))
+  geom_line(aes(group = approx, color = approx))+
+  scale_color_manual(values = c('black', 'grey'))+
+  theme_bw()+
+  theme(panel.grid = element_blank())
 
 ### bring together all the new smooth asvs-----
 asvs_sm <- asv23_sm |>
@@ -1196,14 +1222,18 @@ asvs_sm_diff <- asvs_sm |>
 asvs_sm_diff |>
   ggplot(aes(decimal_date, diff_rclr_time))+
   geom_line()+
-  facet_wrap(vars(asv_num))
+  facet_wrap(vars(asv_num))+
+  theme_bw()+
+  theme(panel.grid = element_blank(), strip.background = element_rect(fill = 'transparent'))
 
 asvs_sm_diff |>
   ggplot(aes(decimal_date, fitted_rclr))+
   geom_line()+
-  facet_wrap(vars(asv_num))
+  facet_wrap(vars(asv_num))+  
+  theme_bw()+
+  theme(panel.grid = element_blank(), strip.background = element_rect(fill = 'transparent'))
 
-## blooms and rate of change from one point to the next one
+## blooms and rate of change from one point to the next one (just to observe) ------
 x <- asv_tab_all_bloo_z_tax_examples |>
   dplyr::filter(bloom == 'Bloom' &
                   asv_num == 'asv62' &
@@ -1279,9 +1309,10 @@ asvs_sm_diff |>
 
 
 # Model the smooth rCLR and env variables----
-set.seed(100)
 
 ### BLOOMER ASV62 (smooth) ----
+#env_data_new_red <- env_data_new_red[-120,]
+
 model_tb <- asvs_sm_diff |>
   dplyr::filter(!is.na(diff_time)) |>
   dplyr::select(-sample_id_num) |>
@@ -1358,16 +1389,16 @@ results <- resamples(modellist)
 summary(results)
 dotplot(results)
 
-# View summary of the trained model
-summary(custom)
-
-# Plot the model
-plot(custom)
+# # View summary of the trained model
+# summary(custom)
+# 
+# # Plot the model
+# plot(custom)
 
 ##in this case is ntree 200
 
 ## retrain model on entire dataset----
-bloo_final_asv62 <- train( diff_rclr_time ~., method='rf', data=model_tb, metric = 'RMSE', ntree=200, importance=T)
+bloo_final_asv62 <- train( diff_rclr_time ~., method='rf', data=model_tb, metric = 'RMSE', ntree=300, importance=T)
 bloo_final_asv62
 ## once we have trained our model we should not retrain it again (it will lead to different results.)
 importance_df_asv62 <- as.data.frame(bloo_final_asv62$finalModel$importance)
@@ -1586,14 +1617,16 @@ results <- resamples(modellist)
 summary(results)
 dotplot(results)
 
-## ntree = 300
+## ntree = 200
 
 ## retrain model on entire dataset----
-bloo_final_asv72 <- train( diff_rclr_time ~., method='rf', data=model_tb, metric = 'RMSE', ntree=300, importance=T)
+bloo_final_asv72 <- train( diff_rclr_time ~., method='rf', data=model_tb, metric = 'RMSE', ntree=200, importance=T)
 bloo_final_asv72
 
 importance_df_asv72 <- as.data.frame(bloo_final_asv72$finalModel$importance)
 importance_df_asv72 <- importance_df_asv72[order(-importance_df_asv72$`%IncMSE`),]
+importance_df_asv72
+
 
 ## remove some variables----
 model_tb |>
@@ -1698,14 +1731,15 @@ results <- resamples(modellist)
 summary(results)
 dotplot(results)
 
-##ntree = 500
+##ntree = 300
 
 ## retrain model on entire dataset----
-bloo_final_asv17 <- train( diff_rclr_time ~., method='rf', data=model_tb, metric = 'RMSE', ntree=500, importance=T)
+bloo_final_asv17 <- train( diff_rclr_time ~., method='rf', data=model_tb, metric = 'RMSE', ntree=300, importance=T)
 bloo_final_asv17
 
 importance_df_asv17 <- as.data.frame(bloo_final_asv17$finalModel$importance)
 importance_df_asv17 <- importance_df_asv72[order(-importance_df_asv17$`%IncMSE`),]
+importance_df_asv17
 
 ## remove some variables----
 model_tb |>
@@ -1810,7 +1844,7 @@ results <- resamples(modellist)
 summary(results)
 dotplot(results)
 
-## ntree = 200
+## ntree = 100
 
 ## retrain model on entire dataset----
 bloo_final_asv11 <- train( diff_rclr_time ~., method='rf', data=model_tb, metric = 'RMSE', ntree=200, importance=T)
@@ -1818,6 +1852,7 @@ bloo_final_asv11
 
 importance_df_asv11 <- as.data.frame(bloo_final_asv11$finalModel$importance)
 importance_df_asv11 <- importance_df_asv11[order(-importance_df_asv11$`%IncMSE`),]
+importance_df_asv11
 
 ## remove some variables----
 model_tb |>
@@ -1922,14 +1957,15 @@ results <- resamples(modellist)
 summary(results)
 dotplot(results)
 
-# ntree = 100 pero poso 200 que surt millor
+# ntree = 100 
 
 ## retrain model on entire dataset----
-bloo_final_asv555 <- train( diff_rclr_time ~., method='rf', data=model_tb, metric = 'RMSE', ntree=200, importance=T)
+bloo_final_asv555 <- train( diff_rclr_time ~., method='rf', data=model_tb, metric = 'RMSE', ntree=100, importance=T)
 bloo_final_asv555
 
 importance_df_asv555 <- as.data.frame(bloo_final_asv555$finalModel$importance)
 importance_df_asv555 <- importance_df_asv555[order(-importance_df_asv555$`%IncMSE`),]
+importance_df_asv555
 
 ## remove some variables----
 model_tb |>
@@ -1977,7 +2013,6 @@ all_results <- lapply(asv_numbers, function(asv_num) {
 
 # Combine all results into a single data frame
 results_models <- bind_rows(all_results)
-
 
 ##plot importance of variables ----
 ##This importance is a measure of by how much removing a variable decreases accuracy, and vice versa — by how much including a variable increases accuracy. 
@@ -2030,41 +2065,47 @@ im_all <- im_all |>
 im_all$asv_num <- im_all$asv_num |>
   factor(levels = c('asv23', 'asv62', 'asv72', 'asv17', 'asv11', 'asv555'))
 
-im_all |>
+## prepare environmental variable labels for this analysis
+labs_env_models <- c( "temperature_no_nas" = 'Temperature (ºC)',
+                      "day_length_no_nas" = 'Day length (h)',
+                      "bacteria_joint_sm" = 'Total bacterial abundance (cells/mL)',
+                      "synechococcus_sm" = 'Synechococcus abundance (cells/mL)',
+                      "chla_total_sm"  = 'Chl-a (µg/L)' ,
+                      "PO4_sm" =   '[PO43-] (µM)',
+                      "NH4_sm"      =   '[NH4+] (µM)',
+                      "NO2_sm"  =    '[NO2-] (µM)',       
+                      "NO3_sm"  =   '[NO3-] (µM)',
+                      "Si_sm"   =   '[SiO4-] (µM)',
+                      "PNF_sm"   =    'Phototrophic nanoflagellate abundaance (cells mL ^-1)',
+                      "cryptomonas_sm" = 'Cryptomonas cells/mL',
+                      "micromonas_sm"  = 'Micromonas cells/mL',
+                      "HNF_sm"      = 'Heterotrophic nanoflagellate abundaance (cells mL ^-1)',
+                      "ev02_sm"   = 'FL community evenness',
+                      "ev3_sm"    = 'PA community evenness',        
+                      "fitted_rclr" = 'previous rCLR')
+
+importance_example_bloo <- im_all |>
   ggplot(aes(fct_infreq(variable), incMSE))+
   geom_col()+
   facet_wrap(~ asv_num)+
+  scale_x_discrete(labels = labs_env_models)+
   labs(y = '%IncMSE')+
   theme_bw()+
   coord_flip()+
   theme(strip.background = element_rect(fill = 'transparent'),
-        panel.grid.minor = element_blank())
+        panel.grid.minor = element_blank(),
+        text = element_text(size = 6))
 
-## check if the predicted values in the 
+importance_example_bloo
 
-## prepare environmental variable labels for this analysis
-labs_env_models <- c( "temperature_no_nas" = 'Temperature (ºC)',
-                                  "day_length_no_nas" = 'Day length (h)',
-                                  "bacteria_joint_sm" = 'Total bacterial abundance (cells/mL)',
-                                  "synechococcus_sm" = 'Synechococcus abundance (cells/mL)',
-                                  "chla_total_sm"  = 'Chl-a (µg/L)' ,
-                                  "PO4_sm" =   '[PO43-] (µM)',
-                                  "NH4_sm"      =   '[NH4+] (µM)',
-                                  "NO2_sm"  =    '[NO2-] (µM)',       
-                                  "NO3_sm"  =   '[NO3-] (µM)',
-                                  "Si_sm"   =   '[SiO4-] (µM)',
-                                  "PNF_sm"   =    'Phototrophic nanoflagellate abundaance (cells mL ^-1)',
-                                  "cryptomonas_sm" = 'Cryptomonas cells/mL',
-                                    "micromonas_sm"  = 'Micromonas cells/mL',
-                                  "HNF_sm"      = 'Heterotrophic nanoflagellate abundaance (cells mL ^-1)',
-                                  "ev02_sm"   = 'FL community evenness',
-                                  "ev3_sm"    = 'PA community evenness',        
-                                 "fitted_rclr" = 'previous rCLR')
+# ggsave(importance_example_bloo, filename = 'importance_example_bloo.pdf',
+#        path = 'Results/Figures/random_forest/',
+#        width = 188, height = 150, units = 'mm')
+
 
 ## PARTIAL DEPENDANCE -----
 ### we explore how do the variables interact with each other
 ## we need the pdp package
-library(pdp)
 
 ## models for each ASV
 # bloo_final_asv62
@@ -2117,11 +2158,17 @@ for(var in predictor_vars) {
     #scale_y_continuous(limits = c(scale_limits))+
     theme_bw()+
     labs(y = 'rCLR change (t-1)', x = x_axis_title)+
-    theme(panel.grid = element_blank())
+    theme(panel.grid = element_blank(),
+          text = element_text(size = 6))
 }
 
 # Display all partial dependence plots
 pdp_asv62 <- gridExtra::grid.arrange(grobs = partial_plots)
+
+ggsave(pdp_asv62, filename = 'pdp_asv62.pdf',
+       path = 'Results/Figures/random_forest/',
+       width = 188, height = 180, units = 'mm')
+
 
 #### asv23------
 # Get the names of predictor variables
@@ -2149,11 +2196,16 @@ for(var in predictor_vars) {
     #scale_y_continuous(limits = c(scale_limits))+
     theme_bw()+
     labs(y = 'rCLR change (t-1)', x = x_axis_title)+
-    theme(panel.grid = element_blank())
+    theme(panel.grid = element_blank(),
+          text = element_text(size = 6))
 }
 
 # Display all partial dependence plots
 pdp_asv23 <- gridExtra::grid.arrange(grobs = partial_plots)
+
+ggsave(pdp_asv23, filename = 'pdp_asv23.pdf',
+       path = 'Results/Figures/random_forest/',
+       width = 188, height = 180, units = 'mm')
 
 #### asv72------
 # Get the names of predictor variables
@@ -2181,11 +2233,18 @@ for(var in predictor_vars) {
     #scale_y_continuous(limits = c(scale_limits))+
     theme_bw()+
     labs(y = 'rCLR change (t-1)', x = x_axis_title)+
-    theme(panel.grid = element_blank())
+    theme(panel.grid = element_blank(),
+          text = element_text (size = 6))
 }
 
 # Display all partial dependence plots
 pdp_asv72 <- gridExtra::grid.arrange(grobs = partial_plots)
+
+
+ggsave(pdp_asv72, filename = 'pdp_asv72.pdf',
+       path = 'Results/Figures/random_forest/',
+       width = 188, height = 180, units = 'mm')
+
 
 #### asv17------
 # Get the names of predictor variables
@@ -2213,21 +2272,20 @@ for(var in predictor_vars) {
     #scale_y_continuous(limits = c(scale_limits))+
     theme_bw()+
     labs(y = 'rCLR change (t-1)', x = x_axis_title)+
-    theme(panel.grid = element_blank())
+    theme(panel.grid = element_blank(),
+          text = element_text (size = 6))
 }
 
 # Display all partial dependence plots
 pdp_asv17 <- gridExtra::grid.arrange(grobs = partial_plots)
 
+
+ggsave(pdp_asv17, filename = 'pdp_asv17.pdf',
+       path = 'Results/Figures/random_forest/',
+       width = 188, height = 180, units = 'mm')
+
+
 #### ASV11----
-importance_df_asv11 |>
-  arrange('%IncMSE')
-
-importance_df_asv555 |>
-  arrange('%IncMSE')
-
-importance_df_asv62 |>
-  arrange('%IncMSE')
 
 # Get the names of predictor variables
 predictor_vars <- predictor_vars[order(match(predictor_vars, rownames(importance_df_asv11)))] 
@@ -2253,11 +2311,17 @@ for(var in predictor_vars) {
     ##scale_y_continuous(limits = c(scale_limits))+
     theme_bw()+
     labs(y = 'rCLR change (t-1)', x = x_axis_title)+
-    theme(panel.grid = element_blank())
+    theme(panel.grid = element_blank(),
+          text = element_text(size = 6))
 }
 
 # Display all partial dependence plots
 pdp_asv11 <- gridExtra::grid.arrange(grobs = partial_plots)
+
+
+ggsave(pdp_asv11, filename = 'pdp_asv11.pdf',
+       path = 'Results/Figures/random_forest/',
+       width = 188, height = 180, units = 'mm')
 
 
 #### asv555------
@@ -2286,12 +2350,19 @@ for(var in predictor_vars) {
     ##scale_y_continuous(limits = c(scale_limits))+
     theme_bw()+
     labs(y = 'rCLR change (t-1)', x = x_axis_title)+
-    theme(panel.grid = element_blank())
+    theme(panel.grid = element_blank(),
+          text = element_text(size = 6))
 }
 
 
 # Display all partial dependence plots
 pdp_asv555 <- gridExtra::grid.arrange(grobs = partial_plots)
+
+
+ggsave(pdp_asv555, filename = 'pdp_asv555.pdf',
+       path = 'Results/Figures/random_forest/',
+       width = 188, height = 180, units = 'mm')
+
 
 
 
