@@ -155,7 +155,6 @@ asv_tab_all_bloo_z_tax_02 <- asv_tab_all_bloo_z_tax |>
 asv_tab_all_bloo_3_complete #PA datset
 asv_tab_all_bloo_z_tax_02 #FL dataset
 
-
 ####### MAKING A DECISION ON USING WAVELETS // FOURIER ANALYSIS // ARIMA FOR OUR DATASET --------
 
 ## The seasonal dynamics of persistent and intermittent individual bacterial taxa was analysed by Fourier time-series analysis. 
@@ -315,7 +314,7 @@ asv_tab_all_3_reads <-  asv_tab_all_bloo_3_interpol |>
    dplyr::mutate(reads = abundance_value*39383) |>
   dplyr::select(asv_num, reads, date)
 
-### add to the main dataset and calculate the zCLR transformation using the interpolated reads for the missing samples
+### add to the main dataset and calculate the rCLR transformation using the interpolated reads for the missing samples
 asv_tab_bbmo_10y_w_3_inter <- asv_tab_bbmo_10y_l |>
   dplyr::filter(str_detect(sample_id, '_3_')) |>
   left_join(m_3) |>
@@ -386,7 +385,7 @@ zclr_df_inter  %$%
   zclr |>
   range()
 
-write.csv(wavelet_3_df, 'data/wavelet_3_df_deconstand.csv') #using the deconstand function (the same we need to use for the PA wavelets)
+#write.csv(wavelet_3_df, 'data/wavelet_3_df_deconstand.csv') #using the deconstand function (the same we need to use for the PA wavelets)
 
 #### Notice that deconstant robust CLR transformation gives me more negative values than the cmultRepl step
 
@@ -1598,7 +1597,7 @@ bloo_02_type <- wavelets_result_tibble_tax_02 %>%
  
  modwt.function.biased <- function(abundance){
    modwt_result <-  abundance |>
-     modwt( wf = 'la8', boundary = "periodic", n.levels = 4) |> #If boundary=="periodic" the defaulTRUE, then the vector you decompose is assumed to be periodic on its defined interval,
+     modwt( wf = 'la8', boundary = "periodic", n.levels = 4) |> #If boundary=="periodic" the default TRUE, then the vector you decompose is assumed to be periodic on its defined interval,
      #brick.wall(wf = 'la8') |> #elimination of all boundary coefficients is accomplished by the function 'brick.wall' prior to the phase shift correction
      phase.shift(wf = 'la8')
    return(modwt_result)

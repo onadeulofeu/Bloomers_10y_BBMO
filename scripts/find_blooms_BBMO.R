@@ -109,9 +109,9 @@ palette_class_assigned_bloo <- c('Gammaproteobacteria' = '#FFA737', 'Alphaproteo
 #   left_join(tax_bbmo_10y, by = c('taxonomy' = 'family')) |>
 #   distinct(taxonomy, order)
 
-asv_tab_all_bloo_z_tax |>
-  group_by(order, class) |>
-  distinct(order, class)
+# asv_tab_all_bloo_z_tax |>
+#   group_by(order, class) |>
+#   distinct(order, class)
 
  # asv_tab_all_bloo_z_tax |>
  #  dplyr::filter(order == 'Synechococcales') |>
@@ -147,9 +147,9 @@ palette_order_assigned_bloo <-  c("SAR11 clade" =  '#B0413E',
                                   #"SAR86 clade" = '#FFBF45',
                                   #"Oceanospirillales" =  '#A05C00'
 
-x <- asv_tab_all_bloo_z_tax |>
-  group_by(order, family) |>
-  distinct(order, family)
+# x <- asv_tab_all_bloo_z_tax |>
+#   group_by(order, family) |>
+#   distinct(order, family)
 
 # asv_tab_all_bloo_z_tax |>
 #   dplyr::filter(family == "Puniceicoccaceae") |>
@@ -159,7 +159,7 @@ x <- asv_tab_all_bloo_z_tax |>
 palette_family_assigned_bloo <- c(##gammaproteobacteria
   "Thiotrichaceae" = '#FFBF45',  
   "Marinobacteraceae" =  '#B5A9A4',  
-  "Alcanivoracaceae1"  =  '#F2DA00',  
+  "Alcanivoracaceae1"  =  '#FCE005',  
   "Moraxellaceae"  =  '#FF8E00', #pseudomonadales
   "Halieaceae" = '#FF7B38', "SAR86 clade" = '#FFA200', #pseudomonadales
   "Vibrionaceae"      = '#1C1B1A',   "Yersiniaceae"  = '#89584D',    #enterobacterales    

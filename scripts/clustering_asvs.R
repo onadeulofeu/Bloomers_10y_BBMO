@@ -8,7 +8,7 @@ library(factoextra) ## visualize hierarchical clusters
 ## palettes----
 palette_clustering <- c("#FFE355",
                         "#EF8D00",
-                        "#ffd2f1",
+                        "#AE659B",
                         "#2b347a",
                         "#c23939",
                         "#4cb76a",
@@ -29,7 +29,7 @@ palete_seasonal_bloo <- c('#2466BF', '#5B9B57', '#FFD700', '#C73F4E', '#AD7CE6')
 
 palette_clustering_assigned <- c('cl_9_3' ="#FFD700",
                                  "#EF8D00",
-                                 "#ffd2f1",
+                                 "#AE659B",
                                  "#2b347a",
                                  "#c23939",
                                  'cl_8_3' = "#4cb76a",
@@ -52,7 +52,7 @@ palette_clustering_assigned <- c('cl_9_3' ="#FFD700",
                                  'asv62_0.2' = '#5B9B57' , 
                                  'asv1_0.2'= '#2F2F2C')
 
-palette_occurrence <- c(narrow = "#ffd2f1",
+palette_occurrence <- c(narrow = "#AE659B",
                         intermidiate = "#3e3e3e",
                         broad = "#57a9a8")
 
@@ -4028,6 +4028,20 @@ bloo_all_types_summary_tab <- bloo_all_types_summary |>
 # 7    asv3
 # 8    asv2
 # 9   asv15
+asv_tab_all_bloo_z_tax |>
+  colnames()
+
+1/3
+
+bloo_types_summary |>
+  dplyr::filter(recurrency == 'yes' &
+                  fraction == '3' &
+                  occurrence_category == 'narrow') ## I am looking for a narrow recurrent bloomer to use as example
+
+bloo_types_summary |>
+  dplyr::filter((asv_num %in% c('asv17', 'asv23', 'asv11', 'asv62', 'asv58', 'asv555', 'asv72') & fraction == '3') |
+           (asv_num %in% c('asv62', 'asv58', 'asv555') & fraction == '0.2') |
+           (asv_num == 'asv11' & fraction == '0.2'))
 
 asv_tab_all_bloo_z_tax_examples <- asv_tab_all_bloo_z_tax |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
@@ -4039,10 +4053,10 @@ asv_tab_all_bloo_z_tax_examples <- asv_tab_all_bloo_z_tax |>
   dplyr::left_join(bloo_types_summary, by = c('asv_num_f' = 'asv_num','fraction')) |>
   dplyr::filter(order != 'SAR11 clade') |>
   #dplyr::filter(asv_num_f %in% c('asv17', 'asv23', 'asv11', 'asv84', 'asv62', 'asv58', 'asv555', 'asv559')) |>
-  filter((asv_num_f %in% c('asv17', 'asv23', 'asv11', 'asv62', 'asv58', 'asv555') & fraction == '3') |
+  filter((asv_num_f %in% c('asv17', 'asv23', 'asv11', 'asv62', 'asv58', 'asv555', 'asv72') & fraction == '3') |
            (asv_num_f %in% c('asv62', 'asv58', 'asv555') & fraction == '0.2') |
            (asv_num_f == 'asv11' & fraction == '0.2')) |>
-  dplyr::left_join(occurrence_bloo_bbmo) |>
+  #dplyr::left_join(occurrence_bloo_bbmo) |>
   dplyr::mutate(bloom = case_when (z_score_ra >= 1.96 &
                                      abundance_value >= 0.1~ 'Bloom',
                                    TRUE ~ 'No-bloom')) |>
@@ -4127,13 +4141,13 @@ asv_tab_all_bloo_z_tax_examples <- asv_tab_all_bloo_z_tax |>
 ### CONCEPTUAL FIGURE OF THE TYPES OF BLOOMERS THAT WE IDENTIFIED IN THE BBMO ------
 ### i will prepare each graph individually so that I can organize them in a tidy way easy to follow 
 
-palette_occurrence <- c(narrow = "#ffd2f1",
-                        intermidiate = "#3e3e3e",
+palette_occurrence <- c(narrow = "#AE659B",
+                        intermediate = "#3e3e3e",
                         broad = "#57a9a8")
 
-labs_occurrence <- as_labeller(c(narrow = "Narrow (<25%)",
-                                 intermidiate = "Intermediate (25-75%)",
-                                 broad = "Broad (>75%)"))
+labs_occurrence <- as_labeller(c(narrow = "Narrow\n(<1/3)",
+                                 intermediate = "Intermediate\n(1/3 < x < 2/3)",
+                                 broad = "Broad\n(>2/3)"))
 
 ##plot1 
 plot1 <- asv_tab_all_bloo_z_tax_examples |>  
@@ -4145,7 +4159,7 @@ plot1 <- asv_tab_all_bloo_z_tax_examples |>
   geom_area(aes(date, y = abundance_value, group = asv_num_f, fill = 'grey'),  position= 'identity')+
   geom_point(data = asv_tab_all_bloo_z_tax_examples |>
                dplyr::filter(bloom == 'Bloom' &
-                               asv_num == 'asv23'), aes(color = bloom), size = 1) +  # Specify shape aesthetic for points
+                               asv_num == 'asv23'), aes(color = bloom), size = 0.5) +  # Specify shape aesthetic for points
   scale_color_manual(values = c( 'Bloom' = '#9F0011', 'No-bloom' = 'white')) +
   scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
   facet_wrap(vars(occurrence_category), 
@@ -4160,12 +4174,14 @@ plot1 <- asv_tab_all_bloo_z_tax_examples |>
          alpha = 'none')+
   theme_bw()+
   theme(axis.text.x = element_text(size = 0), panel.grid.minor = element_blank(),
-        panel.grid.major.y = element_blank(), strip.text = element_text(size = 0, margin = margin(4, 4, 4, 4)),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 0, margin = margin(10, 4, 4, 4)),
         legend.position = 'bottom', axis.text.y = element_text(size = 5),
-        axis.title = element_text(size = 7), strip.background = element_rect(fill = "#57a9a8",color = "#57a9a8" ), #strip.text.x = element_blank(),
+        axis.title.x = element_text(size = 0),
+        axis.ticks.x = element_blank(),
+        axis.title.y = element_text(size = 7), strip.background = element_rect(fill = "#57a9a8",color = "#57a9a8" ), #strip.text.x = element_blank(),
         legend.text = element_text(size = 5), legend.title = element_text(size = 7),# strip.placement = 'outside',
         plot.margin = margin(5,5,5,5),
-        legend.key.size = unit(3, 'mm'), aspect.ratio = 4/5, title = element_text(size = 8))
+        legend.key.size = unit(3, 'mm'), aspect.ratio = 4/6, title = element_text(size = 8))
 
 ##plot2
 plot2 <- asv_tab_all_bloo_z_tax_examples |>  
@@ -4177,7 +4193,7 @@ plot2 <- asv_tab_all_bloo_z_tax_examples |>
   geom_area(aes(date, y = abundance_value, group = asv_num_f, fill = 'grey'),   position= 'identity')+
   geom_point(data = asv_tab_all_bloo_z_tax_examples |>
                dplyr::filter(bloom == 'Bloom' &
-                               asv_num == 'asv62'), aes(color = bloom), size = 1) +  # Specify shape aesthetic for points
+                               asv_num == 'asv62'), aes(color = bloom), size = 0.5) +  # Specify shape aesthetic for points
   scale_color_manual(values = c( 'Bloom' = '#9F0011', 'No-bloom' = 'white')) +
   scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
   facet_wrap(vars(occurrence_category), 
@@ -4192,24 +4208,25 @@ plot2 <- asv_tab_all_bloo_z_tax_examples |>
          alpha = 'none')+
   theme_bw()+
   theme(axis.text.x = element_text(size = 0), panel.grid.minor = element_blank(),
-        panel.grid.major.y = element_blank(), strip.text = element_text(size = 0, margin = margin(4, 4, 4, 4)),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 0, margin = margin(10, 4, 4, 4)),
         legend.position = 'bottom', axis.text.y = element_text(size = 5),
-        axis.title = element_text(size = 7), strip.background = element_rect(fill = "#3e3e3e",color = "#3e3e3e" ),
+        axis.title.x = element_text(size = 0),
+        axis.ticks.x = element_blank(),
+        axis.title.y = element_text(size = 7), strip.background = element_rect(fill = "#3e3e3e",color = "#3e3e3e"), #strip.text.x = element_blank(),
         legend.text = element_text(size = 5), legend.title = element_text(size = 7),# strip.placement = 'outside',
         plot.margin = margin(5,5,5,5),
-        legend.key.size = unit(3, 'mm'), aspect.ratio = 4/5)
-
+        legend.key.size = unit(3, 'mm'), aspect.ratio = 4/6, title = element_text(size = 8))
 # plot 3
 plot3 <- asv_tab_all_bloo_z_tax_examples |>  
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::filter(asv_num_f %in% c('asv58')) |>
+  dplyr::filter(asv_num_f %in% c('asv72')) |>
   ggplot(aes(date, abundance_value))+
-  scale_y_continuous(labels = percent_format(), expand = c(0,0), limits = c(0,0.2))+ #, limits = c(0,0.25)
+  scale_y_continuous(labels = percent_format(), expand = c(0,0),  limits = c(0,0.3))+ #
   geom_hline(yintercept = 0.1, linetype = 'dashed', size = 0.3)+
   geom_area(aes(date, y = abundance_value, group = asv_num_f, fill = 'grey'),   position= 'identity')+
   geom_point(data = asv_tab_all_bloo_z_tax_examples |>
                dplyr::filter(bloom == 'Bloom' &
-                               asv_num == 'asv58'), aes(color = bloom), size = 1) +  # Specify shape aesthetic for points
+                               asv_num == 'asv72'), aes(color = bloom), size = 0.5) +  # Specify shape aesthetic for points
   scale_color_manual(values = c( 'Bloom' = '#9F0011', 'No-bloom' = 'white')) +
   scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
   facet_wrap(vars(occurrence_category), 
@@ -4224,12 +4241,14 @@ plot3 <- asv_tab_all_bloo_z_tax_examples |>
          alpha = 'none')+
   theme_bw()+
   theme(axis.text.x = element_text(size = 0), panel.grid.minor = element_blank(),
-        panel.grid.major.y = element_blank(), strip.text = element_text(size = 0, margin = margin(4, 4, 4, 4)),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 0, margin = margin(10, 4, 4, 4)),
         legend.position = 'bottom', axis.text.y = element_text(size = 5),
-        axis.title = element_text(size = 7), strip.background = element_rect(fill = "#3e3e3e",color = "#3e3e3e" ),
+        axis.title.x = element_text(size = 0),
+        axis.ticks.x = element_blank(),
+        axis.title.y = element_text(size = 7), strip.background = element_rect(fill = "#AE659B", color = "#AE659B"), #strip.text.x = element_blank(),
         legend.text = element_text(size = 5), legend.title = element_text(size = 7),# strip.placement = 'outside',
         plot.margin = margin(5,5,5,5),
-        legend.key.size = unit(3, 'mm'), aspect.ratio = 4/5)
+        legend.key.size = unit(3, 'mm'), aspect.ratio = 4/6, title = element_text(size = 8))
 
 # plot 4
 plot4 <- asv_tab_all_bloo_z_tax_examples |>  
@@ -4241,7 +4260,7 @@ plot4 <- asv_tab_all_bloo_z_tax_examples |>
   geom_area(aes(date, y = abundance_value, group = asv_num_f, fill = 'grey'),   position= 'identity')+
   geom_point(data = asv_tab_all_bloo_z_tax_examples |>
                dplyr::filter(bloom == 'Bloom' &
-                               asv_num == 'asv17'), aes(color = bloom), size = 1) +  # Specify shape aesthetic for points
+                               asv_num == 'asv17'), aes(color = bloom), size = 0.5) +  # Specify shape aesthetic for points
   scale_color_manual(values = c( 'Bloom' = '#9F0011', 'No-bloom' = 'white')) +
   scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
   facet_wrap(vars(occurrence_category), 
@@ -4256,12 +4275,13 @@ plot4 <- asv_tab_all_bloo_z_tax_examples |>
          alpha = 'none')+
   theme_bw()+
   theme(axis.text.x = element_text(size = 0), panel.grid.minor = element_blank(),
-        panel.grid.major.y = element_blank(), strip.text = element_text(size = 0, margin = margin(4, 4, 4, 4)),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 0, margin = margin(10, 4, 4, 4)),
         legend.position = 'bottom', axis.text.y = element_text(size = 5),
+        axis.ticks.x = element_blank(),
         axis.title = element_text(size = 7), strip.background = element_rect(fill = "#57a9a8", color = "#57a9a8" ),
-        legend.text = element_text(size = 5), legend.title = element_text(size = 7),# strip.placement = 'outside',
+        legend.text = element_text(size = 5), legend.title = element_text(size = 5),# strip.placement = 'outside',
         plot.margin = margin(5,5,5,5),
-        legend.key.size = unit(3, 'mm'), aspect.ratio = 4/5)
+        legend.key.size = unit(3, 'mm'), aspect.ratio = 4/6)
 
 # plot 5
 plot5 <- asv_tab_all_bloo_z_tax_examples |>  
@@ -4273,7 +4293,7 @@ plot5 <- asv_tab_all_bloo_z_tax_examples |>
   geom_area(aes(date, y = abundance_value, group = asv_num_f, fill = 'grey'),   position= 'identity')+
   geom_point(data = asv_tab_all_bloo_z_tax_examples |>
                dplyr::filter(bloom == 'Bloom' &
-                               asv_num == 'asv84'), aes(color = bloom), size = 1) +  # Specify shape aesthetic for points
+                               asv_num == 'asv84'), aes(color = bloom), size = 0.5) +  # Specify shape aesthetic for points
   scale_color_manual(values = c( 'Bloom' = '#9F0011', 'No-bloom' = 'white')) +
   scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
   facet_wrap(vars(occurrence_category), 
@@ -4288,12 +4308,13 @@ plot5 <- asv_tab_all_bloo_z_tax_examples |>
          alpha = 'none')+
   theme_bw()+
   theme(axis.text.x = element_text(size = 0), panel.grid.minor = element_blank(),
-        panel.grid.major.y = element_blank(), strip.text = element_text(size = 0, margin = margin(4, 4, 4, 4)),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 0, margin = margin(10, 4, 4, 4)),
         legend.position = 'bottom', axis.text.y = element_text(size = 5),
+        axis.ticks.x = element_blank(),
         axis.title = element_text(size = 7), strip.background = element_rect(fill = "#3e3e3e",color = "#3e3e3e" ),
-        legend.text = element_text(size = 5), legend.title = element_text(size = 7),# strip.placement = 'outside',
+        legend.text = element_text(size = 5), legend.title = element_text(size = 5),# strip.placement = 'outside',
         plot.margin = margin(5,5,5,5),
-        legend.key.size = unit(3, 'mm'), aspect.ratio = 4/5)
+        legend.key.size = unit(3, 'mm'), aspect.ratio = 4/6)
 
 # plot 6
 plot6 <- asv_tab_all_bloo_z_tax_examples |>  
@@ -4305,7 +4326,7 @@ plot6 <- asv_tab_all_bloo_z_tax_examples |>
   geom_area(aes(date, y = abundance_value, group = asv_num_f, fill = 'grey'),   position= 'identity')+
   geom_point(data = asv_tab_all_bloo_z_tax_examples |>
                dplyr::filter(bloom == 'Bloom' &
-                               asv_num == 'asv559'), aes(color = bloom), size = 1) +  # Specify shape aesthetic for points
+                               asv_num == 'asv559'), aes(color = bloom), size = 0.5) +  # Specify shape aesthetic for points
   scale_color_manual(values = c( 'Bloom' = '#9F0011', 'No-bloom' = 'white')) +
   scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
   facet_wrap(vars(occurrence_category), 
@@ -4320,12 +4341,13 @@ plot6 <- asv_tab_all_bloo_z_tax_examples |>
          alpha = 'none')+
   theme_bw()+
   theme(axis.text.x = element_text(size = 0), panel.grid.minor = element_blank(),
-        panel.grid.major.y = element_blank(), strip.text = element_text(size = 0, margin = margin(4, 4, 4, 4)),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 0, margin = margin(10, 4, 4, 4)),
         legend.position = 'bottom', axis.text.y = element_text(size = 5),
-        axis.title = element_text(size = 7), strip.background = element_rect(fill = "#ffd2f1", color = "#ffd2f1"),
-        legend.text = element_text(size = 5), legend.title = element_text(size = 7),# strip.placement = 'outside',
+        axis.ticks.x = element_blank(),
+        axis.title = element_text(size = 7), strip.background = element_rect(fill = "#AE659B", color = "#AE659B"),
+        legend.text = element_text(size = 5), legend.title = element_text(size = 5),# strip.placement = 'outside',
         plot.margin = margin(5,5,5,5),
-        legend.key.size = unit(3, 'mm'), aspect.ratio = 4/5)
+        legend.key.size = unit(3, 'mm'), aspect.ratio = 4/6)
 
 # plot 7
 plot7 <- asv_tab_all_bloo_z_tax_examples |>  
@@ -4339,7 +4361,7 @@ dplyr::filter(fraction == '0.2') |>
   geom_point(data = asv_tab_all_bloo_z_tax_examples |>
                dplyr::filter(bloom == 'Bloom' &
                                asv_num == 'asv11',
-                             fraction == '0.2'), aes(color = bloom), size = 1) +  # Specify shape aesthetic for points
+                             fraction == '0.2'), aes(color = bloom), size = 0.5) +  # Specify shape aesthetic for points
   scale_color_manual(values = c( 'Bloom' = '#9F0011', 'No-bloom' = 'white')) +
   scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
   facet_wrap(vars(occurrence_category), 
@@ -4354,12 +4376,13 @@ dplyr::filter(fraction == '0.2') |>
          alpha = 'none')+
   theme_bw()+
   theme(axis.text.x = element_text(size = 0), panel.grid.minor = element_blank(),
-        panel.grid.major.y = element_blank(), strip.text = element_text(size = 0, margin = margin(4, 4, 4, 4)),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 0, margin = margin(10, 4, 4, 4)),
         legend.position = 'bottom', axis.text.y = element_text(size = 5),
+        axis.ticks.x = element_blank(),
         axis.title = element_text(size = 7), strip.background = element_rect(fill = "#3e3e3e", color = "#3e3e3e"),
-        legend.text = element_text(size = 5), legend.title = element_text(size = 7),# strip.placement = 'outside',
+        legend.text = element_text(size = 5), legend.title = element_text(size = 5),# strip.placement = 'outside',
         plot.margin = margin(5,5,5,5),
-        legend.key.size = unit(3, 'mm'), aspect.ratio = 4/5)
+        legend.key.size = unit(3, 'mm'), aspect.ratio = 4/6)
 
 # plot 8
 plot8 <- asv_tab_all_bloo_z_tax_examples |>  
@@ -4371,7 +4394,7 @@ plot8 <- asv_tab_all_bloo_z_tax_examples |>
   geom_area( aes(date, y = abundance_value, group = asv_num_f, fill = 'grey'),   position= 'identity')+
   geom_point(data = asv_tab_all_bloo_z_tax_examples |>
                dplyr::filter(bloom == 'Bloom' &
-                               asv_num == 'asv555'), aes(color = bloom), size = 1) +  # Specify shape aesthetic for points
+                               asv_num == 'asv555'), aes(color = bloom), size = 0.5) +  # Specify shape aesthetic for points
   scale_color_manual(values = c( 'Bloom' = '#9F0011', 'No-bloom' = 'white')) +
   scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
   facet_wrap(vars(occurrence_category), 
@@ -4386,12 +4409,13 @@ plot8 <- asv_tab_all_bloo_z_tax_examples |>
          alpha = 'none')+
   theme_bw()+
   theme(axis.text.x = element_text(size = 0), panel.grid.minor = element_blank(),
-        panel.grid.major.y = element_blank(), strip.text = element_text(size = 0, margin = margin(4, 4, 4, 4)),
+        axis.ticks.x = element_blank(),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 0, margin = margin(10, 4, 4, 4)),
         legend.position = 'bottom', axis.text.y = element_text(size = 5),
-        axis.title = element_text(size = 7), strip.background = element_rect(fill = "#ffd2f1", color = "#ffd2f1"),
-        legend.text = element_text(size = 5), legend.title = element_text(size = 7),# strip.placement = 'outside',
+        axis.title = element_text(size = 7), strip.background = element_rect(fill = "#AE659B", color = "#AE659B"),
+        legend.text = element_text(size = 5), legend.title = element_text(size = 5),# strip.placement = 'outside',
         plot.margin = margin(5,5,5,5),
-        legend.key.size = unit(3, 'mm'), aspect.ratio = 4/5)
+        legend.key.size = unit(3, 'mm'), aspect.ratio = 4/6)
 
 # legend
 legend_plot <- asv_tab_all_bloo_z_tax_examples |>  
@@ -4406,7 +4430,6 @@ legend_plot <- asv_tab_all_bloo_z_tax_examples |>
   geom_point(aes(color = bloom), size = 1) +  # Specify shape aesthetic for points
   scale_color_manual(values = c( 'Bloom' = '#9F0011', 'No-bloom' = 'white')) +
   scale_fill_manual(values = palette_occurrence, labels = labs_occurrence) +
-  geom_hline(yintercept = 0.1, linetype = 'dashed')+
   labs(x = 'Time (Y)', y = 'Relative abundance (%)', fill = 'Occurrence category', color = 'Bloom')+
   guides(fill = guide_legend(ncol = 3, size = 6),
          color = guide_legend(ncol = 2, size = 6),  # Hide points in the color legend
@@ -4415,19 +4438,19 @@ legend_plot <- asv_tab_all_bloo_z_tax_examples |>
   theme(axis.text.x = element_text(size = 0), panel.grid.minor = element_blank(),
         panel.grid.major.y = element_blank(), strip.text = element_text(size = 0, margin = margin(4, 4, 4, 4)),
         legend.position = 'bottom', axis.text.y = element_text(size = 5),
-        axis.title = element_text(size = 7), strip.background = element_rect(fill = "#ffd2f1", color = "transparent"),
+        axis.title = element_text(size = 7), strip.background = element_rect(fill = "#AE659B", color = "transparent"),
         legend.text = element_text(size = 5), legend.title = element_text(size = 7),# strip.placement = 'outside',
         plot.margin = margin(5,5,5,5),
         legend.key.size = unit(3, 'mm'))
 
-legend_only  <- cowplot::get_legend(legend_plot)
+#legend_only  <- cowplot::get_legend(legend_plot)
 
 #library(cowplot)
 #library(gridExtra)
-examples_bloomers_types_titles <- grid.arrange(plot1, plot2, plot3,
-             plot4, plot5, plot6,
-             legend_only, plot7, plot8,
-             ncol = 3)
+# examples_bloomers_types_titles <- grid.arrange(plot1, plot2, plot3,
+#              plot4, plot5, plot6,
+#              legend_only, plot7, plot8,
+#              ncol = 3)
 
 # # Add text to the combined plot
 # text1 <- textGrob("Non-recurrent", x = 0.05, y = 1, gp = gpar(fontsize = 8))
@@ -4440,9 +4463,9 @@ examples_bloomers_types_titles <- grid.arrange(plot1, plot2, plot3,
 #            vjust = 1, size = 3.5)
 
 #Save the combined plot
-ggsave(filename = 'examples_bloomers_types.pdf', plot = examples_bloomers_types_titles,
-       path = 'results/figures/',
-       width = 188, height = 160, units = 'mm')
+# ggsave(filename = 'examples_bloomers_types.pdf', plot = examples_bloomers_types_titles,
+#        path = 'results/figures/',
+#        width = 188, height = 160, units = 'mm')
 
 #### I decide to keep only 6 blooming examples ------
 legend_only  <- cowplot::get_legend(legend_plot)
@@ -4455,17 +4478,25 @@ layout_mat <- rbind(c(1, 2, 3),
                     c(4, 5, 6),
                     c(7, 7, 7))  # This specifies that legend_only occupies all columns in the last row
 
-# Arrange the plots using the layout matrix
-examples_bloomers_types_titles <- grid.arrange(plot1, plot2, plot3,
-             plot4, plot7, plot8,
-             legend_only,
-             layout_matrix = layout_mat)
+# Define heights for each row
+heights <- c(1, 1, 0.25)  # Adjust the height of the last row to be shorter
 
-#Save the combined plot
+# Arrange the plots using the layout matrix and heights
+examples_bloomers_types_titles <- grid.arrange(plot1, plot2, plot3,
+                                               plot4, plot7, plot8,
+                                               legend_only,
+                                               layout_matrix = layout_mat,
+                                               heights = heights)
+# Add text to each row
+grid.text("Recurrent", x = unit(0.02, "npc"), y = unit(1, "npc") - unit(0.5 * heights[1], "cm"), just = "left", gp = gpar(fontsize = 8))
+grid.text("Non-recurrent", x = unit(0.02, "npc"), y = unit(1, "npc") - unit(heights[1] + 3 * heights[2], "cm"), just = "left", gp = gpar(fontsize = 8))
+# Add grid line between rows 1 and 2 (still tpe be improved)
+grid.lines(x = unit(c(0, 1), "npc"), y = unit(1, "npc") - unit(heights[1], "npc"), gp = gpar(col = "black", lwd = 1))
+
+#Save the combined plot (trobar la manera de guardar-ho amb el text!!)
 ggsave(filename = 'examples_bloomers_types_red.pdf', plot = examples_bloomers_types_titles,
        path = 'results/figures/',
        width = 188, height = 120, units = 'mm')
-
 
 ### EXAMPLES OF BLOOMING EVENTS ---- 
 labs_blooming_events <-  as_labeller(c('0.2' = 'Free living (0.2-3 um)',
