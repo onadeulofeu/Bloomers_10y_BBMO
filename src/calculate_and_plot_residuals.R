@@ -1,7 +1,8 @@
 #' Function to calculate residuals from mean abundance and plot them
 #' 
 #' What we intent to do here is to observe if some blooming events present a relative abundance lower than the 
-#' mean abundance of that specific ASV in the whole dataset
+#' mean abundance of that specific ASV in the whole dataset and additionally observe if the relative abundance of
+#' these events is over the variance of their relative abundance or not.
 #'
 #' @param data_anom_abund tibble with the information of the relative abundance during a potential blooming event
 #' @param data_mean_abund_asv tibble with the mean abundance of each ASV for the whole dataset
@@ -25,6 +26,12 @@ plot_residuals <- function(data_anom_abund, data_mean_abund_asv, asv_num, commun
   data_mean_abund_f <- data_mean_abund_asv |>
     dplyr::filter(asv_num == {{asv_num}} &
                     fraction == {{community_fraction}})
+  
+  title_plot <- data_anom_abund |>
+    dplyr::filter(asv_num == {{asv_num}} &
+                    fraction == {{community_fraction}}) |>
+    dplyr::mutate(asv_num_fa = paste0(asv_num, ' ', family)) |>
+    distinct(asv_num_fa)
     
   plot_residuals <- data_anom_abund |>
     left_join(data_mean_abund_asv, by = c('asv_num', 'fraction')) |>
@@ -36,19 +43,20 @@ plot_residuals <- function(data_anom_abund, data_mean_abund_asv, asv_num, commun
                                                       ymin = (data_mean_abund_f$mean_abund - data_mean_abund_f$sd_abund), 
                                                       ymax = (data_mean_abund_f$mean_abund + data_mean_abund_f$sd_abund)),
               fill = '#94969E',
-              alpha = 0.6)+
+              alpha = 0.4)+
     geom_hline(yintercept = data_mean_abund_f$mean_abund)+
-    geom_point()+
+    geom_point(aes(color = bloom_event))+
+    scale_color_manual(values = c('bloom' = 'darkred', 'no-bloom' = 'white'))+
     geom_segment(aes(x = date, y = residual, xend = date, yend = data_mean_abund_f$mean_abund), linetype = "dashed")+ 
-   
-    labs(title = {{asv_num}})+
-    scale_x_datetime(date_labels = "%Y", limits = c(min(timeseries_limits$date_min), max(timeseries_limits$date_max)))+
-    labs(x = 'Time', y = 'Difference between\ngeometric mean\nabundance during\n a potential blooming\nevent')+
+    labs(title = title_plot)+
+    scale_x_datetime(date_labels = "%Y", expand = c(0,0), limits = c(min(timeseries_limits$date_min), max(timeseries_limits$date_max)))+
+    labs(x = 'Time', y = 'Relative abundance (%)')+
     theme_bw()+
     theme(panel.grid = element_blank(),
+          legend.position = "none",
           strip.background = element_blank(),
-          text = element_text(size = 5),
-          axis.title.y = element_text(size = 3),
+          text = element_text(size = 7),
+          axis.title.y = element_text(size = 5),
           legend.key.size = unit(4, 'mm'))
   
   return(plot_residuals)
