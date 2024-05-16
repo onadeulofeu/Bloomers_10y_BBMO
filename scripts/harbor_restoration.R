@@ -588,7 +588,7 @@ harbor_group_data <- asv_tab_all_bloo_z_tax_harbor |>
 harbor_group <-harbor_group_data |> 
   dplyr::group_by(asv_num, date, harbor_group) |>
   dplyr::mutate(abund_max = sum(abundance_value)) |>
-  ggplot(aes(date, abund_max))+
+  ggplot(aes(date, abundance_value))+
   scale_y_continuous(labels = percent_format())+
   geom_vline(xintercept = as.POSIXct('2010-03-24', format = "%Y-%m-%d"), linetype = 'dashed') +
   geom_vline(xintercept = as.POSIXct('2010-07-01', format = "%Y-%m-%d"), linetype = 'dashed') +
@@ -668,7 +668,7 @@ harbor_group_rclr <- asv_tab_all_bloo_z_tax_harbor |>
   dplyr::filter(!is.na(harbor_group)) |> 
   dplyr::group_by(asv_num, date, harbor_group) |>
   dplyr::mutate(abund_max = sum(abundance_value)) |>
-  ggplot(aes(date, abund_max))+
+  ggplot(aes(date, abundance_value))+
   #scale_y_continuous(labels = percent_format())+
   geom_vline(xintercept = as.POSIXct('2010-03-24', format = "%Y-%m-%d"), linetype = 'dashed') +
   geom_vline(xintercept = as.POSIXct('2010-07-01', format = "%Y-%m-%d"), linetype = 'dashed') +

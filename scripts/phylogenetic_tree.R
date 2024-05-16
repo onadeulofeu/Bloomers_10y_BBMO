@@ -1,65 +1,70 @@
 
+####### Code developed by Ona Deulofeu-Capo 2024  #################
+
+# packages
 library(tidyverse)
+library(ape) 
 
-## I need to create a fasta file with the sequences of my potential bloomers----
+# packages version ----
 
+# Previously I need to create a fasta file with the sequences of my potential bloomers----
 # Aligment
 ##https://www.genome.jp/tools-bin/clustalw
 
-## add fasta seqs, DNA format, and Select Weight Matrix: CLUSTALW (for DNA)
-
- asv_num_seq_bloo <- tax |>
-  left_join(tax_bbmo_10y_new, by = 'asv_num') |>
-  dplyr::select(seq, asv_num) |>
-  dplyr::mutate(seq = as.character(seq),
-                asv_num = as.character(asv_num))
-
-# Assuming your tibble is named 'sequences_tibble' with columns 'sequence_name' and 'sequence'
-
-# Open a connection to write the output to a file
-output_file <- "sequences.fasta"
-file_conn <- file(output_file, "w")
-
-# Iterate over each row in the tibble and write to the file in FASTA format
-for (i in 1:nrow(asv_num_seq_bloo)) {
-  # Extract sequence name and sequence
-  seq_name <- as.character(asv_num_seq_bloo$asv_num[i])  # Extract character string from the tibble
-  seq <- as.character(asv_num_seq_bloo$seq[i])  # Ensure seq is a character vector
-  
-  # Write to file in FASTA format
-  cat(">", seq_name, "\n", seq, "\n", file = file_conn, sep = "")
-}
-
-# Close the file connection
-close(file_conn)
-
-# Print a message indicating the file has been written
-cat("FASTA file '", output_file, "' has been created.\n")
-
-## Run the code in marbits or in local look at README file in the folder----
-
-# module load
+# ## add fasta seqs, DNA format, and Select Weight Matrix: CLUSTALW (for DNA)
 # 
-# module load raxml-ng/0.9.0
+#  asv_num_seq_bloo <- tax |>
+#   left_join(tax_bbmo_10y_new, by = 'asv_num') |>
+#   dplyr::select(seq, asv_num) |>
+#   dplyr::mutate(seq = as.character(seq),
+#                 asv_num = as.character(asv_num))
 # 
-# raxml-ng --check --msa /alignment_remei_100_long_trimmed.fasta --model GTR+I+G -seed 123 --prefix remei100 ## for checking sequences 
+# # Assuming your tibble is named 'sequences_tibble' with columns 'sequence_name' and 'sequence'
 # 
-# raxml-ng --msa alignment_remei_100_long_trimmed.fasta --model GTR+I+G —-outgroup NR_074309.1_Synechococcus_elongatus_PCC_6301 -seed 123 --threads 2 --prefix remei100 ## for doing the main tree
+# # Open a connection to write the output to a file
+# output_file <- "sequences.fasta"
+# file_conn <- file(output_file, "w")
 # 
-# raxml-ng --rfdist --tree remei100.raxml.mlTrees --prefix remei100 ## para comprobar topologias
+# # Iterate over each row in the tibble and write to the file in FASTA format
+# for (i in 1:nrow(asv_num_seq_bloo)) {
+#   # Extract sequence name and sequence
+#   seq_name <- as.character(asv_num_seq_bloo$asv_num[i])  # Extract character string from the tibble
+#   seq <- as.character(asv_num_seq_bloo$seq[i])  # Ensure seq is a character vector
+#   
+#   # Write to file in FASTA format
+#   cat(">", seq_name, "\n", seq, "\n", file = file_conn, sep = "")
+# }
 # 
-# raxml-ng --bootstrap --msa alignment_remei_100_long_trimmed.fasta --model GTR+I+G --outgroup NR_074309.1_Synechococcus_elongatus_PCC_6301 -seed 123 --threads 2 --bs-trees 600 --prefix remei100 ## for making bootstraps
+# # Close the file connection
+# close(file_conn)
 # 
-# raxml-ng --bsconverge --bs-trees remei100.raxml.bootstraps --prefix remei100 -seed 123 --threads 1 --bs-cutoff 0.01 ## para ver si las bootstraps convergen
+# # Print a message indicating the file has been written
+# cat("FASTA file '", output_file, "' has been created.\n")
 # 
-# raxml-ng --support --tree remei100.raxml.bestTree --bs-trees remei100.raxml.bootstraps --prefix remei100 --threads 2 ## para juntar las bootstraps con el tree
+# ## Run the code in marbits or in local, look at README file in the folder----
+# 
+# # module load
+# # 
+# # module load raxml-ng/0.9.0
+# # 
+# # raxml-ng --check --msa /alignment_remei_100_long_trimmed.fasta --model GTR+I+G -seed 123 --prefix remei100 ## for checking sequences 
+# # 
+# # raxml-ng --msa alignment_remei_100_long_trimmed.fasta --model GTR+I+G —-outgroup NR_074309.1_Synechococcus_elongatus_PCC_6301 -seed 123 --threads 2 --prefix remei100 ## for doing the main tree
+# # 
+# # raxml-ng --rfdist --tree remei100.raxml.mlTrees --prefix remei100 ## para comprobar topologias
+# # 
+# # raxml-ng --bootstrap --msa alignment_remei_100_long_trimmed.fasta --model GTR+I+G --outgroup NR_074309.1_Synechococcus_elongatus_PCC_6301 -seed 123 --threads 2 --bs-trees 600 --prefix remei100 ## for making bootstraps
+# # 
+# # raxml-ng --bsconverge --bs-trees remei100.raxml.bootstraps --prefix remei100 -seed 123 --threads 1 --bs-cutoff 0.01 ## para ver si las bootstraps convergen
+# # 
+# # raxml-ng --support --tree remei100.raxml.bestTree --bs-trees remei100.raxml.bootstraps --prefix remei100 --threads 2 ## para juntar las bootstraps con el tree
 
-
-## Visualization of our tree----
+# Visualization of our tree ----
 #devtools::install_github("GuangchuangYu/ggtree")
 library(ggtree)
-library(ggplot)
+library(ggplot2)
 library(tidyverse)
+library(tidytree)
 
 tree <- ggtree::read.tree('data/raxml/bloo_bbmo.raxml.support')
 
@@ -71,68 +76,70 @@ tree |>
   geom_tiplab(align = T)
   #geom_tippoint()
 
-# I try to add a column with information of the types of blooms that they form (from the wavelets analysis). 
+# tree |>
+#   ggplot() + 
+#   geom_tree() + 
+#   theme_tree2() +
+#   #geom_treescale()+
+#   geom_tiplab(align = T)
+# 
+# tax <- asv_tab_all_bloo_z_tax |>
+#   dplyr::select(asv_num, phylum, class, order, family, genus) |>
+#   distinct()
+# 
+# metadata <- bloo_02 |>
+#   dplyr::mutate(fraction = '0.2') |>
+#   bind_rows(bloo_3) |>
+#   dplyr::mutate(fraction = case_when(is.na(fraction)~ '3',
+#                                      !is.na(fraction) ~ fraction)) |>
+#   group_by(value) |>
+#   dplyr::mutate(detect = n()) |>
+#   dplyr::mutate(detect_both = case_when(detect == '2' ~ 'both',
+#                                         detect == '1' ~ fraction)) |>
+#   group_by( value) |>
+#   dplyr::select(detect_both, value) |>
+#   distinct() |>
+#   rename(asv_num = value) |>
+#   left_join(tax)
+# 
+# merged_data <- merge(as_tibble_col(tree$tip.label, column_name = 'asv_num'), metadata, by = "asv_num") |>
+#   dplyr::mutate(family_num = paste0(family,' ', asv_num))
+# 
+#  tree_plot <- ggtree(tree, layout='dendrogram', branch.length='none') %<+% ## this is used to assign new data to the plot
+#   merged_data +
+#   geom_tree(aes(color=class))+
+#   scale_color_manual(values = palette_class_assigned)+
+#   geom_tiplab( aes(label=family), size=2, align=TRUE) +
+#     labs(color = 'Class')+
+#   #geom_treescale()+
+#   #geom_tiplab(align = T)+
+#   theme_tree2()
+#   #geom_treescale(x = 10, y = 360)
+#  
+#  ## prepare the data if they are blooming on the FL or the PA fraction
+#  detect_both <- merged_data |>
+#    dplyr::select(detect_both, asv_num) |>
+#    dplyr::mutate(blooming_fraction = 1,
+#                  detect_both = str_replace(detect_both, '3', 'PA')) |>
+#    dplyr::mutate(detect_both = str_replace(detect_both, '0.2', 'FL')) |>
+#    pivot_wider(id_cols = asv_num, values_fill = 0, names_from = detect_both, values_from = blooming_fraction)
+#  
+#  detect_both <- detect_both |>
+#    dplyr::mutate_all(as.character) |>
+#    dplyr::mutate(PA = case_when(both == '1' ~ '1',
+#                                 both == '0' ~ PA),
+#                  FL =  case_when(both == '1' ~ '1',
+#                                  both == '0' ~ FL)) |>
+#    dplyr::select(-both)   |>
+#    column_to_rownames(var = 'asv_num') 
+#  
+#  palette_fraction_bw <- c(  '0' = 'white', '1' = 'black' )
+#  
+ tips_to_remove <- c("asv2", "asv3", "asv5", "asv8") ## discarded as potential bloomers for our dataset
+ tree <- drop.tip(tree, tips_to_remove)
 
-
-# And another column with the information of in which fraction do they bloom.
-tree |>
-  ggplot() + 
-  geom_tree() + 
-  theme_tree2() +
-  #geom_treescale()+
-  geom_tiplab(align = T)
-
-tax <- asv_tab_all_bloo_z_tax |>
-  dplyr::select(asv_num, phylum, class, order, family, genus) |>
-  distinct()
-
-metadata <- bloo_02 |>
-  dplyr::mutate(fraction = '0.2') |>
-  bind_rows(bloo_3) |>
-  dplyr::mutate(fraction = case_when(is.na(fraction)~ '3',
-                                     !is.na(fraction) ~ fraction)) |>
-  group_by(value) |>
-  dplyr::mutate(detect = n()) |>
-  dplyr::mutate(detect_both = case_when(detect == '2' ~ 'both',
-                                        detect == '1' ~ fraction)) |>
-  group_by( value) |>
-  dplyr::select(detect_both, value) |>
-  distinct() |>
-  rename(asv_num = value) |>
-  left_join(tax)
-
-merged_data <- merge(as_tibble_col(tree$tip.label, column_name = 'asv_num'), metadata, by = "asv_num") |>
-  dplyr::mutate(family_num = paste0(family,' ', asv_num))
-
- tree_plot <- ggtree(tree, layout='dendrogram', branch.length='none') %<+% ## this is used to assign new data to the plot
-  merged_data +
-  geom_tree(aes(color=class))+
-  scale_color_manual(values = palette_class_assigned)+
-  geom_tiplab( aes(label=family), size=2, align=TRUE) +
-    labs(color = 'Class')+
-  #geom_treescale()+
-  #geom_tiplab(align = T)+
-  theme_tree2()
-  #geom_treescale(x = 10, y = 360)
- 
- ## prepare the data if they are blooming on the FL or the PA fraction
- detect_both <- merged_data |>
-   dplyr::select(detect_both, asv_num) |>
-   dplyr::mutate(blooming_fraction = 1,
-                 detect_both = str_replace(detect_both, '3', 'PA')) |>
-   dplyr::mutate(detect_both = str_replace(detect_both, '0.2', 'FL')) |>
-   pivot_wider(id_cols = asv_num, values_fill = 0, names_from = detect_both, values_from = blooming_fraction)
- 
- detect_both <- detect_both |>
-   dplyr::mutate_all(as.character) |>
-   dplyr::mutate(PA = case_when(both == '1' ~ '1',
-                                both == '0' ~ PA),
-                 FL =  case_when(both == '1' ~ '1',
-                                 both == '0' ~ FL)) |>
-   dplyr::select(-both)   |>
-   column_to_rownames(var = 'asv_num') 
- 
- palette_fraction_bw <- c(  '0' = 'white', '1' = 'black' )
+ # Plot the modified tree
+ plot(tree)
 
  # Plot the dendrogram with colored branches based on 'class'
  tree_plot <- ggtree(tree, branch.length='none') %<+% ## this is used to assign new data to the plot
@@ -151,7 +158,6 @@ merged_data <- merge(as_tibble_col(tree$tip.label, column_name = 'asv_num'), met
          axis.line.x = element_blank(),
          axis.ticks.x = element_blank()) 
 
-
 # Create the heatmap colored by 'detect_both' variable
 heatmap <- gheatmap(tree_plot, detect_both, offset=7, width = .1, color=NA, font.size = 3) + 
   scale_fill_manual(values = palette_fraction_bw, name="Potential\nblooming\nin fraction", labels=c("0" = "No", "1" = "Yes"))+
@@ -163,6 +169,30 @@ print(heatmap)
 
 #### Based on wavelets analysis I create a label for each taxa and add the information to the phylogenetic tree----
 bloo_type_biased_all ##here I have their maximum coefficient. Maybe the lowest ones are not significant and other criteria need to be followed to decide what do we trust
+
+bloo_type_biased_all <- read.csv('data/bloo_type_biased_all_checked.csv') #3not sure if this is the table that i would like to use
+wavelets_result_02 <- read.csv('data/wavelets_analysis/wavelets_result_ed_tibble_tax_02_biased_red.csv')
+wavelets_result_3 <- read.csv('data/wavelets_analysis/wavelets_result_ed_tibble_tax_3_biased_red.csv')
+
+wavelets_result_ed_tibble_tax_02_biased_red_coeff <- wavelets_result_02 %>%
+  group_by(asv_num, wavelets_transformation) %>%
+  dplyr::filter(!is.na(wavelets_result_ed)) |>
+  dplyr::summarize(coefficients = sqrt(sum(wavelets_result_ed^2))) |>
+  dplyr::mutate(fraction = '0.2') |>
+  dplyr::mutate(wavelets_fraction = paste0(wavelets_transformation,'_', fraction)) |>
+  dplyr::select(-fraction, -wavelets_transformation)
+
+wavelets_result_ed_tibble_tax_3_biased_red_coeff <- wavelets_result_3 %>%
+  group_by(asv_num, wavelets_transformation) %>%
+  dplyr::filter(!is.na(wavelets_result_ed)) |>
+  dplyr::summarize(coefficients = sqrt(sum(wavelets_result_ed^2))) |>
+  dplyr::mutate(fraction = '3') |>
+  dplyr::mutate(wavelets_fraction = paste0(wavelets_transformation,'_', fraction)) |>
+  dplyr::select(-fraction, -wavelets_transformation)
+
+wavelets_result_ed_tibble_biased_red_coeff_all <-  wavelets_result_ed_tibble_tax_3_biased_red_coeff |>
+  bind_rows(wavelets_result_ed_tibble_tax_02_biased_red_coeff) |>
+  pivot_wider(id_cols = asv_num, values_from = coefficients, names_from = wavelets_fraction, values_fill = 0)
 
 ## I prepare a table similar to the one I have for the fraction at which they bloom or not bloom.
 type_bloo <- bloo_type_biased_all |>
@@ -180,8 +210,6 @@ type_bloo_heatmap <- gheatmap(tree_plot, type_bloo, offset=12, width = .1, color
   theme(legend.position = 'bottom', text = element_text(size = 6), # labels=c("0" = "No", "1" = "Yes")
         legend.key.size = unit(0.5, "lines"), 
         axis.text.x = element_text(size = 1, angle =180))
-
-
 
 combined_plot <- tree_plot +
   heatmap+
@@ -219,9 +247,9 @@ heatmap1 <- gheatmap(tree_plot, wavelets_result_ed_tibble_biased_red_coeff_all, 
 # Print the combined plot
 print(heatmap1)
 
-ggsave(heatmap1, filename = 'phylogenetic_tree_wavelets_coeff.pdf',
-       path = 'Results/Figures/',
-       width = 230, height = 200, units = 'mm')
+# ggsave(heatmap1, filename = 'phylogenetic_tree_wavelets_coeff.pdf',
+#        path = 'Results/Figures/',
+#        width = 230, height = 200, units = 'mm')
 
 ### Remove d2 and d4 signals (no information)----
 wavelets_result_ed_tibble_biased_red_coeff_all_red <- wavelets_result_ed_tibble_biased_red_coeff_all |>
@@ -262,9 +290,9 @@ heatmap1 <- gheatmap(tree_plot, wavelets_result_ed_tibble_biased_red_coeff_all_r
 # Print the combined plot
 print(heatmap1)
 
-ggsave(heatmap1, filename = 'phylogenetic_tree_wavelets_coeff_red.pdf',
-       path = 'Results/Figures/',
-       width = 230, height = 200, units = 'mm')
+# ggsave(heatmap1, filename = 'phylogenetic_tree_wavelets_coeff_red_nosar11.pdf',
+#        path = 'Results/Figures/',
+#        width = 230, height = 200, units = 'mm')
 
 #### i can not change the labs names because they are in the column names not as a variable
 labs_wavelets_fract <- as_labeller(c('d1_3' = 'Fine-scale PA',
@@ -291,7 +319,6 @@ heatmap1 |>
                                's4_0.2' = 'Inter-annual'))
 
 ### Phyogenetic tree with variances for each coefficient------
-
 wavelets_variance <- wavelets_result_ed_tibble_tax_3_biased_red |> 
   dplyr::mutate(fraction = '3') |>
   bind_rows( wavelets_result_ed_tibble_tax_02_biased_red) |>
@@ -348,7 +375,6 @@ print(heatmap1)
 ## I analyse the relationship between different types of bloomers and phylogeny-----
 ### For this I use the phylogenetic tree and hierarchical clutsering analysis from the wavelets
 library(dendextend)
-library(ape)
 
 # Define the taxa to be removed (replace "taxon1", "taxon2", etc. with actual taxon names)
 taxa_to_remove <- bloo_02 |>
@@ -461,9 +487,7 @@ tanglegram(dend_ed_pa, hc5,
            lwd = 2, 
            main = paste("entanglement =", round(entanglement(dend_list), 2)))
 
-
 ### The same for the FL fraction-----
-
 # Define the taxa to be removed (replace "taxon1", "taxon2", etc. with actual taxon names)
 taxa_to_remove <- bloo_3 |>
   anti_join(bloo_02) |>
@@ -586,7 +610,6 @@ tanglegram(dend_ed_fl, hc_fl_5,
            main = paste("entanglement =", round(entanglement(dend_list), 2)))
 
 ##Phylogenetic tree with the category of each bloomer-----
-
 bloo_all_types_summary <- read.csv( 'results/tables/bloo_all_types_summary.csv')
 
 ## I prepare the table with the category of each blooming event
@@ -686,11 +709,247 @@ heatmap(bloo_all_types_summary_ed_02)
 bloo_all_types_summary_ed_02 |>
   dplyr::select(asv_num, cluster_fr, fraction) 
 
-
-
 # ggsave(heatmap1, filename = 'phylogenetic_tree_wavelets_coeff_variance.pdf',
 #        path = 'Results/Figures/',
 #        width = 230, height = 200, units = 'mm')
 
+############ TREE FOR ALL MY TAXA ######## -----------------
+## I need to create a fasta file with the sequences of all the taxa ----
+
+# Aligment
+##https://www.genome.jp/tools-bin/clustalw
+
+## add fasta seqs, DNA format, and Select Weight Matrix: CLUSTALW (for DNA)
+
+asv_num_seq_bbmo <- bbmo_10y@tax_table |>
+  as_tibble() |>
+  dplyr::select(asv_num = .otu, seq ) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num', 'seq')) |>
+  #dplyr::select(seq, asv_num) |>
+  dplyr::mutate(seq = as.character(seq),
+                asv_num = as.character(asv_num))
+
+# Assuming your tibble is named 'sequences_tibble' with columns 'sequence_name' and 'sequence'
+
+# Open a connection to write the output to a file
+output_file <- "sequences_bbmo.fasta"
+file_conn <- file(output_file, "w")
+
+# Iterate over each row in the tibble and write to the file in FASTA format
+for (i in 1:nrow(asv_num_seq_bbmo)) {
+  # Extract sequence name and sequence
+  seq_name <- as.character(asv_num_seq_bbmo$asv_num[i])  # Extract character string from the tibble
+  seq <- as.character(asv_num_seq_bbmo$seq[i])  # Ensure seq is a character vector
+  
+  # Write to file in FASTA format
+  cat(">", seq_name, "\n", seq, "\n", file = file_conn, sep = "")
+}
+
+# Close the file connection
+close(file_conn)
+
+# Print a message indicating the file has been written
+cat("FASTA file '", output_file, "' has been created.\n")
+
+## Is being a bloomer a phylogenetic related trait? ----
+
+## we compute a phylogenetic tree with all taxa present in the BBMO during those 10-Y
+
+### upload data 
+
+## I plot a tree with the following information 
+### highlight bloomers in PA or FL differently
+### which type of bloomer are they? recurrent or not, in the community broad, narrow or intermediate
 
 
+### Hypothesis 2: more close phylogenetic taxa in the community leads to less blooms (for each taxa) -----
+
+#### calculate phylogenetic distance form a tree----
+
+# Example of calculating distances between taxa in a phylogenetic tree
+# Replace 'tree' with your actual phylogenetic tree object
+
+# Calculate pairwise distances between all taxa in the tree
+pairwise_dist <- cophenetic(tree)
+
+# Display the pairwise distances
+print(pairwise_dist)
+
+row_names_tb <- pairwise_dist |>
+  rownames() |>
+  as_tibble_col(column_name = 'asv_num_1')
+
+phylogenetic_distances_tb <- pairwise_dist |>
+  as_tibble() |>
+  bind_cols(row_names_tb) |>
+  #rownames_to_column(var = 'rows_asv_num') |>
+  pivot_longer(cols = -c('asv_num_1'), values_to = 'phylogenetic_distance', names_to = 'asv_num_2')
+
+phylogenetic_distances_tb |>
+  dplyr::reframe(mean = mean(phylogenetic_distance))
+
+phylogenetic_distances_tb |>
+  dplyr::filter(asv_num_1 == 'asv43') |>
+  dplyr::filter(phylogenetic_distnace < 0.1) |>
+  left_join(bloo_taxonomy, by = c('asv_num_2' = 'asv_num_f'))
+
+asv_tab_all_bloo_z_tax |>
+  dplyr::filter(asv_num_f %in% c('asv43', 'asv192')) |>
+  dplyr::filter(abundance_type == 'relative_abundance') |>
+  ggplot(aes(date, abundance_value))+
+  #geom_point()+
+  geom_line(aes(group = asv_num, color = asv_num_f))+
+  facet_wrap(vars(fraction), scales = 'free_y')+
+  theme_bw()
+
+1-0.988 ## less than 5 nulceotides of difference between those ASVs
+
+asv_num_close <- phylogenetic_distances_tb |>
+  dplyr::filter(asv_num_1 == 'asv1') |>
+  dplyr::filter(phylogenetic_distance < 0.012) |>
+  left_join(bloo_taxonomy, by = c('asv_num_2' = 'asv_num_f')) |>
+  dplyr::select(asv_num_2)
+
+closely_phylogenetically_related_example1 <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(asv_num_f %in% asv_num_close$asv_num_2) |>
+  dplyr::filter(abundance_type == 'relative_abundance') |>
+  ggplot(aes(date, abundance_value))+
+  #geom_point(aes(shape = asv_num_f))+
+  geom_line(aes(group = interaction(asv_num, family), color =interaction(asv_num, family)))+
+  scale_color_manual(values = c("#2d373b", "#4cb76a"))+
+  scale_y_continuous(labels = percent_format())+
+  labs(y = 'Relative abundance (%)', color = 'ASV', x = 'Time')+
+  facet_wrap(vars(fraction), scales = 'free_y', labeller = labs_fraction)+
+  theme_bw()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        legend.position = 'bottom',
+        aspect.ratio = 6/11,
+        panel.grid = element_blank(), text = element_text(size = 8),
+        strip.text = element_text(margin = margin(2, 2, 2, 2)),
+        plot.margin = unit(c(0.2, 5, 0.5, 0.5), "cm"),
+        legend.key.size = unit(3, 'mm'))
+
+closely_phylogenetically_related_example1 
+
+# ggsave(closely_phylogenetically_related_example1, filename = 'closely_phylogenetically_related_example1.pdf',
+#        path = 'Results/Figures/',
+#        width = 188, height = 80, units = 'mm')
+
+closely_phylogenetically_related_example1 <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(asv_num_f %in% asv_num_close$asv_num_2) |>
+  dplyr::filter(abundance_type == 'rclr') |>
+  ggplot(aes(date, abundance_value))+
+  #geom_point(aes(shape = asv_num_f))+
+  geom_line(aes(group = interaction(asv_num, family), color =interaction(asv_num, family)))+
+  scale_color_manual(values = c("#2d373b", "#4cb76a"))+
+  labs(y = 'rCLR', color = 'ASV', x = 'Time')+
+  facet_wrap(vars(fraction), scales = 'free_y', labeller = labs_fraction)+
+  theme_bw()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        legend.position = 'bottom',
+        aspect.ratio = 6/11,
+        panel.grid = element_blank(), text = element_text(size = 8),
+        strip.text = element_text(margin = margin(2, 2, 2, 2)),
+        plot.margin = unit(c(0.2, 5, 0.5, 0.5), "cm"),
+        legend.key.size = unit(3, 'mm'))
+
+closely_phylogenetically_related_example1 
+
+# ggsave(closely_phylogenetically_related_example1, filename = 'closely_phylogenetically_related_example1_rclr.pdf',
+#        path = 'Results/Figures/',
+#        width = 188, height = 80, units = 'mm')
+
+## look for those taxa that are closely phylogenetically related----
+### new palette
+palete_close_asvs <- c("asv1" =     '#2D373B' ,
+                       'asv7' = '#009F6A',
+                       'asv4' = "#ca6094",
+                       'asv31' = '#006CB0',
+                       'asv17'= '#9C0000',
+                       'asv77' = '#74B9C8',
+                       'asv200' = "#ca6094",
+                       'asv264' = '#2D373B',
+                       'asv42' = '#FFA200',
+                       'asv49' = '#92ABFF')
+
+labs_family_fraction <- as_labeller(c('0.2' = 'Free living (0.2-3 um)',
+                                                         '3' = 'Particle attached (3-20 um)',
+                                      'asv4.asv31'='Cyanobiaceae',
+                                      'asv7.asv1' = 'Cyanobiaceae',
+                                      'asv264.asv200' = 'Clade I',
+                                      'asv49.asv42' = 'SAR86 clade',
+                                      'asv17.asv77' = 'Sphingomonadaceae'))
+                          
+close_bloomers <- phylogenetic_distances_tb |>
+  dplyr::filter(phylogenetic_distance < 0.012) |>
+  dplyr::filter(!asv_num_1 %in% c('asv2', 'asv3', 'asv5', 'asv8')) |>
+  dplyr::filter(!asv_num_2 %in% c('asv2', 'asv3', 'asv5', 'asv8')) |>
+  dplyr::filter(asv_num_1 != asv_num_2) |>
+  dplyr::select(asv_num_2)
+  
+close_groups <- phylogenetic_distances_tb |>
+  dplyr::filter(!asv_num_1 %in% c('asv2', 'asv3', 'asv5', 'asv8')) |>
+  dplyr::filter(!asv_num_2 %in% c('asv2', 'asv3', 'asv5', 'asv8')) |>
+  dplyr::filter(phylogenetic_distance < 0.012) |>
+  dplyr::filter(asv_num_1 != asv_num_2) |>
+  dplyr::mutate(close_group = paste0(asv_num_1, '.', asv_num_2)) |>
+  dplyr::filter(asv_num_1 %in% c('asv17', 'asv264', 'asv49', 'asv7', 'asv4')) |>
+  pivot_longer(cols = starts_with('asv_num'))
+
+closely_phylogenetically_related_example2 <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(asv_num_f %in% close_bloomers$asv_num_2) |>
+  dplyr::filter(abundance_type == 'relative_abundance') |>
+  dplyr::left_join(close_groups, by = c('asv_num' = 'value')) |>
+  group_by(close_group, date) |>
+  dplyr::mutate(max_abund = sum(abundance_value)) |>
+  ggplot(aes(date, abundance_value))+
+  #geom_point(aes(shape = asv_num_f))+
+  geom_line(aes(group = asv_num, color = asv_num))+
+  #geom_area(aes(fill = asv_num, color = asv_num), position = 'stack', alpha = 0.2)+
+  scale_fill_manual( values = palete_close_asvs)+
+  scale_color_manual( values = palete_close_asvs)+
+  scale_y_continuous(labels = percent_format())+
+  labs(y = 'Relative abundance (%)', fill = 'ASV', x = 'Time', color = 'ASV')+
+  facet_grid(close_group~fraction, scales = 'free_y', labeller = labs_family_fraction)+
+  theme_bw()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        legend.position = 'bottom',
+        aspect.ratio = 6/11,
+        panel.grid = element_blank(), text = element_text(size = 8),
+        strip.text = element_text(margin = margin(2, 2, 2, 2)),
+        plot.margin = unit(c(0.2, 5, 0.5, 0.5), "cm"),
+        legend.key.size = unit(3, 'mm'))
+
+closely_phylogenetically_related_example2
+
+ggsave(closely_phylogenetically_related_example2, filename = 'closely_phylogenetically_related_example2.pdf',
+       path = 'Results/Figures/',
+       width = 188, height = 220, units = 'mm')
+
+closely_phylogenetically_related_example2 <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(asv_num_f %in% close_bloomers$asv_num_2) |>
+  dplyr::filter(abundance_type == 'rclr') |>
+  dplyr::left_join(close_groups, by = c('asv_num' = 'value')) |>
+  ggplot(aes(date, abundance_value))+
+  #geom_point(aes(shape = asv_num_f))+
+  geom_line(aes(fill = asv_num, color = asv_num))+
+  #geom_area(aes(fill = asv_num, color = asv_num), position = 'stack', alpha = 0.2)+
+  scale_fill_manual( values = palete_close_asvs)+
+  scale_color_manual( values = palete_close_asvs)+
+  #scale_y_continuous(labels = percent_format())+
+  labs(y = 'rCLR', fill = 'ASV', x = 'Time', color = 'ASV')+
+  facet_grid(close_group~fraction, scales = 'free_y', labeller = labs_family_fraction)+
+  theme_bw()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        legend.position = 'bottom',
+        aspect.ratio = 6/11,
+        panel.grid = element_blank(), text = element_text(size = 8),
+        strip.text = element_text(margin = margin(2, 2, 2, 2)),
+        plot.margin = unit(c(0.2, 5, 0.5, 0.5), "cm"),
+        legend.key.size = unit(3, 'mm'))
+
+closely_phylogenetically_related_example2
+
+ggsave(closely_phylogenetically_related_example2, filename = 'closely_phylogenetically_related_example2_rclr.pdf',
+       path = 'Results/Figures/',
+       width = 188, height = 220, units = 'mm')
