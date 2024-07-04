@@ -12,7 +12,6 @@ library(waveslim)
 library(vegan) #deconstand
 
 # Differentiate different types of bloomers studying their signals across time----
-
 ## upload data----
 asv_tab_all_bloo_z_tax <- read.csv2('data/detect_bloo/asv_tab_all_bloo_z_tax_new_assign_checked.csv') |> ## in this dataset I have all the information from potential blooming ASVs
   as_tibble() |>
@@ -204,6 +203,12 @@ wavelet_02_df <- asv_tab_all_bloo_z_tax |>
   dplyr::filter(asv_num %in% bloo_02$value) |>
   dplyr::select(abundance_value, asv_num, decimal_date)
 
+# admissibility average arround 0-----
+wavelet_02_df |>
+  dplyr::group_by(asv_num) |>
+  dplyr::filter(!asv_num %in%  c('asv2', 'asv3', 'asv5', 'asv8')) |>
+  dplyr::reframe(mean = mean(abundance_value))
+
 # ## I run again the wavelets analysis with rCLR values from deconstant function not zcompositions, to use the same transformation for both PA and FL----
 # asv_tab_bbmo_10y_w_02 <- asv_tab_bbmo_10y_l |>
 #   dplyr::filter(str_detect(sample_id, '_0.2_')) |>
@@ -294,7 +299,7 @@ wavelet_02_df <- asv_tab_all_bloo_z_tax |>
 #write.csv2(wavelet_02_df, 'data/wavelet_02_df_deconstand.csv') #using the deconstand function (the same we need to use for the PA wavelets)
 #write.csv2(wavelet_02_df, 'data/wavelet_02_df_zclr.csv') #using the zcompositions function which deals with 0 in a more elegant way.
 
-## for the PA fraction we need to calculate again the zCLR transformation after the interpolation of the missing samples ----
+## for the PA fraction we need to calculate again the rCLR transformation after the interpolation of the missing samples ----
 ### i feel that i makes more sense to make the interpolation from relative_abundances therefore I need to convert it's relative abundance interpolated
 ### value to interpolated reads, for this I imagine that they have the total reads that we have in the mean dataset
 
@@ -361,12 +366,23 @@ zclr_df_inter_deconstand <- decostand(asv_tab_bbmo_10y_w_3_inter, method = 'rclr
   as_tibble(rownames = "date") %>%
   pivot_longer(cols = starts_with('asv'), names_to = 'asv_num', values_to = 'rclr') 
 
+# clr_df_inter_deconstand <- decostand(asv_tab_bbmo_10y_w_3_inter, method = 'clr', pseudocount = 1) |>
+#   as_tibble(rownames = "date") %>%
+#   pivot_longer(cols = starts_with('asv'), names_to = 'asv_num', values_to = 'clr') 
+
 ## filter it for my bloomers (the one's I want to perform the wavelets analysis on)
 wavelet_3_df <-  zclr_df_inter_deconstand |>
   dplyr::filter(asv_num %in% bloo_3$value) |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
   left_join(m_02, by = c('date')) |>
   dplyr::select(decimal_date, asv_num, rclr)
+
+### admissibility average around 0-----
+wavelet_3_df |>
+  dplyr::group_by(asv_num) |>
+  dplyr::mutate(rclr = as.numeric(rclr)) |>
+  dplyr::reframe(mean = mean(rclr)) |>
+  arrange(-mean)
 # 
 # asv_tab_10y_3_zclr_inter_bloo %$%
 #   unique(decimal_date) ## one sample is missing needs to be solved.
@@ -715,7 +731,6 @@ modwtasv194_biased <- modwt(abund194, wf = 'la8', boundary = "periodic", n.level
  
  ### To observe which component dominates we need to observe the one that has the highest coefficients in absolute value.
  
- 
 ### MODWT of the ASV11-----
  # Create an empty list to store your plots
  par(mfrow = c(n.levels + 1, 1), mar = c(2, 3, 0.5, 0.2))
@@ -907,7 +922,7 @@ selected_coefficients <- modwt_result[[selected_level]]
 
 ## upload data
 ### we work with two different datasets one for FL and the other for PA
-wavelet_3_df <- read.csv2('data/wavelet_3_df_deconstand.csv') |>
+wavelet_3_df <- read.csv2('data/wavelet_3_df_deconstand.csv', sep = ',') |>
   as_tibble() |>
   dplyr::select(-X)
 
@@ -2314,12 +2329,12 @@ wavelets_variance <-  wavelets_result_ed_tibble_tax_3_biased_red |>
          text = element_text(size = 5),
          legend.key.size = unit(2, 'mm'),
          axis.ticks = element_line(unit(1, 'mm')))
- 
+ 4459+1363+2027
  wavelets_variance
  
- ggsave(wavelets_variance, filename = 'wavelets_variance.pdf',
-        path = 'results/figures/',
-        width = 88, height = 100, units = 'mm')
+ # ggsave(wavelets_variance, filename = 'wavelets_variance.pdf',
+ #        path = 'results/figures/',
+ #        width = 88, height = 100, units = 'mm')
  
  #### GENERAL PLOTS FOR THOSE ASVs THAT ARE ACTUALLY SEASONAL FORM THOSE THAT ARE NOT-----
  ##reorder taxonomy as factors ----
