@@ -548,6 +548,14 @@ ccm_rho_filt |>
   dplyr::select(-'Year', -'Month', -Day) |>
   colnames()
 
+## i need to remove the cells where the have the same row name and col name because is the result of being predicted by itself and it won't make sense
+
+# replace cells where row name equals column name with 0
+ccm_rho_filt[cbind(match(row.names(ccm_rho_filt)[row.names(ccm_rho_filt) %in% colnames(ccm_rho_filt)], row.names(ccm_rho_filt)), 
+        match(row.names(ccm_rho_filt)[row.names(ccm_rho_filt) %in% colnames(ccm_rho_filt)], colnames(ccm_rho_filt)))] <- 0
+
+## input for evaluating bloomers causal variables.
+
 #### explore the distribution of rho values ----
 ccm_rho_filt |>
   as_tibble() |>
@@ -643,6 +651,10 @@ ccm_rho_filt |>
   dplyr::select(-'Year', -'Month', -Day) |>
   colnames()
 
+# replace cells where row name equals column name with 0
+ccm_rho_filt[cbind(match(row.names(ccm_rho_filt)[row.names(ccm_rho_filt) %in% colnames(ccm_rho_filt)], row.names(ccm_rho_filt)), 
+                   match(row.names(ccm_rho_filt)[row.names(ccm_rho_filt) %in% colnames(ccm_rho_filt)], colnames(ccm_rho_filt)))] <- 0
+
 #### explore the distribution of rho values ----
 ccm_rho_filt |>
   as_tibble() |>
@@ -718,6 +730,10 @@ ccm_rho_filt |>
   row.names() <- asv_tab_bbmo_10y_rclr_occ_filt_inter |>
   dplyr::select(-'Year', -'Month', -Day) |>
   colnames()
+
+# replace cells where row name equals column name with 0
+ccm_rho_filt[cbind(match(row.names(ccm_rho_filt)[row.names(ccm_rho_filt) %in% colnames(ccm_rho_filt)], row.names(ccm_rho_filt)), 
+                   match(row.names(ccm_rho_filt)[row.names(ccm_rho_filt) %in% colnames(ccm_rho_filt)], colnames(ccm_rho_filt)))] <- 0
 
 #### explore the distribution of rho values ----
 ccm_rho_filt |>
@@ -798,6 +814,10 @@ ccm_rho_filt |>
   row.names() <- asv_tab_10y_rel_occ_filt_w_env_inter |>
   dplyr::select(-'Year', -'Month', -Day) |>
   colnames()
+
+# replace cells where row name equals column name with 0
+ccm_rho_filt[cbind(match(row.names(ccm_rho_filt)[row.names(ccm_rho_filt) %in% colnames(ccm_rho_filt)], row.names(ccm_rho_filt)), 
+                   match(row.names(ccm_rho_filt)[row.names(ccm_rho_filt) %in% colnames(ccm_rho_filt)], colnames(ccm_rho_filt)))] <- 0
 
 #### explore the distribution of rho values ----
 ccm_rho_filt |>
@@ -933,6 +953,7 @@ bloo_all_types_summary_tb <- bloo_all_types_summary_tb |>
 
 ### I work with the matrix clean which has only significant rho values and also filtered rows and cols by a threshold based on the number of NAs accepted ---
 # Replace NA values (e.g., with 0)
+
 matrix_clean[is.na(matrix_clean)] <- 0
 
 # Create the heatmap
@@ -1324,48 +1345,49 @@ heatmap_noclustcols <-
 ## I would like to plot in the columns only the BLOOMERS to see what is their relationship with other taxa and environmental data -------
 
 ## pheatmap edited to understand easily the data being visualized ----
-matrix_clean |>
-  dim()
+# matrix_clean |>
+#   dim()
+
+ccm_rho_filt |>
+  dim()  ## i work with this matrix without filtering by number of NAs in each column/row.
+### Notes from Carmen, matrix rho is a not symetric matrix. The effect of i on j is not the same
+### as j on i. Columns are causal variables of rows.
 
 ## for the datasets coming from data transformed to rel abundance I need to replace NA rho values to 0 to be able to plot the phaetmap
-data <- matrix_clean |>
+
+## variables_2 are the causal variables
+## variables are the resulting variables. (I need these filtered by my bloomers, the ones that I'm interested in)
+
+bloo_all_types_summary_tb <- bloo_all_types_summary_tb |>
+  dplyr::mutate(fraction = as.character(fraction)) |>
+  dplyr::filter(!asv_num %in% c('asv2', 'asv3', 'asv5', 'asv8') )
+
+data <- ccm_rho_filt |>
   as.matrix() |>
   as.data.frame() |>
   rownames_to_column(var = 'variables') |>
   as_tibble() |>
-  #dplyr::select(starts_with(c('bp', 'bn')), variables, -BP_FC1.55) |>
   pivot_longer(cols = !c('variables'), names_to = 'variables_2', values_to = 'rho') |>
-  #dplyr::filter(rho > 0.5) |>
   separate(col = variables, into = c('fraction', 'asv_num'), remove = F) |>
   dplyr::mutate(asv_num = case_when(is.na(asv_num) ~ fraction,
                                     asv_num == '5um' ~ fraction,
                                     TRUE ~ asv_num)) |>
-  #dplyr::filter(asv_num %in% bloo_taxonomy$asv_num_f) |>
   dplyr::left_join(tax_occ_filt_bbmo, by = 'asv_num') |>
-  #dplyr::filter(str_detect(variables, 'bp')) |>
   dplyr::mutate(fraction = case_when(fraction == 'bp' ~ '0.2',
                                      fraction == 'bn' ~ '3',
                                      TRUE ~ 'env')) |>
   dplyr::mutate(phylum = case_when(is.na(phylum) ~ 'env',
                                    TRUE ~ phylum),
-                
                 class = case_when(is.na(class) ~ 'env',
                                   TRUE ~ class),
-                
                 order = case_when(is.na(order) ~ 'env',
                                   TRUE ~ order), 
-                
                 family = case_when(is.na(family) ~ 'env',
                                    TRUE ~ family),  
-                
                 bloom = case_when(is.na(bloom) ~ 'env',
                                   TRUE ~ bloom),
-                
                 asv_num = case_when(#is.na(asv_num) ~ 'env',
-                  #asv_num == 'length' ~ 'env',
                   asv_num == 'synechococcus' ~ 'Synechococcus',
-                  #asv_num == 'total' ~ 'env',
-                  #asv_num == '5um' ~ 'env',
                   asv_num == 'joint' ~ 'Bacterial Abundance',
                   variables == 'day_length' ~ 'Day length',
                   asv_num == 'temperature' ~ 'Temperature',
@@ -1379,6 +1401,7 @@ data <- matrix_clean |>
                   variables == 'HNF2_5um_Micro' ~ 'HFN 2-5 um',
                   variables == 'HNF_Micro' ~ 'HNF',
                   variables == 'HNF_5um_Micro' ~ 'HNF 5 um',
+                  #HNF_5um_Micro  
                   TRUE ~ asv_num)
   ) |>
   left_join(bloo_all_types_summary_tb) |>
@@ -1388,17 +1411,19 @@ data <- matrix_clean |>
     asv_num %in% c('Synechococcus', 'Bacterial Abundance', 'Day length', 
                    'Temperature', 'Chl-a', 'Bacterial Production', 'PNF',
                    'PNF 5 um', 'PNF 2-5 um', 'Cryptomonas', 'Micromonas', 
-                   'HFN 2-5 um', 'HNF', 'HFN 5 um', "PO4" , "NH4" ,  
+                   'HFN 2-5 um', 'HNF 5 um','HNF', 'HFN 5 um', "PO4" , "NH4" ,  
                    "NO2",  "NO3", "Si") ~ 'env',
     is.na(recurrency) ~ 'No Bloomer',
     TRUE ~ recurrency  # Preserve other values if any
   ))
 
 # add annotations
-anotr1 <- data |>
+annotr_labs <- data |>
   distinct(variables, fraction, asv_num, phylum, class, order, family, bloom, frequency)
 
-anotr2 <- data |>
+anotr <- annotr_labs 
+
+annotc_labs <- data |>
   dplyr::select(-c(variables, 'fraction', 'asv_num', 'domain', 'phylum', 'class', 'order', 'family', 'genus', 'bloom', 'frequency', 'recurrency')) |>
   separate(col = variables_2, into = c('fraction', 'asv_num'), remove = F) |>
   dplyr::left_join(tax_occ_filt_bbmo, by = 'asv_num') |>
@@ -1457,33 +1482,39 @@ anotr2 <- data |>
     TRUE ~ frequency  # Preserve other values if any
   ))
 
+anotc <- annotc_labs 
+
 #####
-anotr1 |>
+annotr_labs |>
   row.names() |>
-  length() == anotr2 |>
+  length() == anotc |>
   row.names() |>
   length() 
 
-anotr_all <- anotr1 |>
+annotr |>
+  length() == annotc |>
+  length()
+
+anotr_all <- annotr_labs |>
   dplyr::select(variables_2 = variables,'fraction', 'asv_num', 'phylum', 'class', 'order', 'family', 'bloom' , frequency) |>
-  bind_rows(anotr2)
+  bind_rows(annotc_labs)
 
-all.equal(rownames(matrix_clean), anotr1$variables) # true?
+all.equal(rownames(ccm_rho_filt), annotr_labs$variables) # true?
 
-annotr <- data.frame(fraction = as.factor(anotr1$fraction),
+annotr <- data.frame(fraction = as.factor(anotr$fraction),
                      #class = as.factor(anotr1$class),
-                     order = as.factor(anotr1$order),
+                     order = as.factor(anotr$order),
                      #bloom = as.factor(anotr1$bloom),
-                     bloom = as.factor(anotr2$frequency)) |>
-  set_rownames(anotr1$variables)
+                     bloom = as.factor(anotr$frequency)) |>
+  set_rownames(anotr$variables)
 
-all.equal(colnames(matrix_clean), anotr2$variables_2) # true?
+all.equal(colnames(ccm_sig), anotc$variables_2) # true?
 
-annotc <- data.frame(fraction = as.factor(anotr2$fraction),
+annotc <- data.frame(fraction = as.factor(anotc$fraction),
                      #class = as.factor(anotr2$class),
-                     order = as.factor(anotr2$order),
-                     bloom = as.factor(anotr2$frequency)) %>%
-  set_rownames(anotr2$variables_2)
+                     order = as.factor(anotc$order),
+                     bloom = as.factor(anotc$frequency)) %>%
+  set_rownames(anotc$variables_2)
 
 # Check if colors match anotr1 columns
 all(names(colors) %in% colnames(annotr))
@@ -1495,8 +1526,8 @@ colors <- list(#bloom = c('1' = "black", '0' = "white", 'env' = '#4A785C'),
   fraction = c('0.2' = '#00808F', '3' = '#454545', 'env' = '#4A785C'))
 
 ## filter colors by only those classes present in the matrix
-unique_class_values <- unique(annotr$class)
-unique_order_values <- unique(annotr$order)
+unique_class_values <- unique(annotc$class)
+unique_order_values <- unique(annotc$order)
 
 # Filter the colors list based on the unique annotation values
 filtered_colors <- list(
@@ -1512,51 +1543,49 @@ set.seed(123)
 
 ## I reorder columns by fraction and environmental variables so that i can observe the tendencies better
 # Extract the fraction column from the row and column annotations
-annotr$fraction <- factor(annotr$fraction, levels = c('3', '0.2', 'env'))
-fraction_row_order <- order(annotr$fraction)
-#fraction_col_order <- order(annotc$fraction)
+annotc$fraction <- factor(annotc$fraction, levels = c('3', '0.2', 'env'))
+fraction_column_order <- order(annotc$fraction)
 
-# Reorder the matrix_clean based on the fraction order
-matrix_clean_reordered <- matrix_clean[fraction_row_order,]
+annotc_labs <- annotc_labs[fraction_column_order,] ## reorder the labels the same way than the annotation
+annotc_reordered <- annotc[fraction_column_order,]
 
-## Remove environmental data and other ASVs that are not BLOOMERS from cols (we would like to only cluster the ASVs) ----
-annotc_filt <- annotc |>
+## Remove environmental data and other ASVs that are not BLOOMERS from rows (we would like to only cluster the bloomers ASVs) ----
+annotr_filt <- annotr |>
   dplyr::filter(fraction != 'env') |>
   dplyr::filter(bloom %in% c('Seasonal', 'Non-Seasonal')) |>
   row.names() |>
-  as_tibble_col(column_name = 'variables')
+  as_tibble_col(column_name = 'variables') ## dataset to filter the matrix
 
-matrix_clean_f <- matrix_clean[, annotc_filt$variables]
+ccm_rho_filt_f <- ccm_rho_filt[annotr_filt$variables, ] # we filter the matrix
 
-annotc_f <- annotc |>
-  dplyr::filter(fraction != 'env')|>
+annotr_labs_f <- annotr_labs |>
+  dplyr::filter(fraction != 'env') |>
+  dplyr::filter(frequency %in% c('Seasonal', 'Non-Seasonal'))
+
+annotr_f <- annotr |>
+  dplyr::filter(fraction != 'env') |>
   dplyr::filter(bloom %in% c('Seasonal', 'Non-Seasonal'))
 
-anotr2_f <- anotr2 |>
-  dplyr::filter(fraction != 'env') |>
-  dplyr::filter(frequency %in% c('Seasonal', 'Non-Seasonal')) 
+fraction_row_order <- order(annotr_f$fraction)
 
-# Step 2: Order the rows of matrix_clean based on the fraction factor
-fraction_row_order <- order(annotr$fraction)
-matrix_clean_f_reor <- matrix_clean_f[fraction_row_order,]
+ccm_rho_filt_f_reordered <- ccm_rho_filt_f[,fraction_column_order]
+ccm_rho_filt_f_reordered  <- ccm_rho_filt_f_reordered[fraction_row_order,]
 
-# Step 3: Reorder the annotr data frame and row_labels 
-annotr_reordered <- annotr[fraction_row_order,]
-anotr1_reordered <- anotr1[fraction_row_order,] # I reorder label cols in the same way that i have ordered the annotr_reordered
+annotr_labs_f <- annotr_labs_f[fraction_row_order,]
+annotr_f_reorder <- annotr[fraction_row_order,]
 
 ## Check that the rows and columns annotation and labels match ----
 # Capture the comparison result for annotr_reordered
-result_annotr <- all(row.names(annotr_reordered) == anotr1_reordered$variables)
+result_annotr <- all(row.names(annotr_reordered) == annotr_labs_f$variables)
 
 # Check if the result is FALSE and print a warning
 if (!result_annotr) {
-  warning("The row names of annotr_reordered do not match anotr1_reordered$variables. Please reorder rows.")
+  warning("The row names of annotr_reordered do not match annotr_labs_filt$variables. Please reorder rows.")
 }
 print(result_annotr)
 
 # Capture the comparison result for annotc_f
-result_annotc <- all(row.names(annotc_f) == anotr2_f$variables_2)
-print(result_annotc)
+result_annotc <- all(row.names(annotc_reordered) == annotc_labs$variables_2)
 
 # Check if the result is FALSE and print a warning
 if (!result_annotc) {
@@ -1565,23 +1594,33 @@ if (!result_annotc) {
 print(result_annotc)
 
 # Step 4: Define gaps between row groups
-gaps_row <- c(sum(annotr_reordered$fraction == '3'), 
-              sum(annotr_reordered$fraction == '3') + sum(annotr_reordered$fraction == '0.2'))
+gaps_col <- c(sum(annotc_reordered$fraction == '3'), 
+              sum(annotc_reordered$fraction == '3') + sum(annotc_reordered$fraction == '0.2'))
 
 #### COMMENT THIS LINE WHEN IS DATA RCLR TRANSFORMED!!! Or when it plots the heatmap without complaining because of NAs
-#matrix_clean_f_reor <- ifelse(is.na(matrix_clean_f_reor), 0, matrix_clean_f_reor) ## for matrices that come from rel abund data
+#ccm_rho_filt_reordered_f <- ifelse(is.na(ccm_rho_filt_reordered_f), 0, ccm_rho_filt_reordered_f) ## for matrices that come from rel abund data
+
+annotc_labs$variables_2 == annotc_reordered |>
+  row.names()
+
+ccm_rho_filt_f_reordered |>
+  colnames() == annotc_reordered |>
+  row.names()
+
+annotc_labs$variables_2 == ccm_rho_filt_f_reordered |>
+  colnames() 
 
 heatmap_noclustcols <-
-  pheatmap(matrix_clean_f_reor,
+  pheatmap(ccm_rho_filt_f_reordered,
            color = palete_gradient_cb3,
            annotation_row = annotr_reordered,
-           annotation_col = annotc_f,
+           annotation_col = annotc_reordered,
            annotation_colors = filtered_colors,
-           labels_row = anotr1_reordered$asv_num,
-           labels_col = anotr2_f$asv_num,
-           cluster_cols = T,
-           cluster_row = F,
-           gaps_row = gaps_row,
+           labels_row = annotr_labs_f$asv_num,
+           labels_col = annotc_labs$asv_num,
+           cluster_cols = F,
+           cluster_row = T,
+           #gaps_col = gaps_col,
            cellwidth = 10, 
            cellheight = 10,
            border_color = 'white',
@@ -1590,13 +1629,15 @@ heatmap_noclustcols <-
            #filename = 'results/figures/heatmap_ccm.pdf',
            #height = 200,
            #width = 180
-           
   )
 
-# ggsave( plot = heatmap_noclustcols, filename = 'heatmap_ccm_seas_rel_100_bloo.pdf',
+# ggsave( plot = heatmap_noclustcols, filename = 'heatmap_ccm_bloo_seas_rel2.pdf',
 #         path = 'results/figures/ccm/',
-#         width = 200, height = 480, units = 'mm')
+#         width = 480, height = 380, units = 'mm')
 
+ggsave( plot = heatmap_noclustcols, filename = 'heatmap_ccm_bloo_noseas_rclr.svg',
+        path = 'results/figures/poster_svg_format/',
+        width = 480, height = 380, units = 'mm')
 
 # BOXPLOTS of causality intra e inter taxonomic class ----
 ## Columns are the causal variables on rows. 
@@ -2079,3 +2120,454 @@ ggsave( plot = top10_causal_bloomers_plot, filename = 'top10_causal_bloomers_plo
         width = 180, height = 160, units = 'mm')
 
         
+
+## Evaluation of the role of the environment and the community for bloomers (seasonal and chaotic) and other ASVs (non-bloomers)
+### boxplot 
+
+### Columns are causal variables of rows.
+
+## for the datasets coming from data transformed to rel abundance I need to replace NA rho values to 0 to be able to plot the phaetmap
+
+## variables_2 are the causal variables
+## variables are the resulting variables. (I need these filtered by my bloomers, the ones that I'm interested in)
+
+
+bloo_all_types_summary_tb <- bloo_all_types_summary_tb |>
+  dplyr::mutate(fraction = as.character(fraction)) |>
+  dplyr::filter(!asv_num %in% c('asv2', 'asv3', 'asv5', 'asv8') )
+
+data <- ccm_rho_filt |>
+  as.matrix() |>
+  as.data.frame() |>
+  rownames_to_column(var = 'variables_predicted') |>
+  as_tibble() |>
+  pivot_longer(cols = !c('variables_predicted'), names_to = 'variables_causal', values_to = 'rho') |>
+  separate(col = variables_predicted, into = c('fraction', 'asv_num'), remove = F) |>
+  dplyr::mutate(asv_num = case_when(is.na(asv_num) ~ fraction,
+                                    asv_num == '5um' ~ fraction,
+                                    TRUE ~ asv_num)) |>
+  dplyr::left_join(tax_occ_filt_bbmo, by = 'asv_num') |>
+  dplyr::mutate(fraction = case_when(fraction == 'bp' ~ '0.2',
+                                     fraction == 'bn' ~ '3',
+                                     TRUE ~ 'env')) |>
+  dplyr::mutate(phylum = case_when(is.na(phylum) ~ 'env',
+                                   TRUE ~ phylum),
+                class = case_when(is.na(class) ~ 'env',
+                                  TRUE ~ class),
+                order = case_when(is.na(order) ~ 'env',
+                                  TRUE ~ order), 
+                family = case_when(is.na(family) ~ 'env',
+                                   TRUE ~ family),  
+                bloom = case_when(is.na(bloom) ~ 'env',
+                                  TRUE ~ bloom),
+                asv_num = case_when(#is.na(asv_num) ~ 'env',
+                  asv_num == 'synechococcus' ~ 'Synechococcus',
+                  asv_num == 'joint' ~ 'Bacterial Abundance',
+                  variables_predicted == 'day_length' ~ 'Day length',
+                  asv_num == 'temperature' ~ 'Temperature',
+                  variables_predicted == 'chla_total' ~ 'Chl-a',
+                  variables_predicted == 'BP_FC1.55' ~ 'Bacterial Production',
+                  variables_predicted == 'PNF_Micro' ~ 'PNF',
+                  variables_predicted == 'PNF2_5um_Micro' ~ 'PNF 2-5 um',
+                  variables_predicted == "PNF_5um_Micro" ~ 'PNF 5 um',
+                  asv_num == 'cryptomonas' ~ 'Cryptomonas',
+                  asv_num == 'micromonas' ~ 'Micromonas',
+                  variables_predicted == 'HNF2_5um_Micro' ~ 'HFN 2-5 um',
+                  variables_predicted == 'HNF_Micro' ~ 'HNF',
+                  variables_predicted == 'HNF_5um_Micro' ~ 'HNF 5 um',
+                  #HNF_5um_Micro  
+                  TRUE ~ asv_num)
+  ) |>
+  left_join(bloo_all_types_summary_tb) |>
+  dplyr::mutate(frequency = case_when(
+    frequency == 'stochastic' ~ 'Non-Seasonal',
+    frequency == 'seasonal' ~ 'Seasonal',
+    asv_num %in% c('Synechococcus', 'Bacterial Abundance', 'Day length', 
+                   'Temperature', 'Chl-a', 'Bacterial Production', 'PNF',
+                   'PNF 5 um', 'PNF 2-5 um', 'Cryptomonas', 'Micromonas', 
+                   'HFN 2-5 um', 'HNF 5 um','HNF', 'HFN 5 um', "PO4" , "NH4" ,  
+                   "NO2",  "NO3", "Si") ~ 'env',
+    is.na(recurrency) ~ 'No Bloomer',
+    TRUE ~ recurrency  # Preserve other values if any
+  ))
+
+
+data$variables_predicted |>
+ unique()
+
+data$variables_causal == data$variables_predicted
+
+data_ed <- data |>
+  dplyr::select(variables_predicted, asv_num_predicted = asv_num, fraction_predicted = fraction, phylum_predicted = phylum,
+                domain_predicted = domain, class_predicted = class, order_predicted = order, family_predicted = family, 
+                frequency_predicted = frequency, variables_causal, rho) |>
+  separate(col = variables_causal, into = c('fraction', 'asv_num'), remove = F) |>
+  dplyr::mutate(asv_num = case_when(is.na(asv_num) ~ fraction,
+                                    asv_num == '5um' ~ fraction,
+                                    TRUE ~ asv_num)) |>
+  dplyr::left_join(tax_occ_filt_bbmo, by = 'asv_num') |>
+  dplyr::mutate(fraction = case_when(fraction == 'bp' ~ '0.2',
+                                     fraction == 'bn' ~ '3',
+                                     TRUE ~ 'env')) |>
+  dplyr::mutate(phylum = case_when(is.na(phylum) ~ 'env',
+                                   TRUE ~ phylum),
+                class = case_when(is.na(class) ~ 'env',
+                                  TRUE ~ class),
+                order = case_when(is.na(order) ~ 'env',
+                                  TRUE ~ order), 
+                family = case_when(is.na(family) ~ 'env',
+                                   TRUE ~ family),  
+                bloom = case_when(is.na(bloom) ~ 'env',
+                                  TRUE ~ bloom),
+                asv_num = case_when(#is.na(asv_num) ~ 'env',
+                  asv_num == 'synechococcus' ~ 'Synechococcus',
+                  asv_num == 'joint' ~ 'Bacterial Abundance',
+                  variables_causal == 'day_length' ~ 'Day length',
+                  asv_num == 'temperature' ~ 'Temperature',
+                  variables_causal == 'chla_total' ~ 'Chl-a',
+                  variables_causal == 'BP_FC1.55' ~ 'Bacterial Production',
+                  variables_causal == 'PNF_Micro' ~ 'PNF',
+                  variables_causal == 'PNF2_5um_Micro' ~ 'PNF 2-5 um',
+                  variables_causal == "PNF_5um_Micro" ~ 'PNF 5 um',
+                  asv_num == 'cryptomonas' ~ 'Cryptomonas',
+                  asv_num == 'micromonas' ~ 'Micromonas',
+                  variables_causal == 'HNF2_5um_Micro' ~ 'HFN 2-5 um',
+                  variables_causal == 'HNF_Micro' ~ 'HNF',
+                  variables_causal == 'HNF_5um_Micro' ~ 'HNF 5 um',
+                  #HNF_5um_Micro  
+                  TRUE ~ asv_num)
+  ) |>
+  left_join(bloo_all_types_summary_tb) |>
+  dplyr::mutate(frequency = case_when(
+    frequency == 'stochastic' ~ 'Non-Seasonal',
+    frequency == 'seasonal' ~ 'Seasonal',
+    asv_num %in% c('Synechococcus', 'Bacterial Abundance', 'Day length', 
+                   'Temperature', 'Chl-a', 'Bacterial Production', 'PNF',
+                   'PNF 5 um', 'PNF 2-5 um', 'Cryptomonas', 'Micromonas', 
+                   'HFN 2-5 um', 'HNF 5 um','HNF', 'HFN 5 um', "PO4" , "NH4" ,  
+                   "NO2",  "NO3", "Si") ~ 'env',
+    is.na(recurrency) ~ 'No Bloomer',
+    TRUE ~ recurrency  # Preserve other values if any
+  )) |>
+  dplyr::select(variables_predicted, asv_num_predicted, fraction_predicted, phylum_predicted ,
+                domain_predicted, class_predicted, order_predicted , family_predicted , 
+                frequency_predicted , variables_causal, rho,
+                 asv_num_causal = asv_num, fraction_causal = fraction, phylum_causal = phylum,
+                domain_causal = domain, class_causal = class, order_causal = order, family_causal = family, 
+                frequency_causal = frequency)
+
+data_ed$frequency_predicted |>
+  unique()
+
+data_ed$frequency_causal |>
+  unique()
+
+data_ed |>
+  dplyr::filter(frequency_predicted != 'env') |>
+  dplyr::filter(fraction_predicted != 'env') |>
+ # dplyr::filter(frequency_predicted != 'No Bloomer') |>
+  ggplot(aes(x = interaction(frequency_causal, fraction_causal), y = rho))+
+  geom_point(aes(color = family_causal),position = position_jitter(width = 0.1))+
+  #geom_violin(alpha = 0.1)+
+  geom_boxplot(alpha = 0.1, notch = T)+
+  facet_wrap(frequency_predicted~fraction_predicted, ncol = 2)+
+  scale_color_manual(values = palette_family_assigned_bloo)+
+  theme_bw()+
+  labs(y = 'Rho', x= '')+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        legend.position = 'bottom',
+        panel.grid = element_blank(), text = element_text(size = 10),
+        strip.text = element_text(margin = margin(2, 2, 2, 2), size = 10),
+        #plot.margin = unit(c(0.2, 5, 0.5, 0.5), "cm"),
+        legend.key.size = unit(3, 'mm'))+
+  guides(color = guide_legend(ncol = 3),
+         alpha = 'none',
+         shape = guide_legend(ncol = 1))
+
+data_ed |>
+  dplyr::filter(frequency_predicted != 'env') |>
+  dplyr::filter(fraction_predicted != 'env') |>
+  # dplyr::filter(frequency_predicted != 'No Bloomer') |>
+  ggplot(aes(x = interaction(frequency_causal, fraction_causal, frequency_predicted), y = rho))+
+  geom_point(position = position_jitter(width = 0.1))+
+  #geom_violin(alpha = 0.1)+
+  geom_boxplot(alpha = 0.1, notch = T, aes(fill = frequency_predicted))+
+  scale_color_manual(values = palette_bloom_frequency)+
+  theme_bw()+
+  labs(y = 'Rho', x= '')+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        legend.position = 'bottom',
+        panel.grid = element_blank(), text = element_text(size = 10),
+        strip.text = element_text(margin = margin(2, 2, 2, 2), size = 10),
+        #plot.margin = unit(c(0.2, 5, 0.5, 0.5), "cm"),
+        legend.key.size = unit(3, 'mm'))+
+  guides(color = guide_legend(ncol = 3),
+         alpha = 'none',
+         shape = guide_legend(ncol = 1))
+
+labs_fraction_env <- as_labeller(c('0.2' = 'Free living\n(0.2-3 um)',
+                               '3' = 'Particle attached\n(3-20 um)',
+                               'env' = 'Environmental\nvariables'))
+
+labs_fraction_bloo <- as_labeller(c('0.2' = 'Free living\n(0.2-3 um)',
+                                   '3' = 'Particle attached\n(3-20 um)',
+                                   'bloomer' = 'Bloomer',
+                                   'no_bloomer' = 'No Bloomer'))
+
+data_ed |>
+  dplyr::filter(frequency_predicted != 'env') |>
+  dplyr::filter(fraction_predicted != 'env') |>
+  dplyr::filter(!frequency_predicted %in% c('Seasonal', 'Non-seasonal')) |>
+  ggplot(aes(x = interaction(frequency_causal, fraction_causal), y = rho))+
+  geom_point(position = position_jitter(width = 0.1))+
+  #geom_violin(alpha = 0.1)+
+  geom_boxplot(alpha = 0.1)+
+  facet_wrap(vars(fraction_predicted), labeller = labs_fraction_env)+
+  theme_bw()+
+  labs(y = 'Rho', x= '')+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        legend.position = 'bottom',
+        panel.grid = element_blank(), text = element_text(size = 10),
+        strip.text = element_text(margin = margin(2, 2, 2, 2), size = 10),
+        #plot.margin = unit(c(0.2, 5, 0.5, 0.5), "cm"),
+        legend.key.size = unit(3, 'mm'))+
+  guides(color = guide_legend(ncol = 3),
+         alpha = 'none',
+         shape = guide_legend(ncol = 1))
+
+data_ed |>
+  dplyr::filter(frequency_predicted != 'env') |>
+  dplyr::filter(frequency_predicted %in% c('Seasonal', 'Non-seasonal')) |>
+  ggplot(aes(x = interaction(frequency_causal, fraction_causal, fraction_predicted), y = rho))+
+  geom_point(aes(shape = fraction_predicted),position = position_jitter(width = 0.1))+
+  #geom_violin(alpha = 0.1)+
+  geom_boxplot(alpha = 0.1)+
+  facet_wrap(vars(asv_num_predicted))+
+  theme_bw()+
+  labs(y = 'Rho', x= '')+
+  coord_flip()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        legend.position = 'bottom',
+        panel.grid = element_blank(), text = element_text(size = 10),
+        strip.text = element_text(margin = margin(2, 2, 2, 2), size = 10),
+        #plot.margin = unit(c(0.2, 5, 0.5, 0.5), "cm"),
+        legend.key.size = unit(3, 'mm'))+
+  guides(color = guide_legend(ncol = 3),
+         alpha = 'none',
+         shape = guide_legend(ncol = 1))
+
+data_ed |>
+  dplyr::filter(frequency_predicted != 'env') |>
+  dplyr::filter(asv_num_predicted %in% c('asv17', 'asv22', 'asv1', 'asv11', 'asv7', 'asv15', 'asv31', 'asv23')) |>
+  #dplyr::filter(frequency_predicted %in% c('Seasonal', 'Non-seasonal')) |>
+  ggplot(aes(x = interaction(frequency_causal, fraction_causal, fraction_predicted), y = rho))+
+  geom_point(aes(shape = fraction_predicted, color = order_causal),position = position_jitter(width = 0.1))+
+  #geom_violin(alpha = 0.1)+
+  geom_boxplot(alpha = 0.1)+
+  facet_wrap(vars(asv_num_predicted))+
+  scale_color_manual(values = palette_order_assigned_all)+
+  theme_bw()+
+  labs(y = 'Rho', x= 'Causal effects and fraction on the predicted fraction')+
+  coord_flip()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        legend.position = 'bottom',
+        panel.grid.major.y  = element_blank(),
+        panel.grid.minor  = element_blank(), text = element_text(size = 10),
+        strip.text = element_text(margin = margin(2, 2, 2, 2), size = 10),
+        #plot.margin = unit(c(0.2, 5, 0.5, 0.5), "cm"),
+        legend.key.size = unit(3, 'mm'))+
+  guides(color = guide_legend(ncol = 3),
+         alpha = 'none',
+         shape = guide_legend(ncol = 1))
+
+select_bloomers <- data_ed |>
+  dplyr::filter(frequency_predicted != 'env') |>
+  dplyr::distinct(asv_num_predicted, frequency_predicted, fraction_predicted) |>
+  dplyr::filter(frequency_predicted != 'No Bloomer')
+
+data_ed |>
+  dplyr::filter(frequency_predicted != 'env') |>
+  dplyr::filter(asv_num_predicted %in%  unique(select_bloomers$asv_num_predicted)) |>
+  #dplyr::filter(rho == 0) |>
+  #dplyr::filter(asv_num_predicted %in% c('asv17', 'asv22', 'asv1', 'asv11', 'asv7', 'asv15', 'asv31', 'asv23')) |>
+  #dplyr::filter(frequency_predicted %in% c('Seasonal', 'Non-seasonal')) |>
+  ggplot(aes(x = interaction(fraction_causal), y = rho))+
+  geom_point(aes( color = order_causal),position = position_jitter(width = 0.1))+
+  #geom_violin(alpha = 0.1)+
+  geom_boxplot(alpha = 0.1, notch = T)+
+  facet_wrap(vars(fraction_predicted), labeller = labs_fraction)+
+  scale_color_manual(values = palette_order_assigned_all)+
+  scale_x_discrete(labels = labs_fraction_env)+
+  theme_bw()+
+  labs(y = 'Rho', x= 'Causal effects', color = 'Order')+
+  coord_flip()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        legend.position = 'bottom',
+        panel.grid.major.y  = element_blank(),
+        panel.grid.minor  = element_blank(), text = element_text(size = 10),
+        strip.text = element_text(margin = margin(2, 2, 2, 2), size = 10),
+        #plot.margin = unit(c(0.2, 5, 0.5, 0.5), "cm"),
+        legend.key.size = unit(3, 'mm'))+
+  guides(color = guide_legend(ncol = 3),
+         alpha = 'none',
+         shape = guide_legend(ncol = 1))
+
+data_ed |>
+  dplyr::filter(frequency_predicted != 'env') |>
+  dplyr::filter(!asv_num_predicted %in%  unique(select_bloomers$asv_num_predicted)) |>
+  #dplyr::filter(rho == 0) |>
+  #dplyr::filter(asv_num_predicted %in% c('asv17', 'asv22', 'asv1', 'asv11', 'asv7', 'asv15', 'asv31', 'asv23')) |>
+  #dplyr::filter(frequency_predicted %in% c('Seasonal', 'Non-seasonal')) |>
+  ggplot(aes(x = interaction(fraction_causal), y = rho))+
+  geom_point(aes( color = order_causal),position = position_jitter(width = 0.1))+
+  #geom_violin(alpha = 0.1)+
+  geom_boxplot(alpha = 0.1, notch = T)+
+  facet_wrap(vars(fraction_predicted), labeller = labs_fraction)+
+  scale_color_manual(values = palette_order_assigned_all)+
+  scale_x_discrete(labels = labs_fraction_env)+
+  theme_bw()+
+  labs(y = 'Rho', x= 'Causal effects', color = 'Order')+
+  coord_flip()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        legend.position = 'bottom',
+        panel.grid.major.y  = element_blank(),
+        panel.grid.minor  = element_blank(), text = element_text(size = 10),
+        strip.text = element_text(margin = margin(2, 2, 2, 2), size = 10),
+        #plot.margin = unit(c(0.2, 5, 0.5, 0.5), "cm"),
+        legend.key.size = unit(3, 'mm'))+
+  guides(color = guide_legend(ncol = 3),
+         alpha = 'none',
+         shape = guide_legend(ncol = 1))
+
+## EFFECT OF THE COMMUNITY ON BLOOMERS AND ON THE COMMUNTY -----
+## bloomers and non-bloomers
+causal_effects_on_community_plot <- data_ed |>
+  dplyr::filter(frequency_predicted != 'env') |>
+  dplyr::mutate(bloom = case_when(!asv_num_predicted %in%  unique(select_bloomers$asv_num_predicted)~ 'no_bloomer',
+                                  asv_num_predicted %in%  unique(select_bloomers$asv_num_predicted) ~ 'bloomer')) |>
+  dplyr::filter(frequency_predicted != 'env') |>
+  #dplyr::filter(!asv_num_predicted %in%  unique(select_bloomers$asv_num_predicted)) |>
+  #dplyr::filter(rho == 0) |>
+  #dplyr::filter(asv_num_predicted %in% c('asv17', 'asv22', 'asv1', 'asv11', 'asv7', 'asv15', 'asv31', 'asv23')) |>
+  #dplyr::filter(frequency_predicted %in% c('Seasonal', 'Non-seasonal')) |>
+  ggplot(aes(x = interaction(fraction_causal), y = rho))+
+  geom_point(aes( color = order_predicted, alpha = 0.8),position = position_jitter(width = 0.1))+
+  #geom_violin(alpha = 0.1)+
+  geom_boxplot(alpha = 0.1, notch = T)+
+  facet_wrap(fraction_predicted~bloom, labeller = labs_fraction_bloo)+
+  scale_color_manual(values = palette_order_assigned_all)+
+  scale_x_discrete(labels = labs_fraction_env)+
+  theme_bw()+
+  labs(y = 'Rho', x= 'Causal effects', color = 'Order predicted ASVs')+
+  coord_flip()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        legend.position = 'bottom',
+        panel.grid.major.y  = element_blank(),
+        panel.grid.minor  = element_blank(), text = element_text(size = 10),
+        strip.text = element_text(margin = margin(2, 2, 2, 2), size = 10),
+        #plot.margin = unit(c(0.2, 5, 0.5, 0.5), "cm"),
+        legend.key.size = unit(3, 'mm'))+
+  guides(alpha = 'none',
+         color = guide_legend(ncol = 4))
+
+causal_effects_on_community_plot
+
+# ggsave(plot = causal_effects_on_community_plot, filename = 'causal_effects_on_community_plot.pdf',
+#                 path = 'results/figures/',
+#                 width = 180, height = 180, units = 'mm')
+
+causal_effects_on_community_plot <- data_ed |>
+  dplyr::filter(frequency_predicted != 'env') |>
+  dplyr::mutate(bloom = case_when(!asv_num_predicted %in%  unique(select_bloomers$asv_num_predicted)~ 'no_bloomer',
+                                  asv_num_predicted %in%  unique(select_bloomers$asv_num_predicted) ~ 'bloomer')) |>
+  dplyr::filter(frequency_predicted != 'env') |>
+  #dplyr::filter(!asv_num_predicted %in%  unique(select_bloomers$asv_num_predicted)) |>
+  #dplyr::filter(rho == 0) |>
+  #dplyr::filter(asv_num_predicted %in% c('asv17', 'asv22', 'asv1', 'asv11', 'asv7', 'asv15', 'asv31', 'asv23')) |>
+  #dplyr::filter(frequency_predicted %in% c('Seasonal', 'Non-seasonal')) |>
+  ggplot(aes(x = interaction(fraction_causal), y = rho))+
+  geom_point(aes( alpha = 0.8), color = '#88C1D8',position = position_jitter(width = 0.1))+
+  #geom_violin(alpha = 0.1)+
+  geom_boxplot(alpha = 0.1, notch = T)+
+  facet_grid(bloom~fraction_predicted, labeller = labs_fraction_bloo)+
+  #scale_color_manual(values = palette_order_assigned_all)+
+  scale_x_discrete(labels = labs_fraction_env)+
+  theme_bw()+
+  labs(y = 'Rho', x= 'Causal effects', color = 'Order predicted ASVs')+
+  coord_flip()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        legend.position = 'none',
+        panel.grid.major.y  = element_blank(),
+        panel.grid.minor  = element_blank(), text = element_text(size = 16),
+        strip.text = element_text(margin = margin(2, 2, 2, 2), size = 16),
+        #plot.margin = unit(c(0.2, 5, 0.5, 0.5), "cm")
+        )+
+  guides(alpha = 'none',
+         color = guide_legend(ncol = 4))
+
+causal_effects_on_community_plot
+
+ggsave(plot = causal_effects_on_community_plot, filename = 'causal_effects_on_community_plot.svg',
+                path = 'results/figures/poster_svg_format/',
+                width = 220, height = 180, units = 'mm')
+
+
+### BLOOMERS EFFECT ON THE COMMUNITY 
+data_ed |>
+  dplyr::filter(frequency_predicted != 'env') |>
+  dplyr::mutate(bloom = case_when(!asv_num_causal %in%  unique(select_bloomers$asv_num_predicted)~ 'no_bloomer',
+                                  asv_num_causal %in%  unique(select_bloomers$asv_num_predicted) ~ 'bloomer')) |>
+  dplyr::filter(frequency_predicted != 'env') |>
+  dplyr::filter(bloom == 'bloomer') |>
+  #dplyr::filter(!asv_num_predicted %in%  unique(select_bloomers$asv_num_predicted)) |>
+  #dplyr::filter(rho == 0) |>
+  #dplyr::filter(asv_num_predicted %in% c('asv17', 'asv22', 'asv1', 'asv11', 'asv7', 'asv15', 'asv31', 'asv23')) |>
+  #dplyr::filter(frequency_predicted %in% c('Seasonal', 'Non-seasonal')) |>
+  ggplot(aes(x = interaction(fraction_causal), y = rho))+
+  geom_point(aes( color = order_causal),position = position_jitter(width = 0.1))+
+  #geom_violin(alpha = 0.1)+
+  geom_boxplot(alpha = 0.1, notch = T)+
+  facet_wrap(fraction_predicted~bloom, labeller = labs_fraction_bloo)+
+  scale_color_manual(values = palette_order_assigned_all)+
+  scale_x_discrete(labels = labs_fraction_env)+
+  theme_bw()+
+  labs(y = 'Rho', x= 'Causal effects', color = 'Order')+
+  coord_flip()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        legend.position = 'bottom',
+        panel.grid.major.y  = element_blank(),
+        panel.grid.minor  = element_blank(), text = element_text(size = 10),
+        strip.text = element_text(margin = margin(2, 2, 2, 2), size = 10),
+        #plot.margin = unit(c(0.2, 5, 0.5, 0.5), "cm"),
+        legend.key.size = unit(3, 'mm'))
+
+
+
+###
+data_ed |>
+  dplyr::filter(frequency_causal == 'env') |>
+  dplyr::filter(frequency_predicted != 'env') |>
+  dplyr::filter(fraction_predicted != 'env') |>
+  dplyr::filter(frequency_predicted == 'No Bloomer') |>
+  ggplot(aes(x = interaction(frequency_causal, fraction_causal), y = rho))+
+  geom_point( position = position_jitter(width = 0.1))+
+  facet_wrap(vars(fraction_predicted))+
+  theme_bw()
+
+data_ed |>
+  dplyr::select(fraction_causal) == data_ed |>
+  dplyr::select(fraction_predicted)
+
+data_ed |>
+  dplyr::select(asv_num_causal) == data_ed |>
+  dplyr::select(asv_num_predicted)
+
+data_ed |>
+  dplyr::filter(frequency_predicted == 'Seasonal') |>
+dplyr::filter(frequency_predicted != 'env') |>
+  ggplot(aes(x = frequency_causal, y = rho))+
+  geom_point()+
+  facet_wrap(vars(fraction_causal))+
+  theme_bw()
+
+  
