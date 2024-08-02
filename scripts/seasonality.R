@@ -1,3 +1,11 @@
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# +++++++++++++++++++++++                     data analysis pipeline                  ++++++++++++++++++++++
+# +++++++++++++++++++++++                    BBMO timeseries 10-Y data                ++++++++++++++++++++++
+# +++++++++++++++++++++++                         metabarcoding                       ++++++++++++++++++++++
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# +++++++++++++++++++++++             Code developed by Ona Deulofeu-Capo 2024        ++++++++++++++++++++++
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 # packages
 #library(fdrtool)
 #library(GeneCycle)
@@ -2939,7 +2947,229 @@ wavelets_variance <-  wavelets_result_ed_tibble_tax_3_biased_red |>
          legend.key.width = unit(1, "lines"))+
    guides(color = guide_legend(override.aes = list(size = 4)))
  
- ggsave( wavelets_transformation_summary_top3_s4, filename = 'wavelets_transformation_summary_top2_s4.pdf',
-        path = 'results/figures/',
-        width = 188, height = 150, units = 'mm')
+ # ggsave( wavelets_transformation_summary_top3_s4, filename = 'wavelets_transformation_summary_top2_s4.pdf',
+ #        path = 'results/figures/',
+ #        width = 188, height = 150, units = 'mm')
+ 
+ 
+ # APPLY CONTINUOUS WAVELET TRANSFORMATION #### ------
+ library(WaveletComp)
+ 
+ ## we need dates in date format not decimal date 
+ m_02_dates <- m_02 |>
+   dplyr::select(date, decimal_date) |>
+   dplyr::mutate(date = as.POSIXct(date, "%Y-%M-%D"))
+
+ wavelet_02_df_date <- wavelet_02_df |>
+   left_join( m_02_dates) |>
+   dplyr::select(date = date, abundance_value, asv_num )
+ 
+ wavelet_3_df_date <- wavelet_3_df |>
+   dplyr::mutate(decimal_date = as.numeric(decimal_date)) |> 
+   left_join( m_02_dates) |>
+   dplyr::select(date = date, abundance_value = rclr, asv_num ) |>
+   dplyr::mutate(abundance_value = as.numeric(abundance_value))
+ 
+ # asv38_test <- wavelet_02_df |>
+ #   left_join( m_02_dates) |>
+ #   dplyr::filter(asv_num == 'asv38') |>
+ #   dplyr::select(-asv_num) |>
+ #   dplyr::select(date = date, abundance_value )
+ # 
+ # asv11_test <- wavelet_02_df |>
+ #   left_join( m_02_dates) |>
+ #   dplyr::filter(asv_num == 'asv11') |>
+ #   dplyr::select(-asv_num) |>
+ #   dplyr::select(date = date, abundance_value )
+ # 
+ # asv27_test <- wavelet_02_df |>
+ #   left_join( m_02_dates) |>
+ #   dplyr::filter(asv_num == 'asv27') |>
+ #   dplyr::select(-asv_num) |>
+ #   dplyr::select(date = date, abundance_value )
+
+#  # Compute the continuous wavelet transform
+#  cwt_chirp <- analyze.wavelet(asv38_test, 
+#                               my.series = 2, loess.span = 0, 
+#                               dt = 1, dj = 1/20, 
+#                               lowerPeriod = 2, 
+#                               upperPeriod = 32, 
+#                               make.pval = TRUE, method = "white.noise", params = NULL,
+#                               n.sim = 100, 
+#                               date.format = '%Y-%M-%d', date.tz = NULL, 
+#                               verbose = TRUE)
+#  
+#  wt.image( cwt_chirp, color.key = "interval", main = "wavelet power spectrum",
+#           legend.params = list(lab = "wavelet power levels"),
+#           periodlab = "period (months)")
+#  
+#  wt.avg(cwt_chirp, siglvl = 0.05, sigcol = "red", 
+#         periodlab = "period (months)")
+#  
+#  cwt_chirp <- analyze.wavelet(asv11_test, 
+#                               my.series = 2, loess.span = 0, 
+#                               dt = 1, dj = 1/20, 
+#                               #lowerPeriod = 2*dt, 
+#                               #upperPeriod = floor(nrow(my.data)/3)*dt, 
+#                               make.pval = TRUE, method = "white.noise", params = NULL,
+#                               n.sim = 100, 
+#                               date.format = '%Y-%M-%d', date.tz = NULL, 
+#                               verbose = TRUE)
+#  
+#  wt.image( cwt_chirp, color.key = "interval", main = "wavelet power spectrum",
+#            legend.params = list(lab = "wavelet power levels"),
+#            periodlab = "period (months)")
+#  
+#  wt.avg(cwt_chirp, siglvl = 0.05, sigcol = "red", 
+#         periodlab = "period (months)")
+#  
+#  cwt_chirp <- analyze.wavelet(asv27_test, 
+#                               my.series = 2, loess.span = 0, 
+#                               dt = 1, dj = 1/20, 
+#                               lowerPeriod = 2, 
+#                               upperPeriod = 32, 
+#                               make.pval = TRUE, method = "white.noise", params = NULL,
+#                               n.sim = 100, 
+#                               date.format = '%Y-%M-%d', date.tz = NULL, 
+#                               verbose = TRUE)
+#  
+# wt.image( cwt_chirp, color.key = "interval", main = "wavelet power spectrum",
+#            legend.params = list(lab = "wavelet power levels"),
+#            periodlab = "period (months)")
+#  
+# wt.avg(cwt_chirp, siglvl = 0.05, sigcol = "red", 
+#         periodlab = "period (months)")
+ 
+ 
+ 
+ #### do it at the same time for all my asvs 
+# Define a function to perform wavelet analysis and plot the results
+ 
+
+wavelet_analysis <- function(asv_num, data, fraction) {
+  # Filter the data for the current ASV
+  asv_data <- data |>
+    dplyr::filter(asv_num == !!asv_num) |>
+    dplyr::select(date, abundance_value)
+  
+  # Compute the continuous wavelet transform
+  cwt_chirp <- analyze.wavelet(asv_data, ## this function uses a Morlet wavelet.
+                               my.series = 2, loess.span = 0, 
+                               dt = 1, # number of observations per time unit
+                               dj = 1/12, 
+                               lowerPeriod = 2, 
+                               upperPeriod = 32, 
+                               make.pval = TRUE, method = "white.noise", params = NULL,
+                               n.sim = 100, 
+                               date.format = '%Y-%M-%d', date.tz = NULL, 
+                               verbose = TRUE)
+  
+  # Plot the wavelet power spectrum
+  wt.image(cwt_chirp, color.key = "interval", 
+           main = paste0("Wavelet Power Spectrum - ASV", asv_num), 
+           legend.params = list(lab = "wavelet power levels"),
+           periodlab = "period (months)")
+  
+  # Plot the wavelet average
+  wt.avg(cwt_chirp, siglvl = 0.05, sigcol = "red", 
+         periodlab = "period (months)")
+  
+  # Create the directory if it doesn't exist
+  dir.create(paste0("results/figures/wavelets_continuous_", fraction, "_ed/"), recursive = TRUE)
+  
+  # Save the wavelet power spectrum plot
+  pdf(file = paste0("results/figures/wavelets_continuous_", fraction, "_ed/", asv_num, "_wavelet_power_spectrum.pdf"), 
+      width = 40, height = 34
+      # , units = "in"
+  )
+  wt.image(cwt_chirp, color.key = "interval", 
+           main = paste0("Wavelet Power Spectrum - ASV", asv_num), 
+           legend.params = list(lab = "wavelet power levels"),
+           periodlab = "period (months)")
+  dev.off()
+  
+  # Save the wavelet average plot
+  pdf(file = paste0("results/figures/wavelets_continuous_", fraction, "_ed/", asv_num, "_wavelet_average.pdf"), 
+      width = 40, height = 34#, units = "in"
+  )
+  wt.avg(cwt_chirp, siglvl = 0.05, sigcol = "red", 
+         periodlab = "period (months)")
+  dev.off()
+}
+
+# Apply the function to all unique ASV numbers
+asv_nums <- unique(wavelet_02_df_date$asv_num)
+for (asv_num in asv_nums) {
+  wavelet_analysis(asv_num, wavelet_02_df_date, fraction = 0.2)
+}
+ 
+asv_nums <- unique(wavelet_3_df_date$asv_num)
+for (asv_num in asv_nums) {
+  wavelet_analysis(asv_num, wavelet_3_df_date, fraction = 3)
+}
+
+## apply the function to all env data ----
+env_data_interpolated_values_all_z_score <- read.csv2('data/env_data/env_data_interpolated_values_all_z_score.csv', sep = ';')
+
+env_data_interpolated_values_all_z_score  <- env_data_interpolated_values_all_z_score  |>
+  dplyr::select(-'X')
+
+env_data_interpolated_values_all <- env_data_interpolated_values_all_z_score |>
+left_join(m_02_dates) |>
+  dplyr::mutate(date = as.POSIXct(date, "%Y-%M-%D")) |>
+  dplyr::select(date, abundance_value = z_score_environmental_variable, asv_num = environmental_variable) |>
+  dplyr::mutate(abundance_value = as.numeric(abundance_value))
+
+
+env_data_interpolated_values_all 
+
+asv_nums <- unique(env_data_interpolated_values_all$asv_num)
+for (asv_num in asv_nums) {
+  wavelet_analysis(asv_num, env_data_interpolated_values_all)
+}
+
+
+ cwt(chirp, sj = 1:128, dj = 1/4, mother = "morlet") 
+ 
+ ## Barplot with seasonality and the taxonomy ----
+ 
+ ### recurrency
+ labs_fraction_rec_freq <-  as_labeller(c('0.2' = 'Free living (0.2-3 um)',
+                                          '3' = 'Particle attached (3-20 um)',
+                                          no = 'Recurrent',
+                                          yes = 'Non-recurrent',
+                                          seasonal = 'Seasonal',
+                                          stochastic = 'Chaotic'))
+ summary_types_of_blooms |>
+   colnames()
+
+ bloo_all_types_summary_tb_tax
+
+ tax_seasonality_plot <- bloo_all_types_summary_tb_tax |>
+   group_by(frequency, fraction, order) |>
+   dplyr::reframe(n = n()) |>
+   group_by(frequency, fraction) |>
+   dplyr::mutate(n_total = sum(n)) |>
+   dplyr::mutate(perc = n/n_total) |>
+   ggplot(aes(perc,as.factor(fraction), fill = order))+
+   scale_y_discrete(labels = labs_fraction)+
+   scale_x_continuous(labels = percent_format())+
+   geom_col()+
+   labs(x='', y = '')+
+   scale_fill_manual(values = palette_order_assigned_bloo)+
+   facet_wrap(vars(frequency), labeller = labs_fraction_rec_freq)+
+   theme_bw()+
+   theme(legend.position = 'none',
+         panel.grid = element_blank(),
+         panel.border = element_blank(),
+         strip.background = element_blank(),
+         text = element_text(size = 14))
+
+ # ggsave('tax_seasonality.svg',  tax_seasonality_plot,
+ #        path = "results/figures/poster_svg_format/",
+ #        width = 220,
+ #        height = 120,
+ #        units = 'mm')
+
+ 
  
