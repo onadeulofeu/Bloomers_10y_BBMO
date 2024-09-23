@@ -1,11 +1,13 @@
-# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# +++++++++++++++++++++++                     data analysis pipeline                  ++++++++++++++++++++++
-# +++++++++++++++++++++++                    BBMO timeseries 10-Y data                ++++++++++++++++++++++
-# +++++++++++++++++++++++                         metabarcoding                       ++++++++++++++++++++++
-# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# +++++++++++++++++++++++             Code developed by Ona Deulofeu-Capo 2024        ++++++++++++++++++++++
-# +++++++++++++++++++++++             Results created by Carmen-García Comas          ++++++++++++++++++++++
-# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# +++++++++++++++++++++++                       EDMs CCM and MDR                      ++++++++++++++++++++++++++++++++++++++++++++
+# +++++++++++++++++++++++                    BBMO timeseries 10-Y data                ++++++++++++++++++++++++++++++++++++++++++++
+# +++++++++++++++++++++++                         metabarcoding                       ++++++++++++++++++++++++++++++++++++++++++++
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# +++++++++++++++++++++++             Code developed by Ona Deulofeu-Capo 2024        ++++++++++++++++++++++++++++++++++++++++++++
+# +++++++++++++++++++++++             Results created by Carmen-García Comas          ++++++++++++++++++++++++++++++++++++++++++++
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
 
 # EDM empircal dynamic modeling
 ## These methods can be used to provide a mechanistic understanding of dynamical systems. 
@@ -503,7 +505,7 @@ asv_tab_bbmo_10y_rel_occ_filt_inter_noseas <- asv_tab_bbmo_10y_rel_occ_filt_inte
 write.csv(asv_tab_bbmo_10y_rel_occ_filt_inter_noseas, file = '../EDM_carmen/asv_tab_bbmo_10y_rel_occ_filt_inter_noseas.csv')
 
 
-# EXPLORE EDM RESULTS ####### ------
+# ------ ####### EXPLORE EDM RESULTS ####### ------
 
 ## Boxplots causality -----
 #### Si tienes tiempo, puedes hacer boxplots de causalidad intra e inter clase taxonómica por ejemplo y 
@@ -786,6 +788,7 @@ asv_tab_10y_rel_occ_filt_w_env_inter <- asv_tab_10y_rel_occ_filt_w_env_inter  |>
   dplyr::select(-'X')
 colnames_vec <- asv_tab_10y_rel_occ_filt_w_env_inter |>
   colnames()
+
 ccm_rho <- read.csv( '../EDM_carmen/marbits/ccm_rel_abund_seas/ccm_rho_Bl_rel_abund_seas.csv', sep = ',') 
 ccm_sig <- read.csv( '../EDM_carmen/marbits/ccm_rel_abund_seas/ccm_sig_Bl_rel_abund_seas.csv', sep = ',') 
 
@@ -959,7 +962,7 @@ matrix_clean[is.na(matrix_clean)] <- 0
 # Create the heatmap
 matrix_clean |>
   as.matrix() |>
-  pheatmap(color = palete_gradient_cb2)
+  pheatmap() #color = palete_gradient_cb2
 
 matrix_clean |>
   dim()
@@ -1219,7 +1222,7 @@ if (length(anotr2$asv_num) == nrow(matrix_clean) && length(anotr1$asv_num) == nc
   # Re-run the pheatmap function
   ##matrix_clean <- ifelse(is.na(matrix_clean), 0, matrix_clean)
   heatmap <- pheatmap(matrix_clean,
-                      color = palete_gradient_cb2,
+                      #color = palete_gradient_cb2,
                       annotation_col = annotc,
                       annotation_colors = filtered_colors,
                       labels_row = anotr1$asv_num,
@@ -1317,7 +1320,7 @@ matrix_clean_f_reor <- ifelse(is.na(matrix_clean_f_reor), 0, matrix_clean_f_reor
 
 heatmap_noclustcols <-
   pheatmap(matrix_clean_f_reor,
-           color = palete_gradient_cb3,
+           #color = palete_gradient_cb3,
            annotation_row = annotr_reordered,
            annotation_col = annotc_f,
            annotation_colors = filtered_colors,
@@ -1612,7 +1615,7 @@ annotc_labs$variables_2 == ccm_rho_filt_f_reordered |>
 
 heatmap_noclustcols <-
   pheatmap(ccm_rho_filt_f_reordered,
-           color = palete_gradient_cb3,
+           #color = palete_gradient_cb3,
            annotation_row = annotr_reordered,
            annotation_col = annotc_reordered,
            annotation_colors = filtered_colors,
@@ -1635,9 +1638,9 @@ heatmap_noclustcols <-
 #         path = 'results/figures/ccm/',
 #         width = 480, height = 380, units = 'mm')
 
-ggsave( plot = heatmap_noclustcols, filename = 'heatmap_ccm_bloo_noseas_rclr.svg',
-        path = 'results/figures/poster_svg_format/',
-        width = 480, height = 380, units = 'mm')
+# ggsave( plot = heatmap_noclustcols, filename = 'heatmap_ccm_bloo_noseas_rclr.svg',
+#         path = 'results/figures/poster_svg_format/',
+#         width = 480, height = 380, units = 'mm')
 
 # BOXPLOTS of causality intra e inter taxonomic class ----
 ## Columns are the causal variables on rows. 
@@ -2130,8 +2133,6 @@ ggsave( plot = top10_causal_bloomers_plot, filename = 'top10_causal_bloomers_plo
 
 ## variables_2 are the causal variables
 ## variables are the resulting variables. (I need these filtered by my bloomers, the ones that I'm interested in)
-
-
 bloo_all_types_summary_tb <- bloo_all_types_summary_tb |>
   dplyr::mutate(fraction = as.character(fraction)) |>
   dplyr::filter(!asv_num %in% c('asv2', 'asv3', 'asv5', 'asv8') )
@@ -2412,6 +2413,37 @@ data_ed |>
          alpha = 'none',
          shape = guide_legend(ncol = 1))
 
+## separate bloomers seasonal and chaotic to observe if they are differentially better predicted ----
+data_ed_2 <- data_ed |>
+  dplyr::filter(frequency_predicted != 'env') |>
+  dplyr::filter(asv_num_predicted %in%  unique(select_bloomers$asv_num_predicted)) |>
+  ungroup()
+
+data_ed_2 |>
+  #dplyr::filter(rho == 0) |>
+  #dplyr::filter(asv_num_predicted %in% c('asv17', 'asv22', 'asv1', 'asv11', 'asv7', 'asv15', 'asv31', 'asv23')) |>
+  #dplyr::filter(frequency_predicted %in% c('Seasonal', 'Non-seasonal')) |>
+  ggplot(aes(x = fraction_causal, y = rho))+
+  geom_point(aes( color = order_causal),position = position_jitter(width = 0.1))+
+  #geom_violin(alpha = 0.1)+
+  geom_boxplot(alpha = 0.1, notch = T)+
+  facet_wrap(vars(fraction_predicted))+ #, labeller = labs_fraction
+  scale_color_manual(values = palette_order_assigned_all)+
+  scale_x_discrete(labels = labs_fraction_env)+
+  theme_bw()+
+  labs(y = 'Rho (Predictive Power)', x= 'Causal effects', color = 'Order')+
+  coord_flip()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        legend.position = 'bottom',
+        panel.grid.major.y  = element_blank(),
+        panel.grid.minor  = element_blank(), text = element_text(size = 10),
+        strip.text = element_text(margin = margin(2, 2, 2, 2), size = 10),
+        #plot.margin = unit(c(0.2, 5, 0.5, 0.5), "cm"),
+        legend.key.size = unit(3, 'mm'))+
+  guides(color = guide_legend(ncol = 3),
+         alpha = 'none',
+         shape = guide_legend(ncol = 1))
+
 data_ed |>
   dplyr::filter(frequency_predicted != 'env') |>
   dplyr::filter(!asv_num_predicted %in%  unique(select_bloomers$asv_num_predicted)) |>
@@ -2440,6 +2472,8 @@ data_ed |>
          shape = guide_legend(ncol = 1))
 
 ## EFFECT OF THE COMMUNITY ON BLOOMERS AND ON THE COMMUNTY -----
+data_ed |>
+  colnames()
 ## bloomers and non-bloomers
 causal_effects_on_community_plot <- data_ed |>
   dplyr::filter(frequency_predicted != 'env') |>
@@ -2455,6 +2489,42 @@ causal_effects_on_community_plot <- data_ed |>
   #geom_violin(alpha = 0.1)+
   geom_boxplot(alpha = 0.1, notch = T)+
   facet_wrap(fraction_predicted~bloom, labeller = labs_fraction_bloo)+
+  scale_color_manual(values = palette_order_assigned_all)+
+  scale_x_discrete(labels = labs_fraction_env)+
+  theme_bw()+
+  labs(y = 'Rho', x= 'Causal effects', color = 'Order predicted ASVs')+
+  coord_flip()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        legend.position = 'bottom',
+        panel.grid.major.y  = element_blank(),
+        panel.grid.minor  = element_blank(), text = element_text(size = 10),
+        strip.text = element_text(margin = margin(2, 2, 2, 2), size = 10),
+        #plot.margin = unit(c(0.2, 5, 0.5, 0.5), "cm"),
+        legend.key.size = unit(3, 'mm'))+
+  guides(alpha = 'none',
+         color = guide_legend(ncol = 4))
+
+causal_effects_on_community_plot
+
+# ggsave(plot = causal_effects_on_community_plot, filename = 'causal_effects_on_community_plot.pdf',
+#                 path = 'results/figures/',
+#                 width = 180, height = 180, units = 'mm')
+
+## separate bloomers by frequency ---
+causal_effects_on_community_plot <- data_ed |>
+  dplyr::filter(frequency_predicted != 'env') |>
+  dplyr::mutate(bloom = case_when(!asv_num_predicted %in%  unique(select_bloomers$asv_num_predicted)~ 'no_bloomer',
+                                  asv_num_predicted %in%  unique(select_bloomers$asv_num_predicted) ~ 'bloomer')) |>
+  dplyr::filter(frequency_predicted != 'env') |>
+  #dplyr::filter(!asv_num_predicted %in%  unique(select_bloomers$asv_num_predicted)) |>
+  #dplyr::filter(rho == 0) |>
+  #dplyr::filter(asv_num_predicted %in% c('asv17', 'asv22', 'asv1', 'asv11', 'asv7', 'asv15', 'asv31', 'asv23')) |>
+  #dplyr::filter(frequency_predicted %in% c('Seasonal', 'Non-seasonal')) |>
+  ggplot(aes(x = interaction(fraction_causal), y = rho))+
+  geom_point(aes( color = order_predicted, alpha = 0.8),position = position_jitter(width = 0.1))+
+  #geom_violin(alpha = 0.1)+
+  geom_boxplot(alpha = 0.1, notch = T)+
+  facet_wrap(fraction_predicted~bloom~frequency_predicted)+ #, labeller = labs_fraction_bloo
   scale_color_manual(values = palette_order_assigned_all)+
   scale_x_discrete(labels = labs_fraction_env)+
   theme_bw()+
@@ -2507,10 +2577,9 @@ causal_effects_on_community_plot <- data_ed |>
 
 causal_effects_on_community_plot
 
-ggsave(plot = causal_effects_on_community_plot, filename = 'causal_effects_on_community_plot.svg',
-                path = 'results/figures/poster_svg_format/',
-                width = 220, height = 180, units = 'mm')
-
+# ggsave(plot = causal_effects_on_community_plot, filename = 'causal_effects_on_community_plot.svg',
+#                 path = 'results/figures/poster_svg_format/',
+#                 width = 220, height = 180, units = 'mm')
 
 ### BLOOMERS EFFECT ON THE COMMUNITY 
 data_ed |>
@@ -2541,8 +2610,6 @@ data_ed |>
         #plot.margin = unit(c(0.2, 5, 0.5, 0.5), "cm"),
         legend.key.size = unit(3, 'mm'))
 
-
-
 ###
 data_ed |>
   dplyr::filter(frequency_causal == 'env') |>
@@ -2570,4 +2637,1100 @@ dplyr::filter(frequency_predicted != 'env') |>
   facet_wrap(vars(fraction_causal))+
   theme_bw()
 
+# -------------- #### MDR RESULTS #### ----------------------------------------- 
+
+## upload data ----
+mdr_tb <- read.csv2('../EDM_carmen/MDR/Bl_nin120_cvunit0.025_aenet_jcof_Nmvx_Rallx_demo.csv', header = T ) |>
+  as_tibble()
+
+mdr_tb |>
+  dim()
+
+mdr_tb |>
+  distinct(variable)
+
+bloo_all_types_summary_tb <- read.csv('results/tables/summary_types_of_blooms.csv')
+
+bloo_all_types_summary_tb_tax <- bloo_all_types_summary_tb |>
+  left_join(tax_bbmo_10y_new, by = 'asv_num') |>
+  dplyr::select(-seq) |>
+  dplyr::filter(!asv_num %in% c('asv2', 'asv3', 'asv5', 'asv8')) |>
+  dplyr::mutate(fraction = as.character(fraction))
+
+bloo_all_types_summary_tb <- bloo_all_types_summary_tb |>
+  dplyr::select(asv_num, recurrency, frequency, fraction) |>
+  dplyr::mutate(fraction = as.character(fraction))
+
+
+# Bloomers are affected by other ASVs  -----
+## prepare data for plotting  ----
+### The tibble is structured such that each row corresponds to a variable that receives an interaction, and each column corresponds to a variable that performs (or realizes) the interaction.
+variable_num <- mdr_tb |>
+  colnames() |>
+  as_tibble_col(column_name = 'variable_name') |>
+  dplyr::filter(!variable_name %in% c('Insample', 'time', 'variable', 'j0'))
+
+variable_num_tb <- mdr_tb |>
+  colnames() |>
+  as_tibble_col(column_name = 'variable_name') |>
+  dplyr::filter(!variable_name %in% c('Insample', 'time', 'variable', 'j0')) |>
+  dplyr::mutate(variable_num = 1:nrow(variable_num))
+
+m_02_red2 <- m_02_red |>
+  dplyr::select(-sample_id)
+
+m_3_red2 <- m_02_red |>
+  dplyr::select(-sample_id)
+
+time_num_02 <- mdr_tb %$%
+  unique(time) |>
+  as_tibble_col(column_name = 'time_num') |>
+  dplyr::mutate(time_num = as.character(time_num)) |>
+  left_join(m_02_red2, by = c('time_num' = 'sample_id_num'))
+
+time_num_3 <- mdr_tb %$%
+  unique(time) |>
+  as_tibble_col(column_name = 'time_num') |>
+  dplyr::mutate(time_num = as.character(time_num)) |>
+  left_join(m_3_red2, by = c('time_num' = 'sample_id_num')) |>
+  dplyr::mutate(fraction = '3')
+
+time_num <- time_num_02 |>
+  bind_rows(time_num_3)
+
+mdr_tb_m <- mdr_tb |>
+  left_join(variable_num_tb , by = c('variable' = 'variable_num')) |>
+  dplyr::mutate(fraction = case_when(str_detect(variable_name, 'bp') ~ '0.2',
+                                     str_detect(variable_name, 'bn') ~ '3')) |>
+  separate(variable_name, sep = '_', into = c('fraction_b', 'asv_num')) |>
+  left_join(bloo_all_types_summary_tb, by = c('asv_num', 'fraction')) |>
+  dplyr::mutate(frequency = case_when(
+    frequency == 'stochastic' ~ 'Non-Seasonal',
+    frequency == 'seasonal' ~ 'Seasonal',
+    is.na(recurrency) ~ 'No Bloomer',
+    TRUE ~ recurrency  # Preserve other values if any
+  )) |>
+  dplyr::mutate(time = as.character(time)) |>
+  left_join(time_num, by = c('fraction', 'time' = 'time_num'))
+
+time_num |>
+  dplyr::filter(is.na(date))
+
+mdr_tb_m |>
+  dplyr::filter(is.na(date))
+
+## prepare bloomers abundance data
+asv_tab_all_bloo_z_tax_red <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(abundance_type == 'rclr') |>
+  dplyr::select(asv_num, fraction, date, abundance_value) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num %in% c('asv11', 'asv7', 'asv1', 'asv22', 'asv23', 'asv31')) 
+
+## plot interactions of the community on my bloomers -----
+### ASV11 ----
+mdr_tb_m |>
+  colnames()
+
+#### I need to group positive and negative interactions for each timepoint 
+mdr_tb_m_positive <- mdr_tb_m |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num == 'asv11') |>
+  pivot_longer(cols = starts_with(c('bp', 'bn')), values_to = 'interaction_strength') |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff) |>
+  dplyr::filter(as.numeric(interaction_strength) > 0) |>
+  dplyr::group_by(date, fraction, asv_num) |>
+  dplyr::reframe(interaction_positive = sum(as.numeric(interaction_strength)))
+
+mdr_tb_m_negative <- mdr_tb_m |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num == 'asv11') |>
+  pivot_longer(cols = starts_with(c('bp', 'bn')), values_to = 'interaction_strength') |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff) |>
+  dplyr::filter(as.numeric(interaction_strength) < 0) |>
+  dplyr::group_by(date, fraction, asv_num) |>
+  dplyr::reframe(interaction_negative = sum(as.numeric(interaction_strength)))
+
+mdr_tb_m_interactions <- mdr_tb_m_positive |>
+  left_join(mdr_tb_m_negative) |>
+  dplyr::mutate(date = as.Date(date))
+
+asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(abundance_value_scaled = scale(abundance_value))|>
+  dplyr::filter(asv_num == 'asv11') |>
+  dplyr::mutate(date = as.Date(date))
+
+asv_tab_all_bloo_z_tax_red_asv$date
+mdr_tb_m_interactions$date
+
+mdr_interactions_rclr <- mdr_tb_m_interactions |>
+  left_join(asv_tab_all_bloo_z_tax_red_asv) |>
+  pivot_longer(cols = c('interaction_positive', 'interaction_negative', 'abundance_value'), 
+               values_to = 'value', names_to = 'variable')
+
+mdr_interactions_rclr  |>
+  ggplot(aes(date, as.numeric(value)))+
+  #scale_y_continuous(sec.axis = sec_axis(~.*80 , name = 'rCLR'))+
+  # geom_smooth(data = asv_tab_all_bloo_z_tax_red_asv, 
+  #             aes(date, y = as.numeric(abundance_value)/80), span = 0.022, color = 'darkred', se = F)+
+  geom_smooth(method = 'loess', span = 0.022, aes(color = variable, group = variable))+
+  geom_line( aes(color = variable, group = variable))+
+  facet_wrap(vars(fraction), labeller = labs_fraction)+
+  scale_color_manual(values = palette_genes)+
+  theme_bw()+
+  labs(x = 'Date', y = 'Interaction Strength', color = '')+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 12),
+        axis.text.x = element_text(size = 10),
+        panel.border = element_blank())
+
+## asv23 ----
+mdr_tb_m_positive <- mdr_tb_m |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num == 'asv23') |>
+  pivot_longer(cols = starts_with(c('bp', 'bn')), values_to = 'interaction_strength') |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff) |>
+  dplyr::filter(as.numeric(interaction_strength) > 0) |>
+  dplyr::group_by(date, fraction, asv_num) |>
+  dplyr::reframe(interaction_positive = sum(as.numeric(interaction_strength)))
+
+mdr_tb_m_negative <- mdr_tb_m |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num == 'asv23') |>
+  pivot_longer(cols = starts_with(c('bp', 'bn')), values_to = 'interaction_strength') |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff) |>
+  dplyr::filter(as.numeric(interaction_strength) < 0) |>
+  dplyr::group_by(date, fraction, asv_num) |>
+  dplyr::reframe(interaction_negative = sum(as.numeric(interaction_strength)))
+
+mdr_tb_m_interactions <- mdr_tb_m_positive |>
+  left_join(mdr_tb_m_negative) |>
+  dplyr::mutate(date = as.Date(date))
+
+asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(abundance_value_scaled = scale(abundance_value))|>
+  dplyr::filter(asv_num == 'asv23') |>
+  dplyr::mutate(date = as.Date(date))
+
+asv_tab_all_bloo_z_tax_red_asv$date
+mdr_tb_m_interactions$date
+
+mdr_interactions_rclr <- mdr_tb_m_interactions |>
+  left_join(asv_tab_all_bloo_z_tax_red_asv) |>
+  pivot_longer(cols = c('interaction_positive', 'interaction_negative', 'abundance_value'), 
+               values_to = 'value', names_to = 'variable')
+
+mdr_interactions_rclr  |>
+  ggplot(aes(date, as.numeric(value)))+
+  #scale_y_continuous(sec.axis = sec_axis(~.*80 , name = 'rCLR'))+
+  # geom_smooth(data = asv_tab_all_bloo_z_tax_red_asv, 
+  #             aes(date, y = as.numeric(abundance_value)/80), span = 0.022, color = 'darkred', se = F)+
+  geom_smooth(method = 'loess', span = 0.022, aes(color = variable, group = variable))+
+  geom_line( aes(color = variable, group = variable))+
+  facet_wrap(vars(fraction), labeller = labs_fraction)+
+  scale_color_manual(values = palette_genes)+
+  theme_bw()+
+  labs(x = 'Date', y = 'Interaction Strength', color = '')+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 12),
+        axis.text.x = element_text(size = 10),
+        panel.border = element_blank())
+
+### ASV7 ----
+mdr_tb_m_rclr <- mdr_tb_m |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num == 'asv7') |>
+  pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff) 
+
+asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(abundance_value_scaled = scale(abundance_value))|>
+  dplyr::filter(asv_num == 'asv7')
+
+mdr_tb_m_rclr |>
+  ggplot(aes(date, as.numeric(value)))+
+  scale_y_continuous(sec.axis = sec_axis(~.*400 , name = 'rCLR'))+
+  geom_smooth(data = asv_tab_all_bloo_z_tax_red_asv, 
+              aes(date, y = as.numeric(abundance_value)/400), span = 0.022, color = 'darkred', se = F)+
+  geom_smooth(method = 'loess', span = 0.022, color = 'darkgrey')+
+  facet_wrap(vars(fraction), labeller = labs_fraction)+
+  scale_color_manual(values = palette_order_assigned_all)+
+  theme_bw()+
+  labs(x = 'Date', y = 'Interaction Strength', color = 'Order')+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 12),
+        axis.text.x = element_text(size = 10),
+        panel.border = element_blank())
+
+## ASV1 ----
+mdr_tb_m_rclr <- mdr_tb_m |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num == 'asv1') |>
+  pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff) 
+
+asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(abundance_value_scaled = scale(abundance_value))|>
+  dplyr::filter(asv_num == 'asv1')
+
+mdr_tb_m_rclr |>
+  ggplot(aes(date, as.numeric(value)))+
+  scale_y_continuous(sec.axis = sec_axis(~.*10 , name = 'rCLR'))+
+  geom_smooth(data = asv_tab_all_bloo_z_tax_red_asv, 
+              aes(date, y = as.numeric(abundance_value)/100), span = 0.022, color = 'darkred', se = F)+
+  geom_smooth(method = 'loess', span = 0.022, color = 'darkgrey')+
+  facet_wrap(vars(fraction), labeller = labs_fraction)+
+  scale_color_manual(values = palette_order_assigned_all)+
+  theme_bw()+
+  labs(x = 'Date', y = 'Interaction Strength', color = 'Order')+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 12),
+        axis.text.x = element_text(size = 10),
+        panel.border = element_blank())
+
+## ASV22 -----
+mdr_tb_m_rclr <- mdr_tb_m |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num == 'asv22') |>
+  pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff) 
+
+asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(abundance_value_scaled = scale(abundance_value))|>
+  dplyr::filter(asv_num == 'asv22')
+
+mdr_tb_m_rclr |>
+  ggplot(aes(date, as.numeric(value)))+
+  scale_y_continuous(sec.axis = sec_axis(~.*40 , name = 'rCLR'))+
+  geom_smooth(data = asv_tab_all_bloo_z_tax_red_asv, 
+              aes(date, y = as.numeric(abundance_value)/40), span = 0.022, color = 'darkred', se = F)+
+  geom_smooth(method = 'loess', span = 0.022, color = 'darkgrey')+
+  facet_wrap(vars(fraction), labeller = labs_fraction)+
+  scale_color_manual(values = palette_order_assigned_all)+
+  theme_bw()+
+  labs(x = 'Date', y = 'Interaction Strength', color = 'Order')+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 12),
+        axis.text.x = element_text(size = 10),
+        panel.border = element_blank())
+
+## asv23 -----
+mdr_tb_m_rclr <- mdr_tb_m |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num == 'asv23') |>
+  pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff) 
+
+asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(abundance_value_scaled = scale(abundance_value))|>
+  dplyr::filter(asv_num == 'asv23')
+
+mdr_tb_m_rclr |>
+  ggplot(aes(date, as.numeric(value)))+
+  scale_y_continuous(sec.axis = sec_axis(~.*40 , name = 'rCLR'))+
+  geom_smooth(data = asv_tab_all_bloo_z_tax_red_asv, 
+              aes(date, y = as.numeric(abundance_value)/40), span = 0.022, color = 'darkred', se = F)+
+  geom_smooth(method = 'loess', span = 0.022, color = 'darkgrey')+
+  facet_wrap(vars(fraction), labeller = labs_fraction)+
+  scale_color_manual(values = palette_order_assigned_all)+
+  theme_bw()+
+  labs(x = 'Date', y = 'Interaction Strength', color = 'Order')+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 12),
+        axis.text.x = element_text(size = 10),
+        panel.border = element_blank())
+
+## ASV31 -----
+mdr_tb_m_rclr <- mdr_tb_m |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num == 'asv31') |>
+  pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff) 
+
+asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(abundance_value_scaled = scale(abundance_value))|>
+  dplyr::filter(asv_num == 'asv31')
+
+mdr_tb_m_rclr |>
+  ggplot(aes(date, as.numeric(value)))+
+  scale_y_continuous(sec.axis = sec_axis(~.*40 , name = 'rCLR'))+
+  geom_smooth(data = asv_tab_all_bloo_z_tax_red_asv, 
+              aes(date, y = as.numeric(abundance_value)/40), span = 0.022, color = 'darkred', se = F)+
+  geom_smooth(method = 'loess', span = 0.022, color = 'darkgrey')+
+  facet_wrap(vars(fraction), labeller = labs_fraction)+
+  scale_color_manual(values = palette_order_assigned_all)+
+  theme_bw()+
+  labs(x = 'Date', y = 'Interaction Strength', color = 'Order')+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 12),
+        axis.text.x = element_text(size = 10),
+        panel.border = element_blank())
+
+mdr_tb_m_rclr <- mdr_tb_m |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num == 'asv17') |>
+  pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff) 
+
+asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(abundance_value_scaled = scale(abundance_value))|>
+  dplyr::filter(asv_num == 'asv17')
+
+mdr_tb_m_rclr |>
+  ggplot(aes(date, as.numeric(value)))+
+  scale_y_continuous(sec.axis = sec_axis(~.*40 , name = 'rCLR'))+
+  geom_smooth(data = asv_tab_all_bloo_z_tax_red_asv, 
+            aes(date, y = as.numeric(abundance_value)/40), span = 0.022, color = 'darkred', se = F)+
+  geom_smooth(method = 'loess', span = 0.022, color = 'darkgrey')+
+  facet_wrap(vars(fraction), labeller = labs_fraction)+
+  scale_color_manual(values = palette_order_assigned_all)+
+  theme_bw()+
+  labs(x = 'Date', y = 'Interaction Strength', color = 'Order')+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 12),
+        axis.text.x = element_text(size = 10),
+        panel.border = element_blank())
+
+### relationship between interactions and rCLR ----
+asv_tab_all_bloo_z_tax_red <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(abundance_type == 'rclr') |>
+  dplyr::select(asv_num, fraction, date, abundance_value) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(
+    (asv_num == 'asv1'  & fraction %in% c('0.2', '3')) |
+      (asv_num == 'asv11' & fraction %in% c('0.2'))       |
+      (asv_num == 'asv23' & fraction %in% c('0.2', '3'))  |
+      (asv_num == 'asv31' & fraction %in% c('3'))         |
+      (asv_num == 'asv7'  & fraction %in% c('0.2', '3'))  |
+      (asv_num == 'asv22' & fraction %in% c('3')) |
+      (asv_num == 'asv17' & fraction %in% c('3', '0.2')))
+
+bloom_event_red <- bloom_event |>
+  dplyr::filter(
+    (asv_num == 'asv1'  & fraction %in% c('0.2', '3')) |
+      (asv_num == 'asv11' & fraction %in% c('0.2'))       |
+      (asv_num == 'asv23' & fraction %in% c('0.2', '3'))  |
+      (asv_num == 'asv31' & fraction %in% c('3'))         |
+      (asv_num == 'asv7'  & fraction %in% c('0.2', '3'))  |
+      (asv_num == 'asv22' & fraction %in% c('3')) |
+      (asv_num == 'asv17' & fraction %in% c('3', '0.2')))
+
+asv_tab_all_bloo_z_tax_red_ed <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::mutate(date = as.Date(date)) |>
+  left_join(bloom_event_red, by = c('date', 'asv_num', 'fraction'))
+
+mdr_abund <- mdr_tb_m |>
+  dplyr::filter(asv_num %in% c('asv11', 'asv7', 'asv1', 'asv22', 'asv23', 'asv31', 'asv17')) |> 
+  pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff) |>
+  dplyr::mutate(date = as.Date(date)) |>
+  #dplyr::mutate(date = as.Date(date)) |>
+  left_join(asv_tab_all_bloo_z_tax_red_ed, by = c('date', 'fraction', 'asv_num'))
+
+#unique(asv_tab_all_bloo_z_tax_red$date) == unique(mdr_tb_m_rclr$date)
+## summaryze positive and negative interactions.
+# bloom_event_red <- bloom_event |>
+#   dplyr::filter(asv_num %in% c('asv11', 'asv7', 'asv1', 'asv22', 'asv23', 'asv31', 'asv17')) |> 
+#   separate(date, into = c('year', 'month', 'day'), remove = F, sep = '-')|>
+#   dplyr::mutate(day = 1 + as.numeric(day)) |>
+#   dplyr::mutate(date_ed = paste0(year,'-', month, '-', day)) |>
+#   dplyr::select(asv_num, date, date_ed, fraction, bloom_event) |>
+#   dplyr::mutate(date_ed = as.Date(date_ed),
+
+mdr_abund_ed <- mdr_abund |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num' = 'asv_num')) ## add affecting ASVs to the tb
+
+mdr_abund_ed$bloom_event
+
+mdr_abund |>
+  colnames()
+
+mdr_abund |>
+  dplyr::select(asv_num, asv_num_eff, order.x, order.y)
+
+mdr_abund |>
+  colnames()
+
+mdr_abund |>
+  dplyr::filter(abs(as.numeric(value)) > 0.05) |>
+  #dplyr::filter(bloom_event == 'bloom') |>
+  ggplot(aes(abundance_value, as.numeric(value)))+
+  #scale_y_continuous(sec.axis = sec_axis(~.*80 , name = 'rCLR'))+
+  # geom_smooth(#data = asv_tab_all_bloo_z_tax_red_asv, 
+  #             #aes(date, y = as.numeric(abundance_value)/80), 
+  #             span = 0.022, color = 'darkred', se = F)+
+  geom_smooth(aes(group = fraction), method = 'loess',  color = 'darkgrey')+
+  geom_point(aes(shape = fraction, alpha = if_else(bloom_event == 'bloom', 0.9, 0.1)))+
+  #geom_point(aes(shape = fraction, alpha = 0.6, color = if_else(order.x == order.y, order.y, 'white')))+
+  facet_wrap(vars(asv_num))+
+  scale_color_manual(values = palette_order_assigned_all)+
+  theme_bw()+
+  guides(alpha = 'none')+
+  labs(x = 'rCLR', y = 'Interaction Strength', color = 'Order')+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 12),
+        axis.text.x = element_text(size = 10),
+        panel.border = element_blank())
+
+## relative abundances ----
+## prepare bloomers abundance data
+asv_tab_all_bloo_z_tax_red <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(abundance_type == 'relative_abundance') |>
+  dplyr::select(asv_num, fraction, date, abundance_value) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num %in% c('asv11', 'asv7', 'asv1', 'asv22', 'asv23', 'asv31', 'asv17')) |>
+  left_join(bloom_event)
+
+asv_tab_all_bloo_z_tax_red_ed <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::mutate(date = as.Date(date))
+
+mdr_abund <- mdr_tb_m |>
+  dplyr::filter(asv_num %in% c('asv11', 'asv7', 'asv1', 'asv22', 'asv23', 'asv31', 'asv17')) |> 
+  pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff) |>
+  dplyr::mutate(date = as.Date(date)) |>
+  #dplyr::mutate(date = as.Date(date)) |>
+  left_join(asv_tab_all_bloo_z_tax_red_ed, by = c('date', 'fraction', 'asv_num'))
+
+mdr_abund %$% date
+asv_tab_all_bloo_z_tax_red_ed %$% date
+
+mdr_abund$abundance_value
+
+mdr_abund |>
+  ggplot(aes(abundance_value, as.numeric(value)))+
+  #scale_y_continuous(sec.axis = sec_axis(~.*80 , name = 'rCLR'))+
+  # geom_smooth(#data = asv_tab_all_bloo_z_tax_red_asv, 
+  #             #aes(date, y = as.numeric(abundance_value)/80), 
+  #             span = 0.022, color = 'darkred', se = F)+
+  #geom_smooth(aes(group = fraction), method = 'loess', span = 0.022, color = 'darkgrey')+
+  geom_point(aes(shape = fraction, alpha = if_else(bloom_event == 'bloom', 0.6, 0.2)))+
+  facet_wrap(vars(asv_num))+
+  scale_color_manual(values = palette_order_assigned_all)+
+  theme_bw()+
+  guides(alpha = 'none')+
+  labs(x = 'Date', y = 'Interaction Strength', color = 'Order')+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 12),
+        axis.text.x = element_text(size = 10),
+        panel.border = element_blank())
+
+### Plotting the summary of interactions on each ASV and their abundances ----
+palette_interactions <- c('interaction_negative' = '#304C57',
+                           'interaction_positive' = '#A1D6C1')
+
+labs_interactions <- as_labeller(c('interaction_negative' = 'Negative',
+                                 'interaction_positive' = 'Positive'))
+
+labs_fraction <- as_labeller(c('0.2' = 'Free living (0.2-3 um)',
+                               '3' = 'Particle attached (3-20 um)',
+                               'asv11' = 'Alteromonadaceae asv11',
+                              'asv1' =  'Cyanobiaceae asv1', 
+                              'asv7' =  'Cyanobiaceae asv7', 
+                              'asv31' =  'Cyanobiaceae asv31', 
+                              'asv23' = 'Rubritaleaceae asv23',
+                              'asv22' = 'Alcanivoracaceae1 asv22',
+                               'asv17' = 'Sphingomonadaceae asv17'))
+
+mdr_interactions_rclr |>
+  distinct(asv_num, family)
+
+#### rCLR -----
+bloom_event <- bloom_event |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) 
   
+asv_tab_all_bloo_z_tax_red <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(abundance_type == 'rclr') |>
+  dplyr::select(asv_num, fraction, date, abundance_value) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num %in% c('asv11', 'asv7', 'asv1', 'asv22', 'asv23', 'asv31', 'asv17')) |>
+  left_join(bloom_event, by = c('date', 'asv_num', 'fraction'))
+
+mdr_tb_m_positive <- mdr_tb_m |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num %in% c ('asv23', 'asv1', 'asv11', 'asv22', 'asv31', 'asv7', 'asv17')) |>
+  pivot_longer(cols = starts_with(c('bp', 'bn')), values_to = 'interaction_strength') |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff) |>
+  dplyr::filter(as.numeric(interaction_strength) > 0) |>
+  dplyr::group_by(date, fraction, asv_num) |>
+  dplyr::reframe(interaction_positive = sum(as.numeric(interaction_strength)))
+
+mdr_tb_m_negative <- mdr_tb_m |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num %in% c ('asv23', 'asv1', 'asv11', 'asv22', 'asv31', 'asv7', 'asv17')) |>
+  pivot_longer(cols = starts_with(c('bp', 'bn')), values_to = 'interaction_strength') |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff) |>
+  dplyr::filter(as.numeric(interaction_strength) < 0) |>
+  dplyr::group_by(date, fraction, asv_num) |>
+  dplyr::reframe(interaction_negative = sum(as.numeric(interaction_strength)))
+
+mdr_tb_m_interactions <- mdr_tb_m_positive |>
+  left_join(mdr_tb_m_negative) |>
+  dplyr::mutate(date = as.Date(date))
+
+asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(abundance_value_scaled = scale(abundance_value))|>
+  dplyr::filter(asv_num %in% c ('asv23', 'asv1', 'asv11', 'asv22', 'asv31', 'asv7', 'asv17')) |>
+  dplyr::filter(
+    (asv_num == 'asv1'  & fraction %in% c('0.2', '3')) |
+      (asv_num == 'asv11' & fraction %in% c('0.2'))       |
+      (asv_num == 'asv23' & fraction %in% c('0.2', '3'))  |
+      (asv_num == 'asv31' & fraction %in% c('3'))         |
+      (asv_num == 'asv7'  & fraction %in% c('0.2', '3'))  |
+      (asv_num == 'asv22' & fraction %in% c('3')) |
+      (asv_num == 'asv17' & fraction %in% c('3', '0.2'))) |>
+  dplyr::mutate(date = as.Date(date))
+
+asv_tab_all_bloo_z_tax_red_asv$date
+mdr_tb_m_interactions$date
+
+mdr_interactions_rclr <- mdr_tb_m_interactions |>
+  left_join(asv_tab_all_bloo_z_tax_red_asv) |>
+  pivot_longer(cols = c('interaction_positive', 'interaction_negative'), 
+               values_to = 'value', names_to = 'variable') |>
+  left_join(bloo_taxonomy, by = 'asv_num')
+
+plot_interactions_summary_rclr <- mdr_interactions_rclr  |>
+  ggplot(aes(date, as.numeric(value)))+
+  scale_y_continuous(sec.axis = sec_axis(~./1 , name = 'rCLR'))+
+  geom_smooth(aes(date, y = as.numeric(abundance_value)*1), span = 0.1, 
+              color = '#D6AAA1',  fill = '#D6AAA1', se = T, linetype = 'dotted')+
+  geom_smooth(method = 'loess', span = 0.1, aes(color = variable, group = variable, fill = variable))+
+  geom_point(aes(alpha = if_else(bloom_event == 'bloom', 0.9, 0),color = variable, group = variable, fill = variable))+
+  #geom_line( aes(color = variable, group = variable))+
+  facet_wrap(asv_num~fraction, labeller = labs_fraction, ncol = 3, scales = 'free_y')+#, labeller = labs_fraction
+  scale_color_manual(values = palette_interactions, labels = labs_interactions)+
+  scale_fill_manual(values = palette_interactions, labels = labs_interactions)+
+  theme_bw()+
+  labs(x = 'Date', y = 'Interaction Strength', color = 'Interactions', fill = 'Interactions')+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 12),
+        axis.text.x = element_text(size = 8),
+        strip.text = element_text(size = 8),
+        panel.border = element_blank(),
+        legend.position = 'bottom')
+
+plot_interactions_summary_rclr
+
+# ggsave(filename = 'plot_interactions_summary_rclr_v3.pdf',
+#        plot = plot_interactions_summary_rclr,
+#        path = 'results/figures/',
+#        width = 180, height = 300, units = 'mm')
+
+### when there is a bloom event are the interactions stronger? ---
+mdr_abund |>
+  colnames()
+
+mdr_tb_m_positive <- mdr_tb_m |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num %in% c ('asv23', 'asv1', 'asv11', 'asv22', 'asv31', 'asv7', 'asv17')) |>
+  pivot_longer(cols = starts_with(c('bp', 'bn')), values_to = 'interaction_strength') |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff) |>
+  dplyr::filter(as.numeric(interaction_strength) > 0) |>
+  dplyr::group_by(date, fraction, asv_num) |>
+  dplyr::reframe(interaction_positive = sum(as.numeric(interaction_strength)))
+
+mdr_tb_m_negative <- mdr_tb_m |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num %in% c ('asv23', 'asv1', 'asv11', 'asv22', 'asv31', 'asv7', 'asv17')) |>
+  pivot_longer(cols = starts_with(c('bp', 'bn')), values_to = 'interaction_strength') |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff) |>
+  dplyr::filter(as.numeric(interaction_strength) < 0) |>
+  dplyr::group_by(date, fraction, asv_num) |>
+  dplyr::reframe(interaction_negative = sum(as.numeric(interaction_strength)))
+
+mdr_tb_m_interactions <- mdr_tb_m_positive |>
+  left_join(mdr_tb_m_negative) |>
+  dplyr::mutate(date = as.Date(date))
+
+bloom_event_red <-  bloom_event_red |>
+  dplyr::mutate(date = as.character(date)) 
+
+asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(abundance_value_scaled = scale(abundance_value))|>
+  #dplyr::filter(asv_num %in% c ('asv23', 'asv1', 'asv11', 'asv22', 'asv31', 'asv7', 'asv17')) |>
+  dplyr::filter(
+    (asv_num == 'asv1'  & fraction %in% c('0.2', '3')) |
+      (asv_num == 'asv11' & fraction %in% c('0.2'))       |
+      (asv_num == 'asv23' & fraction %in% c('0.2', '3'))  |
+      (asv_num == 'asv31' & fraction %in% c('3'))         |
+      (asv_num == 'asv7'  & fraction %in% c('0.2', '3'))  |
+      (asv_num == 'asv22' & fraction %in% c('3')) |
+      (asv_num == 'asv17' & fraction %in% c('3', '0.2'))) |>
+  dplyr::mutate(date = as.Date(date)) |>
+  dplyr::mutate(date = as.character(date)) |>
+  #dplyr::filter(date %in% c('2004-03-22', '2005-02-15', '2005-05-10')) |>
+  left_join(bloom_event_red, by = c('asv_num', 'fraction', 'date'))
+
+unique(asv_tab_all_bloo_z_tax_red_asv$date)
+unique(bloom_event_red$date)
+unique(mdr_tb_m_interactions$date)
+
+asv_tab_all_bloo_z_tax_red_asv$date
+mdr_tb_m_interactions$date
+
+mdr_tb_m_interactions |>
+  str()
+
+asv_tab_all_bloo_z_tax_red_asv |>
+  str()
+
+asv_tab_all_bloo_z_tax_red_asv$bloom_event |>
+  is.na() |>
+  summary() 
+
+test <-  asv_tab_all_bloo_z_tax_red_asv |>
+dplyr::filter(date %in% c('2004-03-22', '2005-02-15', '2005-05-10')) 
+
+test2 <- mdr_tb_m_interactions |>
+  dplyr::mutate(date = as.Date(date)) |>
+  dplyr::mutate(date = as.character(date)) |>
+  dplyr::filter(date %in% c('2004-03-22', '2005-02-15', '2005-05-10')) 
+
+test |>
+  left_join(test2)
+
+test2 |>
+  left_join(test)
+
+mdr_interactions_rclr <- mdr_tb_m_interactions |>
+  dplyr::mutate(date = as.Date(date)) |>
+  dplyr::mutate(date = as.character(date)) |>
+  #dplyr::mutate(date = as.Date(date_ed)) |>
+ # dplyr::filter(date %in% c('2004-03-22', '2005-02-15', '2005-05-10')) |> 
+  left_join(asv_tab_all_bloo_z_tax_red_asv, by = c('asv_num', 'fraction', 'date' = 'date')) |>
+  left_join(bloo_taxonomy, by = 'asv_num') |>
+  dplyr::mutate(
+    interaction_negative = case_when(is.na(interaction_negative) ~ 0,  # Numeric '0'
+                                     TRUE ~ as.numeric(interaction_negative)),
+    interaction_positive = case_when(is.na(interaction_positive) ~ 0,  # Numeric '0'
+                                     TRUE ~ as.numeric(interaction_positive))
+  ) |>
+  dplyr::mutate(interaction_balance = interaction_positive+interaction_negative)
+
+mdr_interactions_rclr |>
+  dplyr::filter(is.na(bloom_event))
+
+mdr_interactions_rclr |>
+  colnames()
+
+mdr_interactions_rclr |>
+  dplyr::filter(!is.na(bloom_event)) |>
+  #dplyr::filter(abs(as.numeric(value)) > 0.05) |>
+  #dplyr::filter(bloom_event == 'bloom') |>
+  ggplot(aes(bloom_event, as.numeric(interaction_balance)))+
+  #scale_y_continuous(sec.axis = sec_axis(~.*80 , name = 'rCLR'))+
+  # geom_smooth(#data = asv_tab_all_bloo_z_tax_red_asv, 
+  #             #aes(date, y = as.numeric(abundance_value)/80), 
+  #             span = 0.022, color = 'darkred', se = F)+
+  #geom_smooth(aes(group = fraction), method = 'loess',  color = 'darkgrey')+
+  geom_point(aes(shape = fraction), position = position_dodge(width = 0.25))+ #alpha = if_else(bloom_event == 'bloom', 0.9, 0.1)
+  geom_boxplot(aes(), notch = T, alpha = 0.2)+
+  #geom_point(aes(shape = fraction, alpha = 0.6, color = if_else(order.x == order.y, order.y, 'white')))+
+  facet_wrap(vars(asv_num), ncol = 2)+
+  scale_x_discrete(labels = c('bloom' = 'Bloom', 'no-bloom' = 'No Bloom'))+
+  scale_color_manual(values = palette_order_assigned_all)+
+  theme_bw()+
+  guides(alpha = 'none')+
+  labs(x = '', y = 'Interaction Balance', color = '')+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 12),
+        axis.text.x = element_text(size = 10),
+        panel.border = element_blank())
+
+#### Relative abundance ----
+asv_tab_all_bloo_z_tax_red <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(abundance_type == 'relative_abundance') |>
+  dplyr::select(asv_num, fraction, date, abundance_value) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num %in% c('asv11', 'asv7', 'asv1', 'asv22', 'asv23', 'asv31', 'asv17'))
+
+mdr_tb_m_positive <- mdr_tb_m |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num %in% c ('asv23', 'asv1', 'asv11', 'asv22', 'asv31', 'asv7', 'asv17')) |>
+  pivot_longer(cols = starts_with(c('bp', 'bn')), values_to = 'interaction_strength') |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff) |>
+  dplyr::filter(as.numeric(interaction_strength) > 0) |>
+  dplyr::group_by(date, fraction, asv_num) |>
+  dplyr::reframe(interaction_positive = sum(as.numeric(interaction_strength)))
+
+mdr_tb_m_negative <- mdr_tb_m |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num %in% c ('asv23', 'asv1', 'asv11', 'asv22', 'asv31', 'asv7', 'asv17')) |>
+  pivot_longer(cols = starts_with(c('bp', 'bn')), values_to = 'interaction_strength') |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff) |>
+  dplyr::filter(as.numeric(interaction_strength) < 0) |>
+  dplyr::group_by(date, fraction, asv_num) |>
+  dplyr::reframe(interaction_negative = sum(as.numeric(interaction_strength)))
+
+mdr_tb_m_interactions <- mdr_tb_m_positive |>
+  left_join(mdr_tb_m_negative) |>
+  dplyr::mutate(date = as.Date(date))
+
+asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(abundance_value_scaled = scale(abundance_value))|>
+  dplyr::filter(asv_num %in% c ('asv23', 'asv1', 'asv11', 'asv22', 'asv31', 'asv7', 'asv17')) |>
+  dplyr::filter(
+    (asv_num == 'asv1'  & fraction %in% c('0.2', '3')) |
+      (asv_num == 'asv11' & fraction %in% c('0.2'))       |
+      (asv_num == 'asv23' & fraction %in% c('0.2', '3'))  |
+      (asv_num == 'asv31' & fraction %in% c('3'))         |
+      (asv_num == 'asv7'  & fraction %in% c('0.2', '3'))  |
+      (asv_num == 'asv22' & fraction %in% c('3')) |
+      (asv_num == 'asv17' & fraction %in% c('3', '0.2'))) |>
+  dplyr::mutate(date = as.Date(date))
+
+# asv_tab_all_bloo_z_tax_red_asv$date
+# mdr_tb_m_interactions$date
+
+mdr_interactions_rclr <- mdr_tb_m_interactions |>
+  left_join(asv_tab_all_bloo_z_tax_red_asv) |>
+  #dplyr::mutate(abundance_value = abundance_value) |>
+  pivot_longer(cols = c('interaction_positive', 'interaction_negative'), 
+               values_to = 'value', names_to = 'variable') |>
+  left_join(bloo_taxonomy, by = 'asv_num')
+
+plot_interactions_summary_relative_abundance <- mdr_interactions_rclr  |>
+  ggplot(aes(date, as.numeric(value)))+
+  scale_y_continuous(sec.axis = sec_axis(~./10 , name = 'Relative abundance'))+
+  # geom_line(aes(date, y = as.numeric(abundance_value)*3), 
+  #             color = '#D6AAA1', linetype = 'dotted')+
+  # geom_smooth(aes(date, y = as.numeric(abundance_value)*10), span = 0.1,
+  #             color = '#D6AAA1',  fill = '#D6AAA1', se = T, linetype = 'dotted')+
+  geom_smooth(method = 'loess', span = 0.1, aes(color = variable, group = variable, fill = variable), alpha = 0.5)+
+  geom_smooth(aes(date, y = as.numeric(abundance_value)*10), span = 0.1,
+              color = '#D6AAA1',  fill = '#D6AAA1', se = T, linetype = 'dotted', alpha = 0.5)+
+  #geom_line( aes(color = variable, group = variable))+
+  facet_wrap(asv_num~fraction, labeller = labs_fraction, ncol = 3, scales = 'free_y')+#, labeller = labs_fraction
+  scale_color_manual(values = palette_interactions, labels = labs_interactions)+
+  scale_fill_manual(values = palette_interactions, labels = labs_interactions)+
+  #scale_linetype_manual()+
+  theme_bw()+
+  labs(x = 'Date', y = 'Interaction Strength', color = 'Interactions', fill = 'Interactions')+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 12),
+        axis.text.x = element_text(size = 8),
+        strip.text = element_text(size = 8),
+        panel.border = element_blank(),
+        legend.position = 'bottom')
+
+plot_interactions_summary_relative_abundance
+# 
+# ggsave(filename = 'plot_interactions_summary_relative_abundance_v2.pdf',
+#        plot = plot_interactions_summary_relative_abundance,
+#        path = 'results/figures/',
+#        width = 180, height = 280, units = 'mm')
+
+## Relationship between interactions and abundances ----
+### rCLR ----
+asv_tab_all_bloo_z_tax_red <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(abundance_type == 'rclr') |>
+  dplyr::select(asv_num, fraction, date, abundance_value) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num %in% c('asv11', 'asv7', 'asv1', 'asv22', 'asv23', 'asv31', 'asv17'))
+
+asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(abundance_value_scaled = scale(abundance_value))|>
+  dplyr::filter(asv_num %in% c('asv23', 'asv1', 'asv11', 'asv22', 'asv31', 'asv7', 'asv17')) |> 
+  dplyr::filter(
+    (asv_num == 'asv1'  & fraction %in% c('0.2', '3')) |
+      (asv_num == 'asv11' & fraction %in% c('0.2'))       |
+      (asv_num == 'asv23' & fraction %in% c('0.2', '3'))  |
+      (asv_num == 'asv31' & fraction %in% c('3'))         |
+      (asv_num == 'asv7'  & fraction %in% c('0.2', '3'))  |
+      (asv_num == 'asv22' & fraction %in% c('3')) |
+      (asv_num == 'asv17'  & fraction %in% c('0.2', '3')) ) |>
+  dplyr::mutate(date = as.Date(date))
+
+mdr_interactions_rclr <- mdr_tb_m_interactions |>
+  left_join(asv_tab_all_bloo_z_tax_red_asv) |>
+  #dplyr::mutate(abundance_value = abundance_value) |>
+  # pivot_longer(cols = c('interaction_positive', 'interaction_negative'), 
+  #              values_to = 'value', names_to = 'variable') |>
+  left_join(bloo_taxonomy, by = 'asv_num') |>
+  dplyr::mutate(
+    interaction_negative = case_when(is.na(interaction_negative) ~ 0,  # Numeric '0'
+                                     TRUE ~ as.numeric(interaction_negative)),
+    interaction_positive = case_when(is.na(interaction_positive) ~ 0,  # Numeric '0'
+                                     TRUE ~ as.numeric(interaction_positive))
+  )
+
+##check normality before correlation
+shapiro.test(as.numeric(mdr_interactions_rclr$interaction_positive)) # => p-value < 2.2e-16 ( NO NORMALITY)
+ggqqplot(as.numeric(mdr_interactions_rclr$interaction_positive))
+
+shapiro.test(as.numeric(mdr_interactions_rclr$interaction_negative)) # => p-value < 2.2e-16 ( NO NORMALITY)
+ggqqplot(as.numeric(mdr_interactions_rclr$interaction_negative))
+
+## for non normal data
+cor_spearman <- rcorr(as.matrix(mdr_interactions_rclr[,c(4,5)]), type = 'spearman')
+
+plot_interactions_summary_rclr_relationship <- mdr_interactions_rclr  |>
+  dplyr::mutate(abundance_value = case_when(
+    is.na(as.numeric(abundance_value)) ~ 0,   # Use numeric 0 instead of '0'
+    TRUE ~ as.numeric(abundance_value)        # Ensure the value is numeric
+  )) |>
+  ggplot(aes(interaction_positive, abs(interaction_negative)))+
+  geom_abline(slope = 1, intercept = 0, color = '#0F3331', linetype = 'dashed')+
+  #scale_y_continuous(sec.axis = sec_axis(~./10 , name = 'rCLR'))+
+  geom_point(aes(size = as.numeric(abundance_value), shape = fraction, color = fraction, fill = fraction, alpha = 0.7))+
+  stat_poly_line(aes(group = fraction, color = fraction, fill = fraction))+
+  stat_cor(aes(group = fraction, color = fraction,  label = paste0(..p.label..)),label.x = 0.2, label.y = 7, 
+           p.digits = 0.01, digits = 2, 
+           p.accuracy = 0.01, method = 'spearman')+
+  stat_cor(aes(group = fraction, color = fraction,  label = paste0(..r.label..)),label.x = 0.2, label.y = 8, 
+           p.digits = 0.01, digits = 2, 
+           p.accuracy = 0.01, method = 'spearman')+
+  #facet_wrap(vars(asv_num), labeller = labs_fraction)+#, labeller = labs_fraction
+  scale_color_manual(values = palette_fraction, labels = labs_fraction)+
+  scale_fill_manual(values = palette_fraction, labels = labs_fraction)+
+  scale_shape_discrete(labels = labs_fraction)+
+  scale_size_continuous(range = c(0, 5), limits = c(0, 10), breaks = c(0, 2.5, 5, 10) )+
+  #scale_linetype_manual()+
+  guides(alpha = 'none')+
+  theme_bw()+
+  labs(x = 'Interaction positive', y = 'Interaction negative', color = 'Interactions', fill = 'Interactions',
+       shape = 'Fraction', size = 'rCLR')+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 12),
+        axis.text.x = element_text(size = 10),
+        panel.border = element_blank(),
+        aspect.ratio = 10/10)
+
+plot_interactions_summary_rclr_relationship
+
+# ggsave(filename = 'plot_interactions_summary_rclr_relationship_v2.pdf',
+#        plot = plot_interactions_summary_rclr_relationship,
+#        path = 'results/figures/',
+#        width = 180, height = 180, units = 'mm')
+
+### Relative abundance ----
+asv_tab_all_bloo_z_tax_red <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(abundance_type == 'relative_abundance') |>
+  dplyr::select(asv_num, fraction, date, abundance_value) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num %in% c('asv11', 'asv7', 'asv1', 'asv22', 'asv23', 'asv31', 'asv17'))
+
+asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(abundance_value_scaled = scale(abundance_value))|>
+  dplyr::filter(asv_num %in% c ('asv23', 'asv1', 'asv11', 'asv22', 'asv31', 'asv7', 'asv17')) |>
+  dplyr::filter(
+    (asv_num == 'asv1'  & fraction %in% c('0.2', '3')) |
+      (asv_num == 'asv11' & fraction %in% c('0.2'))       |
+      (asv_num == 'asv23' & fraction %in% c('0.2', '3'))  |
+      (asv_num == 'asv31' & fraction %in% c('3'))         |
+      (asv_num == 'asv7'  & fraction %in% c('0.2', '3'))  |
+      (asv_num == 'asv22' & fraction %in% c('3'))|
+      (asv_num == 'asv17'  & fraction %in% c('0.2', '3')) ) |>
+  dplyr::mutate(date = as.Date(date))
+
+mdr_interactions_rclr <- mdr_tb_m_interactions |>
+  left_join(asv_tab_all_bloo_z_tax_red_asv) |>
+  #dplyr::mutate(abundance_value = abundance_value) |>
+  # pivot_longer(cols = c('interaction_positive', 'interaction_negative'), 
+  #              values_to = 'value', names_to = 'variable') |>
+  left_join(bloo_taxonomy, by = 'asv_num') |>
+  dplyr::mutate(
+    interaction_negative = case_when(is.na(interaction_negative) ~ 0,  # Numeric '0'
+                                     TRUE ~ as.numeric(interaction_negative)),
+    interaction_positive = case_when(is.na(interaction_positive) ~ 0,  # Numeric '0'
+                                     TRUE ~ as.numeric(interaction_positive))
+  )
+
+##check normality before correlation
+shapiro.test(as.numeric(mdr_interactions_rclr$interaction_positive)) # => p-value < 2.2e-16 ( NO NORMALITY)
+ggqqplot(as.numeric(mdr_interactions_rclr$interaction_positive))
+
+shapiro.test(as.numeric(mdr_interactions_rclr$interaction_negative)) # => p-value < 2.2e-16 ( NO NORMALITY)
+ggqqplot(as.numeric(mdr_interactions_rclr$interaction_negative))
+
+## for non normal data
+cor_spearman <- rcorr(as.matrix(mdr_interactions_rclr[,c(4,5)]), type = 'spearman')
+
+plot_interactions_summary_relative_abundance_relationship <- mdr_interactions_rclr  |>
+  dplyr::mutate(abundance_value = case_when(
+    is.na(as.numeric(abundance_value)) ~ 0,   # Use numeric 0 instead of '0'
+    TRUE ~ as.numeric(abundance_value)        # Ensure the value is numeric
+  )) |>
+  ggplot(aes(interaction_positive, abs(interaction_negative)))+
+  geom_abline(slope = 1, intercept = 0, color = '#0F3331', linetype = 'dashed')+
+  #scale_y_continuous(sec.axis = sec_axis(~./10 , name = 'Relative abundance'))+
+  geom_point(aes(size = abundance_value, shape = fraction, color = fraction, fill = fraction, alpha = 0.7))+
+  stat_poly_line(aes(group = fraction, color = fraction, fill = fraction))+
+  stat_cor(aes(group = fraction, color = fraction,  label = paste0(..p.label..)),label.x = 0.2, label.y = 7, 
+           p.digits = 0.01, digits = 2, 
+           p.accuracy = 0.01, method = 'spearman')+
+  stat_cor(aes(group = fraction, color = fraction,  label = paste0(..r.label..)),label.x = 0.2, label.y = 8, 
+           p.digits = 0.01, digits = 2, 
+           p.accuracy = 0.01, method = 'spearman')+
+  #facet_wrap(vars(asv_num), labeller = labs_fraction)+#, labeller = labs_fraction
+  scale_color_manual(values = palette_fraction, labels = labs_fraction)+
+  scale_fill_manual(values = palette_fraction, labels = labs_fraction)+
+  scale_shape_discrete(labels = labs_fraction)+
+  scale_size_continuous(range = c(0, 5), limits = c(0, 0.5), breaks = c(0, 0.25, 0.5) )+
+  #scale_linetype_manual()+
+  guides(alpha = 'none')+
+  theme_bw()+
+  labs(x = 'Interaction positive', y = 'Interaction negative', color = 'Interactions', fill = 'Interactions',
+       shape = 'Fraction', size = 'Relative Abundance')+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 12),
+        axis.text.x = element_text(size = 10),
+        panel.border = element_blank(),
+        aspect.ratio = 10/10)
+
+plot_interactions_summary_relative_abundance_relationship
+
+# ggsave(filename = 'plot_interactions_summary_relative_abundance_relationship_v2.pdf',
+#        plot = plot_interactions_summary_relative_abundance_relationship,
+#        path = 'results/figures/',
+#        width = 180, height = 180, units = 'mm')
+
+## Bloomers effects ON other ASVs -----
+### I would like to observe what is the effect that some bloomers have on other community members -----
+
+asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(abundance_type == 'rclr') |>
+  dplyr::select(asv_num, fraction, date, abundance_value) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  #dplyr::mutate(abundance_value_scaled = scale(abundance_value))|>
+  dplyr::filter(asv_num %in% c ('asv23', 'asv1', 'asv11', 'asv22', 'asv31', 'asv7', 'asv17')) |>
+  dplyr::filter(
+    (asv_num == 'asv1'  & fraction %in% c('0.2', '3')) |
+      (asv_num == 'asv11' & fraction %in% c('0.2'))       |
+      (asv_num == 'asv23' & fraction %in% c('0.2', '3'))  |
+      (asv_num == 'asv31' & fraction %in% c('3'))         |
+      (asv_num == 'asv7'  & fraction %in% c('0.2', '3'))  |
+      (asv_num == 'asv22' & fraction %in% c('3')) |
+      (asv_num == 'asv17' & fraction %in% c('3', '0.2')),
+    ) |>
+  dplyr::mutate(date = as.Date(date))
+
+mdr_tb_m_positive <- mdr_tb_m |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::select(time, variable, bp_asv1, bn_asv1, bp_asv11, bp_asv23, bn_asv23,
+                bn_asv31, bn_asv7, bp_asv7, bn_asv7) |>
+  pivot_longer(cols = starts_with(c('bp', 'bn')), values_to = 'interaction_strength') |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  #left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  left_join(variable_num_tb, by = c('variable' = 'variable_num')) |>
+  separate(variable_name, sep = '_', into = c('fraction_aff', 'asv_num_aff')) |>
+  dplyr::filter(asv_num_aff != asv_num_eff) |>
+  dplyr::filter(as.numeric(interaction_strength) > 0) |>
+  dplyr::group_by(asv_num_aff, time, fraction_aff) |>
+  dplyr::reframe(interaction_strength = sum(as.numeric(interaction_strength)))
+
+mdr_tb_m_negative <- mdr_tb_m |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::select(time, variable, bp_asv1, bn_asv1, bp_asv11, bp_asv23, bn_asv23,
+                bn_asv31, bn_asv7, bp_asv7, bn_asv7) |>
+  pivot_longer(cols = starts_with(c('bp', 'bn')), values_to = 'interaction_strength') |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  #left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  left_join(variable_num_tb, by = c('variable' = 'variable_num')) |>
+  separate(variable_name, sep = '_', into = c('fraction_aff', 'asv_num_aff')) |>
+  dplyr::filter(asv_num_aff != asv_num_eff) |>
+  dplyr::filter(as.numeric(interaction_strength) < 0) |>
+  dplyr::group_by(asv_num_aff, time, fraction_aff) |>
+  dplyr::reframe(interaction_strength = sum(as.numeric(interaction_strength)))
+
+mdr_tb_m_interactions <- mdr_tb_m_positive |>
+  full_join(mdr_tb_m_negative) |>
+  dplyr::mutate(fraction = case_when(str_detect(fraction_aff, 'bp') ~ '0.2',
+                                     str_detect(fraction_aff, 'bn') ~ '3')) |>
+  left_join(time_num, by = c('time' = 'time_num', 'fraction')) |>
+  dplyr::mutate(date = as.Date(date)) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_aff' = 'asv_num'))
+
+asv_tab_all_bloo_z_tax_red_asv$date
+mdr_tb_m_interactions$date
+
+# mdr_interactions_rclr <- mdr_tb_m_interactions |>
+#   #left_join(asv_tab_all_bloo_z_tax_red_asv) |>
+#   pivot_longer(cols = c('interaction_positive', 'interaction_negative'), 
+#                values_to = 'value', names_to = 'variable') |>
+#   left_join(bloo_taxonomy, by = 'asv_num')
+mdr_tb_m_interactions$order |>
+  unique()
+
+mdr_tb_m_interactions$order <- factor(mdr_tb_m_interactions$order, levels = c('Synechococcales',
+                                                                              'Enterobacterales',
+                                                                              'Pseudomonadales',
+                                                                              'SAR11 clade',
+                                                                              'Puniceispirillales',
+                                                                              'Rhodobacterales',
+                                                                              'Sphingomonadales',
+                                                                              'Rhodospirillales',
+                                                                              'Flavobacteriales',
+                                                                              'Verrucomicrobiales'))
+
+plot_interactions_summary_rclr <- mdr_tb_m_interactions  |>
+  left_join(asv_tab_all_bloo_z_tax_red_asv)+
+  ggplot(aes(date, as.numeric(interaction_strength)))+
+  coord_flip()+
+  geom_point(aes(shape = fraction, color = order, fill = order))+
+  #scale_y_continuous(sec.axis = sec_axis(~./1 , name = 'rCLR'))+
+  # geom_smooth(aes(date, y = as.numeric(abundance_value)*1), span = 0.1, 
+  #             color = '#D6AAA1',  fill = '#D6AAA1', se = T, linetype = 'dotted')+
+  #geom_smooth(method = 'loess', span = 0.1, aes(color = variable, group = variable, fill = variable))+
+  geom_line( aes(x = as.numeric(abundance_value), color = order, group = asv_num))+
+  facet_wrap(vars(order))+#, labeller = labs_fraction
+  geom_violin(alpha = 0.1)+
+  scale_color_manual(values = palette_order_assigned_all)+
+  scale_fill_manual(values = palette_order_assigned_all)+
+  theme_bw()+
+  labs(x = 'Date', y = 'Interaction Strength', color = 'Interactions', fill = 'Interactions')+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 12),
+        axis.text.x = element_text(size = 8),
+        strip.text = element_text(size = 10),
+        panel.border = element_blank(),
+        legend.position = 'bottom')
+
+plot_interactions_summary_rclr
+
+# ggsave(filename = 'plot_interactions_summary_rclr.pdf',
+#        plot = plot_interactions_summary_rclr,
+#        path = 'results/figures/',
+#        width = 180, height = 280, units = 'mm')
+
+
+
+
