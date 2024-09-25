@@ -1,4 +1,9 @@
 # packages ----
+library(tidyverse)
+library(ggplot2)
+library(vegan)
+library(purrr)
+library(broom)
 
 
 # upload data ---
@@ -7,6 +12,24 @@ asv_tab_all_bloo_z_tax <- read.csv2('data/detect_bloo/asv_tab_all_bloo_z_tax_new
   dplyr::select(-X)
 
 bloo_all_types_summary_tax <- read.csv('results/tables/bloo_all_types_summary_tb_tax_v2.csv')
+
+occurrence_bloo_bbmo <- read.delim2('data/occurrence_bloo_bbmo.csv', sep = ',') |>
+  dplyr::mutate(occurrence_category = ifelse(occurrence_perc > 2/3, 'broad',
+                                             ifelse(occurrence_perc < 1/3, 'narrow',
+                                                    'intermediate')))
+
+harbour_restoration_dec <- tibble(xmin = '2010.24', xmax = '2010.52') |>
+  dplyr::mutate(date_min = as.numeric(xmin),
+                date_max = as.numeric(xmax))
+
+### we work with two different datasets one for FL and the other for PA
+wavelet_3_df <- read.csv2('data/wavelet_3_df_deconstand.csv', sep = ',') |>
+  as_tibble() |>
+  dplyr::select(-X)
+
+wavelet_02_df <- read.csv2('data/wavelet_02_df_deconstand.csv') |>
+  as_tibble() |>
+  dplyr::select(-X)
 
 # palettes ----
 palette_occurrence <- c(narrow = "#AE659B",
@@ -772,6 +795,7 @@ examples_bloomers_types_titles_observed <- grid.arrange(plot1, plot2, plot3,
 #        width = 188, height = 230, units = 'mm')
 
 
+
 #  ------ ########## Figure seasonal bloomers do not bloom every year ------ ########## ------ 
 
 bloo_all_types_summary_tb <- bloo_all_types_summary_tb_tax_v2 |>
@@ -858,7 +882,218 @@ seasonal_bloo_y
 #        # path = 'results/figures/',
 #        width = 180, height = 200, units = 'mm')
 # ------ Figure harbor restoration ------ ########## ------
-## how was the diverstiy affected by the harbor restoration ----
+## are there statistically significant differences? -----
+data <- asv_tab_all_bloo_z_tax |> 
+  dplyr::mutate(date = as.POSIXct(date, format = "%Y-%m-%d")) |> 
+  dplyr::mutate(harbor_restoration = case_when(
+    date < '2010-03-24' ~ 'pre_perturbation',
+    date >= '2010-03-24' & date < '2012-06-09' ~ 'perturbation',
+    date >= '2012-06-09' ~ 'after_perturbation'
+  )) |> 
+  dplyr::filter(fraction == '3') |> 
+  dplyr::filter(abundance_type == 'rclr') 
+
+positive_negative_effect_stats <- data |> 
+  dplyr::group_by(asv_num) |>  # Group by ASV
+  tidyr::nest() |>  # Nest the data for each ASV
+  dplyr::mutate(
+    # For each ASV, extract the nested data and calculate pre, perturbation, and after means
+    pre_values = map(data, ~ .x$abundance_value[.x$harbor_restoration == "pre_perturbation"]),
+    pert_values = map(data, ~ .x$abundance_value[.x$harbor_restoration == 'perturbation']),
+    after_values = map(data, ~ .x$abundance_value[.x$harbor_restoration == 'after_perturbation']),
+    
+    # Perform the global test comparing pre, perturbation, and after
+    test_result = pmap(list(pre_values, pert_values, after_values), ~ {
+      pre_vals <- ..1
+      pert_vals <- ..2
+      after_vals <- ..3
+      
+      # Skip if any of the groups has fewer than 2 values
+      if (length(pre_vals) > 1 & length(pert_vals) > 1 & length(after_vals) > 1) {
+        # Check if all values in any group are identical (constant values)
+        pre_identical = length(unique(pre_vals)) == 1
+        pert_identical = length(unique(pert_vals)) == 1
+        after_identical = length(unique(after_vals)) == 1
+        
+        # Perform normality test only if the values in the group are not constant
+        pre_normal = if (!pre_identical) shapiro.test(pre_vals)$p.value > 0.05 else FALSE
+        pert_normal = if (!pert_identical) shapiro.test(pert_vals)$p.value > 0.05 else FALSE
+        after_normal = if (!after_identical) shapiro.test(after_vals)$p.value > 0.05 else FALSE
+        
+        # Choose between ANOVA or Kruskal-Wallis based on normality
+        if (pre_normal & pert_normal & after_normal) {
+          # Prepare data for ANOVA
+          df = tibble(
+            abundance_value = c(pre_vals, pert_vals, after_vals),
+            harbor_restoration = rep(c("pre_perturbation", "perturbation", "after_perturbation"),
+                                     times = c(length(pre_vals), length(pert_vals), length(after_vals)))
+          )
+          # Perform one-way ANOVA
+          aov_res = aov(abundance_value ~ harbor_restoration, data = df)
+          tidy(aov_res) |> dplyr::filter(term == "harbor_restoration") |> pull(p.value)
+        } else {
+          # Prepare data for Kruskal-Wallis test
+          df = tibble(
+            abundance_value = c(pre_vals, pert_vals, after_vals),
+            harbor_restoration = rep(c("pre_perturbation", "perturbation", "after_perturbation"),
+                                     times = c(length(pre_vals), length(pert_vals), length(after_vals)))
+          )
+          # Perform Kruskal-Wallis test
+          kruskal_res = kruskal.test(abundance_value ~ harbor_restoration, data = df)
+          kruskal_res$p.value
+        }
+      } else {
+        NA_real_  # Skip if there is insufficient data
+      }
+    }),
+    
+    # Compute mean values for classification
+    mean_pre = map_dbl(pre_values, ~ mean(.x, na.rm = TRUE)),
+    mean_pert = map_dbl(pert_values, ~ mean(.x, na.rm = TRUE)),
+    mean_after = map_dbl(after_values, ~ mean(.x, na.rm = TRUE)),
+    
+    # Classify harbor effect based on the mean comparisons
+    harbor_effect = case_when(
+      mean_pre > mean_pert ~ 'negative',
+      mean_pre < mean_pert ~ 'positive',
+      mean_after > mean_pert | mean_after > mean_pre ~ 'opportunistic',
+      TRUE ~ 'neutral'
+    ),
+    
+    # Mark if the global test is significant
+    significant = ifelse(!is.na(test_result) & test_result < 0.05, TRUE, FALSE)
+  ) |> 
+  dplyr::select(asv_num, harbor_effect, test_result, significant) |>
+  as_tibble()
+
+positive_negative_effect_stats  |> 
+  dplyr::filter(significant == 'TRUE') #32
+
+positive_negative_effect |>
+  left_join(positive_negative_effect_stats) |>
+  dplyr::filter(harbor_effect_rclr != harbor_effect) ## none! 
+
+clear_effect_asvs <- positive_negative_effect |>
+  left_join(positive_negative_effect_stats) |>
+  dplyr::filter(harbor_effect_rclr == harbor_effect) |>
+  left_join(bloo_all_types_summary_tax_3)
+
+clear_effect_asvs |>
+  dplyr::filter(significant == 'TRUE') # 32 ASVs
+
+## plot to check that stats are correct ----
+data <- asv_tab_all_bloo_z_tax |> 
+  dplyr::mutate(date = as.POSIXct(date, format = "%Y-%m-%d")) |> 
+  dplyr::mutate(harbor_restoration = case_when(
+    date < '2010-03-24' ~ 'pre_perturbation',
+    date >= '2010-03-24' & date < '2012-06-09' ~ 'perturbation',
+    date >= '2012-06-09' ~ 'after_perturbation'
+  )) |> 
+  dplyr::group_by(harbor_restoration, abundance_type, asv_num) |> 
+  dplyr::filter(fraction == '3') |> 
+  dplyr::filter(abundance_type == 'rclr') |>
+  left_join(positive_negative_effect_stats) |>
+  dplyr::mutate(asv_num = reorder(asv_num, significant == "Significant", FUN = max))
+
+data$significant <- factor(data$significant, levels = c('TRUE', 'FALSE'), labels = c('Significant', 'Non-significant'))
+data$harbor_restoration <- factor(data$harbor_restoration, levels = c('pre_perturbation', 'perturbation', 'after_perturbation'))
+
+differential_abundance_harbor_plot <- data |>
+  ggplot(aes(harbor_restoration, abundance_value))+
+  geom_point(aes(color = significant, shape = significant), position = position_jitter(width = 0.25))+
+  geom_boxplot(alpha = 0.2)+
+  scale_color_manual(values = c('#4cb76a', '#2466BF'))+
+  scale_x_discrete(labels = c('pre_perturbation' = 'Pre', 'perturbation' = 'Perturbation', 'after_perturbation' = 'Post'))+
+  labs(x = '', y = 'rCLR', color = '', shape = '')+
+  facet_wrap(vars(interaction(order_f, asv_num_f)), scales = 'free', ncol = 5)+
+  theme_bw()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        legend.position = 'bottom',
+        panel.grid = element_blank(), text = element_text(size = 8),
+        strip.text = element_text(margin = margin(2, 2, 2, 2)),
+        #plot.margin = unit(c(0.2, 5, 0.5, 0.5), "cm"),
+        legend.key.size = unit(3, 'mm'))
+
+differential_abundance_harbor_plot
+
+# ggsave(filename = 'differential_abundance_harbor_plot.pdf',
+#        plot = differential_abundance_harbor_plot,
+#        path = 'Results/Figures/',
+#        width = 180, height = 230, units = 'mm')
+
+
+asv_tab_all_bloo_z_tax_sig <- asv_tab_all_bloo_z_tax |>
+  #dplyr::filter(asv_num %in% wavelet_results_category_harbor_affected$asv_num) |>
+  #left_join(summary_types_of_blooms, by = c('asv_num', 'fraction')) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(abundance_type == 'rclr') |>
+  dplyr::filter(fraction == '3') |>
+  left_join(clear_effect_asvs) |>
+  dplyr::mutate(type_of_bloomer = case_when(type_of_bloomer == 'Inter-Annual' ~ 'Chaotic',
+                                            type_of_bloomer == "Year-to-Year" ~ 'Chaotic',
+                                            type_of_bloomer ==  "No-significant Periodicity" ~ 'Chaotic',
+                                            type_of_bloomer == 'Recurrent' ~ 'Seasonal',
+                                            TRUE ~ type_of_bloomer))
+### Plot with harbor restoration images ----
+asv_tab_all_bloo_z_tax_sig$harbor_effect <- factor(asv_tab_all_bloo_z_tax_sig$harbor_effect, levels = c('negative', 'positive'))
+
+asv_tab_all_bloo_z_tax_sig$type_of_bloomer <- factor(asv_tab_all_bloo_z_tax_sig$type_of_bloomer, levels = c('Seasonal', 'Chaotic'))
+
+harbor_pa_stats_plot <- asv_tab_all_bloo_z_tax_sig |>
+  dplyr::filter(significant == 'TRUE') |>
+  dplyr::mutate(harbor_effect = case_when(harbor_effect == 'positive' ~ 'Positive',
+                                          harbor_effect == 'negative' ~ 'Negative')) |>
+  dplyr::group_by(date, fraction, order_f, family_f, abundance_type, type_of_bloomer, harbor_effect) |>
+  dplyr::reframe(abund_max = sum(abundance_value)) |>
+  ggplot(aes(date, abund_max))+
+  #scale_y_continuous(labels = percent_format())+
+  geom_vline(xintercept = as.POSIXct('2010-03-24', format = "%Y-%m-%d"), linetype = 'dashed') +
+  geom_vline(xintercept = as.POSIXct('2010-07-01', format = "%Y-%m-%d"), linetype = 'dashed') +
+  geom_vline(xintercept = as.POSIXct('2012-06-09', format = "%Y-%m-%d"), linetype = 'dashed') +
+  geom_rect(data = harbour_restoration_dec, mapping=aes(xmin = as.POSIXct('2010-07-01', format = "%Y-%m-%d"), 
+                                                        xmax = as.POSIXct('2010-08-31', format = "%Y-%m-%d"), x=NULL, y=NULL,
+                                                        ymin = -Inf, ymax = Inf), fill = '#94969E', alpha = 0.6)+
+  geom_rect(data = harbour_restoration_dec, mapping=aes(xmin = as.POSIXct('2011-07-01', format = "%Y-%m-%d"), 
+                                                        xmax = as.POSIXct('2011-08-31', format = "%Y-%m-%d"), x=NULL, y=NULL,
+                                                        ymin = -Inf, ymax = Inf), fill = '#94969E', alpha = 0.6)+
+  scale_fill_manual(values = palette_family_assigned_bloo)+
+  labs(y = 'rCLR', x = 'Time', fill = 'Family')+
+  geom_area(aes(group = family_f, fill = family_f), position = 'stack')+
+  #facet_wrap(vars(harbor_group), ncol = 1, scales = 'free_y')+
+  #facet_grid(type_of_bloomer~harbor_effect,  scales = 'free_y')+
+  facet_wrap(vars(interaction(type_of_bloomer, harbor_effect)),  scales = 'free_y', ncol = 1)+
+  guides(fill = guide_legend(ncol = 1))+
+  theme_bw()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        legend.position = 'right',
+        #aspect.ratio = 6/11,
+        panel.grid = element_blank(), text = element_text(size = 10),
+        strip.text = element_text(margin = margin(2, 2, 2, 2)),
+        plot.margin = unit(c(0.2, 0.5, 5.25, 0.5), "cm"),
+        legend.key.size = unit(4, 'mm'))
+
+composition <- plot_grid(harbor_pa_stats_plot, align = "hv", nrow = 1) + 
+  draw_image("data/env_data/harbour_restoration_data/blanes_harbor_icgc/Blanes_2010.jpg", x = 0.05, y = 0, width = 0.25, height = 0.25) +
+  draw_image("data/env_data/harbour_restoration_data/blanes_harbor_icgc/Blanes_2011.jpg", x = 0.33, y = 0, width = 0.25, height = 0.25) +
+  draw_image("data/env_data/harbour_restoration_data/blanes_harbor_icgc/Blanes_2013.jpg", x = 0.61, y = 0, width = 0.25, height = 0.25)
+
+# Add labels to each part of the composition
+composition_with_labels <- composition +
+  annotate("text", x = 0.03, y = 0.97, label = "A", size = 3) +
+  annotate("text", x = 0.07, y = 0.17, label = "B", size = 3,  colour = "white") +
+  annotate("text", x = 0.34, y = 0.17, label = "C", size = 3, colour = "white") +
+  annotate("text", x = 0.62, y = 0.17, label = "D", size = 3, colour = "white")
+
+# Display the composition with labels
+print(composition_with_labels)
+
+# Save the composition as a PDF
+# ggsave(filename = 'harbor_restoration_plot_photo_rclr_stats_v4.pdf',
+#        plot = composition_with_labels,
+#        path = 'Results/Figures/',
+#        width = 180, height = 200, units = 'mm')
+
+## how was the diversity affected by the harbor restoration ----
 asv_tab_bbmo_10y_w_rar_t <- asv_tab_bbmo_10y_w_rar |>
   t() |>
   as_tibble(rownames = NULL)
@@ -904,6 +1139,7 @@ shannon_harbor_rar_plot <- shannon_rar_m |>
         axis.ticks.x = element_blank())
 
 shannon_harbor_rar_plot 
+
 
 
 
