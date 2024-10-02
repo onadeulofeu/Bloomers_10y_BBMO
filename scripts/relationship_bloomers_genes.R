@@ -7,10 +7,15 @@
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-##packages
+##packages ----
 #library(cowplot)
 library(tidyverse)
 library(gridExtra)
+
+# labels
+labs_fraction_env <- as_labeller(c('0.2' = 'Free living\n(0.2-3 um)',
+                                   '3' = 'Particle attached\n(3-20 um)',
+                                   'env' = 'Environmental\nvariables'))
 
 ##palettes-----
 palette_genes <- c("#ffe355",
@@ -1097,7 +1102,6 @@ library(vegan)
 
 ## I filter genes in MARBITS and then i move to local -----
 ### What I did is filter the genes table by different thresholds, to be able to see if the tendencies are the same even if i'm filtering some genes.
-
 ## threshold 0.001 -------
 threshold_value <- 0.001
 filtered_genes <- read.table('data/genes_sergio/filtered_0.1threshold_BBMO_genes_cleaned2.tbl') ## threshold 0.001
@@ -1334,17 +1338,21 @@ comparison_bray_thresholds
 
 ## Plot community bray curtis with genes bray curtis + euclidean distance + unifrac distance -----
 palette_diversity <- c('genes' = "#270000",
-                       "wunifrac_distance" = "#898989",
+                       "wunifrac_distance" = "'#FFBAA6'",
                        "euclidean_distance" = "#008241",
                        "bray_curtis_community" = "#a21e66", 
                        'bray_curtis_kmers' = '#FFCAFB')
 
 
 labs_diversity <- as_labeller(c('genes' = 'Bray Curtis Genes',
-                                "wunifrac_distance" = 'Weigthed UNIFRAC',
-                                "euclidean_distance" = 'Euclidean Environmental Distance',
-                                "bray_curtis_community" = 'Bray Curtis Community Composition',
+                                "wunifrac_distance" = 'Weigthed\nUNIFRAC',
+                                "euclidean_distance" = 'Euclidean Environmental\nDistance',
+                                "bray_curtis_community" = 'Bray Curtis\nCommunity Composition',
                                 'bray_curtis_kmers' = 'Bray Curtis k-mers'))
+
+labs_fraction_env <- as_labeller(c('0.2' = 'Free living\n(0.2-3 um)',
+                                   '3' = 'Particle attached\n(3-20 um)',
+                                   'env' = 'Environmental\nvariables'))
 
 bray_unifrac_eucl_tb$bray_curtis_type |>
   unique()
@@ -1365,7 +1373,7 @@ bray_unifrac_eucl_tb$bray_curtis_type |>
 # bray_curtis_genes_all$genes_threshold |>
 #   unique()
 
-bray_curtis_genes_all_red <- bray_curtis_genes_all |>
+bray_curtis_genes_all_red <- bray_curtis_genes_filtered_v5 |>
   dplyr::select( date, bray_curtis_result, genes_threshold) |>
   dplyr::mutate(bray_curtis_type = 'genes') |>
   dplyr::mutate(fraction = '0.2') |>
@@ -1398,8 +1406,8 @@ bc_ramiro_red <- bc_ramiro |>
 bray_unifrac_eucl_tb <- bray_curtis_genes_all_red |>
   bind_rows(unifrac_tibble_m_red) |>
   bind_rows(euclidean_distance_tb_red) |>
-  bind_rows(bray_curtis_m_tb_red) |>
-  bind_rows(bc_ramiro_red)
+  bind_rows(bray_curtis_m_tb_red)# |>
+  #bind_rows(bc_ramiro_red)
 
 # plot weighted unifrac distances -----
 
@@ -1537,7 +1545,7 @@ bray_unifrac_eucl_tb_w <- bray_unifrac_eucl_tb_3 |>
   bind_rows(bray_unifrac_eucl_tb_02)
 
 palette_diversity <- c('genes' = "#270000",
-                       "wunifrac_distance" = "#898989",
+                       "wunifrac_distance" = "'#FFBAA6'",
                        "euclidean_distance" = "#008241",
                        "bray_curtis_community" = "#a21e66", 
                        'bray_curtis_kmers' = '#FFCAFB')
@@ -1556,7 +1564,6 @@ shapiro.test(as.numeric(bray_unifrac_eucl_tb_w$bray_curtis_community)) # => p-va
 ggqqplot(as.numeric(bray_unifrac_eucl_tb_w$bray_curtis_community))
 
 #### first correlation: Bray-Curtis genes vs Bray-Curtis community, and Bray-Curtis genes vs. weighted UNIFRAC distance ----
-
 corr_bray_02_plot <- bray_unifrac_eucl_tb_02 |>
   ggplot(aes(bray_curtis_community, genes))+
   geom_abline(slope = 1, intercept = 0, color = 'black', linetype = 'dashed')+
@@ -1573,21 +1580,21 @@ corr_bray_02_plot <- bray_unifrac_eucl_tb_02 |>
            p.accuracy = 0.01, method = 'spearman',
            color = "#a21e66")+
   geom_point(data = bray_unifrac_eucl_tb_02, aes(wunifrac_distance, genes), #shape = 2, 
-             alpha = 0.8,  color = "#898989")+
+             alpha = 0.8,  color = "'#FFBAA6'")+
   stat_cor(data = bray_unifrac_eucl_tb_02, aes(wunifrac_distance, genes, 
     label =   paste(..p.label..)), label.x = 0.05,  
     label.y = 0.3,
-    p.digits = 0.01, digits = 2, p.accuracy = 0.01, method = 'spearman', color = "#898989"#,
+    p.digits = 0.01, digits = 2, p.accuracy = 0.01, method = 'spearman', color = "'#FFBAA6'"#,
     #position = position_jitter(0.0)
   )+
   stat_cor(data = bray_unifrac_eucl_tb_02, aes(wunifrac_distance, genes, 
                                                label =   paste(..r.label..)),
-           label.x = 0.05, label.y = 0.25,  color = "#898989" ,
+           label.x = 0.05, label.y = 0.25,  color = "'#FFBAA6'" ,
            p.digits = 0.01, digits = 2, 
            p.accuracy = 0.01, method = 'spearman')+
   #geom_smooth(method = 'loess', color = 'grey')+
   geom_smooth(method = 'lm', color = "#a21e66", fill = "#a21e66")+
-  geom_smooth(method = 'lm', data = bray_unifrac_eucl_tb_02, aes(wunifrac_distance, genes), color = "#898989", fill = "#898989")+
+  geom_smooth(method = 'lm', data = bray_unifrac_eucl_tb_02, aes(wunifrac_distance, genes), color = "'#FFBAA6'", fill = "'#FFBAA6'")+
   labs(x = 'wUNIFRAC and Bray-CurtisCommunity-Based', y = 'Bray-Curtis Genes Based')+
   theme_bw()+
   theme(axis.text.x = element_text(size = 6), panel.grid.minor = element_blank(),
@@ -1599,6 +1606,94 @@ corr_bray_02_plot <- bray_unifrac_eucl_tb_02 |>
         strip.placement = 'outside', aspect.ratio = 12/12)
 
 corr_bray_02_plot
+
+## Construction of new correlation plot for main text ----
+#### first correlation: Bray-Curtis genes vs Bray-Curtis community, and Bray-Curtis genes vs. weighted UNIFRAC distance ----
+
+corr_bray_02_plot <- bray_unifrac_eucl_tb_02 |>
+  ggplot(aes(bray_curtis_community, genes))+
+  scale_x_continuous(limits = c(0.05, 0.85))+
+  scale_y_continuous(limits = c(0.05, 0.85))+
+  geom_abline(slope = 1, intercept = 0, color = 'black', linetype = 1, alpha = 0.5)+
+  geom_point(color = "#00808F", alpha = 0.8)+
+  stat_cor(aes( #color = 'black', 
+    
+    label =   paste(..p.label..)), label.x = 0.35,
+    label.y = 0.25,
+    p.digits = 0.01, digits = 2, p.accuracy = 0.01, method = 'spearman', color = "#00808F"#,
+    #position = position_jitter(0.0)
+  )+
+  stat_cor(aes( label = paste0(..r.label..)),label.x = 0.35, label.y = 0.2, 
+           p.digits = 0.01, digits = 2, 
+           p.accuracy = 0.01, method = 'spearman',
+           color = "#00808F")+
+  #geom_smooth(method = 'loess', color = 'grey')+
+  geom_smooth(method = 'lm', color = "#00808F", fill = "#00808F")+
+
+  labs(x = 'Bray-Curtis Community-Based', y = 'Bray-Curtis Genes-Based')+
+  theme_bw()+
+  theme(#axis.text.x = element_text(size = 6), 
+    panel.grid.minor = element_blank(),
+        #panel.grid.major.y = element_blank(), strip.text = element_text(size = 12),
+        legend.position = 'bottom', axis.text.y = element_text(size = 10),
+        axis.title = element_text(size = 10), strip.background = element_blank(), 
+        legend.text = element_text(size = 6), legend.title = element_text(size = 8), 
+        panel.border = element_blank(),
+        strip.placement = 'outside', aspect.ratio = 12/12)
+
+corr_bray_02_plot
+
+corr_unifrac_02_plot <- bray_unifrac_eucl_tb_02 |>
+  ggplot(aes(bray_curtis_community, genes))+
+  geom_abline(slope = 1, intercept = 0, color = 'black', linetype = 1, alpha = 0.5)+
+  #geom_smooth(method = 'loess', color = 'grey')+
+  geom_point(data = bray_unifrac_eucl_tb_02, aes(wunifrac_distance, genes), #shape = 2, 
+             alpha = 0.8,  color = "#00808F")+
+  scale_x_continuous(limits = c(0.05, 0.85))+
+  scale_y_continuous(limits = c(0.05, 0.85))+
+  stat_cor(data = bray_unifrac_eucl_tb_02, aes(wunifrac_distance, genes, 
+                                               label =   paste(..p.label..)), label.x = 0.05,  
+           label.y = 0.3,
+           p.digits = 0.01, digits = 2, p.accuracy = 0.01, method = 'spearman', color = "#00808F"#,
+           #position = position_jitter(0.0)
+  )+
+  stat_cor(data = bray_unifrac_eucl_tb_02, aes(wunifrac_distance, genes, 
+                                               label =   paste(..r.label..)),
+           label.x = 0.05, label.y = 0.25,  color = "#00808F" ,
+           p.digits = 0.01, digits = 2, 
+           p.accuracy = 0.01, method = 'spearman')+
+  geom_smooth(method = 'lm', data = bray_unifrac_eucl_tb_02, aes(wunifrac_distance, genes), color = "#00808F", fill ="#00808F")+
+  labs(x = 'Bray-Curtis Community-Based', y = 'Bray-Curtis Genes-Based')+
+  theme_bw()+
+  theme(#axis.text.x = element_text(size = 6), 
+    panel.grid.minor = element_blank(),
+    #panel.grid.major.y = element_blank(), strip.text = element_text(size = 12),
+    legend.position = 'bottom', axis.text.y = element_text(size = 10),
+    axis.title = element_text(size = 10), strip.background = element_blank(), 
+    legend.text = element_text(size = 6), legend.title = element_text(size = 8), 
+    panel.border = element_blank(),
+    strip.placement = 'outside', aspect.ratio = 12/12)
+
+corr_unifrac_02_plot
+
+
+# Now arrange the full layout, with bray_unifrac_eucl_plot occupying the top row
+corr_bray_unifrac_plot <- plot_grid(
+  corr_bray_02_plot, corr_unifrac_02_plot,
+  # Top plot (spanning both columns)          # Second row with two plots
+  ncol = 2,                # One column layout for the main grid
+  #rel_heights = c(1, 2.75, 1, 0.25),   # First plot 3 times the height of the second row
+  labels = c('A', 'B')
+)
+
+# Print the final plot
+print(corr_bray_unifrac_plot)
+
+# ggsave( plot = corr_bray_unifrac_plot,
+#         filename = 'corr_bray_unifrac_plot.pdf',
+#         path = 'results/figures/',
+#         width = 180, height = 100, units = 'mm')
+
 
 ## Environment Bray - Curtis community and Environment Weigthed UNIFRAC distance ---- 
 corr_euclidean_bray_plot <- bray_unifrac_eucl_tb_w |>
@@ -1618,24 +1713,24 @@ corr_euclidean_bray_plot <- bray_unifrac_eucl_tb_w |>
            color = "#a21e66")+
   geom_point(data = bray_unifrac_eucl_tb_w |>
                dplyr::mutate(euclidean_sc = scale(euclidean_distance)), aes(euclidean_sc,  wunifrac_distance), #shape = 2, 
-             alpha = 0.8,  color = "#898989")+
+             alpha = 0.8,  color = "'#FFBAA6'")+
   stat_cor(data = bray_unifrac_eucl_tb_w |>
              dplyr::mutate(euclidean_sc = scale(euclidean_distance)), aes(euclidean_sc,  wunifrac_distance, 
                                                label =   paste(..p.label..)), label.x = 0.05,  
            label.y = 0.3,
-           p.digits = 0.01, digits = 2, p.accuracy = 0.01, method = 'spearman', color = "#898989"#,
+           p.digits = 0.01, digits = 2, p.accuracy = 0.01, method = 'spearman', color = "'#FFBAA6'"#,
            #position = position_jitter(0.0)
   )+
   stat_cor(data = bray_unifrac_eucl_tb_w |>
              dplyr::mutate(euclidean_sc = scale(euclidean_distance)), aes(euclidean_sc,  wunifrac_distance, 
                                                                           label =   paste(..r.label..)),
-           label.x = 0.05, label.y = 0.25,  color = "#898989" ,
+           label.x = 0.05, label.y = 0.25,  color = "'#FFBAA6'" ,
            p.digits = 0.01, digits = 2, 
            p.accuracy = 0.01, method = 'spearman')+
   #geom_smooth(method = 'loess', color = 'grey')+
   geom_smooth(aes(group = fraction), method = 'lm', color = "#a21e66", fill = "#a21e66")+
   geom_smooth(method = 'lm', data = bray_unifrac_eucl_tb_w |>
-                dplyr::mutate(euclidean_sc = scale(euclidean_distance)), aes(euclidean_sc,  wunifrac_distance, group = fraction), color = "#898989", fill = "#898989")+
+                dplyr::mutate(euclidean_sc = scale(euclidean_distance)), aes(euclidean_sc,  wunifrac_distance, group = fraction), color = "'#FFBAA6'", fill = "'#FFBAA6'")+
   labs(x = 'Scaled Euclidean Distance', y = 'Bray-Curtis Communtiy Based & Weigthed UNIFRAC distance')+
   theme_bw()+
   theme(axis.text.x = element_text(size = 10), panel.grid.minor = element_blank(),
@@ -1668,26 +1763,26 @@ corr_euclidean_bray_plot <- bray_unifrac_eucl_tb_w |>
            color = "#a21e66")+
   geom_point(data = bray_unifrac_eucl_tb_w |>
                dplyr::mutate(euclidean_sc = scale(euclidean_distance)), aes(euclidean_distance,  wunifrac_distance), #shape = 2, 
-             alpha = 0.8,  color = "#898989")+
+             alpha = 0.8,  color = "'#FFBAA6'")+
   stat_cor(data = bray_unifrac_eucl_tb_w |>
              dplyr::mutate(euclidean_sc = scale(euclidean_distance)), aes(euclidean_distance,  wunifrac_distance, 
                                                                           label =   paste(..p.label..)), 
            label.x = 8,  
            label.y = 0.3,
-           p.digits = 0.01, digits = 2, p.accuracy = 0.01, method = 'spearman', color = "#898989"#,
+           p.digits = 0.01, digits = 2, p.accuracy = 0.01, method = 'spearman', color = "'#FFBAA6'"#,
            #position = position_jitter(0.0)
   )+
   stat_cor(data = bray_unifrac_eucl_tb_w |>
              dplyr::mutate(euclidean_sc = scale(euclidean_distance)), aes(euclidean_distance,  wunifrac_distance, 
                                                                           label =   paste(..r.label..)),
-           label.x = 8, label.y = 0.35,  color = "#898989" ,
+           label.x = 8, label.y = 0.35,  color = "'#FFBAA6'" ,
            p.digits = 0.01, digits = 2, 
            p.accuracy = 0.01, method = 'spearman')+
   #geom_smooth(method = 'loess', color = 'grey')+
   geom_smooth(aes(group = fraction), method = 'lm', color = "#a21e66", fill = "#a21e66")+
   scale_shape_manual(values = c(19,17), labels = labs_fraction)+
   geom_smooth(method = 'lm', data = bray_unifrac_eucl_tb_w |>
-                dplyr::mutate(euclidean_sc = scale(euclidean_distance)), aes(euclidean_distance,  wunifrac_distance, group = fraction), color = "#898989", fill = "#898989")+
+                dplyr::mutate(euclidean_sc = scale(euclidean_distance)), aes(euclidean_distance,  wunifrac_distance, group = fraction), color = "'#FFBAA6'", fill = "'#FFBAA6'")+
   labs(x = 'Euclidean Distance', y = 'Bray-Curtis Communtiy Based & wUNIFRAC distance',
        shape = 'Fraction')+
   guides(shape = guide_legend(ncol = 1))+
@@ -1723,25 +1818,25 @@ corr_unifrac_bray_plot <- bray_unifrac_eucl_tb_w |>
            color = "#a21e66")+
   # geom_point(data = bray_unifrac_eucl_tb_w |>
   #              dplyr::mutate(euclidean_sc = scale(euclidean_distance)), aes(euclidean_distance,  wunifrac_distance), #shape = 2, 
-  #            alpha = 0.8,  color = "#898989")+
+  #            alpha = 0.8,  color = "'#FFBAA6'")+
   # stat_cor(data = bray_unifrac_eucl_tb_w |>
   #            dplyr::mutate(euclidean_sc = scale(euclidean_distance)), aes(euclidean_distance,  wunifrac_distance, 
   #                                                                         label =   paste(..p.label..)), label.x = 0.05,  
   #          label.y = 0.3,
-  #          p.digits = 0.01, digits = 2, p.accuracy = 0.01, method = 'spearman', color = "#898989"#,
+  #          p.digits = 0.01, digits = 2, p.accuracy = 0.01, method = 'spearman', color = "'#FFBAA6'"#,
   #          #position = position_jitter(0.0)
   # )+
   # stat_cor(data = bray_unifrac_eucl_tb_w |>
   #            dplyr::mutate(euclidean_sc = scale(euclidean_distance)), aes(euclidean_distance,  wunifrac_distance, 
   #                                                                         label =   paste(..r.label..)),
-  #          label.x = 0.05, label.y = 0.25,  color = "#898989" ,
+  #          label.x = 0.05, label.y = 0.25,  color = "'#FFBAA6'" ,
   #          p.digits = 0.01, digits = 2, 
   #          p.accuracy = 0.01, method = 'spearman')+
   #geom_smooth(method = 'loess', color = 'grey')+
   geom_smooth(aes(), method = 'lm', color = "#a21e66", fill = "#a21e66")+
   scale_shape_manual(values = c(19,17), labels = labs_fraction)+
   # geom_smooth(method = 'lm', data = bray_unifrac_eucl_tb_w |>
-  #               dplyr::mutate(euclidean_sc = scale(euclidean_distance)), aes(euclidean_distance,  wunifrac_distance, group = fraction), color = "#898989", fill = "#898989")+
+  #               dplyr::mutate(euclidean_sc = scale(euclidean_distance)), aes(euclidean_distance,  wunifrac_distance, group = fraction), color = "'#FFBAA6'", fill = "'#FFBAA6'")+
   labs(x = 'Bray-Curtis Communtiy Based ', y = 'Weigthed UNIFRAC distance', shape = 'Fraction')+
   guides(shape = guide_legend(ncol = 1, title.position = 'top'))+
   theme_bw()+
@@ -1777,25 +1872,25 @@ corr_unifrac_bray_plot <- bray_unifrac_eucl_tb_w |>
            color = "#a21e66")+
   # geom_point(data = bray_unifrac_eucl_tb_w |>
   #              dplyr::mutate(euclidean_sc = scale(euclidean_distance)), aes(euclidean_distance,  wunifrac_distance), #shape = 2, 
-  #            alpha = 0.8,  color = "#898989")+
+  #            alpha = 0.8,  color = "'#FFBAA6'")+
   # stat_cor(data = bray_unifrac_eucl_tb_w |>
   #            dplyr::mutate(euclidean_sc = scale(euclidean_distance)), aes(euclidean_distance,  wunifrac_distance, 
   #                                                                         label =   paste(..p.label..)), label.x = 0.05,  
   #          label.y = 0.3,
-  #          p.digits = 0.01, digits = 2, p.accuracy = 0.01, method = 'spearman', color = "#898989"#,
+  #          p.digits = 0.01, digits = 2, p.accuracy = 0.01, method = 'spearman', color = "'#FFBAA6'"#,
   #          #position = position_jitter(0.0)
   # )+
   # stat_cor(data = bray_unifrac_eucl_tb_w |>
 #            dplyr::mutate(euclidean_sc = scale(euclidean_distance)), aes(euclidean_distance,  wunifrac_distance, 
 #                                                                         label =   paste(..r.label..)),
-#          label.x = 0.05, label.y = 0.25,  color = "#898989" ,
+#          label.x = 0.05, label.y = 0.25,  color = "'#FFBAA6'" ,
 #          p.digits = 0.01, digits = 2, 
 #          p.accuracy = 0.01, method = 'spearman')+
 #geom_smooth(method = 'loess', color = 'grey')+
 geom_smooth(aes(), method = 'lm', color = "#a21e66", fill = "#a21e66")+
   scale_shape_manual(values = c(19,17), labels = labs_fraction)+
   # geom_smooth(method = 'lm', data = bray_unifrac_eucl_tb_w |>
-  #               dplyr::mutate(euclidean_sc = scale(euclidean_distance)), aes(euclidean_distance,  wunifrac_distance, group = fraction), color = "#898989", fill = "#898989")+
+  #               dplyr::mutate(euclidean_sc = scale(euclidean_distance)), aes(euclidean_distance,  wunifrac_distance, group = fraction), color = "'#FFBAA6'", fill = "'#FFBAA6'")+
   labs(x = 'Bray-Curtis Communtiy Based ', y = 'wUNIFRAC distance', shape = 'Fraction')+
   guides(shape = guide_legend(ncol = 1))+
   theme_bw()+
@@ -1873,22 +1968,22 @@ corr_bray_02_plot <- bray_unifrac_eucl_tb_02 |>
   geom_point(data = bray_unifrac_eucl_tb_02 |>
                left_join(abund_asv_bloom_events_02_unique), 
              aes(wunifrac_distance, genes, alpha = ifelse(bloom_event == 'bloom', 1, 0.2)), #shape = 2, 
-             color = "#898989")+
+             color = "'#FFBAA6'")+
   stat_cor(data = bray_unifrac_eucl_tb_02 |>
              left_join(abund_asv_bloom_events_02_unique), aes(wunifrac_distance, genes, 
                                                                 label =   paste(..p.label..)), label.x = 0.05,  
            label.y = 0.3,
-           p.digits = 0.01, digits = 2, p.accuracy = 0.01, method = 'spearman', color = "#898989"#,
+           p.digits = 0.01, digits = 2, p.accuracy = 0.01, method = 'spearman', color = "'#FFBAA6'"#,
            #position = position_jitter(0.0)
   )+
   stat_cor(data = bray_unifrac_eucl_tb_02, aes(wunifrac_distance, genes, 
                                                label =   paste(..r.label..)),
-           label.x = 0.05, label.y = 0.25,  color = "#898989" ,
+           label.x = 0.05, label.y = 0.25,  color = "'#FFBAA6'" ,
            p.digits = 0.01, digits = 2, 
            p.accuracy = 0.01, method = 'spearman')+
   #geom_smooth(method = 'loess', color = 'grey')+
   geom_smooth(method = 'lm', color = "#a21e66", fill = "#a21e66")+
-  geom_smooth(method = 'lm', data = bray_unifrac_eucl_tb_02, aes(wunifrac_distance, genes), color = "#898989", fill = "#898989")+
+  geom_smooth(method = 'lm', data = bray_unifrac_eucl_tb_02, aes(wunifrac_distance, genes), color = "'#FFBAA6'", fill = "'#FFBAA6'")+
   labs(x = 'wUNIFRAC and Bray-CurtisCommunity-Based', y = 'Bray-Curtis Genes Based', 
        alpha = 'Bloom event')+
   theme_bw()+
@@ -1902,3 +1997,613 @@ corr_bray_02_plot <- bray_unifrac_eucl_tb_02 |>
 
 corr_bray_02_plot
 
+## ---- BLOOMS and CARD-FISH (CLARA RUIZ GONZÁLEZ DATA) ---- ##
+abund_asv_bloom_events_02_unique <- asv_tab_all_bloo_z_tax_summary_all |>
+  dplyr::filter(fraction == '0.2') |>
+  dplyr::filter(abundance_type == 'relative_abundance' &
+                  z_score_ra >= 1.96 &
+                  abundance_value >= 0.1) |> #we add this line in case we want potential bloomers not just anomalies in their rel abund
+  dplyr::select(year, sample_id, asv_num, abundance_type, abundance_value) |>
+  dplyr::filter(year %in% c('2009', '2010', '2011', '2012', '2013')) |>
+  left_join(tax_bbmo_10y_new) |>
+  distinct(asv_num)
+
+abund_asv_bloo_fl_08_10 <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(fraction == '0.2') |>
+  dplyr::filter(abundance_type == 'rclr' &
+                  z_score_ra >= 1.96 &
+                  abundance_value >= 0.1) |> #we add this line in case we want potential bloomers not just anomalies in their rel abund
+  dplyr::select(year, sample_id, asv_num, abundance_type, abundance_value, date) |>
+  dplyr::filter(year %in% c('2008','2009', '2010')) |>
+  left_join(tax_bbmo_10y_new)
+
+abund_asv_bloo_fl_08_10 <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(fraction == '0.2') |>
+  dplyr::filter(abundance_type == 'relative_abundance' &
+                  z_score_ra >= 1.96 &
+                  abundance_value >= 0.1) |> #we add this line in case we want potential bloomers not just anomalies in their rel abund
+  dplyr::select(year, sample_id, asv_num, abundance_type, abundance_value, date) |>
+  dplyr::filter(year %in% c('2008','2009', '2010')) |>
+  left_join(tax_bbmo_10y_new)
+
+asv_tab_all_bloo_z_tax |>
+  dplyr::filter(abundance_type == 'relative_abundance') |>
+  dplyr::filter(asv_num %in% bloo_02_filt$value) |>
+  dplyr::filter(date %in% abund_asv_bloo_fl_08_10$date) |>
+  dplyr::mutate(family_asv_num = paste0(family, asv_num)) |>
+  dplyr::filter(fraction == '0.2') |>
+  ggplot(aes(date, abundance_value))+
+  geom_line(aes(group = asv_num_f))+
+  facet_wrap(vars(family_asv_num))+
+  theme_bw()+
+  theme(strip.background = element_rect(fill = 'transparent'))
+
+
+
+## New combination of plots: recurrence in Blanes, Bray Curtis and wUNIFRAC over the years + Env distance (IF WE KEEP IT THEN I MOVE IT TO THE SUMMARY SCRIPT) ----
+
+palette_diversity <- c('genes' = "#270000",
+                       "wunifrac_distance" = "'#FFBAA6'",
+                       "euclidean_distance" = "#008241",
+                       "bray_curtis_community" = "#a21e66", 
+                       'bray_curtis_kmers' = '#FFCAFB')
+
+palette_fraction_env <- c("env" = "#008241", 
+                          '0.2' = '#00808F', 
+                          '3' = "#454545")
+
+# plot weighted unifrac distances -----
+bray_unifrac_eucl_tb$bray_curtis_type |>
+  unique()
+
+data <- bray_unifrac_eucl_tb |>
+  dplyr::filter(!bray_curtis_type %in% c('bray_curtis_kmers', "genes")) 
+
+data$bray_curtis_type <- factor(data$bray_curtis_type, levels = c('bray_curtis_community', 'wunifrac_distance', 'euclidean_distance'))
+data$fraction |>
+  unique()
+
+data$fraction <- factor(data$fraction, levels = c('0.2', '3', 'env'))
+
+# legend 
+legend_plot <- data |>
+  #dplyr::filter(fraction != 'env') |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(!str_detect(date, '2003-')) |>
+  ggplot(aes(date, bray_curtis_result))+
+  facet_wrap(fraction ~ bray_curtis_type, scales = "free_x", ncol = 1, 
+             labeller = labeller(fraction = function(x) ifelse(x == "fraction", "", x), 
+                                 bray_curtis_type = labs_diversity), 
+             strip.position = 'left') + 
+  geom_line(aes(date, group = fraction, color = fraction, linetype = fraction), linewidth = 0.75, alpha = 1)+ #, linetype = bray_curtis_type
+  #scale_linetype_discrete(labels = labs_diversity)+
+  #facet_wrap(diversity_index~., labeller = labs_diversity)+
+  scale_color_manual(values= palette_fraction_env, labels = labs_fraction_env)+ #, labels = labs_fraction
+  scale_linetype_manual( labels = labs_fraction_env, values = c('0.2' = 1, '3' = 2, 'env' = 1))+
+  scale_x_datetime(date_breaks = 'year', date_labels = '%Y')+
+  geom_line(data = data |>
+              dplyr::filter(fraction == '3'), aes(date, bray_curtis_result), alpha = 0.3)+
+  labs(x = 'Date', y = '', color = '', linetype = '')+
+  scale_shape_discrete(labels = labs_fraction)+
+  guides(shape = 'none',
+         color = guide_legend(ncol = 3, keywidth = unit(1, "cm")))+
+  #guide_legend(keywidth = unit(0.5, "cm"), ncol = 2)
+  #scale_y_continuous(limits = c(0.15, 1.0))+
+  theme_bw()+
+  theme(#panel.grid = element_blank(), 
+    strip.background = element_blank(), legend.position = 'bottom',
+    panel.grid.minor = element_blank(),
+    axis.title  = element_text(size = 9),
+    strip.text = element_text(size = 7),
+    axis.text.y = element_text(size = 5),
+    # axis.text.x = element_text(size = 7), 
+    panel.grid.major.y = element_blank(),
+    legend.text = element_text(size = 7),
+    panel.border = element_blank(),
+    plot.margin = margin(t = 5, b = 5))
+legend_plot 
+
+legend_plot <- get_legend(legend_plot)
+
+bray_unifrac_eucl_plot <- data |>
+  dplyr::filter(fraction != 'env') |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(!str_detect(date, '2003-')) |>
+  ggplot(aes(date, bray_curtis_result))+
+  facet_wrap(fraction ~ bray_curtis_type, scales = "fixed", ncol = 1, 
+             labeller = labeller(fraction = function(x) ifelse(x %in% c("0.2", '3'), "", x), 
+                                 bray_curtis_type = labs_diversity), 
+             strip.position = 'left') + 
+  geom_line(aes(date, group = fraction, color = fraction, linetype = fraction), linewidth = 0.75, alpha = 1)+ #, linetype = bray_curtis_type
+  #scale_linetype_discrete(labels = labs_diversity)+
+  #facet_wrap(diversity_index~., labeller = labs_diversity)+
+  scale_color_manual(values= palette_fraction_env, labels = labs_fraction_env)+ #, labels = labs_fraction
+  scale_linetype_manual( labels = labs_fraction_env, values = c('0.2' = 1, '3' = 2, 'env' = 1))+
+  scale_x_datetime(date_breaks = 'year', date_labels = '%Y')+
+  geom_line(data = data |>
+              dplyr::filter(fraction == '3'), aes(date, bray_curtis_result), alpha = 0.3)+
+  labs(x = 'Date', y = '', color = '', linetype = '')+
+  scale_shape_discrete(labels = labs_fraction)+
+  guides(shape = 'none',
+         color = guide_legend(ncol = 3, keywidth = unit(1, "cm")))+
+  #guide_legend(keywidth = unit(0.5, "cm"), ncol = 2)
+  #scale_y_continuous(limits = c(0.15, 1.0))+
+  theme_bw()+
+  theme(#panel.grid = element_blank(), 
+    strip.background = element_blank(), legend.position = 'none',
+    panel.grid.minor = element_blank(),
+    axis.title  = element_text(size = 9),
+    strip.text = element_text(size = 5),
+    axis.text = element_text(size = 5),
+    # axis.text.x = element_text(size = 7), 
+    panel.grid.major.y = element_blank(),
+    panel.border = element_blank(),
+    strip.placement = 'outside',
+    axis.ticks.length.y =  unit(0.2, "mm"))
+
+bray_unifrac_eucl_plot
+
+eucl_plot <- data |>
+  dplyr::filter(fraction == 'env',
+                bray_curtis_type == 'euclidean_distance') |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(!str_detect(date, '2003-')) |>
+  ggplot(aes(date, bray_curtis_result))+
+  facet_wrap(fraction ~ bray_curtis_type, scales = "free_x", ncol = 1, 
+             labeller = labeller(fraction = function(x) ifelse(x == "env", "", x), 
+                                 bray_curtis_type = labs_diversity), 
+             strip.position = 'left') + 
+  geom_line(aes(date, group = fraction, color = fraction, linetype = fraction), linewidth = 0.75, alpha = 1)+ #, linetype = bray_curtis_type
+  #scale_linetype_discrete(labels = labs_diversity)+
+  #facet_wrap(diversity_index~., labeller = labs_diversity)+
+  scale_color_manual(values= palette_fraction_env, labels = labs_fraction_env)+ #, labels = labs_fraction
+  scale_linetype_manual( labels = labs_fraction_env, values = c('0.2' = 1, '3' = 2, 'env' = 1))+
+  scale_x_datetime(date_breaks = 'year', date_labels = '%Y')+
+  labs(x = 'Date', y = '', color = '', linetype = '')+
+  scale_shape_discrete(labels = labs_fraction)+
+  guides(shape = 'none',
+         color = guide_legend(ncol = 3, keywidth = unit(1, "cm")))+
+  #guide_legend(keywidth = unit(0.5, "cm"), ncol = 2)
+  #scale_y_continuous(limits = c(0.15, 1.0))+
+  theme_bw()+
+  theme(#panel.grid = element_blank(), 
+    strip.background = element_blank(), legend.position = 'none',
+    panel.grid.minor = element_blank(),
+    axis.title  = element_text(size = 7),
+    strip.text = element_text(size = 5),
+    axis.text = element_text(size = 5),
+    # axis.text.x = element_text(size = 7), 
+    panel.grid.major.y = element_blank(),
+    panel.border = element_blank(),
+    strip.placement = 'outside', 
+    plot.margin = margin(t = 5, l = 10))
+
+eucl_plot
+
+bray_curtis_lag_plot <- bray_curtis_lag_all |>
+  #dplyr::filter(as.numeric(lag) < 108) |>
+  ggplot(aes(lag, bray_curtis_result))+
+  scale_x_continuous(breaks = c(12, 24, 36, 48, 12*5, 12*6, 12*7, 12*8, 12*9, 120), labels = c(1, 2, 3,4, 5, 6, 7, 8,  9, 10))+
+  geom_point(aes(shape = fraction), alpha = 0.02)+
+  # geom_point(data = bray_curtis_lag_all |>
+  #              group_by(fraction, lag) |>
+  #              dplyr::reframe(mean = mean(bray_curtis_result)), aes(lag, mean, group = fraction, color = fraction, fill =  fraction))+
+  #facet_wrap(vars(fraction), labeller = labs_fraction, ncol = 1)+
+  scale_shape_discrete(labels = labs_fraction)+
+  labs(y = 'Bray Curtis Dissimilarity', x = 'Lag between samples', shape = '', color = '', fill = '', linetype = '')+
+  geom_line(data = bray_curtis_lag_all |>
+              group_by(fraction, lag) |>
+              dplyr::reframe(mean = mean(bray_curtis_result)), aes(lag, mean, group = fraction, color = fraction, 
+                                                                   linetype = fraction), linewidth = 1)+
+
+  #geom_smooth(aes(group = fraction, color = fraction, fill =  fraction), method = 'loess', span = 0.1)+
+  #geom_smooth(aes(group = fraction,  color = fraction, fill =  fraction), method = 'lm')+
+  scale_linetype_discrete( labels = labs_fraction)+
+  scale_color_manual(values = palette_fraction, labels = labs_fraction)+
+  scale_fill_manual(values = palette_fraction, labels = labs_fraction)+
+  guides(shape = guide_legend(ncol = 2))+
+  theme_bw()+
+  theme(panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.grid.major.y = element_blank(),
+        axis.title.y = element_text(size = 5),
+        axis.text.y = element_text(size = 4),
+        strip.background = element_rect(fill = 'transparent'),
+        legend.position = 'none',
+        plot.margin = margin(l = 45, t = 5, b = 5))
+
+bray_curtis_lag_plot 
+
+# Now arrange the full layout, with bray_unifrac_eucl_plot occupying the top row
+BBMO_community_diversity_presentation_plot <- plot_grid(
+  bray_curtis_lag_plot,
+  bray_unifrac_eucl_plot,
+  eucl_plot,
+  legend_plot,
+  # Top plot (spanning both columns)          # Second row with two plots
+  ncol = 1,                # One column layout for the main grid
+  rel_heights = c(1, 2.75, 1, 0.25),   # First plot 3 times the height of the second row
+  labels = c('A', 'B', 'c')
+)
+
+# Print the final plot
+print(BBMO_community_diversity_presentation_plot)
+
+# ggsave( plot = BBMO_community_diversity_presentation_plot,
+#         filename = 'BBMO_community_diversity_presentation_plot.pdf',
+#         path = 'results/figures/',
+#         width = 180, height = 200, units = 'mm')
+
+
+## I calculate the Bray Curtis for the KOs dataset and see if they also correlate with my Bray Curtis community based ----
+### I explore the other genes tables (eggNOG, CAZY, KEGGs, and PFAM)
+#### upload data
+cazy_tb <- read.table('data/genes_sergio/BBMOSOLA-GC_250bp_CAZy.lengthNorm.SCGnorm.counts.tbl') 
+egg_tb <- read.table('data/genes_sergio/BBMOSOLA-GC_250bp_eggNOG.lengthNorm.metaGsizeNorm.counts.tbl') 
+kegg_tb <- read.table('data/genes_sergio/BBMOSOLA-GC_250bp_KEGG.ko.lengthNorm.metaGsizeNorm.counts.txt') 
+pfam_tb <- read.table('data/genes_sergio/BBMOSOLA-GC_250bp_pfam.lengthNorm.metaGsizeNorm.counts.tbl') 
+
+### cazy_tb Bray Curtis  ----
+colnames(cazy_tb) <- cazy_tb[1,]
+cazy_tb <- cazy_tb[-1,]
+
+cazy_tb <- cazy_tb |>
+  as_tibble() |>
+  dplyr::select(annot, matches('^BL09|^BL10|^BL11|^BL12|^BL13'))## only Blanes not SOLA
+
+cazy_tb |>
+  dim()
+
+cazy_tb_l <- cazy_tb |>
+  pivot_longer(starts_with('BL'), values_to = 'relative_abundance', names_to = 'asv_num') |>
+  dplyr::select(asv_num = annot, sample_id = asv_num, relative_abundance) |>
+  dplyr::mutate(relative_abundance = as.numeric(relative_abundance))
+
+bray_curtis_cazy <- dissimilarity_matrix(data = cazy_tb_l, 
+                                                   sample_id_col = sample_id,
+                                                   values_cols_prefix = 'BL')
+
+## add dates 
+abund_asv_bloo_fl_09_13 <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(year %in% c('2009', '2010', '2011', '2012', '2013')) |>
+  distinct(year, date) |>
+  dplyr::mutate(sample_id = paste0('BL', 1:nrow(bray_curtis_cazy)))
+
+bray_curtis_cazy <-  bray_curtis_cazy |>
+  dplyr::mutate(sample_id = paste0('BL', 1:nrow(bray_curtis_cazy))) |>
+  left_join(abund_asv_bloo_fl_09_13, by = c( 'sample_id')) |>
+  dplyr::mutate(bray_type = 'cazymes')
+
+### egg_tb Bray Curtis ----
+colnames(egg_tb) <- egg_tb[1,]
+egg_tb <- egg_tb[-1,]
+
+egg_tb <- egg_tb |>
+  as_tibble() |>
+  dplyr::select(annot, matches('^BL09|^BL10|^BL11|^BL12|^BL13'))## only Blanes not SOLA
+
+egg_tb |>
+  dim() #61 
+
+egg_tb_l <- egg_tb |>
+  pivot_longer(starts_with('BL'), values_to = 'relative_abundance', names_to = 'asv_num') |>
+  dplyr::select(asv_num = annot, sample_id = asv_num, relative_abundance) |>
+  dplyr::mutate(relative_abundance = as.numeric(relative_abundance))
+
+bray_curtis_egg <- dissimilarity_matrix(data = egg_tb_l, 
+                                         sample_id_col = sample_id,
+                                         values_cols_prefix = 'BL')
+
+## add dates 
+abund_asv_bloo_fl_09_13 <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(year %in% c('2009', '2010', '2011', '2012', '2013')) |>
+  distinct(year, date) |>
+  dplyr::mutate(sample_id = paste0('BL', 1:nrow(bray_curtis_egg)))
+
+bray_curtis_egg <-  bray_curtis_egg |>
+  dplyr::mutate(sample_id = paste0('BL', 1:nrow(bray_curtis_egg))) |>
+  left_join(abund_asv_bloo_fl_09_13, by = c( 'sample_id')) |>
+  dplyr::mutate(bray_type = 'eggNOG')
+
+### kegg_tb Bray Curtis ----
+colnames(kegg_tb) <- kegg_tb[1,]
+kegg_tb <- kegg_tb[-1,]
+
+kegg_tb <- kegg_tb |>
+  as_tibble() |>
+  dplyr::select(annot, matches('^BL09|^BL10|^BL11|^BL12|^BL13'))## only Blanes not SOLA
+
+kegg_tb |>
+  dim()
+
+# kegg_tb |>
+#   dplyr::mutate(sample_id = paste0('BL', 1:nrow(kegg_tb_t)))
+
+kegg_tb_l <- kegg_tb |>
+  pivot_longer(starts_with('BL'), values_to = 'relative_abundance', names_to = 'asv_num') |>
+  dplyr::select(asv_num = annot, sample_id = asv_num, relative_abundance) |>
+  dplyr::mutate(relative_abundance = as.numeric(relative_abundance))
+
+bray_curtis_kegg <- dissimilarity_matrix(data = kegg_tb_l, 
+                                         sample_id_col = sample_id,
+                                         values_cols_prefix = 'BL')
+
+## add dates 
+abund_asv_bloo_fl_09_13 <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(year %in% c('2009', '2010', '2011', '2012', '2013')) |>
+  distinct(year, date) |>
+  dplyr::mutate(sample_id = paste0('BL', 1:nrow(bray_curtis_kegg)))
+
+bray_curtis_kegg <-  bray_curtis_kegg |>
+  dplyr::mutate(sample_id = paste0('BL', 1:nrow(bray_curtis_kegg))) |>
+  left_join(abund_asv_bloo_fl_09_13, by = c( 'sample_id')) |>
+  dplyr::mutate(bray_type = 'KEGG')
+
+### pfam_tb Bray Curtis 
+colnames(pfam_tb) <- pfam_tb[1,]
+pfam_tb <- pfam_tb[-1,]
+
+pfam_tb <- pfam_tb |>
+  as_tibble() |>
+  dplyr::select(annot, matches('^BL09|^BL10|^BL11|^BL12|^BL13'))## only Blanes not SOLA
+
+pfam_tb |>
+  dim() #61
+
+pfam_tb_l <- pfam_tb |>
+  pivot_longer(starts_with('BL'), values_to = 'relative_abundance', names_to = 'asv_num') |>
+  dplyr::select(asv_num = annot, sample_id = asv_num, relative_abundance) |>
+  dplyr::mutate(relative_abundance = as.numeric(relative_abundance))
+
+bray_curtis_pfam <- dissimilarity_matrix(data = pfam_tb_l, 
+                                         sample_id_col = sample_id,
+                                         values_cols_prefix = 'BL')
+
+## add dates 
+abund_asv_bloo_fl_09_13 <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(year %in% c('2009', '2010', '2011', '2012', '2013')) |>
+  distinct(year, date) |>
+  dplyr::mutate(sample_id = paste0('BL', 1:nrow(bray_curtis_pfam)))
+
+bray_curtis_pfam <-  bray_curtis_pfam |>
+  dplyr::mutate(sample_id = paste0('BL', 1:nrow(bray_curtis_pfam))) |>
+  left_join(abund_asv_bloo_fl_09_13, by = c( 'sample_id')) |>
+  dplyr::mutate(bray_type = 'pfam')
+
+## plot all the different genetic datasets -----
+bray_curtis_genes_filtered_v5 <- bray_curtis_genes_filtered_v5 |>
+  dplyr::mutate(bray_type = 'genes')
+
+bray_curtis_genes_all_types_tb <- bray_curtis_cazy |>
+  bind_rows(bray_curtis_egg) |>
+  bind_rows(bray_curtis_kegg) |>
+  bind_rows(bray_curtis_pfam) |>
+  bind_rows(bray_curtis_genes_filtered_v5)
+
+bray_curtis_genes_all_types_tb %$%
+  unique(bray_type)
+
+## nice palette for the different genes content 
+palette_bray_types <- c('#A7FFE6',
+                        '#FFBAA6',
+                        #'#FFBAA6',
+                        '#AA928B',
+                        '#8BAA90')
+
+bray_genes_all <- bray_curtis_genes_all_types_tb |>
+  ggplot(aes(date, bray_curtis_result))+
+  geom_line(aes(group = bray_type, color = bray_type), linewidth = 0.75)+
+  scale_color_manual(values = palette_bray_types)+
+  scale_x_datetime(date_breaks = 'year', date_labels = '%Y')+
+  geom_vline(xintercept = as.numeric(as.Date("2005-01-01")), color = '#000000')+
+  labs(x = 'Date', y = 'Bray Curtis Dissimilarity', color = '', linetype = '')+
+  guides(shape = 'none',
+         color = guide_legend(ncol = 2))+
+  #guide_legend(keywidth = unit(0.5, "cm"))+
+  guides(color = guide_legend(ncol = 5))+
+  #scale_y_continuous(limits = c(0.15, 1.0))+
+  theme_bw()+
+  theme(#panel.grid = element_blank(), 
+    strip.background = element_blank(), legend.position = 'bottom',
+    panel.grid.minor = element_blank(),
+    axis.title  = element_text(size = 9),
+    # axis.text.x = element_text(size = 7), 
+    panel.grid.major.y = element_blank(),
+    panel.border = element_blank())
+
+bray_genes_all
+
+bray_02_community <- bray_unifrac_eucl_tb_02 |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  ggplot(aes(date, bray_curtis_community))+
+  geom_line(aes( ), linewidth = 0.75, color = '#00808F')+
+  scale_x_datetime(date_breaks = 'year', date_labels = '%Y')+
+  geom_vline(xintercept = as.numeric(as.Date("2005-01-01")), color = '#000000')+
+  labs(x = 'Date', y = 'Bray Curtis Dissimilarity', color = '', linetype = '')+
+  #guide_legend(keywidth = unit(0.5, "cm"), ncol = 2)
+  #scale_y_continuous(limits = c(0.15, 1.0))+
+  theme_bw()+
+  theme(#panel.grid = element_blank(), 
+    strip.background = element_blank(), legend.position = 'none',
+    panel.grid.minor = element_blank(),
+    axis.title  = element_text(size = 9),
+    # axis.text.x = element_text(size = 7), 
+    panel.grid.major.y = element_blank(),
+    panel.border = element_blank())
+
+bray_02_community 
+
+bray_community_vs_genes <- plot_grid(bray_genes_all,
+          bray_02_community,rel_heights = c(2,1),
+          ncol = 1,
+          labels = c('A', 'B'), label_fontface = 'plain',
+          label_size = 9,
+          hjust = 0.1
+          )
+
+# ggsave( plot = bray_community_vs_genes, filename = 'bray_community_vs_genes.pdf',
+#         path = 'results/figures/relationship_genes_blooms/',
+#         width = 180, height = 140, units = 'mm')
+
+## Correlations between the different genes correlations and the community ----
+bray_curtis_genes_filtered_v5_ed <- bray_curtis_genes_filtered_v5 |>
+  dplyr::select(samples, row_index_2, bray_curtis_result,  year, date, bray_type) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::mutate(year = as.double(year)) |>
+  dplyr::mutate(sample_id = 'sample_id.x') |>
+  dplyr::select(samples, row_index_2, bray_curtis_result, sample_id, year, date, bray_type)
+
+bray_curtis_genes_all_types_tb <- bray_curtis_genes_filtered_v5_ed |>
+  bind_rows(bray_curtis_pfam) |>
+  bind_rows(bray_curtis_egg) |>
+  bind_rows(bray_curtis_kegg) |>
+  bind_rows(bray_curtis_cazy)
+
+bray_unifrac_eucl_tb_02_ed <- bray_unifrac_eucl_tb_02 |> 
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::select(-genes) |>
+  dplyr::mutate(date = as.character(date)) 
+ 
+corr_bray_genes_community_tb <- bray_curtis_genes_all_types_tb |>
+  dplyr::select(-sample_id, -year, -row_index_2, -samples) |>
+  pivot_wider(names_from = 'bray_type', values_from = 'bray_curtis_result') |>
+  dplyr::mutate(date = as.Date(date)) |>
+  dplyr::mutate(date = as.character(date)) |>
+  #dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  left_join(bray_unifrac_eucl_tb_02_ed, by = c('date'))
+
+corr_bray_genes_community_tb  |>
+  colnames()
+
+##before correlation we check normality ----
+shapiro.test(as.numeric(corr_bray_genes_community_tb$cazymes)) # => p-value = 1.537e-06 (NO NORMALITY)
+ggqqplot(as.numeric(corr_bray_genes_community_tb$cazymes))
+
+shapiro.test(as.numeric(corr_bray_genes_community_tb$eggNOG)) # => p-value = 7.583e-06(NO NORMALITY)
+ggqqplot(as.numeric(corr_bray_genes_community_tb$eggNOG))
+
+shapiro.test(as.numeric(corr_bray_genes_community_tb$KEGG)) # => p-value = 4.927e-06 (NO NORMALITY)
+ggqqplot(as.numeric(corr_bray_genes_community_tb$KEGG))
+
+shapiro.test(as.numeric(corr_bray_genes_community_tb$pfam)) # => p-value = 1.287e-07 (NO NORMALITY)
+ggqqplot(as.numeric(corr_bray_genes_community_tb$pfam))
+
+shapiro.test(as.numeric(corr_bray_genes_community_tb$bray_curtis_result)) # => p-value = 0.166 (NORMALITY)
+ggqqplot(as.numeric(corr_bray_genes_community_tb$bray_curtis_result))
+
+shapiro.test(as.numeric(corr_bray_genes_community_tb$genes)) # => p-value = 0.166 (NORMALITY)
+ggqqplot(as.numeric(corr_bray_genes_community_tb$genes))
+
+shapiro.test(as.numeric(corr_bray_genes_community_tb$bray_curtis_community)) # =>p-value = 0.1728 (NORMALITY)
+ggqqplot(as.numeric(corr_bray_genes_community_tb$bray_curtis_community))
+
+#### plot the correlations ----
+palette_bray_types <- c('#A7FFE6',
+                        '#2D515E',
+                        '#FFBAA6',
+                        '#AA928B',
+                        '#8BAA90') #,'#2C362E'
+
+corr_bray_genes_types_plot <- corr_bray_genes_community_tb |>
+  ggplot(aes(bray_curtis_community, cazymes))+
+  geom_abline(slope = 1, intercept = 0, color = 'black', linetype = 'dashed')+
+  geom_point(color = "#A7FFE6", alpha = 0.8)+
+  stat_cor(aes( #color = 'black', 
+    label =   paste(..p.label..)), label.x = 0.05,
+    label.y = 0.22,
+    p.digits = 0.01, digits = 2, p.accuracy = 0.01, method = 'spearman', color = "#A7FFE6"#,
+    #position = position_jitter(0.0)
+  )+
+  stat_cor(aes( label = paste0(..r.label..)),label.x = 0.05, label.y = 0.20, 
+           p.digits = 0.01, digits = 2, 
+           p.accuracy = 0.01, method = 'spearman',
+           color = "#A7FFE6")+
+  geom_smooth(method = 'lm', color = "#A7FFE6", fill = "#A7FFE6")+
+  
+  geom_point(data = corr_bray_genes_community_tb, aes(bray_curtis_community, eggNOG), #shape = 2, 
+             alpha = 0.8,  color = '#2D515E')+
+  stat_cor(data = corr_bray_genes_community_tb, aes(bray_curtis_community, eggNOG, 
+                                               label =   paste(..p.label..)), label.x = 0.05,  
+           label.y = 0.35,
+           p.digits = 0.01, digits = 2, p.accuracy = 0.01, method = 'spearman', color = '#2D515E'
+           #position = position_jitter(0.0)
+  )+
+  stat_cor(data = corr_bray_genes_community_tb, aes(bray_curtis_community, eggNOG,
+                                               label =   paste(..r.label..)),
+           label.x = 0.05, label.y = 0.32,  color = '#2D515E' ,
+           p.digits = 0.01, digits = 2, 
+           p.accuracy = 0.01, method = 'spearman')+
+  geom_smooth(method = 'lm', data = corr_bray_genes_community_tb, aes(bray_curtis_community, eggNOG), color = '#2D515E', fill = '#2D515E')+ 
+  
+  geom_point(data = corr_bray_genes_community_tb, aes(bray_curtis_community, KEGG), #shape = 2, 
+             alpha = 0.8,  color = '#AA928B')+
+  stat_cor(data = corr_bray_genes_community_tb, aes(bray_curtis_community, KEGG, 
+                                                    label =   paste(..p.label..)), label.x = 0.05,  
+           label.y = 0.24,
+           p.digits = 0.01, digits = 2, p.accuracy = 0.01, method = 'spearman', color = '#AA928B'
+           #position = position_jitter(0.0)
+  )+
+  stat_cor(data = corr_bray_genes_community_tb, aes(bray_curtis_community, KEGG,
+                                                    label =   paste(..r.label..)),
+           label.x = 0.05, label.y = 0.26,  color = '#AA928B' ,
+           p.digits = 0.01, digits = 2, 
+           p.accuracy = 0.01, method = 'spearman')+
+  geom_smooth(method = 'lm', data = corr_bray_genes_community_tb, aes(bray_curtis_community, KEGG), color = '#AA928B', fill = '#AA928B')+ 
+
+  geom_point(data = corr_bray_genes_community_tb, aes(bray_curtis_community, pfam), #shape = 2, 
+             alpha = 0.8,  color = '#8BAA90')+
+  stat_cor(data = corr_bray_genes_community_tb, aes(bray_curtis_community, pfam, 
+                                                    label =   paste(..p.label..)), label.x = 0.05,  
+           label.y = 0.3,
+           p.digits = 0.01, digits = 2, p.accuracy = 0.01, method = 'spearman', color = '#8BAA90'
+           #position = position_jitter(0.0)
+  )+
+  stat_cor(data = corr_bray_genes_community_tb, aes(bray_curtis_community, pfam,
+                                                    label =   paste(..r.label..)),
+           label.x = 0.05, label.y = 0.28,  color = '#8BAA90' ,
+           p.digits = 0.01, digits = 2, 
+           p.accuracy = 0.01, method = 'spearman')+
+  geom_smooth(method = 'lm', data = corr_bray_genes_community_tb, aes(bray_curtis_community, pfam), color = '#8BAA90', fill = '#8BAA90')+ 
+
+  geom_point(data = corr_bray_genes_community_tb, aes(bray_curtis_community, genes), #shape = 2, 
+             alpha = 0.8,  color = '#FFBAA6')+
+  stat_cor(data = corr_bray_genes_community_tb, aes(bray_curtis_community, genes, 
+                                                    label =   paste(..p.label..)), label.x = 0.05,  
+           label.y = 0.4,
+           p.digits = 0.01, digits = 2, p.accuracy = 0.01, method = 'spearman', color = '#FFBAA6'
+           #position = position_jitter(0.0)
+  )+
+  stat_cor(data = corr_bray_genes_community_tb, aes(bray_curtis_community, genes,
+                                                    label =   paste(..r.label..)),
+           label.x = 0.05, label.y = 0.38,  color = '#FFBAA6' ,
+           p.digits = 0.01, digits = 2, 
+           p.accuracy = 0.01, method = 'spearman')+
+  geom_smooth(method = 'lm', data = corr_bray_genes_community_tb, aes(bray_curtis_community, genes), color = '#FFBAA6', fill = '#FFBAA6')+
+  
+  labs(x = 'Bray-Curtis Community-Based', y = 'Bray-Curtis Genes Based')+
+  theme_bw()+
+  theme(axis.text = element_text(size = 8), panel.grid.minor = element_blank(),
+        #panel.grid.major.y = element_blank(), strip.text = element_text(size = 12),
+        legend.position = 'bottom', axis.text.y = element_text(size = 10),
+        axis.title = element_text(size = 8), strip.background = element_blank(), 
+        legend.text = element_text(size = 6), legend.title = element_text(size = 8), 
+        panel.border = element_blank(),
+        strip.placement = 'outside', aspect.ratio = 12/12)
+
+corr_bray_genes_types_plot
+
+bray_genes_all_legend <- get_legend(bray_genes_all)
+
+corr_bray_community_types_genes <- plot_grid(
+  corr_bray_genes_types_plot,
+  bray_genes_all_legend,
+                        rel_heights = c(2.25,0.5),
+                                     ncol = 1,
+                                    # labels = c('A'), label_fontface = 'plain',
+                                     label_size = 9,
+                                     hjust = 0.1
+)
+# 
+# ggsave( plot = corr_bray_community_types_genes, filename = 'corr_bray_community_types_genes.pdf',
+#         path = 'results/figures/relationship_genes_blooms/',
+#         width = 180, height = 180, units = 'mm')
