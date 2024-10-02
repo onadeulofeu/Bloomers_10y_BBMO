@@ -4,9 +4,11 @@ library(ggplot2)
 library(vegan)
 library(purrr)
 library(broom)
+library(ggtree)
+library(ape)
 
 
-# upload data ---
+# upload data ----
 asv_tab_all_bloo_z_tax <- read.csv2('data/detect_bloo/asv_tab_all_bloo_z_tax_new_assign_checked.csv') |> ##using dada2 classifier assign tax with silva 138.1 and correctly identifying bloomers
   as_tibble() |>
   dplyr::select(-X)
@@ -22,6 +24,21 @@ harbour_restoration_dec <- tibble(xmin = '2010.24', xmax = '2010.52') |>
   dplyr::mutate(date_min = as.numeric(xmin),
                 date_max = as.numeric(xmax))
 
+### upload data 
+tree_complete <- ggtree::read.tree('data/raxml/complete_tree_cesga/bbmo.raxml.support')
+
+## add blooming events or not 
+bloom_event <- asv_tab_all_bloo_z_tax |>
+  dplyr::mutate(bloom_event = case_when(abundance_type == 'relative_abundance' &
+                                          abundance_value >= 0.1 &
+                                          z_score_ra > 1.96 ~ 'bloom',
+                                        TRUE ~ 'no-bloom')) |>
+  filter(bloom_event != 0) |>
+  dplyr::select(date, asv_num, bloom_event, fraction) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  ungroup() |>
+  distinct()
+
 ### we work with two different datasets one for FL and the other for PA
 wavelet_3_df <- read.csv2('data/wavelet_3_df_deconstand.csv', sep = ',') |>
   as_tibble() |>
@@ -31,10 +48,25 @@ wavelet_02_df <- read.csv2('data/wavelet_02_df_deconstand.csv') |>
   as_tibble() |>
   dplyr::select(-X)
 
+### interpolated environmental variables
+env_data_interpolated_values_all <- read.csv2('data/env_data/env_data_interpolated_values_all.csv') |>
+  rename(sample_id_num = X)
+
 # palettes ----
 palette_occurrence <- c(narrow = "#AE659B",
                         intermediate = "#3e3e3e",
                         broad = "#57a9a8")
+
+palette_diversity <- c('genes' = "#270000",
+                       "wunifrac_distance" = "#898989",
+                       "euclidean_distance" = "#008241",
+                       "bray_curtis_community" = "#a21e66", 
+                       'bray_curtis_kmers' = '#FFCAFB')
+
+palette_fraction_env <- c("env" = "#008241", 
+                          '0.2' = '#00808F', 
+                          '3' = "#454545")
+
 
 # labels -----
 labs_occurrence <- as_labeller(c(narrow = "Narrow\n(<1/3)",
@@ -58,6 +90,20 @@ labs_season <- as_labeller(c( 'winter' = 'Winter' ,
                               'spring' = 'Spring',
                               'summer' = 'Summer',
                               'autumn' = 'Autumn')) 
+
+labs_fraction_env <- as_labeller(c('0.2' = 'Free living\n(0.2-3 um)',
+                                   '3' = 'Particle attached\n(3-20 um)',
+                                   'env' = 'Environmental\nvariables'))
+
+labs_diversity <- as_labeller(c('genes' = 'Bray Curtis Genes',
+                                "wunifrac_distance" = 'Weigthed\nUNIFRAC',
+                                "euclidean_distance" = 'Euclidean Environmental\nDistance',
+                                "bray_curtis_community" = 'Bray Curtis\nCommunity Composition',
+                                'bray_curtis_kmers' = 'Bray Curtis k-mers'))
+
+labs_fraction_env <- as_labeller(c('0.2' = 'Free living\n(0.2-3 um)',
+                                   '3' = 'Particle attached\n(3-20 um)',
+                                   'env' = 'Environmental\nvariables'))
 
 ### The remodelation of the Blanes harbour strated on 24th March 2010 and finished on the 9th of june 2012
 harbour_restoration <- tibble(xmin = '2010-03-24', xmax = '2012-06-09') |>
@@ -126,7 +172,168 @@ blooming_threshold
 #        path = 'Results/Figures/',
 #        width = 188, height = 188, units = 'mm')
 
+
 # ---------------------- RESULTS ----------------------  ########## ------
+
+# ------ ########## Figure recurrency in Blanes vs. changes over the years ------ #########
+bray_unifrac_eucl_tb$bray_curtis_type |>
+  unique()
+
+data <- bray_unifrac_eucl_tb |>
+  dplyr::filter(!bray_curtis_type %in% c('bray_curtis_kmers', "genes")) 
+
+data$bray_curtis_type <- factor(data$bray_curtis_type, levels = c('bray_curtis_community', 'wunifrac_distance', 'euclidean_distance'))
+data$fraction |>
+  unique()
+
+data$fraction <- factor(data$fraction, levels = c('0.2', '3', 'env'))
+
+# legend 
+legend_plot <- data |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(!str_detect(date, '2003-')) |>
+  ggplot(aes(date, bray_curtis_result))+
+  facet_wrap(fraction ~ bray_curtis_type, scales = "free_x", ncol = 1, 
+             labeller = labeller(fraction = function(x) ifelse(x == "fraction", "", x), 
+                                 bray_curtis_type = labs_diversity), 
+             strip.position = 'left') + 
+  geom_line(aes(date, group = fraction, color = fraction, linetype = fraction), linewidth = 0.75, alpha = 1)+ #, linetype = bray_curtis_type
+  scale_color_manual(values= palette_fraction_env, labels = labs_fraction_env)+ #, labels = labs_fraction
+  scale_linetype_manual( labels = labs_fraction_env, values = c('0.2' = 1, '3' = 2, 'env' = 1))+
+  scale_x_datetime(date_breaks = 'year', date_labels = '%Y')+
+  geom_line(data = data |>
+              dplyr::filter(fraction == '3'), aes(date, bray_curtis_result), alpha = 0.3)+
+  labs(x = 'Date', y = '', color = '', linetype = '')+
+  scale_shape_discrete(labels = labs_fraction)+
+  guides(shape = 'none',
+         color = guide_legend(ncol = 3, keywidth = unit(1, "cm")))+
+  theme_bw()+
+  theme(
+    strip.background = element_blank(), legend.position = 'bottom',
+    panel.grid.minor = element_blank(),
+    axis.title  = element_text(size = 9),
+    strip.text = element_text(size = 7),
+    axis.text.y = element_text(size = 5),
+    panel.grid.major.y = element_blank(),
+    legend.text = element_text(size = 7),
+    panel.border = element_blank(),
+    plot.margin = margin(t = 5, b = 5))
+legend_plot 
+
+legend_plot <- get_legend(legend_plot)
+
+bray_unifrac_eucl_plot <- data |>
+  dplyr::filter(fraction != 'env') |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(!str_detect(date, '2003-')) |>
+  ggplot(aes(date, bray_curtis_result))+
+  facet_wrap(fraction ~ bray_curtis_type, scales = "fixed", ncol = 1, 
+             labeller = labeller(fraction = function(x) ifelse(x %in% c("0.2", '3'), "", x), 
+                                 bray_curtis_type = labs_diversity), 
+             strip.position = 'left') + 
+  geom_line(aes(date, group = fraction, color = fraction, linetype = fraction), linewidth = 0.75, alpha = 1)+ #, linetype = bray_curtis_type
+  scale_color_manual(values= palette_fraction_env, labels = labs_fraction_env)+ #, labels = labs_fraction
+  scale_linetype_manual( labels = labs_fraction_env, values = c('0.2' = 1, '3' = 2, 'env' = 1))+
+  scale_x_datetime(date_breaks = 'year', date_labels = '%Y')+
+  geom_line(data = data |>
+              dplyr::filter(fraction == '3'), aes(date, bray_curtis_result), alpha = 0.3)+
+  labs(x = 'Date', y = '', color = '', linetype = '')+
+  scale_shape_discrete(labels = labs_fraction)+
+  guides(shape = 'none',
+         color = guide_legend(ncol = 3, keywidth = unit(1, "cm")))+
+  theme_bw()+
+  theme(#panel.grid = element_blank(), 
+    strip.background = element_blank(), legend.position = 'none',
+    panel.grid.minor = element_blank(),
+    axis.title  = element_text(size = 9),
+    strip.text = element_text(size = 5),
+    axis.text = element_text(size = 5),
+    # axis.text.x = element_text(size = 7), 
+    panel.grid.major.y = element_blank(),
+    panel.border = element_blank(),
+    strip.placement = 'outside',
+    axis.ticks.length.y =  unit(0.2, "mm"))
+
+bray_unifrac_eucl_plot
+
+eucl_plot <- data |>
+  dplyr::filter(fraction == 'env',
+                bray_curtis_type == 'euclidean_distance') |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(!str_detect(date, '2003-')) |>
+  ggplot(aes(date, bray_curtis_result))+
+  facet_wrap(fraction ~ bray_curtis_type, scales = "free_x", ncol = 1, 
+             labeller = labeller(fraction = function(x) ifelse(x == "env", "", x), 
+                                 bray_curtis_type = labs_diversity), 
+             strip.position = 'left') + 
+  geom_line(aes(date, group = fraction, color = fraction, linetype = fraction), linewidth = 0.75, alpha = 1)+ #, linetype = bray_curtis_type
+  scale_color_manual(values= palette_fraction_env, labels = labs_fraction_env)+ #, labels = labs_fraction
+  scale_linetype_manual( labels = labs_fraction_env, values = c('0.2' = 1, '3' = 2, 'env' = 1))+
+  scale_x_datetime(date_breaks = 'year', date_labels = '%Y')+
+  labs(x = 'Date', y = '', color = '', linetype = '')+
+  scale_shape_discrete(labels = labs_fraction)+
+  guides(shape = 'none',
+         color = guide_legend(ncol = 3, keywidth = unit(1, "cm")))+
+  theme_bw()+
+  theme(#panel.grid = element_blank(), 
+    strip.background = element_blank(), legend.position = 'none',
+    panel.grid.minor = element_blank(),
+    axis.title  = element_text(size = 7),
+    strip.text = element_text(size = 5),
+    axis.text = element_text(size = 5),
+    # axis.text.x = element_text(size = 7), 
+    panel.grid.major.y = element_blank(),
+    panel.border = element_blank(),
+    strip.placement = 'outside', 
+    plot.margin = margin(t = 5, l = 10))
+
+eucl_plot
+
+bray_curtis_lag_plot <- bray_curtis_lag_all |>
+  ggplot(aes(lag, bray_curtis_result))+
+  scale_x_continuous(breaks = c(12, 24, 36, 48, 12*5, 12*6, 12*7, 12*8, 12*9, 120), labels = c(1, 2, 3,4, 5, 6, 7, 8,  9, 10))+
+  geom_point(aes(shape = fraction), alpha = 0.02)+
+  scale_shape_discrete(labels = labs_fraction)+
+  labs(y = 'Bray Curtis Dissimilarity', x = 'Lag between samples', shape = '', color = '', fill = '', linetype = '')+
+  geom_line(data = bray_curtis_lag_all |>
+              group_by(fraction, lag) |>
+              dplyr::reframe(mean = mean(bray_curtis_result)), aes(lag, mean, group = fraction, color = fraction, 
+                                                                   linetype = fraction), linewidth = 1)+
+  scale_linetype_discrete( labels = labs_fraction)+
+  scale_color_manual(values = palette_fraction, labels = labs_fraction)+
+  scale_fill_manual(values = palette_fraction, labels = labs_fraction)+
+  guides(shape = guide_legend(ncol = 2))+
+  theme_bw()+
+  theme(panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.grid.major.y = element_blank(),
+        axis.title.y = element_text(size = 5),
+        axis.text.y = element_text(size = 4),
+        strip.background = element_rect(fill = 'transparent'),
+        legend.position = 'none',
+        plot.margin = margin(l = 45, t = 5, b = 5))
+
+bray_curtis_lag_plot 
+
+# Now arrange the full layout, with bray_unifrac_eucl_plot occupying the top row
+BBMO_community_diversity_presentation_plot <- plot_grid(
+  bray_curtis_lag_plot,
+  bray_unifrac_eucl_plot,
+  eucl_plot,
+  legend_plot,
+  ncol = 1,                # One column layout for the main grid
+  rel_heights = c(1, 2.75, 1, 0.25),
+  labels = c('A', 'B', 'c')
+)
+
+# Print the final plot
+print(BBMO_community_diversity_presentation_plot)
+
+# ggsave( plot = BBMO_community_diversity_presentation_plot,
+#         filename = 'BBMO_community_diversity_presentation_plot.pdf',
+#         path = 'results/figures/',
+#         width = 180, height = 200, units = 'mm')
+
 
 # ------ ########## Figure bloomers community timeseries ------ ########## ----------
 ## I remove the 4 ASVs that clustered together in the seasonality analysis but not others that could be potential blooms
@@ -280,6 +487,7 @@ bbmo_bloo_ev_order_no_sar_cluster_seas_plot  <- grid.arrange(bbmo_bloo_ev_order_
 #        height = 160,
 #        units = 'mm')
 
+
 ## -------- ########## Supplementray figure: BBMO bloomers time series separated by the different types of bloomers ------ ########## ---------
 ##try to explain that seasonal blooms are not always lead by the same ASV
 labs_fraction_rec_freq <-  as_labeller(c('0.2' = 'Free living (0.2-3 um)',
@@ -358,6 +566,7 @@ booming_events_seas_BBMO10Y
 #        width = 180,
 #        height = 160,
 #        units = 'mm')
+
 
 # ------ ########## Figure example of different types of bloomers identified in our dataset ------ ########## ------------------------
 bloo_all_types_summary_tb_tax_v2 |>
@@ -631,6 +840,7 @@ legend_plot <- asv_tab_all_bloo_z_tax_examples |>
         legend.text = element_text(size = 5), legend.title = element_text(size = 7),# strip.placement = 'outside',
         plot.margin = margin(5,5,5,5),
         legend.key.size = unit(3, 'mm'))
+
 #### I decide to keep only 6 blooming examples ------
 legend_only  <- cowplot::get_legend(legend_plot)
 
@@ -1142,5 +1352,92 @@ shannon_harbor_rar_plot
 
 
 
+
+
+## Relationship between Bray Curtis Genes and Bray Curtis of the Community ----
+#### first correlation: Bray-Curtis genes vs Bray-Curtis community, and Bray-Curtis genes vs. weighted UNIFRAC distance ----
+corr_bray_02_plot <- bray_unifrac_eucl_tb_02 |>
+  ggplot(aes(bray_curtis_community, genes))+
+  scale_x_continuous(limits = c(0.05, 0.85))+
+  scale_y_continuous(limits = c(0.05, 0.85))+
+  geom_abline(slope = 1, intercept = 0, color = 'black', linetype = 1, alpha = 0.5)+
+  geom_point(color = "#00808F", alpha = 0.8)+
+  stat_cor(aes( #color = 'black', 
+    
+    label =   paste(..p.label..)), label.x = 0.35,
+    label.y = 0.25,
+    p.digits = 0.01, digits = 2, p.accuracy = 0.01, method = 'spearman', color = "#00808F"#,
+    #position = position_jitter(0.0)
+  )+
+  stat_cor(aes( label = paste0(..r.label..)),label.x = 0.35, label.y = 0.2, 
+           p.digits = 0.01, digits = 2, 
+           p.accuracy = 0.01, method = 'spearman',
+           color = "#00808F")+
+  #geom_smooth(method = 'loess', color = 'grey')+
+  geom_smooth(method = 'lm', color = "#00808F", fill = "#00808F")+
+  
+  labs(x = 'Bray-Curtis Community-Based', y = 'Bray-Curtis Genes-Based')+
+  theme_bw()+
+  theme(#axis.text.x = element_text(size = 6), 
+    panel.grid.minor = element_blank(),
+    #panel.grid.major.y = element_blank(), strip.text = element_text(size = 12),
+    legend.position = 'bottom', axis.text.y = element_text(size = 10),
+    axis.title = element_text(size = 10), strip.background = element_blank(), 
+    legend.text = element_text(size = 6), legend.title = element_text(size = 8), 
+    panel.border = element_blank(),
+    strip.placement = 'outside', aspect.ratio = 12/12)
+
+corr_bray_02_plot
+
+corr_unifrac_02_plot <- bray_unifrac_eucl_tb_02 |>
+  ggplot(aes(bray_curtis_community, genes))+
+  geom_abline(slope = 1, intercept = 0, color = 'black', linetype = 1, alpha = 0.5)+
+  #geom_smooth(method = 'loess', color = 'grey')+
+  geom_point(data = bray_unifrac_eucl_tb_02, aes(wunifrac_distance, genes), #shape = 2, 
+             alpha = 0.8,  color = "#00808F")+
+  scale_x_continuous(limits = c(0.05, 0.85))+
+  scale_y_continuous(limits = c(0.05, 0.85))+
+  stat_cor(data = bray_unifrac_eucl_tb_02, aes(wunifrac_distance, genes, 
+                                               label =   paste(..p.label..)), label.x = 0.05,  
+           label.y = 0.3,
+           p.digits = 0.01, digits = 2, p.accuracy = 0.01, method = 'spearman', color = "#00808F"#,
+           #position = position_jitter(0.0)
+  )+
+  stat_cor(data = bray_unifrac_eucl_tb_02, aes(wunifrac_distance, genes, 
+                                               label =   paste(..r.label..)),
+           label.x = 0.05, label.y = 0.25,  color = "#00808F" ,
+           p.digits = 0.01, digits = 2, 
+           p.accuracy = 0.01, method = 'spearman')+
+  geom_smooth(method = 'lm', data = bray_unifrac_eucl_tb_02, aes(wunifrac_distance, genes), color = "#00808F", fill ="#00808F")+
+  labs(x = 'Bray-Curtis Community-Based', y = 'Bray-Curtis Genes-Based')+
+  theme_bw()+
+  theme(#axis.text.x = element_text(size = 6), 
+    panel.grid.minor = element_blank(),
+    #panel.grid.major.y = element_blank(), strip.text = element_text(size = 12),
+    legend.position = 'bottom', axis.text.y = element_text(size = 10),
+    axis.title = element_text(size = 10), strip.background = element_blank(), 
+    legend.text = element_text(size = 6), legend.title = element_text(size = 8), 
+    panel.border = element_blank(),
+    strip.placement = 'outside', aspect.ratio = 12/12)
+
+corr_unifrac_02_plot
+
+
+# Now arrange the full layout, with bray_unifrac_eucl_plot occupying the top row
+corr_bray_unifrac_plot <- plot_grid(
+  corr_bray_02_plot, corr_unifrac_02_plot,
+  # Top plot (spanning both columns)          # Second row with two plots
+  ncol = 2,                # One column layout for the main grid
+  #rel_heights = c(1, 2.75, 1, 0.25),   # First plot 3 times the height of the second row
+  labels = c('A', 'B')
+)
+
+# Print the final plot
+print(corr_bray_unifrac_plot)
+
+# ggsave( plot = corr_bray_unifrac_plot,
+#         filename = 'corr_bray_unifrac_plot.pdf',
+#         path = 'results/figures/',
+#         width = 180, height = 100, units = 'mm')
 
 # ---------------------- DISCUSSION ----------------------  ########## ------
