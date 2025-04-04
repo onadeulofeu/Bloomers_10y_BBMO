@@ -11,10 +11,42 @@ library(cowplot)
 library(tidyverse)
 
 # ------------------ ## --------- Blooming events and their functional implications ------------------ ## ---------
-## upload data
+## upload metabarcoding data ----
 asv_tab_all_bloo_z_tax <- read.csv2('data/detect_bloo/asv_tab_all_bloo_z_tax_new_assign_checked.csv') |> ##using dada2 classifier assign tax with silva 138.1 and correctly identifying bloomers
   as_tibble() |>
   dplyr::select(-X)
+
+## reorder taxonomy as factors
+asv_tab_all_bloo_z_tax <- asv_tab_all_bloo_z_tax |>
+  dplyr::mutate(phylum_f = as_factor(phylum),
+                family_f = as_factor(family),
+                order_f = as_factor(order),
+                class_f = as_factor(class),
+                asv_num_f = as_factor(asv_num))
+
+asv_tab_all_bloo_z_tax$class_f <-  factor(asv_tab_all_bloo_z_tax$class_f, 
+                                          levels=unique(asv_tab_all_bloo_z_tax$class_f[order(asv_tab_all_bloo_z_tax$phylum_f)]), 
+                                          ordered=TRUE)
+
+asv_tab_all_bloo_z_tax$order_f <-  factor(asv_tab_all_bloo_z_tax$order_f, 
+                                          levels=unique(asv_tab_all_bloo_z_tax$order_f[order(asv_tab_all_bloo_z_tax$phylum_f,
+                                                                                             asv_tab_all_bloo_z_tax$class_f)]), 
+                                          ordered=TRUE)
+
+asv_tab_all_bloo_z_tax$family_f <-  factor(asv_tab_all_bloo_z_tax$family_f, 
+                                           levels=unique(asv_tab_all_bloo_z_tax$family_f[order(asv_tab_all_bloo_z_tax$phylum_f,
+                                                                                               asv_tab_all_bloo_z_tax$class_f,
+                                                                                               asv_tab_all_bloo_z_tax$order_f)]), 
+                                           ordered=TRUE)
+
+asv_tab_all_bloo_z_tax$asv_num_f <-  factor(asv_tab_all_bloo_z_tax$asv_num_f, 
+                                            levels=unique(asv_tab_all_bloo_z_tax$asv_num_f[order(asv_tab_all_bloo_z_tax$phylum_f,
+                                                                                                 asv_tab_all_bloo_z_tax$class_f,
+                                                                                                 asv_tab_all_bloo_z_tax$order_f,
+                                                                                                 asv_tab_all_bloo_z_tax$family_f)]), 
+                                            ordered=TRUE)
+
+
 
 ## -------- Are there consistent trends between heterotrophic blooms and genetic content from metagenomes? --------
 ### Heterotrophic bloomers during 2009-2014 FL fraction metabarcoding -----
@@ -317,7 +349,7 @@ kos_tb_t_l_bl0904 <- kos_tb_t |>
   dplyr::filter(str_detect(annot, 'BL0904'))
 
 ## Are this taxa sustaining functions in the ecosystem during bloom events? 
-### calculate relative participation of my bloomers tax to each specific KO ----
+### calculate relative contribution of my bloomers tax to each specific KO ----
 relative_contribution_gla <- genes_bloo_ko_1101_tb |>
   left_join(kos_tb_t_l_bl1101, by = c('KO' = 'asv_num', 'sample_id' = 'annot')) |>
   dplyr::mutate(relative_contribution = as.numeric(contribution_to_ko)/as.numeric(scg_kos_counts)) |>
@@ -339,20 +371,6 @@ relative_contribution_gla_plot <- relative_contribution_gla |>
 
 relative_contribution_gla_plot
 
-# counts_contribution_gla_plot <- relative_contribution_gla |>
-#   dplyr::mutate(ko_gene = paste0(KO, ' ', gene)) |>
-#   dplyr::mutate(ko_gene = as.factor(ko_gene)) |>
-#   dplyr::mutate(ko_gene = fct_reorder(ko_gene, relative_contribution, .desc = F)) |>  # Reorder factor
-#   ggplot(aes(value, fct_infreq(ko_gene)))+
-#   geom_col(aes(), fill = "#f1c510")+
-#   labs(x = 'SGC counts', y = '')+
-#   #scale_x_continuous( expand = c(0,0), limits = c(0, 0.45))+
-#   theme_bw()+
-#   theme(panel.grid.minor = element_blank(),
-#         axis.text.y = element_text(size = 0), axis.ticks.y = element_blank(),
-#         axis.text.x = element_text(size = 4),
-#         axis.title.x = element_text(size = 5))
-# 
 # counts_contribution_gla_plot
 relative_contribution_amy <- genes_bloo_ko_0904_tb |>
   left_join(kos_tb_t_l_bl0904, by = c('KO' = 'asv_num', 'sample_id' = 'annot')) |>
@@ -375,26 +393,9 @@ relative_contribution_amy_plot <- relative_contribution_amy |>
 
 relative_contribution_amy_plot
 
-# counts_contribution_amy_plot <- relative_contribution_amy |>
-#   dplyr::mutate(ko_gene = paste0(KO, ' ', gene)) |>
-#   dplyr::mutate(ko_gene = as.factor(ko_gene)) |>
-#   dplyr::mutate(ko_gene = fct_reorder(ko_gene, relative_contribution, .desc = F)) |>  # Reorder factor
-#   ggplot(aes(value, fct_rev(ko_gene)))+
-#   geom_col(aes(), fill = "#2d373b")+
-#   labs(x = 'SGC counts', y = '')+
-#   scale_x_continuous( expand = c(0,0), limits = c(0, 0.4))+
-#   theme_bw()+
-#   theme(axis.text.y = element_text(size = 0), axis.ticks.y = element_blank(),
-#         panel.grid.minor = element_blank(),
-#         axis.text.x = element_text(size = 4),
-#         axis.title.x = element_text(size = 5))
-# 
-# counts_contribution_amy_plot
-
 plot_grid(relative_contribution_gla_plot, relative_contribution_amy_plot, 
           nrow = 1,
           rel_widths = c(1, 1))
-
 
 ### Composition plot genes and heterotrophic bloom events ----
 timeseries_bloom0914_fl_plot <- plot_grid(
