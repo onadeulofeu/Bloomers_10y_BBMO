@@ -1,17 +1,149 @@
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# +++++++++++++++++++++++                     data analysis pipeline                  ++++++++++++++++++++++
-# +++++++++++++++++++++++                    BBMO Dateseries 10-Y data                ++++++++++++++++++++++
-# +++++++++++++++++++++++                         metabarcoding                       ++++++++++++++++++++++
+# +++++++++++++++++++++++                   data analysis pipeline                    ++++++++++++++++++++++
+# +++++++++++++++++++++++                   BBMO Dateseries 10-Y data                 ++++++++++++++++++++++
+# +++++++++++++++++++++++                   metabarcoding & metagenomic               ++++++++++++++++++++++
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # +++++++++++++++++++++++             Code developed by Ona Deulofeu-Capo 2024        ++++++++++++++++++++++
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-##packages ----
+## packages ----
 library(cowplot)
 library(tidyverse)
+library(ggpmisc)
 
-# ------------------ ## --------- Blooming events and their functional implications ------------------ ## ---------
+# ------------------ ## --------- Blooming events and their functional implications ------------------ ## ---
+## upload palettes ----
+
+palette_order_assigned_bloo <-  c("SAR11 clade" =      "#ca6094",
+                                  "Rhodospirillales"  = '#FFA180', 
+                                  "Sphingomonadales"  = '#8C000A', 
+                                  "Puniceispirillales" = '#4cb50f',
+                                  'Rhizobiales' = '#B31722',    
+                                  "Rhodobacterales" = '#2d373b',
+                                  "Verrucomicrobiales"= '#005c69',
+                                  "Opitutales"   =   '#74B9C8',
+                                  "Phycisphaerales"  = '#e3a6ce', 
+                                  "Flavobacteriales"   =  '#0051BF', 
+                                  'Chitinophagales' = '#92ABFF', 
+                                  "Synechococcales"  = '#009F6A', 
+                                  "Bacteriovoracales" = '#8C789D',
+                                  "Pseudomonadales"  = '#FF8E00', 
+                                  "Enterobacterales" = "#f1c510",
+                                  'Thiotrichales' =  "#000000",
+                                  'env' = "#4A785C") 
+
+
+
+
+# ------------------ ## --------- Community level ----------------------- ## ----------------------- ## -----
+## upload data correlations datasets genes and community
+bray_unifrac_eucl_tb_02 <- read.csv('data/bray_unifrac_eucl_tb_02.csv')
+bray_unifrac_eucl_tb <- read.csv('data/bray_unifrac_eucl_tb.csv')
+corr_bray_genes_community_tb <- read.csv('data/corr_bray_genes_community_tb_scg.csv')
+
+## Relationship between Bray Curtis Genes and Bray Curtis of the Community ----
+#### first correlation: Bray-Curtis genes vs Bray-Curtis community, and Bray-Curtis genes vs. weighted UNIFRAC distance ----
+corr_bray_02_plot <- bray_unifrac_eucl_tb_02 |>
+  ggplot(aes(bray_curtis_community, genes))+
+  scale_x_continuous(limits = c(0.05, 0.85))+
+  scale_y_continuous(limits = c(0.05, 0.85))+
+  geom_point(color = "#00808F", alpha = 0.8)+
+  stat_cor(aes(
+    label =   paste(..p.label..)), label.x = 0.35,
+    label.y = 0.25,
+    p.digits = 0.01, digits = 2, p.accuracy = 0.01, method = 'spearman', color = "#00808F"#,
+  )+
+  stat_cor(aes( label = paste0(..r.label..)),label.x = 0.35, label.y = 0.2, 
+           p.digits = 0.01, digits = 2, 
+           p.accuracy = 0.01, method = 'spearman',
+           color = "#00808F")+
+  geom_smooth(method = 'lm', color = "#00808F", fill = "#00808F")+
+  
+  labs(x = 'Bray-Curtis Community-Based', y = 'Bray-Curtis Genes-Based')+
+  theme_bw()+
+  theme(
+    panel.grid.minor = element_blank(),
+    legend.position = 'bottom', axis.text.y = element_text(size = 10),
+    axis.title = element_text(size = 10), strip.background = element_blank(), 
+    legend.text = element_text(size = 6), legend.title = element_text(size = 8), 
+    strip.placement = 'outside', aspect.ratio = 12/12)
+
+corr_bray_02_plot
+
+## I add KOs and genes in the same correlation plot. KOs will inform us if there is a change in the functionality -----
+corr_bray_02_kos_plot <- corr_bray_genes_community_tb |>
+  ggplot(aes(bray_curtis_community, KEGG_sgc))+
+  scale_x_continuous(limits = c(0.05, 0.85))+
+  scale_y_continuous(limits = c(0.05, 0.25))+
+  geom_point( 
+    alpha = 0.8,  color = "#00808F")+
+  stat_cor(aes( 
+    label =   paste(..p.label..)), label.x = 0.6,
+    label.y = 0.25,
+    p.digits = 0.01, digits = 2, p.accuracy = 0.01, method = 'spearman', color = "#00808F"#,
+  )+
+  stat_cor(aes( label = paste0(..r.label..)),label.x = 0.6, label.y = 0.2, 
+           p.digits = 0.01, digits = 2, 
+           p.accuracy = 0.01, method = 'spearman',
+           color = "#00808F")+
+  geom_smooth(method = 'lm', color = "#00808F", fill = "#00808F")+
+  labs(x = 'Bray-Curtis Community-Based', y = 'Bray-Curtis KOs-Based')+
+  theme_bw()+
+  theme( 
+    panel.grid.minor = element_blank(),
+    legend.position = 'bottom', axis.text.y = element_text(size = 10),
+    axis.title = element_text(size = 10), strip.background = element_blank(), 
+    legend.text = element_text(size = 6), legend.title = element_text(size = 8), 
+    strip.placement = 'outside', aspect.ratio = 12/12)
+
+corr_bray_02_kos_plot
+
+# Now arrange the full layout, with bray_unifrac_eucl_plot occupying the top row
+corr_bray_unifrac_kos_plot <- plot_grid(
+  corr_bray_02_plot, #corr_unifrac_02_plot,
+  corr_bray_02_kos_plot, #corr_unifrac_02_ko_plot,
+  # Top plot (spanning both columns)          # Second row with two plots
+  ncol = 1,                # One column layout for the main grid
+  rel_heights = c(1, 1),   # First plot 3 times the height of the second row
+  labels = c('A', 'B'), #'C', 'D',
+  label_fontface = 'plain'
+)
+
+# Print the final plot
+print(corr_bray_unifrac_kos_plot)
+
+# ------------------ ## --------- Bloomers level ----------------------- ## ----------------------- ## -----
 ## upload metabarcoding data ----
+
+bbmo_10y <-readRDS("data/blphy10years.rds") ## 8052 all samples, no filtering
+
+bbmo_10y <-
+  prune_taxa(taxa_sums(bbmo_10y@otu_table) >0, ##filter ASVs that are 0 in the whole dataset
+             bbmo_10y)
+
+## separate datasets by ASV_tab, taxonomy and metadata
+asv_tab_bbmo_10y_l <- bbmo_10y@otu_table |>
+  as_tibble()
+
+m_bbmo_10y <- bbmo_10y@sam_data |>  
+  as_tibble()
+
+colnames(asv_tab_bbmo_10y_l) <- c('asv_num', "sample_id", 'reads')
+
+colnames(m_bbmo_10y) <- c('sample_id', "project", "location", "code",             
+                          "type", "samname", "fraction", "run",               
+                          "date", "basics", "julian_day", "day_of_year",       
+                          "decimal_date", "position", "sampling_time", "day_length",        
+                          "temperature", "secchi", "salinity", "chla_total",     
+                          "chla_3um", "PO4" ,"NH4", "NO2" ,              
+                          "NO3",  "Si", "BP_FC1.55", "PNF_Micro",         
+                          "PNF2_5um_Micro", "PNF_5um_Micro", "cryptomonas", "micromonas",        
+                          "HNF_Micro", "HNF2_5um_Micro", "HNF_5um_Micro", "LNA",               
+                          "HNA", "prochlorococcus_FC", "Peuk1",  "Peuk2",          
+                          "year", "month", "day", "season",            
+                          "bacteria_joint", "synechococcus", "depth", "name_complete")
+
+
 asv_tab_all_bloo_z_tax <- read.csv2('data/detect_bloo/asv_tab_all_bloo_z_tax_new_assign_checked.csv') |> ##using dada2 classifier assign tax with silva 138.1 and correctly identifying bloomers
   as_tibble() |>
   dplyr::select(-X)
@@ -46,9 +178,20 @@ asv_tab_all_bloo_z_tax$asv_num_f <-  factor(asv_tab_all_bloo_z_tax$asv_num_f,
                                                                                                  asv_tab_all_bloo_z_tax$family_f)]), 
                                             ordered=TRUE)
 
+bloom_event <- asv_tab_all_bloo_z_tax |>
+  dplyr::mutate(bloom_event = case_when(abundance_type == 'relative_abundance' &
+                                          abundance_value >= 0.1 &
+                                          z_score_ra > 1.96 ~ 'bloom',
+                                        TRUE ~ 'no-bloom')) |>
+  filter(bloom_event != 0) |>
+  dplyr::select(date, asv_num, bloom_event, fraction) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  ungroup() |>
+  distinct()
 
 
-## -------- Are there consistent trends between heterotrophic blooms and genetic content from metagenomes? --------
+
+## -------- Are there consistent trends between heterotrophic blooms and genetic content from metagenomes? -
 ### Heterotrophic bloomers during 2009-2014 FL fraction metabarcoding -----
 heterotrophic_blooms <- bloom_event |>
   dplyr::filter(fraction == '0.2' & bloom_event == 'bloom') |>
@@ -235,7 +378,7 @@ kos_genes_relation_tb |>
 kos_genes_relation_tb |>
   colnames() <- c('gene', 'KO')
 
-### Bloom Glaciecola 
+
 genes_bloo_tb <- read.csv('data/genes_sergio/BBMO-GC_250bp_gene.lengthNorm.SingleCopyGeneNorm.counts_bloo_genes_bloo.tbl',
                           sep = '\t')
 
@@ -243,6 +386,7 @@ genes_bloo_tb_tax <- genes_bloo_tb |>
   left_join(genes_tax_tb_f, by = c('gene')) |>
   dplyr::filter(!is.na(tax_bloo_close))
 
+### Bloom Glaciecola 
 top25_kos_gla <- genes_bloo_tb_tax |>
   pivot_longer(cols = starts_with('BL'), names_to = 'sample_id') |>
   left_join(kos_genes_relation_tb, by = c('gene')) |>
@@ -300,7 +444,7 @@ genes_bloo_ko_0904_tb <- genes_bloo_tb_tax |>
   slice_max(order_by = contribution_to_ko, n = 25) |>
   dplyr::select(tax_bloo_close, KO, sample_id, contribution_to_ko, date)
 
-genes_bloo_ko_1102_tb %$%
+genes_bloo_ko_0904_tb %$%
   contribution_to_ko |>
   range()
 
@@ -308,27 +452,13 @@ genes_bloo_ko_1102_tb %$%
 top25_kos_amy |>
   cat(top25_kos_gla)
 
-top_25_kos_names <- read.csv2('data/genes_sergio/top25_genes_description.csv')
-
-kos_modules <- read.csv('data/genes_sergio/kos_modules.tbl', sep = '\t') |>
-  dplyr::mutate(module = str_replace(module, 'md:', ''),
-                ko = str_replace(ko, 'ko:', ''))
-
-top_25_kos_name_module <- top_25_kos_names |>
-  left_join(kos_modules, by = c('KO' ='ko'))
-
-top_25_kos_name_module |>
-  distinct(module)
-
-#write.table(top_25_kos_name_module, 'data(genes_sergio/top25_kos_modules_scg.txt', sep = '\t')
-
-top_25_kos_names |>
-  distinct(module)
+top_25_kos_names <- read.csv2('data/genes_sergio/top25_kos_modules_scg.csv')
 
 top_25_kos_names |>
   colnames()
 
-top_25_kos_names <- read.csv2('data/genes_sergio/top25_genes_description_scg.csv', sep = '\t')
+top_25_kos_names |>
+  distinct(module)
 
 ## upload KEGGs counts SCG
 kos_tb_t <- kos_tb_t |>
@@ -356,7 +486,7 @@ relative_contribution_gla <- genes_bloo_ko_1101_tb |>
   left_join(top_25_kos_names, by = c('KO' = 'KO'))
 
 relative_contribution_gla_plot <- relative_contribution_gla |>
-  dplyr::mutate(ko_gene = paste0(KO, ' ', gene)) |>
+  dplyr::mutate(ko_gene = paste0(KO, ' ', gene, module)) |>
   dplyr::mutate(ko_gene = as.factor(ko_gene)) |>
   dplyr::mutate(ko_gene = fct_reorder(ko_gene, relative_contribution, .desc = F)) |>  # Reorder factor
   ggplot(aes(relative_contribution, fct_infreq(ko_gene)))+
@@ -378,7 +508,7 @@ relative_contribution_amy <- genes_bloo_ko_0904_tb |>
   left_join(top_25_kos_names, by = c('KO' = 'KO'))
 
 relative_contribution_amy_plot <- relative_contribution_amy |>
-  dplyr::mutate(ko_gene = paste0(KO, ' ', gene)) |>
+  dplyr::mutate(ko_gene = paste0(KO, ' ', gene, module)) |>
   dplyr::mutate(ko_gene = as.factor(ko_gene)) |>
   dplyr::mutate(ko_gene = fct_reorder(ko_gene, relative_contribution, .desc = F)) |>  # Reorder factor
   ggplot(aes(relative_contribution, fct_infreq(ko_gene)))+
