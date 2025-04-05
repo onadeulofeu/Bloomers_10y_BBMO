@@ -453,12 +453,25 @@ top25_kos_amy |>
   cat(top25_kos_gla)
 
 top_25_kos_names <- read.csv2('data/genes_sergio/top25_kos_modules_scg.csv')
+modules_info <- fread('data/genes_sergio/module_def-ko-uniques.txt', sep = '\t', fill = T, header = T)
+modules_brite <- fread('data/genes_sergio/kegg-2019-02-11-brite-ko00002.keg-hierarchical-pathways.txt', sep = '\t', header = T,fill = T, data.table =  T) |>
+  column_to_rownames(var = 1) |>
+  as_tibble()
+
+modules_brite_filt <- modules_brite |>
+  dplyr::filter(ko_id %in% top_25_kos_names$KO)
 
 top_25_kos_names |>
   colnames()
 
 top_25_kos_names |>
   distinct(module)
+
+top_25_kos_names_info <- top_25_kos_names |>
+  left_join(modules_info, by = c('KO' = 'ko')) |>
+  left_join(modules_brite_filt, by = c('KO' = 'ko_id'))
+
+write.table(top_25_kos_names_info, 'data/genes_sergio/top_25_kos_names_info.txt', sep = '\t') 
 
 ## upload KEGGs counts SCG
 kos_tb_t <- kos_tb_t |>
@@ -557,3 +570,86 @@ ggsave( plot = composition_plot,
         filename = 'genes_kos_bloomers_v3.pdf',
         path = 'results/figures/',
         width = 180, height = 160, units = 'mm')
+
+
+## Supplementary comprovation: pre-bloom  -----
+### Glaciecola
+genes_bloo_ko_1012_tb <- genes_bloo_tb_tax |>
+  pivot_longer(cols = starts_with('BL'), names_to = 'sample_id') |>
+  left_join(kos_genes_relation_tb, by = c('gene')) |>
+  dplyr::filter(tax_bloo_close == 'Glaciecola') |>
+  dplyr::filter(str_detect(sample_id, 'BL1012')) |>
+  left_join(m_bbmo_10y_ed_4metag_red2, by = c('sample_id' = 'sample_id_sim')) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  group_by(KO, sample_id, tax_bloo_close, date) |>
+  dplyr::reframe(contribution_to_ko = sum(value)) |>
+  dplyr::filter(contribution_to_ko != 0) |>
+  dplyr::filter(KO %in% top25_kos_gla)
+
+kos_tb_t_l_bl1012 <- kos_tb_t |>
+  dplyr::select(-sum_not_annotated, -sample_id) |>
+  pivot_longer(starts_with('K'), values_to = 'scg_kos_counts', names_to = 'asv_num') |>
+  dplyr::filter(asv_num %in% top25_kos_gla) |>
+  dplyr::filter(str_detect(annot, 'BL1012'))
+
+relative_contribution_gla <- genes_bloo_ko_1012_tb |>
+  left_join(kos_tb_t_l_bl1012, by = c('KO' = 'asv_num', 'sample_id' = 'annot')) |>
+  dplyr::mutate(relative_contribution = as.numeric(contribution_to_ko)/as.numeric(scg_kos_counts)) |>
+  left_join(top_25_kos_names, by = c('KO' = 'KO'))
+
+relative_contribution_gla_plot <- relative_contribution_gla |>
+  dplyr::mutate(ko_gene = paste0(KO, ' ', gene, module)) |>
+  dplyr::mutate(ko_gene = as.factor(ko_gene)) |>
+  dplyr::mutate(ko_gene = fct_reorder(ko_gene, relative_contribution, .desc = F)) |>  # Reorder factor
+  ggplot(aes(relative_contribution, fct_infreq(ko_gene)))+
+  geom_col(aes(), fill = "#f1c510")+
+  labs(x = 'Relative contribution', y = '')+
+  scale_x_continuous(limits = c(0,1), expand = c(0,0))+
+  theme_bw()+
+  theme(panel.grid.minor = element_blank(), axis.text.y = element_text(size = 5),
+        axis.text.x = element_text(size = 4),
+        axis.title.x = element_text(size = 5),
+        axis.ticks.length = unit(0.2, "mm"))
+
+relative_contribution_gla_plot
+
+##
+genes_bloo_ko_1004_tb <- genes_bloo_tb_tax |>
+  pivot_longer(cols = starts_with('BL'), names_to = 'sample_id') |>
+  left_join(kos_genes_relation_tb, by = c('gene')) |>
+  dplyr::filter(tax_bloo_close == 'Amylibacter') |>
+  dplyr::filter(str_detect(sample_id, 'BL1004')) |>
+  left_join(m_bbmo_10y_ed_4metag_red2, by = c('sample_id' = 'sample_id_sim')) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  group_by(KO, sample_id, tax_bloo_close, date) |>
+  dplyr::reframe(contribution_to_ko = sum(value)) |>
+  dplyr::filter(contribution_to_ko != 0) |>
+  dplyr::filter(KO %in% top25_kos_amy)
+
+kos_tb_t_l_bl1004 <- kos_tb_t |>
+  dplyr::select(-sum_not_annotated, -sample_id) |>
+  pivot_longer(starts_with('K'), values_to = 'scg_kos_counts', names_to = 'asv_num') |>
+  dplyr::filter(asv_num %in% top25_kos_amy) |>
+  dplyr::filter(str_detect(annot, 'BL1004'))
+
+relative_contribution_amy <- genes_bloo_ko_1004_tb |>
+  left_join(kos_tb_t_l_bl1004, by = c('KO' = 'asv_num', 'sample_id' = 'annot')) |>
+  dplyr::mutate(relative_contribution = as.numeric(contribution_to_ko)/as.numeric(scg_kos_counts)) |>
+  left_join(top_25_kos_names, by = c('KO' = 'KO'))
+
+relative_contribution_amy_plot <- relative_contribution_amy |>
+  dplyr::mutate(ko_gene = paste0(KO, ' ', gene, module)) |>
+  dplyr::mutate(ko_gene = as.factor(ko_gene)) |>
+  dplyr::mutate(ko_gene = fct_reorder(ko_gene, relative_contribution, .desc = F)) |>  # Reorder factor
+  ggplot(aes(relative_contribution, fct_infreq(ko_gene)))+
+  geom_col(aes(), fill =  "#2d373b")+
+  labs(x = 'Relative contribution', y = '')+
+  scale_x_continuous(limits = c(0,1), expand = c(0,0))+
+  theme_bw()+
+  theme(panel.grid.minor = element_blank(), axis.text.y = element_text(size = 5),
+        axis.text.x = element_text(size = 4),
+        axis.title.x = element_text(size = 5),
+        axis.ticks.length = unit(0.2, "mm"))
+
+relative_contribution_amy_plot
+
