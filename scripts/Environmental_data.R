@@ -1,3 +1,11 @@
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# +++++++++++++++++++++++                     data analysis pipeline                  ++++++++++++++++++++++++++++++++++++++++++++
+# +++++++++++++++++++++++                    BBMO timeseries 10-Y data                ++++++++++++++++++++++++++++++++++++++++++++
+# +++++++++++++++++++++++                 Environmental data processing               ++++++++++++++++++++++++++++++++++++++++++++
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# +++++++++++++++++++++++             Code developed by Ona Deulofeu-Capo 2024        ++++++++++++++++++++++++++++++++++++++++++++
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 # Analyse if blooming events respond to changes in environmental conditions
 ## Mantel tests are correlation tests that determine the correlation between
 ## two matrices (rather than two variables). When using the test for microbial
@@ -24,21 +32,18 @@
 ## Unless using the ranked Mantel statistic, the Mantel approach is suited to 
 ## detect linear relationships between (dis)similarity matrices.
 
-##packages----
+## upload packages ----
 library(vegan)
 library(tidyverse)
 library(ggplot2)
 library(magrittr)
 library(multipanelfigure) #merge plots with different sizes
 library(forcats) 
-# 
-# m_bbmo_10y |>
-#   colnames()
 
-## functions----
+## upload functions ----
 source('src/calculate_z_scores.R')
 
-## environmental variables labs----
+## environmental variables labs ----
 labs_env <- as_labeller(c("day_length" = 'Day length' ,
                                 "temperature" = 'Temperature',
                                 "secchi"  = 'Turbididty\n(Secchi disck)',    
@@ -72,19 +77,13 @@ labs_env <- as_labeller(c("day_length" = 'Day length' ,
                           'total_vlp' = 'Total viruses'))
 
 ##upload data----
-asv_tab_all_bloo_z_tax <- read.csv2('data/asv_tab_all_bloo_z_tax_new_assign.csv')
+asv_tab_all_bloo_z_tax <- read.csv2('data/detect_bloo/asv_tab_all_bloo_z_tax_new_assign_checked.csv')
 asv_tab_rar <- read.csv2('data/asv_tab_bbmo_10y_w_rar.csv') |>
   as_tibble()
 
 library(readxl) ##I upload the general metadata from the whole BBMO 20Y
 bbmo_20y <- read_xlsx('data/main_databaseMOSTREIGBLANES_March23_od.xlsx', skip = 0 ) |>
   as_tibble()
-
-bbmo_20y |>
-  colnames()
-
-bbmo_20y |>
-  head()
 
 ##I would like to add viruses to the analysis----
 bbmo_20y_v <- bbmo_20y |>
@@ -108,6 +107,93 @@ bbmo_20y_v_red <-  bbmo_20y_v |>
   dplyr::filter(!is.na(total_vlp)) |>
   dplyr::filter(!sample_id_ed2 == 'BL130709') |> #transecte DEVOTES
   dplyr::distinct(sample_id_ed2, total_vlp, low_vlp, med_vlp, high_vlp)
+
+m_02_ed2 <- m_02 |>
+  dplyr::select(sample_id, HNF_Micro, HNF2_5um_Micro, HNF_5um_Micro, decimal_date, date, year) |>
+  separate(sample_id, sep = '_', into = c('sample_id', 'fraction', 'code'), remove = F)
+
+m_vir_tb <- bbmo_20y_v_red |>
+  right_join(m_02_ed2, by = c('sample_id_ed2' = 'sample_id')) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d")))
+
+plot_virus_abund <- m_vir_tb |>
+  ggplot(aes(date, total_vlp))+
+  geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
+                                                    ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
+  geom_area(colour = '#182533')+
+  labs(y = 'Virus/mL', x = 'Date')+
+  geom_line(aes(date, low_vlp), color = '#69BFAE')+
+  geom_line(aes(date, med_vlp), color = '#4E8AC7')+
+  geom_line(aes(date, high_vlp), color = '#988B99')+
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0)
+  )+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 7), panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(), strip.text = element_text(size = 7),
+        legend.position = 'bottom', axis.text.y = element_text(size = 8),
+        axis.title = element_text(size = 8), strip.background = element_blank(), 
+        legend.text = element_text(size = 6), legend.title = element_text(size = 8), strip.placement = 'outside',
+        plot.margin = margin(2,5,0,5))  
+
+plot_virus_abund 
+
+plot_HNF_abund <- m_vir_tb |>
+  ggplot(aes(date, HNF_Micro))+
+  geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
+                                                    ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
+  geom_line(colour = '#182533')+
+  labs(y = 'cells/mL', x = 'Date')+
+  #geom_smooth (method = 'loess', span = 0.1)+
+  #geom_line(aes(date, HNF2_5um_Micro), color = '#69BFAE')+
+  #geom_line(aes(date, HNF_5um_Micro), color = '#4E8AC7')+
+  # geom_line(aes(date, high_vlp), color = '#988B99')+
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0)
+  )+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 7), panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(), strip.text = element_text(size = 7),
+        legend.position = 'bottom', axis.text.y = element_text(size = 8),
+        axis.title = element_text(size = 8), strip.background = element_blank(), 
+        legend.text = element_text(size = 6), legend.title = element_text(size = 8), strip.placement = 'outside',
+        plot.margin = margin(2,5,0,5))  
+
+plot_HNF_abund
+
+
+plot_grid(plot_virus_abund,
+          plot_HNF_abund,
+          cols = 1)
+
+asv_tab_all_bloo_z_tax |>
+  colnames()
+
+asv_tab_all_bloo_z_tax$asv_num |>
+  unique()
+
+asv11_tb <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(abundance_type == 'relative_abundance') |>
+  dplyr::filter(asv_num == 'asv11') |>
+  dplyr::filter(fraction == '0.2') |>
+  dplyr::select(abundance_value, sample_id) |>
+  separate(sample_id, sep = '_', into = c('sample_id', 'fraction', 'code'), remove = F)
+
+m_vir_tb |>
+  left_join(asv11_tb, by = c('sample_id_ed2' = 'sample_id')) |>
+  dplyr::mutate(lag_vir = lag(total_vlp)) |>
+  ggplot(aes(lag_vir, abundance_value))+
+  geom_point()
+
+m_vir_tb |> 
+  ggplot(aes(total_vlp, HNF_Micro)) +
+  geom_point() +
+  geom_smooth(method = 'lm', se = TRUE) +
+  stat_poly_eq(
+    aes(label = paste( ..rr.label.., ..p.value.label.., sep = "~~~")), 
+    formula = y ~ x,
+    method = "lm",
+    parse = TRUE
+  )
+
 
 ## we also have some data for the radiometer even though it has been broken for a period -----
 ### radiometer units llum (µE m-2 s-1)
@@ -160,7 +246,6 @@ radiometer_data |>
   scale_y_reverse()+
   labs(x = 'Month', y = 'Depth (m)', fill = 'Light')+
   facet_wrap(vars(year))+
-  #scale_fill_gradient()+
   scale_fill_viridis_c(option = "magma")+
   theme_light()+
   theme(panel.grid.major.y = element_blank())
@@ -303,278 +388,7 @@ bbmo_env_02_seas |>
   theme_light()+
   theme(text = element_text(size = 12), strip.text.x = element_blank())
 
-# Mantel test whole community structure vs environmental data ------
-### in this case we use the rarefied community to overcome the compositional problem previous to calculate
-### the distances
-## I create three different datasets one for ASVs, one for environmental data and the other for the community------
-asv_tab_rar |>
-  colnames()
 
-asv_tab_rar_l <- asv_tab_rar |>
-  pivot_longer(starts_with('asv'), 
-               values_to = 'abundance', 
-               names_to = 'asv_num')
-
-asv_tab_all_bloo_z_tax |>
-  colnames()
-
-sample_id <- asv_tab_all_bloo_z_tax$sample_id
-
-bbmo_env <- asv_tab_all_bloo_z_tax |>
-  dplyr::select(sample_id,
-                day_length,
-                #sampling_time
-                temperature,
-                secchi,
-                salinity,
-                chla_total,
-                chla_3um,
-                PO4,
-                NH4, NO2, NO3,
-                Si, BP_FC1.55,
-                PNF_Micro, PNF2_5um_Micro,
-                PNF_5um_Micro, 
-                cryptomonas, micromonas,
-                HNF_Micro, HNF2_5um_Micro,   
-                HNF_5um_Micro ,  LNA,              
-                HNA,   prochlorococcus_FC,
-                Peuk1,   Peuk2,                 
-                bacteria_joint, synechococcus) |>
-  dplyr::select(-sample_id) |>
-  dplyr::mutate_if( is.character, as.numeric) |>
-  bind_cols(sample_id) |>
-  rename(sample_id = '...28') |>
-  distinct(sample_id,
-           day_length,
-           #sampling_time
-           temperature,
-           secchi,
-           salinity,
-           chla_total,
-           chla_3um,
-           PO4,
-           NH4, NO2, NO3,
-           Si, BP_FC1.55,
-           PNF_Micro, PNF2_5um_Micro,
-           PNF_5um_Micro, 
-           cryptomonas, micromonas,
-           HNF_Micro, HNF2_5um_Micro,   
-           HNF_5um_Micro ,  LNA,              
-           HNA,   prochlorococcus_FC,
-           Peuk1,   Peuk2,                 
-           bacteria_joint, synechococcus ) |>
-  tidyr::separate(sample_id, into = c('sample_id_ed', 'filter', 'sequencing_num'), sep = '_', remove = FALSE) |>
-  left_join(bbmo_20y_v_red, by = c('sample_id_ed' = 'sample_id_ed2'), relationship = "many-to-many") |>  ## add virus data to the environmental data 
-  #rename('sample_id' = sample_id.x ) |>
-  distinct(sample_id,
-           day_length,
-           #sampling_time
-           temperature,
-           secchi,
-           salinity,
-           chla_total,
-           chla_3um,
-           PO4,
-           NH4, NO2, NO3,
-           Si, BP_FC1.55,
-           PNF_Micro, PNF2_5um_Micro,
-           PNF_5um_Micro, 
-           cryptomonas, micromonas,
-           HNF_Micro, HNF2_5um_Micro,   
-           HNF_5um_Micro ,  LNA,              
-           HNA,   prochlorococcus_FC,
-           Peuk1,   Peuk2,                 
-           bacteria_joint, synechococcus,  low_vlp ,
-           med_vlp ,  
-           high_vlp ,
-           total_vlp)
-
-# bbmo_env$sample_id
-# bbmo_20y_v |>
-#   dim()
-# 
-# bbmo_env |>
-#   dim()
-## in case I need the env data separated by fractions but it's the same data-----
-bbmo_env_02 <- bbmo_env |>
-  dplyr::filter(str_detect(sample_id, '_0.2_')) 
-  # tidyr::separate(sample_id, into = c('sample_id_ed', 'filter', 'sequencing_num'), sep = '_', remove = FALSE) |>
-  # left_join(bbmo_20y_v, by = c('sample_id_ed' = 'sample_id_ed2'), relationship = "many-to-many")
-
-bbmo_env_3 <- bbmo_env |>
-  dplyr::filter(str_detect(sample_id, '_3_')) 
-  # tidyr::separate(sample_id, into = c('sample_id_ed', 'filter', 'sequencing_num'), sep = '_', remove = FALSE) |>
-  # left_join(bbmo_20y_v, by = c('sample_id_ed' = 'sample_id_ed2'), relationship = "many-to-many")
-
-##normalization of environmental data using z-scores----
-
-# class(bbmo_env_sim$day_length)
-# sum(is.na(bbmo_env_sim$day_length))
-
-# bbmo_env_sim <- bbmo_env |>
-#   dplyr::select(sample_id, day_length) |>
-#   dplyr::filter(!is.na(day_length)) |>
-#   dplyr::mutate(day_length = as.numeric(day_length)) |>
-#   ungroup()
-
-## I created a function for this purpose 
-# calculate_z_score <- function(data, col, name = NULL, group = NULL) {
-#   stopifnot(is.numeric(data[[col]]))
-#   
-#   # Check for NAs in the specified column
-#   if (anyNA(data[[col]])) {
-#     warning("The specified column contains NA values.")
-#   }
-#   
-#   col_name <- ifelse(!is.null(name), paste0("z_score_", name), 'z_score')
-#   
-#   if (!is.null(group)) {
-#     data <- data |>
-#       dplyr::group_by({{group}}) |>
-#       dplyr::mutate(!!col_name := (!!{{col}} - base::mean(!!{{col}}, na.rm = TRUE)) / base::sd(!!{{col}}, na.rm = TRUE))
-#   } else {
-#     data <- data |>
-#       dplyr::mutate(!!col_name := (!!{{col}} - base::mean(!!{{col}}, na.rm = TRUE)) / base::sd(!!{{col}}, na.rm = TRUE))
-#   }
-#   
-#   return(data)
-# }
-
-#calculate_z_score <- function(data, col, name = NULL, group = NULL) {
-#   stopifnot(is.numeric(data[[col]]))
-#   
-#   # Check for NAs in the specified column
-#   if (anyNA(data[[col]])) {
-#     warning("The specified column contains NA values.")
-#   }
-#   
-#   col_name <- ifelse(!is.null(name), paste0("z_score_", name), 'z_score')
-#   
-#   if (!is.null(group)) {
-#     data <- data |>
-#       dplyr::group_by(!!sym(group)) |>
-#       dplyr::mutate(!!col_name := (!!sym(col) - base::mean(!!sym(col), na.rm = TRUE)) / stats::sd(!!sym(col), na.rm = TRUE))
-#   } else {
-#     data <- data |>
-#       dplyr::mutate(!!col_name := (!!sym(col) - base::mean(!!sym(col), na.rm = TRUE)) / stats::sd(!!sym(col), na.rm = TRUE))
-#   }
-#   
-#   return(data)
-# }
-
-# calculate_z_score(bbmo_env_sim, col = 'day_length', name = 'day_length', group = NULL)
-# 
-# bbmo_env_sim |>
-#   glimpse()
-## Using the function created to normalize environmental data to z-scores----
-bbmo_env_z <- 
-  bbmo_env |>
-  as_tibble() |>
-  pivot_longer(cols = c( day_length,
-                         #sampling_time
-                         temperature,
-                         secchi,
-                         salinity,
-                         chla_total,
-                         chla_3um,
-                         PO4,
-                         NH4, NO2, NO3,
-                         Si, BP_FC1.55,
-                         PNF_Micro, PNF2_5um_Micro,
-                         PNF_5um_Micro, 
-                         cryptomonas, micromonas,
-                         HNF_Micro, HNF2_5um_Micro,   
-                         HNF_5um_Micro ,  LNA,              
-                         HNA,   prochlorococcus_FC,
-                         Peuk1,   Peuk2,                 
-                         bacteria_joint, synechococcus, 
-                         low_vlp ,
-                         med_vlp ,  
-                         high_vlp ,
-                         total_vlp), values_to = 'env_values', names_to = 'environmental_variable') |>
-  dplyr::filter(!is.na(env_values)) |>
-  dplyr::mutate(env_values = as.numeric(env_values)) |>
-  calculate_z_score(col = 'env_values', name = 'environmental_variable', group = 'environmental_variable') 
-  #pivot_wider(id_cols = )
-#   
-# bbmo_env_z$sample_id |>
-#   unique()
-  
-# ## calculate z-scores without using a function---- 
-#   bbmo_env_zscore_02  <- bbmo_env_02 |>
-#     as_tibble() |>
-#     pivot_longer(cols = c(day_length,
-#                            #sampling_time
-#                            temperature,
-#                            secchi,
-#                            salinity,
-#                            chla_total,
-#                            chla_3um,
-#                            PO4,
-#                            NH4, NO2, NO3,
-#                            Si, BP_FC1.55,
-#                            PNF_Micro, PNF2_5um_Micro,
-#                            PNF_5um_Micro, 
-#                            dryptomonas, micromonas,
-#                            HNF_Micro, HNF2_5um_Micro,   
-#                            HNF_5um_Micro ,  LNA,              
-#                            HNA,   prochlorococcus_FC,
-#                            Peuk1,   Peuk2,                 
-#                            bacteria_joint, synechococcus), values_to = 'env_values', names_to = 'environmental_variable') |>
-#     #group_by(environmental_variable) |>
-#     dplyr::filter(!is.na(env_values)) |>
-#     calculate_z_score(col = 'env_values', name = 'environmental_variable', group = 'environmental_variable') 
-#     
-#     # dplyr::mutate(sd = sd(env_values),
-#     #               mean = mean(env_values)) |>
-#     # dplyr::mutate(z_score = ((env_values - mean(env_values))/ sd(env_values))) |>
-#     # ungroup()
-#   
-#   bbmo_env_zscore_3  <- bbmo_env_3 |>
-#     as_tibble() |>
-#     pivot_longer(cols = c(day_length,
-#                           #sampling_time
-#                           temperature,
-#                           secchi,
-#                           salinity,
-#                           chla_total,
-#                           chla_3um,
-#                           PO4,
-#                           NH4, NO2, NO3,
-#                           Si, BP_FC1.55,
-#                           PNF_Micro, PNF2_5um_Micro,
-#                           PNF_5um_Micro, 
-#                           dryptomonas, micromonas,
-#                           HNF_Micro, HNF2_5um_Micro,   
-#                           HNF_5um_Micro ,  LNA,              
-#                           HNA,   prochlorococcus_FC,
-#                           Peuk1,   Peuk2,                 
-#                           bacteria_joint, synechococcus), values_to = 'env_values', names_to = 'environmental_variable') |>
-#     group_by(environmental_variable) |>
-#     dplyr::filter(!is.na(env_values)) |>
-#     dplyr::mutate(sd = sd(env_values),
-#                   mean = mean(env_values)) |>
-#     dplyr::mutate(z_score = ((env_values - mean(env_values))/ sd(env_values))) |>
-#     ungroup()
-#  
-## for the Mantel test analysis we need the table in a wider format -----
-bbmo_env_zscore_w <-   bbmo_env_z |>
-  dplyr::select(sample_id, environmental_variable, z_score_environmental_variable) |>
-  pivot_wider(id_cols = sample_id, names_from = environmental_variable, values_from = z_score_environmental_variable)
-
-# bbmo_env_l |>
-#  # group_by(enviornmental_variable) |>
-#   calculate_z_score(col = 'env_values', group = 'enviornmental_variable')
-#   
-# bbmo_env |>
-#   class()
-# 
-# bbmo_env |>
-#   colnames()
-# bbmo_env |>
-#   glimpse()
-# 
-#   calculate_z_score(bbmo_env, col = day_length)
 
 ### The restoration of the Blanes harbor strated on 24th March 2010 and finished on the 9th of june 2012----
 harbour_restoration <- tibble(xmin = '2010-03-24', xmax = '2012-06-09') |>
@@ -3309,8 +3123,6 @@ wavelets_result_env_tibble_red_coeff <- wavelets_result_env_tibble_red %>%
   dplyr::filter(!is.na(wavelets_result_ed)) |>
   group_by(environmental_variable, wavelets_transformation) %>%
   dplyr::summarize(coefficients = sqrt(sum(wavelets_result_ed^2))) 
-  #dplyr::mutate(wavelets_fraction = paste0(wavelets_transformation,'_', fraction)) |>
-  #dplyr::select( -wavelets_transformation)
 
 wavelets_result_env_tibble_red_coeff <- wavelets_result_env_tibble_red_coeff |>
   dplyr::mutate(environmental_variable = str_replace(environmental_variable,'_no_nas',''))
@@ -3332,8 +3144,6 @@ labs_wavelets <- as_labeller(c('d1' = 'Fine-scale',
                                'd4' = 'Year-to-year',
                                's4' = 'Inter-annual'))
 
-
-
 wavelets_result_env_tibble_red_coeff_plot <- wavelets_result_env_tibble_red_coeff |>
   ggplot(aes( wavelets_transformation, environmental_variable, fill = coefficients))+
   geom_tile()+
@@ -3351,52 +3161,6 @@ ggsave('wavelets_result_env_tibble_red_coeff.pdf', wavelets_result_env_tibble_re
      width = 88,
      height = 100,
      units = 'mm')
-
-
-### Boxplot to explain that the BBMO is a highly oligotrohpic environment ----
-bbmo_env |>
-  colnames()
-
-bbmo_env_dates <- asv_tab_all_bloo |>
-  dplyr::filter(str_detect(sample_id, '0.2_')) |>
-  dplyr::select(sample_id, date) |>
-  distinct(sample_id, date)
-
-nutrients <-
-  bbmo_env |>
-  dplyr::filter(str_detect(sample_id, '0.2_')) |>
-  dplyr::select("PO4",  "NH4" ,  "NO2" , "NO3" , "Si" ,  sample_id) |>
-  left_join(bbmo_env_dates) |>
-  pivot_longer(cols = c("PO4",  "NH4" ,  "NO2" , "NO3" , "Si" ), values_to = 'env_values', names_to = 'environmental_variable') |>
-  ggplot(aes(environmental_variable, env_values))+
-  scale_x_discrete(labels = labs_env)+
-  geom_point(position = position_jitter(width = 0.1), size = 0.5)+
-  geom_boxplot(alpha = 0.4)+
-  #scale_fill_gradientn( colours = palete_gradient_cb)+
-  # scale_fill_gradient2(low = "#0049B7",
-  #                      high = "#b81131", midpoint = 0)+
-  # scale_fill_gradient2(colours = palete_gradient_cb2,
-  #                      midpoint = 0  # Set the midpoint value)+
-  # scale_fill_gradientn(colors = palete_gradient_cb5,
-  #                      breaks=c(-6, 0, 6),
-  #                      limits=c(-6,  6), na.value="#4d009c")+ # I add this since I have one value which is outside the range, to define the color it should have
-  #facet_wrap(.~year, scales = 'free_x', nrow = 1, switch = 'x')+
-  #geom_tile(alpha = 1)+
-  #geom_vline(xintercept = seq(0.5, 12, by = 12), linetype = "dashed", color = "darkgrey") +
-  #scale_x_datetime(expand = c(0,0))+
-  #scale_x_continuous(expand = c(0,0), labels = unique(bbmo_env_z_ed$year), breaks = unique(bbmo_env_z_ed$year))+
-  labs(x = '', y = '[uM]')+
-  theme_bw()+
-  theme(panel.grid = element_blank(), text = element_text(size = 8), legend.position = 'bottom',
-        #panel.border = element_blank(), 
-        strip.background = element_blank(), plot.margin = unit(c(0,3,0,1), "mm"), 
-        legend.key.size = unit(3, "mm"))
-
-# ggsave('nutrients.pdf', nutrients,
-#        path = "~/Documentos/Doctorat/BBMO/BBMO_bloomers/Results/Figures/",
-#        width = 88,
-#        height = 88,
-#        units = 'mm')
 
 ### environmental distance between samples ----
 ## Upload environmental to model with interpolated missing variables----
@@ -3418,11 +3182,6 @@ decimal_date_tb_unique <- env_data_interpolated_values_all |>
   arrange(decimal_date) |>
   dplyr::select(decimal_date, sample_id_num) 
 
-# metaMDS <- env_data_interpolated_values_all_scaled |>
-#   dplyr::select(- "BP_FC1.55_no_nas" ,- "HNF2_5um_Micro_no_nas" ,-"HNF_5um_Micro_no_nas") |>
-#   dplyr::select(-sample_id_num) |>
-#   metaMDS(distance = 'euclidean', k = 2, plot = TRUE, try = 40) 
-
 # Dissimilarity matrix
 distances_env <- env_data_interpolated_values_all_scaled  |>
   dplyr::select(-BP_FC1.55_no_nas, -sample_id_num) |>
@@ -3432,11 +3191,7 @@ euclidean_distance <- distances_env |>
   as.matrix() |>
   as_tibble() |>
   bind_cols(decimal_date_tb_unique) |>
-  #rownames_to_column(var = 'rows_asv_num') |>
   pivot_longer(cols = -c('decimal_date', 'sample_id_num'), values_to = 'euclidean_distance', names_to = 'sample_id_num_2')
-
-# m <- m |>
-#   dplyr::mutate(date_hour = (as.POSIXct(date_hour.x, format = "%d/%m/%y %H:%M")))
 
 decimal_date_tb_unique <- decimal_date_tb_unique |>
   dplyr::mutate(sample_id_num = as.character(sample_id_num))
@@ -3453,7 +3208,6 @@ euclidean_distance_tb_g |>
 
 ## less env variables -----
 # Dissimilarity matrix (non bio parammeters nutrients temperature and day length)
-
 env_data_interpolated_values_all_scaled |>
   colnames()
 
@@ -3466,11 +3220,7 @@ euclidean_distance <- distances_env |>
   as.matrix() |>
   as_tibble() |>
   bind_cols(decimal_date_tb_unique) |>
-  #rownames_to_column(var = 'rows_asv_num') |>
   pivot_longer(cols = -c('decimal_date', 'sample_id_num'), values_to = 'euclidean_distance', names_to = 'sample_id_num_2')
-
-# m <- m |>
-#   dplyr::mutate(date_hour = (as.POSIXct(date_hour.x, format = "%d/%m/%y %H:%M")))
 
 decimal_date_tb_unique <- decimal_date_tb_unique |>
   dplyr::mutate(sample_id_num = as.character(sample_id_num))
@@ -3498,11 +3248,7 @@ euclidean_distance <- distances_env |>
   as.matrix() |>
   as_tibble() |>
   bind_cols(decimal_date_tb_unique) |>
-  #rownames_to_column(var = 'rows_asv_num') |>
   pivot_longer(cols = -c('decimal_date', 'sample_id_num'), values_to = 'euclidean_distance', names_to = 'sample_id_num_2')
-
-# m <- m |>
-#   dplyr::mutate(date_hour = (as.POSIXct(date_hour.x, format = "%d/%m/%y %H:%M")))
 
 decimal_date_tb_unique <- decimal_date_tb_unique |>
   dplyr::mutate(sample_id_num = as.character(sample_id_num))
@@ -3513,11 +3259,155 @@ euclidean_distance_tb_bio <- euclidean_distance |>
   dplyr::select(-decimal_date) |>
   left_join(decimal_date_tb_unique, by = c('sample_id_num_2' = 'sample_id_num'))
 
-#dplyr::mutate(date_hour = (as.POSIXct(date_code, format = "%d/%m/%y %H:%M:%S"))) |>
-
 euclidean_distance_tb_bio |>
   ggplot(aes(decimal_date, euclidean_distance))+
   geom_line()
+
+# plot euclidean distance phyiscochemical and biological ----
+
+euclidean_distance_tb_bio |>
+  colnames()
+
+euclidean_distance_tb_phch <- euclidean_distance_tb_phch |>
+  dplyr::mutate(type = 'phch')
+
+euclidean_distance_tb_g <- euclidean_distance_tb_g  |>
+  dplyr::mutate(type = 'g') |>
+  dplyr::mutate(sample_id_num = as.character(sample_id_num))
+
+euclidean_distance_tb_bio |>
+  dplyr::mutate(type = 'bio') |>
+  bind_rows(euclidean_distance_tb_phch) |>
+  #bind_rows(euclidean_distance_tb_g) |>
+  ggplot(aes(decimal_date, euclidean_distance))+
+  geom_line(aes(group = type))
+
+euclidean_distance_tb_bio_phch <- euclidean_distance_tb_bio |>
+  dplyr::mutate(type = 'bio') |>
+  bind_rows(euclidean_distance_tb_phch) |>
+  left_join(m_02_red2, by = c('sample_id_num_2' = 'sample_id_num')) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::select(date, euclidean_distance, type)
+
+eucl_plot <- euclidean_distance_tb_bio_phch |>
+  ggplot(aes(date, euclidean_distance))+
+  geom_line(data = euclidean_distance_tb_bio_phch |>
+              dplyr::filter(type == 'phch'), aes(date, group = type, color = type), linewidth = 0.75, alpha = 0.3)+
+  geom_line(aes(date, group = type, color = type, linetype = type), linewidth = 0.75, alpha = 1)+ #, linetype = bray_curtis_type
+  scale_color_manual(values= palette_fraction_env, labels = labs_fraction_env)+ #, labels = labs_fraction
+  #scale_linetype_manual( labels = labs_fraction_env, values = c('0.2' = 1, '3' = 2, 'env' = 1))+
+  scale_x_datetime(date_breaks = 'year', date_labels = '%Y')+
+  labs(x = 'Date', y = 'Euclidean Distance', color = '', linetype = '')+
+  #scale_shape_discrete(labels = labs_fraction)+
+  guides(shape = 'none',
+         color = guide_legend(ncol = 3, keywidth = unit(1, "cm")))+
+  theme_bw()+
+  theme(#panel.grid = element_blank(), 
+    strip.background = element_blank(), legend.position = 'none',
+    panel.grid.minor = element_blank(),
+    axis.title  = element_text(size = 7),
+    strip.text = element_text(size = 5),
+    axis.text = element_text(size = 5),
+    # axis.text.x = element_text(size = 7), 
+    panel.grid.major.y = element_blank(),
+    panel.border = element_blank(),
+    strip.placement = 'outside', 
+    plot.margin = margin(t = 5, l = 20, r = 20))
+
+eucl_plot
+ 
+m_02 |>
+  colnames()
+
+m_02 |>
+  ggplot(aes(decimal_date, HNA))+
+  geom_line()+
+  geom_line(aes(y = LNA), linetype = 'dashed')
+
+m_lna_hna <- m_02 |>
+  dplyr::mutate(date = as.character.Date(date)) |>
+  dplyr::select(date, LNA, HNA) |>
+  pivot_longer(cols = !c('date')) |>
+  add_row(date = '2003-12-10') |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d")))
+
+plot_HNA_LNA <- m_lna_hna |>
+  dplyr::filter(!is.na(name)) |>
+  ggplot(aes(date, value))+
+  scale_x_datetime(date_labels = '%Y', expand = c(0,0), date_breaks = '1 year', limits = c(min(m_lna_hna$date), max(m_lna_hna$date))
+  )+
+  geom_area(aes(date, value, fill = name, group = name), alpha = 1,  position='stack')+
+  #geom_hline(yintercept = 0.1, linetype = 'dashed')+
+  scale_y_continuous(labels = scientific_format(), expand = c(0,0))+
+  #scale_color_identity()+
+  #geom_smooth( aes(color = name, fill = name), span = 0.1)+
+  scale_fill_manual(values = c('LNA' = '#9E364B', 'HNA' =  "#52343A"), na.value = "#000000")+
+  scale_color_manual(values = c('LNA' = '#9E364B', 'HNA' =  "#52343A"), na.value = "#000000")+
+  labs(x = 'Date', y = 'Relative abundance (%)', fill = 'Family')+
+  facet_grid(vars(name))+
+  guides(fill = guide_legend(ncol = 6, size = 10,
+                             override.aes = aes(label = '')),
+         color = guide_legend(ncol = 6, size = 10,
+                             override.aes = aes(label = '')),
+         alpha = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 7), panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(), strip.text = element_text(size = 7),
+        legend.position = 'none', axis.text.y = element_text(size = 8),
+        axis.title = element_text(size = 8), strip.background = element_blank(), 
+        legend.text = element_text(size = 6), legend.title = element_text(size = 8), strip.placement = 'outside',
+        plot.margin = margin(2,5,0,5))  
+
+plot_HNA_LNA
+
+# ggsave('plot_HNA_LNA.pdf', plot_HNA_LNA,
+#        path = "results/figures/main_df3/supplementary/",
+#        width = 180,
+#        height = 120,
+#        units = 'mm')
+
+### some correlations (non significative)
+## correlation PA FL
+euclidean_distance_tb_bio_phch_w <- euclidean_distance_tb_bio_phch  |>
+  pivot_wider(values_from = 'euclidean_distance', names_from = 'type')|>
+  dplyr::mutate(date = as.Date.character(date)) |>
+  dplyr::mutate(date = (as.character(date))) 
+
+bray_unifrac_eucl_tb_02 |>
+  left_join(euclidean_distance_tb_bio_phch_w, by = 'date') |>
+  dplyr::filter(fraction == '0.2') |>
+  ggplot(aes(bray_curtis_community, bio))+
+  geom_point()+
+  geom_smooth(method = 'lm')
+
+bray_unifrac_eucl_tb_02 |>
+  left_join(euclidean_distance_tb_bio_phch_w, by = 'date') |>
+  dplyr::filter(fraction == '0.2') |>
+  ggplot(aes(bray_curtis_community, phch))+
+  geom_point()+
+  geom_smooth(method = 'lm')
+
+bray_unifrac_eucl_tb |>
+  pivot_wider(values_from = 'bray_curtis_result', names_from = 'bray_curtis_type') |>
+  dplyr::filter(fraction == '3') |>
+  dplyr::mutate(date = as.Date.character(date)) |>
+  dplyr::mutate(date = (as.character(date))) |>
+  left_join(euclidean_distance_tb_bio_phch_w, by = 'date') |>
+  dplyr::filter(fraction == '3') |>
+  ggplot(aes(bray_curtis_community, bio))+
+  geom_point()+
+  geom_smooth(method = 'lm')
+
+bray_unifrac_eucl_tb |>
+  pivot_wider(values_from = 'bray_curtis_result', names_from = 'bray_curtis_type') |>
+  dplyr::filter(fraction == '3') |>
+  dplyr::mutate(date = as.Date.character(date)) |>
+  dplyr::mutate(date = (as.character(date))) |>
+  left_join(euclidean_distance_tb_bio_phch_w, by = 'date') |>
+  dplyr::filter(fraction == '3') |>
+  ggplot(aes(bray_curtis_community, phch))+
+  geom_point()+
+  geom_smooth(method = 'lm')
 
 ## NMDS env data
 data.hel <- env_data_interpolated_values_all_scaled |>
@@ -3555,7 +3445,6 @@ nmds_10y_env |>
   scale_shape_discrete(labels = labs_fraction)+
   scale_color_manual(values = palette_seasons_4)+
   labs(shape = 'Fraction', color = 'Season')+
-  #geom_text(aes(label = `sample_code`), check_overlap = F, nudge_x = 0.02, nudge_y = 0.04) +
   theme_bw()+
   theme(axis.text.x = element_text(size = 14), panel.grid.minor = element_blank(),
         strip.text = element_text(size = 14),
@@ -3570,7 +3459,6 @@ nmds_10y_env |>
   scale_shape_discrete(labels = labs_fraction)+
   scale_color_manual(values = palette_years)+
   labs(shape = 'Fraction', color = 'Season')+
-  #geom_text(aes(label = `sample_code`), check_overlap = F, nudge_x = 0.02, nudge_y = 0.04) +
   theme_bw()+
   theme(axis.text.x = element_text(size = 14), panel.grid.minor = element_blank(),
         strip.text = element_text(size = 14),
@@ -3613,7 +3501,6 @@ nmds_10y_env |>
   scale_shape_discrete(labels = labs_fraction)+
   scale_color_manual(values = palette_seasons_4)+
   labs(shape = 'Fraction', color = 'Season')+
-  #geom_text(aes(label = `sample_code`), check_overlap = F, nudge_x = 0.02, nudge_y = 0.04) +
   theme_bw()+
   theme(axis.text.x = element_text(size = 14), panel.grid.minor = element_blank(),
         strip.text = element_text(size = 14),
@@ -3628,7 +3515,6 @@ nmds_10y_env |>
   scale_shape_discrete(labels = labs_fraction)+
   scale_color_manual(values = palette_years)+
   labs(shape = 'Fraction', color = 'Season')+
-  #geom_text(aes(label = `sample_code`), check_overlap = F, nudge_x = 0.02, nudge_y = 0.04) +
   theme_bw()+
   theme(axis.text.x = element_text(size = 14), panel.grid.minor = element_blank(),
         strip.text = element_text(size = 14),
@@ -3665,7 +3551,6 @@ distances_env_tb <- distances_env |>
 
 euclidean_distance <- distances_env_tb |>
   bind_cols(sample_num) |>
-  #rownames_to_column(var = 'rows_asv_num') |>
   pivot_longer(cols = -c('sample_id_num'), values_to = 'euclidean_distance', names_to = 'sample_num_2')
 
 m <- m_02 |>
@@ -3674,7 +3559,6 @@ m <- m_02 |>
 euclidean_distance_tb <- euclidean_distance |>
   dplyr::mutate(sample_distance = (as.numeric(sample_num_2) - as.numeric(sample_id_num))) |>
   dplyr::filter(sample_distance == 1) |>
-  #dplyr::mutate(date_hour = (as.POSIXct(date_code, format = "%d/%m/%y %H:%M:%S"))) |>
   right_join(m, by = c( 'sample_num_2' = 'sample_id_num')) 
 
 euclidean_distance_tb$season <- factor(euclidean_distance_tb$season, levels = c('winter', 'spring',
@@ -3683,7 +3567,6 @@ euclidean_distance_tb$season <- factor(euclidean_distance_tb$season, levels = c(
 euclidean_distance_plot <- euclidean_distance_tb |>  
   ggplot(aes(date, euclidean_distance))+
   geom_line()+
- # facet_wrap(vars(season), labeller = labs_fraction_s, scales = 'free_x')+
   scale_y_continuous(expand = c(0,0))+
   theme_bw()+
   labs(y = 'Euclidean distance', x = 'Date')+
@@ -3705,10 +3588,16 @@ euclidean_distance_plot
 #        path = 'results/figures/',
 #        width = 180, height = 80, units = 'mm')
 
-# I plot the bacterial abundances + HNA over the time series ----
-m_02 |>
+## mean and sd prokaryotes abundances ---
+m_bbmo_10y |>
   colnames()
 
-
-
+m_bbmo_10y |>
+  dplyr::select(date, bacteria_joint) |>
+  distinct(date, bacteria_joint) |>
+  dplyr::mutate(timeseries = 'BBMO') |>
+  dplyr::group_by(timeseries) |>
+  dplyr::reframe(mean = mean(bacteria_joint), sd = sd(bacteria_joint)) |>
+  dplyr::mutate(mean = scientific(mean), 
+                sd = scientific(sd))
 
