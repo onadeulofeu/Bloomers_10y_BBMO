@@ -27,11 +27,13 @@ source('../../Bloomers/R/find_asv_with_anomalies.R')
 source('../../Bloomers/R/compute_bray_curtis_dissimilariy.R')
 
 # upload data ----
-asv_tab_all_bloo_z_tax <- read.csv2('data/detect_bloo/asv_tab_all_bloo_z_tax_new_assign_checked.csv') |> ##using dada2 classifier assign tax with silva 138.1 and correctly identifying bloomers
+asv_tab_all_bloo_z_tax <- read.csv2('data/detect_bloo/asv_tab_all_bloo_z_tax_new_assign_checked_rclr.csv') |> ##using dada2 classifier assign tax with silva 138.1 and correctly identifying bloomers
   as_tibble() |>
-  dplyr::select(-X)
+  dplyr::select(-X) |>
+  pivot_longer(cols = c('relative_abundance', 'rclr'), values_to = 'abundance_value', names_to = 'abundance_type')
 
-bloo_all_types_summary_tax <- read.csv('results/tables/bloo_all_types_summary_tb_tax_v2.csv')
+bloo_all_types_summary_tax <- read.csv('results/tables/bloo_all_types_summary_tb_tax_v2.csv') |>
+  dplyr::select(-X)
 
 occurrence_bloo_bbmo <- read.delim2('data/occurrence_bloo_bbmo.csv', sep = ',') |>
   dplyr::mutate(occurrence_category = ifelse(occurrence_perc > 2/3, 'broad',
@@ -99,7 +101,8 @@ tree_complete <- ggtree::read.tree('data/raxml/complete_tree_cesga/bbmo.raxml.su
 bloom_event <- asv_tab_all_bloo_z_tax |>
   dplyr::mutate(bloom_event = case_when(abundance_type == 'relative_abundance' &
                                           abundance_value >= 0.1 &
-                                          z_score_ra > 1.96 ~ 'bloom',
+                                          z_score_ra > cut_off_value_ra &
+                                          z_score_rclr > cut_off_value_rclr ~ 'bloom',
                                         TRUE ~ 'no-bloom')) |>
   filter(bloom_event != 0) |>
   dplyr::select(date, asv_num, bloom_event, fraction) |>
@@ -436,7 +439,6 @@ blooming_threshold
 #        path = 'Results/Figures/',
 #        width = 188, height = 188, units = 'mm')
 
-
 # ---------------------- RESULTS ----------------------  ########## ------
 # ------ ########## Figure recurrency in Blanes vs. changes over the years ------ #########
 bray_unifrac_eucl_tb$bray_curtis_type |>
@@ -633,9 +635,8 @@ print(BBMO_community_diversity_presentation_plot)
 #         path = 'results/figures/',
 #         width = 180, height = 150, units = 'mm')
 
-
 # ------ ########## Figure bloomers community timeseries ------ ########## ----------
-## I remove the 4 ASVs that clustered together in the seasonality analysis but not others that could be potential blooms
+
 ## Rarefied dataset to calculate Community Evenness----
 source('../../Bloomers/R/community_evenness.R')
 
@@ -722,99 +723,12 @@ asv_tab_all_bloo_z_tax$asv_num_f <-  factor(asv_tab_all_bloo_z_tax$asv_num_f,
                                                                                                  asv_tab_all_bloo_z_tax$family_f)]), 
                                             ordered=TRUE)
 
-## 4 ASVs discarded as potential bloomers ----
-bbmo_no_bloo_sar_cluster <- asv_tab_all_bloo_z_tax |>
-  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::filter(abundance_type == 'relative_abundance') |>
-  dplyr::filter(fraction == '0.2') |>
-  dplyr::filter(asv_num %in% c('asv2', 'asv3', 'asv5', 'asv8')) |>
-  #group_by(date, fraction) |>
-  # dplyr::mutate(max_abund = sum(abundance_value)) |>
-  # ungroup() |>
-  # group_by(date, fraction, order_f) |>
-  # dplyr::mutate(abund_order = sum(abundance_value)) |>
-  # ungroup() |>
-  ggplot(aes(date, abundance_value))+
-  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0)
-  )+
-  geom_area(aes(date, abundance_value, fill = family_f, group = asv_num_f), alpha = 1,  position='stack')+
-  geom_hline(yintercept = 0.1, linetype = 'dashed')+
-  scale_y_continuous(labels = percent_format(), expand = c(0,0), limits = c(0,0.25))+
-  #scale_color_identity()+
-  geom_smooth( aes(color = family_f, fill = "#000000"))+
-  scale_fill_manual(values = palette_family_assigned_bloo, na.value = "#000000")+
-  scale_color_manual(values = palette_family_assigned_bloo, na.value = "#000000")+
-  labs(x = 'Date', y = 'Relative abundance (%)', fill = 'Family')+
-  facet_grid(vars(asv_num))+
-  guides(fill = guide_legend(ncol = 6, size = 10,
-                             override.aes = aes(label = '')),
-         alpha = 'none')+
-  theme_bw()+
-  theme(axis.text.x = element_text(size = 7), panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank(), strip.text = element_text(size = 7),
-        legend.position = 'bottom', axis.text.y = element_text(size = 8),
-        axis.title = element_text(size = 8), strip.background = element_blank(), 
-        legend.text = element_text(size = 6), legend.title = element_text(size = 8), strip.placement = 'outside',
-        plot.margin = margin(2,5,0,5))  
-
-bbmo_no_bloo_sar_cluster
-
-# ggsave('bbmo_no_bloo_sar_cluster_plot.pdf', bbmo_no_bloo_sar_cluster,
-#        path = "results/figures/main_df3/supplementary/",
-#        width = 180,
-#        height = 170,
-#        units = 'mm')
-
-bbmo_no_bloo_sar_cluster <- asv_tab_all_bloo_z_tax |>
-  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::filter(abundance_type == 'rclr') |>
-  dplyr::filter(fraction == '0.2') |>
-  dplyr::filter(asv_num %in% c('asv2', 'asv3', 'asv5', 'asv8')) |>
-  #group_by(date, fraction) |>
-  # dplyr::mutate(max_abund = sum(abundance_value)) |>
-  # ungroup() |>
-  # group_by(date, fraction, order_f) |>
-  # dplyr::mutate(abund_order = sum(abundance_value)) |>
-  # ungroup() |>
-  ggplot(aes(date, abundance_value))+
-  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0)
-  )+
-  geom_area(aes(date, abundance_value, fill = family_f, group = asv_num_f), alpha = 1,  position='stack')+
-  geom_hline(yintercept = 0.1, linetype = 'dashed')+
-  scale_y_continuous(expand = c(0,0))+
-  #scale_color_identity()+
-  geom_smooth( aes(color = family_f, fill = "#000000"))+
-  scale_fill_manual(values = palette_family_assigned_bloo, na.value = "#000000")+
-  scale_color_manual(values = palette_family_assigned_bloo, na.value = "#000000")+
-  labs(x = 'Date', y = 'rCLR', fill = 'Family')+
-  facet_grid(vars(asv_num))+
-  guides(fill = guide_legend(ncol = 6, size = 10,
-                             override.aes = aes(label = '')),
-         alpha = 'none')+
-  theme_bw()+
-  theme(axis.text.x = element_text(size = 7), panel.grid.minor = element_blank(),
-        panel.grid.major = element_blank(), strip.text = element_text(size = 7),
-        legend.position = 'bottom', axis.text.y = element_text(size = 8),
-        axis.title = element_text(size = 8), strip.background = element_blank(), 
-        legend.text = element_text(size = 6), legend.title = element_text(size = 8), strip.placement = 'outside',
-        plot.margin = margin(2,5,0,5))  
-
-bbmo_no_bloo_sar_cluster
-
-# ggsave('bbmo_no_bloo_sar_cluster_plot_v2.pdf', bbmo_no_bloo_sar_cluster,
-#        path = "results/figures/main_df3/supplementary/",
-#        width = 180,
-#        height = 170,
-#        units = 'mm')
-
-
 ## FIG 2
-bbmo_bloo_ev_order_no_sar_cluster <- asv_tab_all_bloo_z_tax |>
+bbmo_bloo_ev_order_plot <- asv_tab_all_bloo_z_tax |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
   dplyr::filter(abundance_type == 'relative_abundance') |>
-  dplyr::filter(asv_num %in% bloo_02$value & fraction == '0.2' |
-                  asv_num %in% bloo_3$value & fraction == '3' ) |>
-  dplyr::filter(!asv_num %in% c('asv2', 'asv3', 'asv5', 'asv8')) |>
+  dplyr::filter(asv_num %in% bloo_02_tb$asv_num & fraction == '0.2' |
+                  asv_num %in% bloo_3_tb$asv_num & fraction == '3' ) |>
   group_by(date, fraction) |>
   dplyr::mutate(max_abund = sum(abundance_value)) |>
   ungroup() |>
@@ -822,28 +736,18 @@ bbmo_bloo_ev_order_no_sar_cluster <- asv_tab_all_bloo_z_tax |>
   dplyr::mutate(abund_order = sum(abundance_value)) |>
   ungroup() |>
   ggplot(aes(date, max_abund))+
-  #geom_line(aes(date, max_abund))+
-  #geom_segment(aes(x = '2005-01-01', y = 0, xend = '2005-01-02', yend =0.57),color="black")+
   scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0)
-                   #limits = c(min(asv_tab_all_bloo_z_tax$date), max(asv_tab_all_bloo_z_tax$date),
-                   #limits = c(as.POSIXct(2004-01-26, origin = '2004-01-26'), as.POSIXct(2014-01-01, origin = '2014-01-01'))
   )+
   geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
                                                     ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
-  #geom_stream(aes(fill = class_f, group = class_f), type = "ridge", bw=1)+
   geom_area(aes(date, abund_order, fill = order_f, group = order_f), alpha = 1,  position='stack')+
-  #geom_line(data = bray_curtis_rar_all_m, aes(date, bray_curtis_result))+
   geom_line(data = community_eveness_all_m, aes(date, community_eveness_rar/1.6), color = '#2D2A2B', alpha = 0.8)+
-  # geom_point(data = community_eveness_all_m |>
-  #              dplyr::filter(anomaly_color == '#9F0011'),  
-  #            aes(date, community_eveness_rar/1.6, color = anomaly_color, alpha = 0.8))+
   scale_y_continuous(labels = percent_format(), expand = c(0,0), limits = c(0,1),
                      sec.axis = sec_axis(~.* 1 , name = 'Community Evenness'))+
   scale_color_identity()+
   scale_fill_manual(values = palette_order_assigned_bloo, na.value = "#000000")+
   labs(x = 'Time', y = 'Relative abundance (%)', fill = 'Order')+
   facet_wrap(vars(fraction), dir = 'v', scales = 'free_y',  labeller = labs_fraction_env)+
-  #facet_wrap(fraction~phylum_f, dir = 'v', scales = 'free_y',  labeller = labs_fraction)+
   guides(fill = guide_legend(ncol = 6, size = 10,
                              override.aes = aes(label = '')),
          alpha = 'none')+
@@ -855,17 +759,16 @@ bbmo_bloo_ev_order_no_sar_cluster <- asv_tab_all_bloo_z_tax |>
         legend.text = element_text(size = 6), legend.title = element_text(size = 8), strip.placement = 'outside',
         plot.margin = margin(2,5,0,5))  
 
-bbmo_bloo_ev_order_no_sar_cluster
+bbmo_bloo_ev_order_plot
 
-order_legend <- get_legend(bbmo_bloo_ev_order_no_sar_cluster)
+order_legend <- get_legend(bbmo_bloo_ev_order_plot)
 
-bbmo_bloo_ev_order_no_sar_cluster <- asv_tab_all_bloo_z_tax |>
+bbmo_bloo_ev_order_plot <- asv_tab_all_bloo_z_tax |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
   dplyr::mutate(order_f = factor(order_f, levels = rev(unique(order_f)))) |>
   dplyr::filter(abundance_type == 'relative_abundance') |>
-  dplyr::filter(asv_num %in% bloo_02$value & fraction == '0.2' |
-                  asv_num %in% bloo_3$value & fraction == '3' ) |>
-  dplyr::filter(!asv_num %in% c('asv2', 'asv3', 'asv5', 'asv8')) |>
+  dplyr::filter(asv_num %in% bloo_02_tb$asv_num & fraction == '0.2' |
+                  asv_num %in% bloo_3_tb$asv_num & fraction == '3' ) |>
   group_by(date, fraction) |>
   dplyr::mutate(max_abund = sum(abundance_value)) |>
   ungroup() |>
@@ -896,19 +799,18 @@ bbmo_bloo_ev_order_no_sar_cluster <- asv_tab_all_bloo_z_tax |>
         legend.text = element_text(size = 7), legend.title = element_text(size = 8), strip.placement = 'outside',
         plot.margin = margin(2,5,0,5))  
 
-bbmo_bloo_ev_order_no_sar_cluster
+bbmo_bloo_ev_order_plot
 
 # figure B
-bloo_all_types_summary_tb_tax <-  bloo_all_types_summary_tb_tax_v2
-bloo_all_types_summary_tb_tax$recurrency <- factor(bloo_all_types_summary_tb_tax$recurrency , 
+bloo_all_types_summary_tax$recurrency <- factor(bloo_all_types_summary_tax$recurrency , 
                                                    levels = c('recurrent', 'non-recurrent'))
-data_text <- bloo_all_types_summary_tb_tax |>
+data_text <- bloo_all_types_summary_tax |>
   group_by(recurrency, fraction, asv_num) |>
   dplyr::reframe(n = n()) |>
   group_by(fraction, recurrency) |>
   dplyr::reframe(n_general = paste0( 'n = ', n())) 
 
-tax_seasonality_plot <- bloo_all_types_summary_tb_tax |>
+tax_seasonality_plot <- bloo_all_types_summary_tax |>
   group_by(recurrency, fraction, order) |>
   dplyr::reframe(n = n()) |>
   group_by( fraction, recurrency) |>
@@ -933,12 +835,120 @@ tax_seasonality_plot <- bloo_all_types_summary_tb_tax |>
 
 tax_seasonality_plot 
 
-bbmo_bloo_ev_order_no_sar_cluster_seas_plot  <- grid.arrange(bbmo_bloo_ev_order_no_sar_cluster, 
+bbmo_bloo_ev_order_no_sar_cluster_seas_plot  <- plot_grid(bbmo_bloo_ev_order_plot, 
                                                              tax_seasonality_plot,
                                                              order_legend,
-             ncol = 1, heights = c(1, 0.35, 0.5))
+             ncol = 1, rel_heights = c(1, 0.35, 0.5))
+
+bbmo_bloo_ev_order_no_sar_cluster_seas_plot
 
 # ggsave('bbmo_bloo_ev_order_no_sar_cluster_seas_plot_v2.pdf', bbmo_bloo_ev_order_no_sar_cluster_seas_plot,
+#        path = "results/figures/",
+#        width = 180,
+#        height = 160,
+#        units = 'mm')
+
+## BC and Community Evenness during bloom events -----
+m_bbmo_10y <- m_bbmo_10y |>
+  dplyr::mutate(date = as.character(as.Date(date)))
+
+bloom_event_highlight <- bloom_events_tb |>  
+  dplyr::mutate(fraction = as.character(fraction)) |>
+  dplyr::mutate(fraction = as.numeric(fraction)) |>
+  left_join(bloo_all_types_summary_tax, by = c('asv_num', 'fraction')) |>
+  dplyr::mutate(bloom_event = 'bloom') |>
+  dplyr::select(date, fraction, bloom_event) |>
+  distinct() |>
+  dplyr::mutate(fraction = as.character(fraction)) |>
+  left_join(m_bbmo_10y) |>
+  dplyr::select(decimal_date, fraction, bloom_event)
+
+data <- bray_curtis_rar_all |>
+  left_join(m_bbmo_10y, by = c('samples' = 'sample_id')) |>
+  rename(sample_id = samples) |>
+  dplyr::select(sample_id, fraction, bray_curtis_result, decimal_date) |>
+  left_join(community_eveness_all_m) |>
+  dplyr::select(fraction, community_eveness_rar, bray_curtis_result, decimal_date) |>
+  left_join(bloom_event_highlight)
+
+## stats 
+## check normality 
+shapiro.test(as.numeric(data |>
+                          dplyr::filter(bloom_event == 'bloom') %$%
+                          bray_curtis_result)) # => p-value = 0.08601 (NORMALITY)
+shapiro.test(as.numeric(data |>
+                          dplyr::filter(is.na(bloom_event)) %$%
+                          bray_curtis_result)) # => p-value = 5.796e-05 (NO NORMALITY)
+
+shapiro.test(as.numeric(data |>
+                          dplyr::filter(bloom_event == 'bloom') %$%
+                          community_eveness_rar)) # => p-value = 3.386e-05 ( NO NORMALITY)
+
+ggqqplot(as.numeric(data |>
+                      dplyr::filter(bloom_event == 'bloom') %$%
+                      bray_curtis_result))
+
+data <- data |>
+  dplyr::mutate(bloom_event = case_when(is.na(bloom_event) ~ 'No Bloom',
+                                        TRUE ~ bloom_event)) 
+
+## check homocedasticity 
+leveneTest(as.numeric(bray_curtis_result) ~ as.factor(bloom_event), data = data) #p-value > 0.05: Variances are homogeneous (equal), and the assumption for ANOVA is met
+leveneTest(as.numeric(community_eveness_rar) ~ as.factor(bloom_event), data = data) # p-value > 0.05
+
+# Perform one-way ANOVA to compare the means of Rho across the three groups
+## anova_result <- aov(rho ~ fraction_causal, data = data_ed3_f)  # Replace `bloom` with your actual group variable
+kruskal_result <- kruskal.test(as.numeric(bray_curtis_result) ~ as.factor(bloom_event), data = data) # significant differences
+kruskal_result <- kruskal.test(as.numeric(community_eveness_rar) ~ as.factor(bloom_event), data = data) # significant differences
+
+boxplot_bc_bloom <- data |>
+  dplyr::mutate(bloom_event = case_when(is.na(bloom_event) ~ 'No Bloom',
+                                        TRUE ~ bloom_event)) |>
+  ggplot(aes(bloom_event, bray_curtis_result))+
+  geom_point(alpha = 0.6, position = position_jitter(width = 0.1))+
+  geom_boxplot(notch = T)+
+  scale_shape_identity()+
+  scale_x_discrete(labels = c( 'bloom' = 'Bloom', 'No Bloom' = 'No Bloom'))+
+  labs(y = 'Bray Curtis Dissimiliarity', x = '')+
+  scale_y_continuous(limits = c(0,1))+
+  theme_bw()+
+  theme(aspect.ratio = 4/4,
+        axis.ticks.length.y =  unit(0.2, "mm")
+  )
+
+boxplot_bc_bloom 
+
+boxplot_ev_bloom <- data |>
+  dplyr::mutate(bloom_event = case_when(is.na(bloom_event) ~ 'No Bloom',
+                                        TRUE ~ bloom_event)) |>
+  ggplot(aes(bloom_event, community_eveness_rar))+
+  geom_point(alpha = 0.6, position = position_jitter(width = 0.1))+
+  geom_boxplot(notch = T)+
+  scale_shape_identity()+
+  scale_x_discrete(labels = c( 'bloom' = 'Bloom', 'No Bloom' = 'No Bloom'))+
+  labs(y = 'Community Evenness', x = '')+
+  scale_y_continuous(limits = c(0,1))+
+  theme_bw()+
+  theme(aspect.ratio = 4/4,
+        axis.ticks.length.y =  unit(0.2, "mm")
+  )
+
+boxplot_ev_bloom
+
+boxplot_bloom_community <- plot_grid(boxplot_bc_bloom, boxplot_ev_bloom,
+                                     ncol = 1)
+
+# ggsave('boxplot_bc_ev_bloom.pdf', boxplot_bc_bloom,
+#        path = "results/figures/",
+#        width = 80,
+#        height = 120,
+#        units = 'mm')
+
+bbmo_bloo_ev_order_seas_bloom_events_plot <- plot_grid(bbmo_bloo_ev_order_no_sar_cluster_seas_plot, 
+          boxplot_bloom_community, ncol = 2,
+          rel_widths = c(1, 0.3))
+
+# ggsave('bbmo_bloo_ev_order_seas_bloom_events_plot.pdf', bbmo_bloo_ev_order_seas_bloom_events_plot,
 #        path = "results/figures/",
 #        width = 180,
 #        height = 160,
@@ -2590,223 +2600,6 @@ print(corr_bray_unifrac_kos_plot)
 #         path = 'results/figures/',
 #         width = 88, height = 120, units = 'mm')
 
-# ---------------------- DISCUSSION ----------------------  ########## ------
-## supplementary figures 
-
-## BC and blooms abundance ----
-community_eveness_all_m
-
-abun_bloo <- asv_tab_all_bloo_z_tax |>
-  dplyr::filter(order != 'Synechococcales') |>
-  dplyr::filter(asv_num != 'asv15') |>
-  dplyr::filter(abundance_type == 'relative_abundance') |>
-  dplyr::group_by(decimal_date, fraction) |>
-  dplyr::reframe(sum = sum(abundance_value))
-
-asv_tab_all_bloo_z_tax |>
-  colnames()
-
-community_eveness_all_m |>
-  left_join(abun_bloo) |>
-  ggplot(aes(community_eveness_rar, sum))+
-  geom_point()
-
-community_eveness_all_m |>
-  colnames()
-
-m_bbmo_10y$sample_id
-
-bloom_event_highlight <- bloom_event |>
-  dplyr::mutate(fraction = as.double(fraction)) |>
-  left_join(bloo_all_types_summary_tax) |>
-  dplyr::filter(order != 'Synechococcales') |>
-  dplyr::filter(asv_num != 'asv15') |>
-  dplyr::filter(!asv_num %in% c('asv2', 'asv3', 'asv5', 'asv8')) |>
-  dplyr::filter(bloom_event == 'bloom') |>
-  dplyr::select(date, fraction, bloom_event) |>
-  distinct() |>
-  dplyr::mutate(fraction = as.character(fraction)) |>
-  left_join(m_bbmo_10y) |>
-  dplyr::select(decimal_date, fraction, bloom_event)
-
-bray_curtis_rar_all |>
-  left_join(m_bbmo_10y, by = c('samples' = 'sample_id')) |>
-  rename(sample_id = samples) |>
-  dplyr::select(sample_id, fraction, bray_curtis_result, decimal_date) |>
-  left_join(community_eveness_all_m) |>
-  dplyr::select(fraction, community_eveness_rar, bray_curtis_result, decimal_date) |>
-  left_join(bloom_event_highlight) |>
-  dplyr::mutate(bloom_event = case_when(is.na(bloom_event) ~ 'No Bloom',
-                                        TRUE ~ 'Heterotrophic Bloom')) |>
-  dplyr::filter(!is.na(fraction)) |>
-  ggplot(aes(community_eveness_rar, bray_curtis_result))+
-  geom_point(aes(color = bloom_event, shape = fraction))+
-  facet_wrap(vars(fraction), ncol = 1)+
-  scale_color_manual(values = c('Heterotrophic Bloom' = "#a21e66", 'No Bloom' = "#898989"))+
-  scale_shape_discrete(labels = labs_fraction_env)+
-  labs(x = 'Community Evenness', y = 'Bray Curtis Dissimilarity', color = '', shape = '')+
-  theme_bw()+
-  theme(strip.background = element_rect(fill = 'transparent'))+
-  guides(color = 'none')
-
-bray_curtis_rar_all |>
-  left_join(m_bbmo_10y, by = c('samples' = 'sample_id')) |>
-  rename(sample_id = samples) |>
-  dplyr::select(sample_id, fraction, bray_curtis_result, decimal_date) |>
-  left_join(community_eveness_all_m) |>
-  dplyr::select(fraction, community_eveness_rar, bray_curtis_result, decimal_date) |>
-  left_join(bloom_event_highlight) |>
-  ggplot(aes(community_eveness_rar, bray_curtis_result))+
-  geom_point(aes(color = bloom_event))+
-  theme_bw()
-
-## time series bc and evenness ------
-bloom_event_highlight <- bloom_event |>  
-  dplyr::mutate(fraction = as.double(fraction)) |>
-  left_join(bloo_all_types_summary_tax, by = c('asv_num', 'fraction')) |>
-  #dplyr::filter(order != 'Synechococcales') |>
-  dplyr::filter(asv_num != 'asv15') |>
-  dplyr::filter(!asv_num %in% c('asv2', 'asv3', 'asv5', 'asv8')) |>
-  #dplyr::filter(recurrency != 'recurrent') |>
-  dplyr::filter(bloom_event == 'bloom') |>
-  dplyr::select(date, fraction, bloom_event) |>
-  distinct() |>
-  dplyr::mutate(fraction = as.character(fraction)) |>
-  left_join(m_bbmo_10y) |>
-  dplyr::select(decimal_date, fraction, bloom_event)
-
-data <- bray_curtis_rar_all |>
-  left_join(m_bbmo_10y, by = c('samples' = 'sample_id')) |>
-  rename(sample_id = samples) |>
-  dplyr::select(sample_id, fraction, bray_curtis_result, decimal_date) |>
-  left_join(community_eveness_all_m) |>
-  dplyr::select(fraction, community_eveness_rar, bray_curtis_result, decimal_date) |>
-  left_join(bloom_event_highlight)
-
-chaotic_blooms_evenness <- data |>
-  ggplot(aes(decimal_date, community_eveness_rar))+
-  geom_line(data = data |>
-              dplyr::filter(fraction == 3), aes(decimal_date, community_eveness_rar,
-                                                group = fraction, linetype = fraction, color = fraction), 
-            alpha = 0.3)+
-  geom_line(aes(group = fraction, linetype = fraction, color = fraction))+
-  labs(x = 'Date', y = 'Community Evenness')+
-  scale_color_manual(values = palette_fraction_env)+
-  geom_point(data = data |>
-               dplyr::filter(bloom_event == 'bloom'), aes(decimal_date, community_eveness_rar,
-                                                          shape = 18),  
-             color = '#AB3F3D')+
-  scale_shape_identity()+
-  theme_bw()+
-  guides(alpha = 'none')+
-  theme(legend.position = 'none')
-
-chatic_blooms_bc <- data |>
-  ggplot(aes(decimal_date, bray_curtis_result))+
-  geom_line(data = data |>
-              dplyr::filter(fraction == 3), aes(decimal_date, bray_curtis_result,
-                                                group = fraction, linetype = fraction,
-                                                color = fraction), alpha = 0.3)+
-  geom_line(aes(group = fraction, linetype = fraction, color = fraction))+
-  labs(x = 'Date', y = 'Bray-Curtis Dissimilarity')+
-  scale_color_manual(values = palette_fraction_env)+
-  geom_point(data = data |>
-               dplyr::filter(bloom_event == 'bloom'), aes(decimal_date, bray_curtis_result,
-                                                          shape = 18),  
-             color = '#AB3F3D')+
-  scale_shape_identity()+
-  theme_bw()+
-  guides(alpha = 'none')+
-  theme(legend.position = 'none')
-
-plot_grid(chaotic_blooms_evenness, 
-          chatic_blooms_bc,
-          ncol = 1)
-
-data |>
-  ggplot(aes(bray_curtis_result, community_eveness_rar))+
-  geom_point(alpha = 0.6)+
-  geom_point(data = data |>
-               dplyr::filter(bloom_event == 'bloom'), aes( bray_curtis_result,
-                                                          community_eveness_rar,
-                                                          shape = 18),  
-             color = '#AB3F3D')+
-  scale_shape_identity()+
-  labs(x = 'Bray Curtis Dissimiliarity', y = 'Community Evenness')+
-  scale_x_continuous(limits = c(0,1))+
-  scale_y_continuous(limits = c(0,1))+
-  theme_bw()+
-  theme(aspect.ratio = 4/4)
-
-## stats 
-## check normality 
-shapiro.test(as.numeric(data |>
-                          dplyr::filter(bloom_event == 'bloom') %$%
-                          bray_curtis_result)) # => p-value = 0.08601 (NORMALITY)
-shapiro.test(as.numeric(data |>
-                          dplyr::filter(is.na(bloom_event)) %$%
-                          bray_curtis_result)) # => p-value = 5.796e-05 (NO NORMALITY)
-ggqqplot(as.numeric(data |>
-                      dplyr::filter(bloom_event == 'bloom') %$%
-                      bray_curtis_result))
-
-data <- data |>
-  dplyr::mutate(bloom_event = case_when(is.na(bloom_event) ~ 'No Bloom',
-                                        TRUE ~ bloom_event)) 
-  
-## check homocedasticity 
-leveneTest(as.numeric(bray_curtis_result) ~ as.factor(bloom_event), data = data) #p-value > 0.05: Variances are homogeneous (equal), and the assumption for ANOVA is met
 
 
-# Perform one-way ANOVA to compare the means of Rho across the three groups
-## anova_result <- aov(rho ~ fraction_causal, data = data_ed3_f)  # Replace `bloom` with your actual group variable
-kruskal_result <- kruskal.test(as.numeric(bray_curtis_result) ~ as.factor(bloom_event), data = data) 
-
-boxplot_bc_bloom <- data |>
-  dplyr::mutate(bloom_event = case_when(is.na(bloom_event) ~ 'No Bloom',
-                                        TRUE ~ bloom_event)) |>
-  ggplot(aes(bloom_event, bray_curtis_result))+
-  geom_point(alpha = 0.6, position = position_jitter(width = 0.1))+
-  geom_boxplot(notch = T)+
-  # geom_point(data = data |>
-  #              dplyr::filter(bloom_event == 'bloom'), aes( bray_curtis_result,
-  #                                                          community_eveness_rar,
-  #                                                          shape = 18),  
-  #            color = '#AB3F3D')+
-  scale_shape_identity()+
-  scale_x_discrete(labels = c( 'bloom' = 'Bloom', 'No Bloom' = 'No Bloom'))+
-  labs(y = 'Bray Curtis Dissimiliarity', x = '')+
- # scale_x_continuous(limits = c(0,1))+
-  scale_y_continuous(limits = c(0,1))+
-  theme_bw()+
-  theme(aspect.ratio = 4/4,
-        axis.ticks.length.y =  unit(0.2, "mm")
-        )
-
-boxplot_bc_bloom 
-
-# ggsave('boxplot_bc_bloom.pdf', boxplot_bc_bloom,
-#        path = "results/figures/",
-#        width = 80,
-#        height = 100,
-#        units = 'mm')
-
-# data |>
-#   dplyr::mutate(bloom_event = case_when(is.na(bloom_event) ~ 'No Bloom',
-#                                         TRUE ~ bloom_event)) |>
-#   ggplot(aes(bloom_event, community_eveness_rar))+
-#   geom_point(alpha = 0.6, position = position_jitter(width = 0.1))+
-#   geom_boxplot(notch = T)+
-#   # geom_point(data = data |>
-#   #              dplyr::filter(bloom_event == 'bloom'), aes( bray_curtis_result,
-#   #                                                          community_eveness_rar,
-#   #                                                          shape = 18),  
-#   #            color = '#AB3F3D')+
-#   scale_shape_identity()+
-#   scale_x_discrete(labels = c( 'bloom' = 'Bloom', 'No Bloom' = 'No Bloom'))+
-#   labs(y = 'Community Evenness', x = '')+
-#   # scale_x_continuous(limits = c(0,1))+
-#   scale_y_continuous(limits = c(0,1))+
-#   theme_bw()+
-#   theme(aspect.ratio = 4/4)
 
