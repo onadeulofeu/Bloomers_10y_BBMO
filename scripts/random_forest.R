@@ -1,3 +1,11 @@
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# +++++++++++++++++++++++                     data analysis pipeline                  ++++++++++++++++++++++
+# +++++++++++++++++++++++                    BBMO timeseries 10-Y data                ++++++++++++++++++++++
+# +++++++++++++++++++++++                         metabarcoding                       ++++++++++++++++++++++
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# +++++++++++++++++++++++             Code developed by Ona Deulofeu-Capo 2024        ++++++++++++++++++++++
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 #packages----
 library(caret) #random forest
 library(forcats) #reorder in ggplot2
@@ -7,8 +15,10 @@ library(stringr)
 library(easystats) # check model assumptions
 library(ggpmisc) # add pvalue and r2 to ggplots 
 
+theme_set(theme_bw()) ##by default the theme of my plots will be bw
+
 ##labels ----
-## prepare environmental variable labels for this analysis
+## prepare environmental variable labels for the plots of this analysis
 labs_env_models <- c( "temperature_no_nas" = 'Temperature (ºC)',
                       "day_length_no_nas" = 'Day length (h)',
                       "bacteria_joint_sm" = 'Total bacterial abundance (cells/mL)',
@@ -27,9 +37,27 @@ labs_env_models <- c( "temperature_no_nas" = 'Temperature (ºC)',
                       "ev3_sm"    = 'PA community evenness',        
                       "fitted_rclr" = 'previous rCLR')
 
+labs_env_models_no_nas <- c( "temperature_no_nas" = 'Temperature (ºC)',
+                      "day_length_no_nas" = 'Day length (h)',
+                      "bacteria_joint" = 'Total bacterial abundance (cells/mL)',
+                      "synechococcus" = 'Synechococcus abundance (cells/mL)',
+                      "chla_total_no_nas"  = 'Chl-a (µg/L)' ,
+                      "PO4_no_nas" =   '[PO43-] (µM)',
+                      "NH4_no_nas"      =   '[NH4+] (µM)',
+                      "NO2_no_nas"  =    '[NO2-] (µM)',       
+                      "NO3_no_nas"  =   '[NO3-] (µM)',
+                      "Si_no_nas"   =   '[SiO4-] (µM)',
+                      "PNF_no_nas"   =    'Phototrophic nanoflagellate abundaance (cells mL ^-1)',
+                      "cryptomonas_no_nas" = 'Cryptomonas cells/mL',
+                      "micromonas_no_nas"  = 'Micromonas cells/mL',
+                      "HNF_Micro_no_nas"      = 'Heterotrophic nanoflagellate abundaance (cells mL ^-1)',
+                      "ev02_no_nas"   = 'FL community evenness',
+                      "ev3_no_nas"    = 'PA community evenness',        
+                      "fitted_rclr" = 'previous rCLR')
+
 ## we need to create a wide dataset with environmental variables and each ASV that we consider it is a potential bloomer
-## do we need to normalize environmental variables to z-scores? No need
-## Is there a way to add the community effect on a blooming event in this test? add bray curtis as an env variable?
+## Do we need to normalize environmental variables to z-scores? No need
+## Is there a way to add the community effect on a blooming event in this test? We added community evenness and then we removed it. We do not expect the community from 1 month before to affect blooming events?
 ## Could we add eukaryotes data here?
 
 ## Caret package https://topepo.github.io/caret/index.html
@@ -38,25 +66,17 @@ labs_env_models <- c( "temperature_no_nas" = 'Temperature (ºC)',
 ### mtry: numbr of variables randomly sampled as candidates at each split
 ### ntree: number of trees to grow
 set.seed(100)
-##metadata to model with interpolated missing variables----
+
+## Environmental to model with interpolated missing variables----
 env_data_interpolated_values_all <- read.csv2('data/env_data/env_data_interpolated_values_all.csv') |>
   rename(sample_id_num = X)
 
-env_data_interpolated_values_all |>
-  dim()
-
 env_data_interpolated_values_all_red <- env_data_interpolated_values_all |>
-  dplyr::select(- decimal_date,  -"PNF2_5um_Micro_no_nas" ,-"PNF_5um_Micro_no_nas",  -"HNF2_5um_Micro_no_nas" ,-"HNF_5um_Micro_no_nas" )
-
-env_data_interpolated_values_all_red  |>
-  colnames() 
-
-env_data_interpolated_values_all_red |>
-  dim()
+  dplyr::select(- decimal_date,  -"PNF2_5um_Micro_no_nas" ,-"PNF_5um_Micro_no_nas",  -"HNF2_5um_Micro_no_nas" ,-"HNF_5um_Micro_no_nas" ) #I need to reduce the explanatory variables nº
 
 ## prepare the dataset----
 ### for the PA bloomers I need the interpolated abundance for those 3 missing samples in this fraction----
-bloo_3_inter  <- read.csv('data/wavelet_3_df_deconstand.csv') |>
+bloo_3_inter  <- read.csv('data/wavelet_3_df_deconstand.csv') |> # It is here because I prepared this dataframe for the wavelets analysis
   as_tibble() |>
   dplyr::select(-X) |>
   dplyr::mutate(fraction = '3') |>
@@ -74,12 +94,10 @@ bloo_rclr_model_tb <- bloo_3_inter |>
 
 ### I pick representatives of different clusters and see how it goes
 
-##EXAMPLES FOR EACH TYPE OF BLOOM 
-### 'asv17' (PA), 'asv23' (PA), 'asv11' (FL), 'asv62' (FL), 'asv72' (FL), 'asv555' (FL))
+# EXAMPLES FOR EACH TYPE OF BLOOM 
+### 'asv17' (PA), 'asv11' (PA), 'asv11' (FL), 'asv62' (FL), 'asv72' (FL), 'asv555' (FL))
 
 ## ideas data that I should add here: diatoms, ciliates, dinophlgellates, 
-
-## do we add diversity in the random forest?
 
 ## I prepare the data for all my bloomers and then I will filter by the one I'm interested in----
 date_tb <- asv_tab_all_bloo_z_tax |>
@@ -96,41 +114,6 @@ diff_time_tb_env <- bloo_rclr_model_tb |>
   dplyr::mutate(diff_rclr_time = diff_rclr/diff_time) |>
   dplyr::mutate(sample_id_num = row_number()) |>
   left_join(env_data_interpolated_values_all_red) ## add envdata (not smoothed) 
-
-# One by one example
-# asv62_rclr <- asv_tab_all_bloo_z_tax |>
-#   dplyr::filter(abundance_type == 'rclr') |>
-#   dplyr::filter(asv_num == 'asv62') |>
-#   dplyr::select(asv_num, abundance_value, date) |>
-#   arrange(date)
-
-##difference in abundance from one day to the next one
-# diff_abund_tb <- diff(asv62_rclr$abundance_value) |>
-#     as_tibble_col(column_name = 'difference_rclr') |>
-#     dplyr::mutate(difference_rclr_num = as.numeric(difference_rclr))
-#  
-# ## calculate from one point to another the increase or decrease
-# ## divide it by the difference in time from one point to the next
-# diff_day_tb <- asv_tab_all_bloo_z_tax |>
-#   dplyr::select(date) |>
-#   dplyr::arrange(date) |>
-#   distinct(date) %$%
-#   diff(date) |>
-#   as_tibble_col(column_name = 'difference_day') |>
-#   dplyr::mutate(difference_day_num = as.numeric(difference_day))
-# 
-# ##calculate the difference in time
-# diff_time_tb <- diff_abund_tb |>
-#   bind_cols(diff_day_tb) |>
-#   dplyr::mutate(diff_time = difference_rclr/difference_day_num) |>
-#   dplyr::select(diff_time) |>
-#   dplyr::mutate(sample_id_num = row_number())
-
-## add the metadata to my target bloomer
-
-## to predict the change in abundance we need the environmental data from my previous datapoint. difference 2-1 gets the env_data in 1
-# diff_time_tb_env <- diff_time_tb  |>
-#   left_join(env_data_interpolated_values_all_red)
 
 # MODELING WITHOUT SMOOTHING MY VARIABLES ----
 
@@ -189,19 +172,19 @@ linear_fit <- lm(diff_rclr_time ~.+temperature_no_nas*day_length_no_nas*chla_tot
 summary(linear_fit)
 anova(linear_fit, type=2)
 
-## asv23----
+## asv11----
 model_tb <- diff_time_tb_env |>
  # dplyr::left_join(community_evenness_all) |> #calculated in the next chunk
   dplyr::filter(!is.na(diff_time)) |>
   dplyr::select(-sample_id_num) |>
-  dplyr::filter(asv_num_f == 'asv23' &
+  dplyr::filter(asv_num_f == 'asv11' &
                   fraction == '3') |>
   ungroup() |>
   dplyr::select(-asv_num_f, -decimal_date, -diff_rclr, -diff_time, -date, -fraction, -abundance_value, -BP_FC1.55_no_nas)
 
 ##add previous CLR value as explanatory variable
 asvs_prev_abund <- diff_time_tb_env |>
-  dplyr::filter(asv_num_f == 'asv23' &
+  dplyr::filter(asv_num_f == 'asv11' &
                   fraction == '3') |>
   dplyr::arrange(decimal_date) |>
   ungroup() |>
@@ -228,13 +211,13 @@ importance_df <- as.data.frame(bloo_rf$finalModel$importance)
 importance_df <- importance_df[order(-importance_df$`%IncMSE`),]
 
 ## retrain model on entire dataset----
-bloo_final_asv23 <- train( diff_rclr_time ~., method='rf', data=model_tb, metric = 'RMSE', ntree=500, importance=T)
-bloo_final_asv23
+bloo_final_asv11 <- train( diff_rclr_time ~., method='rf', data=model_tb, metric = 'RMSE', ntree=500, importance=T)
+bloo_final_asv11
 
 ## once we have trained our model we should not retrain it again (it will lead to different results.)
-importance_df_asv23 <- as.data.frame(bloo_final_asv23$finalModel$importance)
-importance_df_asv23 <- importance_df_asv23[order(-importance_df_asv23$`%IncMSE`),]
-importance_df_asv23
+importance_df_asv11 <- as.data.frame(bloo_final_asv11$finalModel$importance)
+importance_df_asv11 <- importance_df_asv11[order(-importance_df_asv11$`%IncMSE`),]
+importance_df_asv11
 
 ## Linear model
 linear_fit <- lm(diff_rclr_time ~., data=model_tb)
@@ -455,8 +438,8 @@ im62 <- importance_df_asv62 |>
   rownames_to_column(var = 'variable') |>
   arrange(desc(`%IncMSE`))
 
-im23 <- importance_df_asv23 |>
-  dplyr::mutate(asv_num = 'asv23') |>
+im11 <- importance_df_asv11 |>
+  dplyr::mutate(asv_num = 'asv11') |>
   rownames_to_column(var = 'variable')
 
 im72 <- importance_df_asv72 |>
@@ -476,7 +459,7 @@ im555 <- importance_df_asv555 |>
   rownames_to_column(var = 'variable')
 
 im_all <- im62 |>
-  bind_rows(im23) |>
+  bind_rows(im11) |>
   bind_rows(im72) |>
   bind_rows(im17) |>
   bind_rows(im11) |>
@@ -493,7 +476,7 @@ im_all <- im_all |>
   dplyr::mutate(asv_num = as.factor(asv_num))
 
 im_all$asv_num <- im_all$asv_num |>
-  factor(levels = c('asv23', 'asv62', 'asv72', 'asv17', 'asv11', 'asv555'))
+  factor(levels = c('asv11', 'asv62', 'asv72', 'asv17', 'asv11', 'asv555'))
 
 importance_example_bloo <- im_all |>
   ggplot(aes(fct_infreq(variable), incMSE))+
@@ -1112,11 +1095,11 @@ bloo_final
 linear_fit <- lm(diff_rclr_time ~., data=model_tb)
 summary(linear_fit)
 
-## BLOOMER ASV23-----
+## BLOOMER ASV11-----
 model_tb <- diff_time_tb_env |>
   dplyr::filter(!is.na(diff_time)) |>
   dplyr::select(-sample_id_num) |>
-  dplyr::filter(asv_num_f == 'asv23' &
+  dplyr::filter(asv_num_f == 'asv11' &
                   fraction == '3') |>
   ungroup() |>
   dplyr::select(-asv_num_f, -diff_rclr, -diff_time, -date, -fraction, -abundance_value) |>
@@ -1369,10 +1352,10 @@ fraction_date_3 <- rclr_time_tb_3 |>
   dplyr::select(fraction, decimal_date)
 
 ## first i try for my examples and they i will decide if I loop over all the variables-----
-#### 3 (asv23, as72, asv17)----
+#### 3 (asv11, as72, asv17)----
 
 #fit the loess model
-fit <- loess(asv23 ~ decimal_date, data = rclr_time_tb_3, span = 0.084)
+fit <- loess(asv11 ~ decimal_date, data = rclr_time_tb_3, span = 0.084)
 
 # predict the fited values
 predicted_values <- predict(fit)
@@ -1385,16 +1368,16 @@ residuals <- residuals(fit)
 # Compute the autocorrelation function (ACF) of the residuals
 acf_res <- acf(residuals, main = "Autocorrelation Function of Residuals")
 
-asv23_sm <- predicted_values |>
-  as_tibble_col(column_name = 'asv23') |>
+asv11_sm <- predicted_values |>
+  as_tibble_col(column_name = 'asv11') |>
   bind_cols(decimal_date_tb) |>
-  dplyr::select(decimal_date, 'fitted_rclr' = 'asv23') |>
-  dplyr::mutate(asv_num = 'asv23') |>
+  dplyr::select(decimal_date, 'fitted_rclr' = 'asv11') |>
+  dplyr::mutate(asv_num = 'asv11') |>
   dplyr::left_join(fraction_date_3)
 
 rclr_time_tb_3 |>
-  dplyr::select(decimal_date, 'rclr' = 'asv23') |>
-  left_join(asv23_sm) |>
+  dplyr::select(decimal_date, 'rclr' = 'asv11') |>
+  left_join(asv11_sm) |>
   pivot_longer(cols = c('rclr', 'fitted_rclr'), names_to = 'approx', values_to = 'abundance_value') |>
   ggplot(aes(decimal_date, abundance_value))+
   geom_line(aes(group = approx, color = approx))+
@@ -1542,7 +1525,6 @@ residuals <- residuals(fit)
 # Compute the autocorrelation function (ACF) of the residuals
 acf_res <- acf(residuals, main = "Autocorrelation Function of Residuals")
 
-
 asv555_sm <- predicted_values |>
   as_tibble_col(column_name = 'asv555') |>
   bind_cols(decimal_date_tb) |>
@@ -1561,7 +1543,7 @@ rclr_time_tb_02 |>
   theme(panel.grid = element_blank())
 
 ### bring together all the new smooth asvs-----
-asvs_sm <- asv23_sm |>
+asvs_sm <- asv11_sm |>
   bind_rows(asv555_sm) |>
   bind_rows(asv62_sm) |>
   bind_rows(asv72_sm) |>
@@ -1621,12 +1603,12 @@ asvs_sm_diff |>
 
 x <- asv_tab_all_bloo_z_tax_examples |>
   dplyr::filter(bloom == 'Bloom' &
-                  asv_num == 'asv23' &
+                  asv_num == 'asv11' &
                   fraction == '3') |>
   dplyr::select(decimal_date)
 
 asvs_sm_diff |>
-  dplyr::filter(asv_num == 'asv23') |>
+  dplyr::filter(asv_num == 'asv11') |>
   ggplot(aes(decimal_date, diff_rclr_time))+
   geom_line()+
   geom_vline(data = x, xintercept = x$decimal_date)
@@ -1791,11 +1773,11 @@ importance_df <- importance_df[order(-importance_df$`%IncMSE`),]
 bloo_final <- train( diff_rclr_time ~., method='rf', data=model_tb, metric = 'RMSE', ntree=200, importance=T)
 bloo_final
 
-### BLOOMER asv23----
+### BLOOMER asv11----
 model_tb <- asvs_sm_diff |>
   dplyr::filter(!is.na(diff_time)) |>
   dplyr::select(-sample_id_num) |>
-  dplyr::filter(asv_num == 'asv23' &
+  dplyr::filter(asv_num == 'asv11' &
                   fraction == '3') |>
   ungroup() |>
   dplyr::select(-asv_num, -diff_rclr, -diff_time, -date, -fraction, -fitted_rclr) |>
@@ -1806,7 +1788,7 @@ model_tb <- asvs_sm_diff |>
 
 ##add previous CLR value as explanatory variable
 asvs_sm_asv <- asvs_sm |>
-  dplyr::filter(asv_num == 'asv23' &
+  dplyr::filter(asv_num == 'asv11' &
                   fraction == '3') |>
   dplyr::arrange(decimal_date) |>
   dplyr::select(-asv_num, -fraction, -decimal_date)
@@ -1869,12 +1851,12 @@ summary(results)
 dotplot(results) ##100 is best
 
 ## retrain model on entire dataset----
-bloo_final_asv23 <- train( diff_rclr_time ~., method='rf', data=model_tb, metric = 'RMSE', ntree=100, importance=T)
-bloo_final_asv23
+bloo_final_asv11 <- train( diff_rclr_time ~., method='rf', data=model_tb, metric = 'RMSE', ntree=100, importance=T)
+bloo_final_asv11
 
-importance_df_asv23 <- as.data.frame(bloo_final_asv23$finalModel$importance)
-importance_df_asv23 <- importance_df_asv23[order(-importance_df_asv23$`%IncMSE`),]
-importance_df_asv23
+importance_df_asv11 <- as.data.frame(bloo_final_asv11$finalModel$importance)
+importance_df_asv11 <- importance_df_asv11[order(-importance_df_asv11$`%IncMSE`),]
+importance_df_asv11
 
 ## remove some variables----
 model_tb <- model_tb |>
@@ -2354,7 +2336,7 @@ process_results <- function(bloo_final_results, asv_num) {
 }
 
 # ASV numbers
-asv_numbers <- c("asv62", "asv23", "asv72", "asv11", "asv17", "asv555")
+asv_numbers <- c("asv62", "asv11", "asv72", "asv11", "asv17", "asv555")
 
 # Process results for each ASV number
 all_results <- lapply(asv_numbers, function(asv_num) {
@@ -2375,8 +2357,8 @@ im62 <- importance_df_asv62 |>
   rownames_to_column(var = 'variable') |>
   arrange(desc(`%IncMSE`))
   
-im23 <- importance_df_asv23 |>
-  dplyr::mutate(asv_num = 'asv23') |>
+im11 <- importance_df_asv11 |>
+  dplyr::mutate(asv_num = 'asv11') |>
   rownames_to_column(var = 'variable')
 
 im72 <- importance_df_asv72 |>
@@ -2396,7 +2378,7 @@ im555 <- importance_df_asv555 |>
   rownames_to_column(var = 'variable')
 
 im_all <- im62 |>
-  bind_rows(im23) |>
+  bind_rows(im11) |>
   bind_rows(im72) |>
   bind_rows(im17) |>
   bind_rows(im11) |>
@@ -2413,7 +2395,7 @@ im_all <- im_all |>
   dplyr::mutate(asv_num = as.factor(asv_num))
 
 im_all$asv_num <- im_all$asv_num |>
-  factor(levels = c('asv23', 'asv62', 'asv72', 'asv17', 'asv11', 'asv555'))
+  factor(levels = c('asv11', 'asv62', 'asv72', 'asv17', 'asv11', 'asv555'))
 
 importance_example_bloo <- im_all |>
   ggplot(aes(fct_infreq(variable), incMSE))+
@@ -2440,24 +2422,42 @@ importance_example_bloo
 
 ## models for each ASV
 # bloo_final_asv62
-# bloo_final_asv23
+# bloo_final_asv11
 # bloo_final_asv72
 # bloo_final_asv17
 # bloo_final_asv11
 # bloo_final_asv555
 
-# Compute partial dependence for each variable variable
-# partial_dep <- partial(bloo_final, pred.var = "temperature_no_nas")
-# 
-# # Plot the partial dependence
-# partial_dep |>
-#   ggplot(aes(x = yhat))+
-#   geom_line()
-# 
-# partial_dep <- partial(bloo_final, pred.var = "fitted_rclr")
-# 
-# # Plot the partial dependence
-# plot(partial_dep)
+#Compute partial dependence for each variable variable
+
+partial_dep <- partial(bloo_final, pred.var = "temperature_no_nas")
+
+##partial_dep <- pdp::partial(bloo_final, pred.var = "temperature_no_nas")
+
+# Plot the partial dependence
+partial_dep |>
+  ggplot(aes(x = yhat))+
+  geom_line()
+
+partial_dep <- partial(bloo_final, pred.var = "fitted_rclr")
+
+# Plot the partial dependence
+plot(partial_dep)
+
+
+#Compute partial dependence for each variable variable
+partial_dep <- pdp::partial(bloo_final, pred.var = "temperature_no_nas")
+
+# Plot the partial dependence
+partial_dep |>
+  ggplot(aes(x = yhat))+
+  geom_line()
+
+partial_dep <- pdp::partial(bloo_final, pred.var = "fitted_rclr")
+
+# Plot the partial dependence
+plot(partial_dep)
+
 
 ## loop
 #### ASV62------
@@ -2500,11 +2500,11 @@ ggsave(pdp_asv62, filename = 'pdp_asv62.pdf',
        path = 'Results/Figures/random_forest/',
        width = 188, height = 180, units = 'mm')
 
-#### asv23------
+#### asv11------
 # Get the names of predictor variables
-predictor_vars <- predictor_vars[order(match(predictor_vars, rownames(importance_df_asv23)))] 
+predictor_vars <- predictor_vars[order(match(predictor_vars, rownames(importance_df_asv11)))] 
 
-scale_limits <- bloo_final_asv23$trainingData$.outcome |>
+scale_limits <- bloo_final_asv11$trainingData$.outcome |>
   range()
 
 # Create an empty list to store the partial dependence plots
@@ -2513,7 +2513,7 @@ partial_plots <- list()
 # Loop through each predictor variable
 for(var in predictor_vars) {
   # Compute partial dependence for the current variable
-  partial_dep <- partial(bloo_final_asv23, pred.var = var)
+  partial_dep <- partial(bloo_final_asv11, pred.var = var)
   
   # Convert the partial dependence plot to a ggplot object
   partial_gg <- autoplot(partial_dep)
@@ -2531,9 +2531,9 @@ for(var in predictor_vars) {
 }
 
 # Display all partial dependence plots
-pdp_asv23 <- gridExtra::grid.arrange(grobs = partial_plots)
+pdp_asv11 <- gridExtra::grid.arrange(grobs = partial_plots)
 
-ggsave(pdp_asv23, filename = 'pdp_asv23.pdf',
+ggsave(pdp_asv11, filename = 'pdp_asv11.pdf',
        path = 'Results/Figures/random_forest/',
        width = 188, height = 180, units = 'mm')
 
@@ -2787,15 +2787,14 @@ bind_rows(validation_results)
 r2_summary_asv62 |>
   ggplot(aes(asv_num, Rsquared_mean))+
   geom_point()+
-  geom_errorbar(aes(ymin = Rsquared_mean-Rsquared_sd, ymax = Rsquared_mean +  Rsquared_sd), width = 0.2) +
-  theme_bw()
+  geom_errorbar(aes(ymin = Rsquared_mean-Rsquared_sd, ymax = Rsquared_mean +  Rsquared_sd), width = 0.2)
 
-### BLOOMER asv23 (smooth) ----
+### BLOOMER asv11 (smooth) ----
 env_data_interpolated_values_all_red <- env_data_interpolated_values_all_red[-120,]
 model_tb <- asvs_sm_diff |>
   dplyr::filter(!is.na(diff_time)) |>
   dplyr::select(-sample_id_num) |>
-  dplyr::filter(asv_num == 'asv23' &
+  dplyr::filter(asv_num == 'asv11' &
                   fraction == '3') |>
   ungroup() |>
   dplyr::select(-asv_num, -diff_rclr, -diff_time, -date, -fraction, -fitted_rclr) |>
@@ -2806,33 +2805,33 @@ model_tb <- asvs_sm_diff |>
 
 ##add previous CLR value as explanatory variable
 asvs_sm_asv <- asvs_sm |>
-  dplyr::filter(asv_num == 'asv23' &
+  dplyr::filter(asv_num == 'asv11' &
                   fraction == '3') |>
   dplyr::arrange(decimal_date) |>
   dplyr::select(-asv_num, -fraction, -decimal_date)
 
 asvs_sm_asv <- asvs_sm_asv[-120,] #the last abundance won't be necessary since we do not need it to predict the next one
 
-model_tb_23 <- model_tb |>
+model_tb_11 <- model_tb |>
   bind_cols(asvs_sm_asv)  |>
   dplyr::select(-sample_id_num, -BP_FC1.55_no_nas)
 
 ### Split data to train and test
-indices <- createDataPartition(y=model_tb_23$diff_rclr_time, p =0.8, list = F)
-train_tb_23 <- model_tb_23[indices,]
-test_tb_23 <- model_tb_23[-indices,]
+indices <- createDataPartition(y=model_tb_11$diff_rclr_time, p =0.8, list = F)
+train_tb_11 <- model_tb_11[indices,]
+test_tb_11 <- model_tb_11[-indices,]
 
 ### Train RF
 #control <- trainControl(method = 'cv', number = 10)
-bloo_rf_23 <- train( diff_rclr_time ~., method='rf', trControl=control, data=train_tb_23, metric = 'RMSE', ntree=300, importance=T)
+bloo_rf_11 <- train( diff_rclr_time ~., method='rf', trControl=control, data=train_tb_11, metric = 'RMSE', ntree=300, importance=T)
 
 ##extract the sd between the R2 from the training and the validation----
 x <- bloo_rf$bestTune$mtry ##this is the chosen mtry
 
-r2_summary_asv23 <- print(bloo_rf, showSD = T) |>
+r2_summary_asv11 <- print(bloo_rf, showSD = T) |>
   as.tibble() |>
   dplyr::filter(mtry == " 9") |>
-  dplyr::mutate(asv_num = 'asv23') |>
+  dplyr::mutate(asv_num = 'asv11') |>
   separate(RMSE, into = c("RMSE_mean", "RMSE_sd"), sep = " \\(") |>
   separate(Rsquared, into = c("Rsquared_mean", "Rsquared_sd"), sep = " \\(") |>
   separate(MAE, into = c("MAE_mean", "MAE_sd"), sep = " \\(") |>
@@ -2845,7 +2844,7 @@ r2_summary_asv23 <- print(bloo_rf, showSD = T) |>
     MAE_mean = as.numeric(MAE_mean)
   )
 
-r2_summary_asv23 |>
+r2_summary_asv11 |>
   ggplot(aes(asv_num, Rsquared_mean))+
   geom_point()+
   geom_errorbar(aes(ymin = Rsquared_mean-Rsquared_sd, ymax = Rsquared_mean +  Rsquared_sd), width = 0.2) +
@@ -3096,14 +3095,14 @@ r2_summary_asv555 |>
   theme_bw()
 
 ##plot the at the same time----
-r2_summary_all <- r2_summary_asv23 |>
+r2_summary_all <- r2_summary_asv11 |>
   bind_rows(r2_summary_asv62) |>
   bind_rows(r2_summary_asv72) |>
   bind_rows(r2_summary_asv11) |>
   bind_rows(r2_summary_asv17) |>
   bind_rows(r2_summary_asv555)
 
-r2_summary_all$asv_num <- factor(r2_summary_all$asv_num, levels = c('asv23', 'asv62', 'asv72', 'asv17', 'asv11', 'asv555'))
+r2_summary_all$asv_num <- factor(r2_summary_all$asv_num, levels = c('asv11', 'asv62', 'asv72', 'asv17', 'asv11', 'asv555'))
 
 plot_cross_validation_sd <- r2_summary_all |>
   ggplot(aes(asv_num, Rsquared_mean))+
@@ -3149,9 +3148,9 @@ model_tb_555 <- create_model_tb(data_diff = asvs_sm_diff,
 
 ## PA
 #bloo_3$value
-model_tb_23 <- create_model_tb(data_diff = asvs_sm_diff,
+model_tb_11 <- create_model_tb(data_diff = asvs_sm_diff,
                                data_previous_ab = asvs_sm,
-                               "asv23", "3")
+                               "asv11", "3")
 model_tb_72 <- create_model_tb(data_diff = asvs_sm_diff,
                                data_previous_ab = asvs_sm,
                                "asv72", "3")
@@ -3211,12 +3210,12 @@ model_subset <- paste0(model_tb, '$', response_column_name)
 #   testX = train_tb_62
 # )
 # 
-# predictions_vs_observed_23 <- extractPrediction(
-#   list(asv23 = bloo_rf_23),
-#   testX = train_tb_23
+# predictions_vs_observed_11 <- extractPrediction(
+#   list(asv11 = bloo_rf_11),
+#   testX = train_tb_11
 # )
 # 
-# prediction_vs_observed_tb <- predictions_vs_observed_23 |>
+# prediction_vs_observed_tb <- predictions_vs_observed_11 |>
 #   bind_rows(predictions_vs_observed_62) 
 # 
 # prediction_vs_observed_tb |>
@@ -3236,7 +3235,7 @@ model_subset <- paste0(model_tb, '$', response_column_name)
 
 ### i do it in a loop for all my ASVs----
 # List of ASV numbers
-asv_numbers <- c(62, 23)
+asv_numbers <- c(62, 11)
 
 # Initialize an empty list to store predictions
 predictions_list <- list()
@@ -3270,7 +3269,6 @@ prediction_vs_observed_tb |>
                rr.digits = 2,
                method = stats::lm)+
   labs(x = 'Observed', y = 'Predicted')+
-  theme_bw()+
   theme(text = element_text(size = 8), strip.background = element_rect(fill = 'transparent'),
         panel.grid = element_blank())
 
@@ -3322,10 +3320,10 @@ r2_summary_asv62 |>
   geom_errorbar(aes(ymin = Rsquared - RMSE, ymax = Rsquared + RMSE), width = 0.2) +
   theme_bw()
 
-### BLOOMER asv23 (smooth) ----
+### BLOOMER asv11 (smooth) ----
 env_data_interpolated_values_all_red <- env_data_interpolated_values_all_red[-120,]
 model_tb <- asvs_sm |>
-  dplyr::filter(asv_num == 'asv23' &
+  dplyr::filter(asv_num == 'asv11' &
                   fraction == '3') |>
   arrange(decimal_date) |>
   dplyr::filter(decimal_date != '2004.07') |> #the first abundance does not have previous timepoint
@@ -3336,7 +3334,7 @@ model_tb <- asvs_sm |>
 
 ##add previous CLR value as explanatory variable
 asvs_sm_asv <- asvs_sm |>
-  dplyr::filter(asv_num == 'asv23' &
+  dplyr::filter(asv_num == 'asv11' &
                   fraction == '3') |>
   dplyr::arrange(decimal_date) |>
   dplyr::select(-asv_num, -fraction, -decimal_date, previous_abund = fitted_rclr )
@@ -3357,11 +3355,11 @@ bloo_rf <- train( fitted_rclr  ~., method='rf', trControl=control, data=train_tb
 
 ##extract the sd between the R2 from the training and the validation
 x <- bloo_rf$bestTune$mtry ##this is the chosen mtry
-r2_summary_asv23 <- bloo_rf$results |>
+r2_summary_asv11 <- bloo_rf$results |>
   dplyr::filter(mtry == x) |>
-  dplyr::mutate(asv_num = 'asv23')
+  dplyr::mutate(asv_num = 'asv11')
 
-r2_summary_asv23 |>
+r2_summary_asv11 |>
   ggplot(aes(asv_num, Rsquared))+
   geom_point()+
   geom_errorbar(aes(ymin = Rsquared - RMSE, ymax = Rsquared + RMSE), width = 0.2) +
@@ -3548,14 +3546,14 @@ r2_summary_asv555 |>
   theme_bw()
 
 ##plot the at the same time----
-r2_summary_all <- r2_summary_asv23 |>
+r2_summary_all <- r2_summary_asv11 |>
   bind_rows(r2_summary_asv62) |>
   bind_rows(r2_summary_asv72) |>
   bind_rows(r2_summary_asv11) |>
   bind_rows(r2_summary_asv17) |>
   bind_rows(r2_summary_asv555)
 
-r2_summary_all$asv_num <- factor(r2_summary_all$asv_num, levels = c('asv23', 'asv62', 'asv72', 'asv17', 'asv11', 'asv555'))
+r2_summary_all$asv_num <- factor(r2_summary_all$asv_num, levels = c('asv11', 'asv62', 'asv72', 'asv17', 'asv11', 'asv555'))
 
 r2_summary_all |>
   ggplot(aes(asv_num, Rsquared))+
@@ -3569,7 +3567,7 @@ r2_summary_all |>
 
 
 
-###TRY THE CODE THAT IS IN CHOLLET 2023----
+###TRY THE CODE THAT IS IN CHOLLET 2011----
 
 control <- trainControl(method = 'cv', 
                         number = 10,   
@@ -3633,6 +3631,7 @@ print(bloo_rf, showSD = T)
 # }
 
 # PENSAR SI TINDRIA SENTIT O NO------
+
 ## MODEL WITH DEGREE OF CHANGE BETWEEN ENV VARIABLES AND CLR SMOOTH-----
 ## calculate the increase in the env variables too----
 env_sm_diff_w <- env_data_new |>
@@ -3742,11 +3741,11 @@ bloo_final_asv62_diff
 importance_df_asv62_diff <- as.data.frame(bloo_final_asv62_diff$finalModel$importance)
 importance_df_asv62_diff <- importance_df_asv62_diff[order(-importance_df_asv62_diff$`%IncMSE`),]
 
-### BLOOMER asv23----
+### BLOOMER asv11----
 model_tb <- asvs_sm_diff |>
   dplyr::filter(!is.na(diff_time)) |>
   dplyr::select(-sample_id_num) |>
-  dplyr::filter(asv_num == 'asv23' &
+  dplyr::filter(asv_num == 'asv11' &
                   fraction == '3') |>
   ungroup() |>
   dplyr::select(-asv_num, -diff_rclr, -diff_time, -date, -fraction, -fitted_rclr) |>
@@ -3822,11 +3821,11 @@ dotplot(results)
 ##500 is best
 
 ## retrain model on entire dataset----
-bloo_final_asv23_diff <- train( diff_rclr_time ~., method='rf', data=model_tb, metric = 'RMSE', ntree=500, importance=T)
-bloo_final_asv23_diff
+bloo_final_asv11_diff <- train( diff_rclr_time ~., method='rf', data=model_tb, metric = 'RMSE', ntree=500, importance=T)
+bloo_final_asv11_diff
 
-importance_df_asv23_diff <- as.data.frame(bloo_final_asv23_diff$finalModel$importance)
-importance_df_asv23_diff <- importance_df_asv23_diff[order(-importance_df_asv23_diff$`%IncMSE`),]
+importance_df_asv11_diff <- as.data.frame(bloo_final_asv11_diff$finalModel$importance)
+importance_df_asv11_diff <- importance_df_asv11_diff[order(-importance_df_asv11_diff$`%IncMSE`),]
 
 ### BLOOMER asv72----
 model_tb <- asvs_sm_diff |>
@@ -4179,7 +4178,7 @@ process_results <- function(bloo_final_results, asv_num) {
 }
 
 # ASV numbers
-asv_numbers <- c("asv62", "asv23", "asv72", "asv11", "asv17", "asv555")
+asv_numbers <- c("asv62", "asv11", "asv72", "asv11", "asv17", "asv555")
 
 # Process results for each ASV number
 all_results <- lapply(asv_numbers, function(asv_num) {
@@ -4200,8 +4199,8 @@ im62 <- importance_df_asv62_diff |>
   rownames_to_column(var = 'variable') |>
   arrange(desc(`%IncMSE`))
 
-im23 <- importance_df_asv23_diff |>
-  dplyr::mutate(asv_num = 'asv23') |>
+im11 <- importance_df_asv11_diff |>
+  dplyr::mutate(asv_num = 'asv11') |>
   rownames_to_column(var = 'variable')
 
 im72 <- importance_df_asv72_diff |>
@@ -4221,7 +4220,7 @@ im555 <- importance_df_asv555_diff |>
   rownames_to_column(var = 'variable')
 
 im_all <- im62 |>
-  bind_rows(im23) |>
+  bind_rows(im11) |>
   bind_rows(im72) |>
   bind_rows(im17) |>
   bind_rows(im11) |>
@@ -4238,7 +4237,7 @@ im_all <- im_all |>
   dplyr::mutate(asv_num = as.factor(asv_num))
 
 im_all$asv_num <- im_all$asv_num |>
-  factor(levels = c('asv23', 'asv62', 'asv72', 'asv17', 'asv11', 'asv555'))
+  factor(levels = c('asv11', 'asv62', 'asv72', 'asv17', 'asv11', 'asv555'))
 
 importance_example_bloo <- im_all |>
   ggplot(aes(fct_infreq(variable), incMSE))+
@@ -4246,7 +4245,6 @@ importance_example_bloo <- im_all |>
   facet_wrap(~ asv_num)+
   scale_x_discrete(labels = labs_env_models)+
   labs(y = '%IncMSE')+
-  theme_bw()+
   coord_flip()+
   theme(strip.background = element_rect(fill = 'transparent'),
         panel.grid.minor = element_blank(),
@@ -4258,11 +4256,11 @@ importance_example_bloo
 #        path = 'Results/Figures/random_forest/',
 #        width = 188, height = 150, units = 'mm')
 
+
 ## PARTIAL DEPENDANCE -----
 ### we explore how do the variables interact with each other
 ## we need the pdp package
 # https://christophm.github.io/interpretable-ml-book/pdp.html
-
 ## loop
 #### ASV62------
 # Get the names of predictor variables
@@ -4298,9 +4296,9 @@ ggsave(pdp_asv62, filename = 'pdp_asv62_diff.pdf',
        path = 'Results/Figures/random_forest/diff_env_variables/',
        width = 188, height = 180, units = 'mm')
 
-#### asv23------
+#### asv11------
 # Get the names of predictor variables
-predictor_vars <- predictor_vars[order(match(predictor_vars, rownames(importance_df_asv23_diff)))] 
+predictor_vars <- predictor_vars[order(match(predictor_vars, rownames(importance_df_asv11_diff)))] 
 
 
 # Create an empty list to store the partial dependence plots
@@ -4309,7 +4307,7 @@ partial_plots <- list()
 # Loop through each predictor variable
 for(var in predictor_vars) {
   # Compute partial dependence for the current variable
-  partial_dep <- partial(bloo_final_asv23_diff, pred.var = var)
+  partial_dep <- partial(bloo_final_asv11_diff, pred.var = var)
   
   # Convert the partial dependence plot to a ggplot object
   partial_gg <- autoplot(partial_dep)
@@ -4327,9 +4325,9 @@ for(var in predictor_vars) {
 }
 
 # Display all partial dependence plots
-pdp_asv23 <- gridExtra::grid.arrange(grobs = partial_plots)
+pdp_asv11 <- gridExtra::grid.arrange(grobs = partial_plots)
 
-ggsave(pdp_asv23, filename = 'pdp_asv23_diff.pdf',
+ggsave(pdp_asv11, filename = 'pdp_asv11_diff.pdf',
        path = 'Results/Figures/random_forest/diff_env_variables/',
        width = 188, height = 180, units = 'mm')
 
@@ -4472,137 +4470,6 @@ ggsave(pdp_asv555, filename = 'pdp_asv555_diff.pdf',
        path = 'Results/Figures/random_forest/diff_env_variables/',
        width = 188, height = 180, units = 'mm')
 
-
-
-
-
-
-##### WHAT HAPPENS WITH OTHER BLOOMERS (DESIGN A CODE TO DO IT FOR ALL OF THEM) ####-----
-bloo_02$value #discard SAR11 clade "asv8"   "asv5"   "asv3"   "asv2"
-bloo_3$value
-
-## ASV1 (in PA and FL)
-#### PA----
-#fit the loess model
-fit <- loess(asv1 ~ decimal_date, data = rclr_time_tb_3, span = 0.084)
-
-# predict the fited values
-predicted_values <- predict(fit)
-
-# Obtain the residuals from the loess model
-residuals <- residuals(fit)
-
-## check the residuals
-## this function gets the residuals and we check that we are not oversmoothing our data, so that there is some remaining variability still in the residuals
-# Compute the autocorrelation function (ACF) of the residuals
-acf_res <- acf(residuals, main = "Autocorrelation Function of Residuals")
-
-asv1_sm <- predicted_values |>
-  as_tibble_col(column_name = 'asv1') |>
-  bind_cols(decimal_date_tb) |>
-  dplyr::select(decimal_date, 'fitted_rclr' = 'asv1') |>
-  dplyr::mutate(asv_num = 'asv1') |>
-  dplyr::left_join(fraction_date_3)
-
-rclr_time_tb_3 |>
-  dplyr::select(decimal_date, 'rclr' = 'asv1') |>
-  left_join(asv1_sm) |>
-  pivot_longer(cols = c('rclr', 'fitted_rclr'), names_to = 'approx', values_to = 'abundance_value') |>
-  ggplot(aes(decimal_date, abundance_value))+
-  geom_line(aes(group = approx, color = approx))+
-  scale_color_manual(values = c('black', 'grey'))+
-  theme_bw()+
-  theme(panel.grid = element_blank())
-
-
-
-### BLOOMER asv1----
-model_tb <- asv1_sm |>
-  dplyr::filter(!is.na(diff_time)) |>
-  #dplyr::select(-sample_id_num) |>
-  dplyr::filter(asv_num == 'asv1' &
-                  fraction == '3') |>
-  ungroup() |>
-  dplyr::select(-asv_num, -diff_rclr, -diff_time, -date, -fraction, -fitted_rclr) |>
-  dplyr::select(-contains('_no_nas')) |>
-  left_join(env_sm_diff_w) |>
-  #left_join(env_data_new) |>
-  dplyr::select(-decimal_date)
-
-##add previous CLR value as explanatory variable
-asvs_sm_asv <- asvs_sm |>
-  dplyr::filter(asv_num == 'asv1' &
-                  fraction == '0.2') |>
-  dplyr::arrange(decimal_date) |>
-  dplyr::select(-asv_num, -fraction, -decimal_date)
-
-asvs_sm_asv <- asvs_sm_asv[-120,] #the last abundance won't be necessary since we do not need it to predict the next one
-
-model_tb <- model_tb |>
-  bind_cols(asvs_sm_asv)|>
-  dplyr::select(-BP_FC1.55_sm) ##BP from the previous month should not have a high impact on the change in abundance of the next
-
-### Split data to train and test
-indices <- createDataPartition(y=model_tb$diff_rclr_time, p =0.75, list = F)
-train_tb <- model_tb[indices,]
-test_tb <- model_tb[-indices,]
-
-### Train RF
-control <- trainControl(method = 'cv', number = 20)
-bloo_rf <- train( diff_rclr_time ~., method='rf', trControl=control, data=train_tb, metric = 'RMSE', ntree=300, importance=T)
-y <- predict(bloo_rf, newdata = test_tb[,-1])
-test_tb$prediction <- y
-fit <- lm(prediction~diff_rclr_time, data=test_tb)
-summary(fit)
-importance_df <- as.data.frame(bloo_rf$finalModel$importance)
-importance_df <- importance_df[order(-importance_df$`%IncMSE`),]
-
-##try to define best parameters----
-# Define train control
-control <- trainControl(method = 'cv', number = 20)
-
-# Define the tuning parameter grid
-sqrt(ncol(train_tb)) ## the mtry should we a number arround this one
-
-tunegrid <- expand.grid(
-  mtry = c(4:6) #, # 
-  #ntree = c(100, 200)
-)
-
-## the ntree can not be changed using tunegrid that is why i need to loop over different numbers of ntree
-modellist <- list()
-for (i in 1:nrow(tunegrid)) {
-  set.seed(100)
-  mtry_val <- tunegrid$mtry[i]
-  
-  for (ntree_val in c(200, 300, 500, 100)) { # Iterate over ntree values
-    fit <- train(diff_rclr_time ~ ., 
-                 data = train_tb, 
-                 method = 'rf', 
-                 metric = 'RMSE', 
-                 tuneGrid = tunegrid,
-                 trControl = control)
-    
-    key <- paste("mtry_", mtry_val, "_ntree_", ntree_val, sep = "")
-    modellist[[key]] <- fit
-  }
-}
-
-# compare results
-results <- resamples(modellist)
-summary(results)
-dotplot(results) ## ntree = 500
-
-## retrain model on entire dataset----
-bloo_final_asv1_diff <- train( diff_rclr_time ~., method='rf', data=model_tb, metric = 'RMSE', ntree=500, importance=T)
-bloo_final_asv1_diff
-
-importance_df_asv1_diff <- as.data.frame(bloo_final_asv1_diff$finalModel$importance)
-importance_df_asv1_diff <- importance_df_asv1_diff[order(-importance_df_asv1_diff$`%IncMSE`),]
-importance_df_asv1_diff
-
-
-
 ### WHAT IF I USE THE CLR INSTEAD OF RCLR----
 asv_tab_10y_02_clr
 
@@ -4629,7 +4496,7 @@ clr_03_w <- clr_03 |>
   pivot_wider(id_cols = decimal_date, names_from = asv_num, values_from = clr)
 
 #fit the loess model
-fit <- loess(asv23 ~ decimal_date, data = clr_03_w, span = 0.01)
+fit <- loess(asv11 ~ decimal_date, data = clr_03_w, span = 0.01)
 
 # predict the fited values
 predicted_values <- predict(fit)
@@ -4642,11 +4509,11 @@ residuals <- residuals(fit)
 # Compute the autocorrelation function (ACF) of the residuals
 acf_res <- acf(residuals, main = "Autocorrelation Function of Residuals")
 
-asv23_sm <- predicted_values |>
-  as_tibble_col(column_name = 'asv23') |>
+asv11_sm <- predicted_values |>
+  as_tibble_col(column_name = 'asv11') |>
   bind_cols(decimal_date_tb) |>
-  dplyr::select(decimal_date, 'fitted_rclr' = 'asv23') |>
-  dplyr::mutate(asv_num = 'asv23') |>
+  dplyr::select(decimal_date, 'fitted_rclr' = 'asv11') |>
+  dplyr::mutate(asv_num = 'asv11') |>
   dplyr::left_join(fraction_date_3)
 
 ## Environmental variables overtime----
@@ -4661,131 +4528,1474 @@ env_data_new |>
 
 
 
-####### NEW APPROACH USING THE MIKROPML PACKAGE----
+---------- ####### NEW APPROACH USING THE MIKROPML PACKAGE ######### --------------------
+
+## This is the first try with my 5 example bloomers.
+
+## packages----
 library(caret)
 library(mikropml)
 library(tictoc) ##see how long does it take to run a part of the code
 library(purrr) #map function
-
-#input
-model_tb_11 #wide data
-
-## preprocess data (remove those variables that have near 0 variance)
-model_tb_11_pre <-  preprocess_data(model_tb_11, outcome_colname = 'diff_rclr_time',
-                collapse_corr_feats = TRUE, ### perfectly correlated env variables do not add inormation to the model #not the case for my data
-                group_neg_corr = TRUE, # none of my variables are in this case
-                method =  "center") #if we want to normalize the data 
+library(pdp) #partial dependance
 
 
-### define a general trainControl 
-control <- trainControl(method = 'cv', number = 10, savePredictions = 'final', returnResamp = 'final', returnData = T, 
-                        p = 0.8)
+## upload data----
+
+### environmental data
+## Environmental to model with interpolated missing variables----
+env_data_interpolated_values_all <- read.csv2('data/env_data/env_data_interpolated_values_all.csv') |>
+  rename(sample_id_num = X)
+
+env_data_interpolated_values_all_red <- env_data_interpolated_values_all |>
+  dplyr::select(- decimal_date,  -"PNF2_5um_Micro_no_nas" ,-"PNF_5um_Micro_no_nas",  -"HNF2_5um_Micro_no_nas" ,-"HNF_5um_Micro_no_nas" ) #I need to reduce the explanatory variables nº
+
+### ASVs rCLR smooth as response variables
+### for the PA bloomers I need the interpolated abundance for those 3 missing samples in this fraction----
+bloo_3_inter  <- read.csv('data/wavelet_3_df_deconstand.csv') |> # It is here because I prepared this dataframe for the wavelets analysis
+  as_tibble() |>
+  dplyr::select(-X) |>
+  dplyr::mutate(fraction = '3') |>
+  dplyr::select(abundance_value = rclr, decimal_date, fraction, asv_num_f =asv_num)
+
+## fl fraction 
+bloo_02_model <- asv_tab_all_bloo_z_tax |>
+  dplyr::filter(abundance_type == 'rclr') |>
+  dplyr::filter(fraction == '0.2') |>
+  dplyr::select(decimal_date, abundance_value, fraction, asv_num_f)
+
+## all together 
+bloo_rclr_model_tb <- bloo_3_inter |>
+  bind_rows(bloo_02_model)
+
+### asvs_sm
+
+### rCLR increase t2-t1/time degree of change from one point and the next
+
+
+### types of blooms
+summary_types_of_blooms <- read.csv('results/tables/summary_types_of_blooms.csv') |>
+  as_tibble() |>
+  dplyr::select(-X) |>
+  dplyr::mutate(fraction = as.character(fraction))
+
+## load functions----
+source('src/create_tb_rf.R')
+source('src/run_ml_and_create_tibble.R')
+source('src/run_ml_importance_and_create_tibble.R')
+source('src/train_rf_and_get_importance.R')
+source('src/train_rf_and_save_pdp.R')
+source('src/plot_partia_dependence.R')
+
+### 1. PREPARE THE INPUT DATA FOR MODELING ------
+## general env data 
+env_data_interpolated_values_all_red <- env_data_interpolated_values_all_red[-120,] # last row of env data is not needed since it won't give us information (there is no next timepoint)
+
+## FL----
+#bloo_02$value
+model_tb_62 <- create_model_tb(data_diff = asvs_sm_diff,
+                               data_previous_ab = asvs_sm,
+                               asv_num = "asv62", fraction = "0.2")
+
+model_tb_11 <- create_model_tb(data_diff = asvs_sm_diff,
+                               data_previous_ab = asvs_sm,
+                               "asv11", "0.2")
+# model_tb_555 <- create_model_tb(data_diff = asvs_sm_diff,
+#                                 data_previous_ab = asvs_sm, 
+#                                 "asv555", "0.2") # this taxa is discarded since it has > 80% the rCLR = 0.
+
+#model_tb_2 <- create_model_tb("asv2", "0.2")
+
+## PA----
+#bloo_3$value
+# model_tb_11 <- create_model_tb(data_diff = asvs_sm_diff,
+#                                data_previous_ab = asvs_sm,
+#                                "asv11", "3")
+model_tb_23 <- create_model_tb(data_diff = asvs_sm_diff,
+                               data_previous_ab = asvs_sm,
+                               "asv23", "3")
+model_tb_72 <- create_model_tb(data_diff = asvs_sm_diff,
+                               data_previous_ab = asvs_sm,
+                               "asv72", "3")
+model_tb_17 <- create_model_tb(data_diff = asvs_sm_diff,
+                               data_previous_ab = asvs_sm,
+                               "asv17", "3")
+
+# The inputs are
+## model_tb_11, model_tb_62... 
+
+
+# 2. PREPROCESS DATA (remove those variables that have near 0 variance, variables that perfectly correlate... )-----
+## It is not the case for my data so I can skip this step
+### examples 
+# model_tb_11_pre <- preprocess_data(model_tb_11, outcome_colname = 'diff_rclr_time')
+# 
+# model_tb_11_pre <-  preprocess_data(model_tb_11, outcome_colname = 'diff_rclr_time',
+#                 collapse_corr_feats = TRUE, ### perfectly correlated env variables do not add inormation to the model #not the case for my data
+#                 group_neg_corr = TRUE, # none of my variables are in this case
+#                 method =  "center") #if we want to normalize the data 
 
 ##continue without preprocessing
-rf_mikro_11_pre <- run_ml(model_tb_11_pre$dat_transformed, method = 'rf',
-       outcome_colname = 'diff_rclr_time',
-       find_feature_importance = T,
-       cross_val = control,
-       training_frac = 0.8,
-       perf_metric_name = 'RMSE',
-       seed = 1030)
 
-test_hp <- list(ntree = c('100', '200', '300', '500'))
+# 3. MODEL ENGINEERING -----
+## In this step I will explore my models, change parammeters, explore the differences to be sure that the model I'm building is correct.
+### I do not perform the feature importance so that the model runs faster and then I can evaluate which parameters I should use
+### define a general trainControl for the parammeter tunning with not a lot of cv so that it runs faster 
+  control_cv <- trainControl(#method = 'cv', number = 10, 
+                             savePredictions = 'final', 
+                             returnResamp = 'final', 
+                             returnData = T, 
+                             p = 0.8,
+                             method = "cv", 
+                             number = 10#, # repeats = 3 tuneGrid = tibble(mtry = 4)
+                            )
+  
+  rf_11 <- run_ml(model_tb_11, method = 'rf',
+                   outcome_colname = 'diff_rclr_time',
+                   find_feature_importance = F,
+                   cross_val = control_cv,
+                   training_frac = 0.8,
+                  ntree = 1000, # more trees more accuracy 
+                  #mtry = 2,
+                   perf_metric_name = 'RMSE',
+                   seed = 1030)
+  
+  rf_62 <- run_ml(model_tb_62, method = 'rf',
+                  outcome_colname = 'diff_rclr_time',
+                  find_feature_importance = F,
+                  cross_val = control_cv,
+                  training_frac = 0.8,
+                  ntree = 1000,
+                  #mtry = 2,
+                  perf_metric_name = 'RMSE',
+                  seed = 1030)
+  
+  rf_72 <- run_ml(model_tb_72, method = 'rf',
+                  outcome_colname = 'diff_rclr_time',
+                  find_feature_importance = F,
+                  cross_val = control_cv,
+                  training_frac = 0.8,
+                  ntree = 1000,
+                  #mtry = 2,
+                  perf_metric_name = 'RMSE',
+                  seed = 1030)
+  
+  rf_17 <- run_ml(model_tb_17, method = 'rf',
+                  outcome_colname = 'diff_rclr_time',
+                  find_feature_importance = F,
+                  cross_val = control_cv,
+                  training_frac = 0.8,
+                  ntree = 1000,
+                  #mtry = 2,
+                  perf_metric_name = 'RMSE',
+                  seed = 1030)
+  
+  rf_11 <- run_ml(model_tb_11, method = 'rf',
+                  outcome_colname = 'diff_rclr_time',
+                  find_feature_importance = F,
+                  cross_val = control_cv,
+                  training_frac = 0.8,
+                  ntree = 1000,
+                  #mtry = 2,
+                  perf_metric_name = 'RMSE',
+                  seed = 1030)
+  
+  ### explore the model performance and decide which parameters I will use before scaling to 100 cv and 100 seeds----
+ #  rf_11$performance
+ #  rf_11$trained_model
+ #  
+ # rf_performance_asv11  <- rf_11$performance |>
+ #    as_tibble() |>
+ #    dplyr::mutate(asv_num = 'asv11')
+ #  rf_performance_asv11 <- rf_62$performance |>
+ #    as_tibble() |>
+ #    dplyr::mutate(asv_num = 'asv11')
+ #  rf_72$performance
+ #  rf_17$performance
+ #  rf_11$performance
+  
+  # Create a function to create tibble from rf performance
+  # create_rf_tibble <- function(rf, asv_num) {
+  #   rf$performance %>%
+  #     as_tibble() %>%
+  #     mutate(asv_num = asv_num)
+  # }
+  # # 
+  # mean(rf_11$trained_model$resample$Rsquared)
+  # rf_11$performance
+  # 
+  # rf_11$feature_importance
+  # rf_11$trained_model$results
+  # rf_11$trained_model$bestTune
+  
+  # bloo_final_asv72$finalModel$importance
+  # 
+  # varImpPlot(bloo_final_asv72$finalModel)
+  # 
+  # plot(bloo_final_asv72$finalModel)
 
-rf_mikro_11 <- run_ml(model_tb_11, method = 'rf',
-                      outcome_colname = 'diff_rclr_time',
-                      find_feature_importance = T,
-                      cross_val = control,
-                      training_frac = 0.8,
-                      hyperparameters = test_hp,
-                      perf_metric_name = 'RMSE',
-                      seed = 1030)
+# # plot.train(bloo_final_asv11)
+#   boot_perf <- bootstrap_performance( rf_11,
+#                                      outcome_colname = "diff_rclr_time",
+#                                      bootstrap_times = 100, alpha = 0.05
+#   )
+#   boot_perf
+#   
 
-rf_mikro_11_ml <- run_ml(model_tb_11, method = 'glmnet',
-                      outcome_colname = 'diff_rclr_time',
-                      find_feature_importance = T,
-                      #cross_val = control,
-                      training_frac = 0.8,
-                      #perf_metric_name = 'RMSE',
-                      seed = 1030)
+  # # Create tibbles for each random forest
+  # rf_performance_asv11 <- create_rf_tibble(rf_11, 'asv11')
+  # rf_performance_asv62 <- create_rf_tibble(rf_62, 'asv62')
+  # rf_performance_72 <- create_rf_tibble(rf_72, 'asv72')
+  # rf_performance_17 <- create_rf_tibble(rf_17, 'asv17')
+  # rf_performance_11 <- create_rf_tibble(rf_11, 'asv11')
+  # 
+  # # Combine all tibbles into one
+  # combined_rf_performance <- bind_rows(
+  #   rf_performance_asv11,
+  #   rf_performance_asv62,
+  #   rf_performance_72,
+  #   rf_performance_17,
+  #   rf_performance_11
+  # )
+  # 
+  # # Plot the data
+  # combined_rf_performance |>
+  #   pivot_longer(cols = contains('RMSE'), values_to = 'value', names_to = 'type') |>
+  #   ggplot( aes(x = asv_num, y = value)) +
+  #   geom_point(aes(color = type), position = position_dodge(width = 0.5)) +
+  #   scale_color_manual(values = c('darkblue', 'grey'))+
+  #   labs(x = "ASV Number", y = "RMSE", color = '')+
+  #   theme_bw()+
+  #   theme(strip.background = element_rect(fill = 'transparent'),
+  #         panel.grid = element_blank(),
+  #         text = element_text(size = 6))
+  #   
+  # combined_rf_performance |>
+  #   #pivot_longer(cols = contains('RMSE'), values_to = 'value', names_to = 'type') |>
+  #   ggplot( aes(x = asv_num, y = Rsquared)) +
+  #   geom_point() +
+  #   #scale_color_manual(values = c('darkblue', 'grey'))+
+  #   labs(x = "ASV Number", y = "RMSE", color = '')+
+  #   theme_bw()+
+  #   theme(strip.background = element_rect(fill = 'transparent'),
+  #         panel.grid = element_blank(),
+  #         text = element_text(size = 6))
+  
+  
+  
+# 4. EVALUATION OF THE MODELS -----
+  ### I do it 100 different times so that I get different values and I can evaluate the performance. Values from the training and the final model should be similar.
 
+# Run the process 10 times with different seeds and create tibbles
+num_runs <- 100
+seed_list <- 101:201  # Example list of 100 different seeds
+#seed_list <- 101:121
 
-## see if there are difences between one preprocessed and the one without processing 
-rf_mikro_11_pre$performance
-rf_mikro_11$performance
+## asv11----
+# Initialize a list to store the tibbles
+rf_performance_list <- list()
 
-rf_mikro_11_pre$feature_importance
-rf_mikro_11$feature_importance
-
-rf_mikro_62 <- run_ml(model_tb_62, method = 'rf',
-       outcome_colname = 'diff_rclr_time',
-       find_feature_importance = T,
-       cross_val = control,
-       #training_frac = 0.8,
-       perf_metric_name = 'RMSE',
-       seed = 1030)
-
-rf_mikro_23 <- run_ml(model_tb_23, method = 'rf',
-                      outcome_colname = 'diff_rclr_time', #response variable
-                      find_feature_importance = T,
-                      cross_val = control,
-                      #training_frac = 0.8,
-                      perf_metric_name = 'RMSE',
-                      seed = 1030)
-
-##I run the model with different seeds 
-get_hyperparams_list(dataset = model_tb_23, method = 'rf') 
-
-hyperparameter <- list(mtry = c(2, 4, 8))
-
-##try to be able to change the model_tb as an argument of the function.
-get_results <- function(seed){
-  run_ml(model_tb_23, method = 'rf',
-         outcome_colname = 'diff_rclr_time', #response variable
-         find_feature_importance = T,
-         cross_val = control,
-         training_frac = 0.8,
-         hyperparameters = hyperparameter,
-         perf_metric_name = 'RMSE',
-         seed = seed)
+# Loop through each run
+for (i in 1:num_runs) {
+  # Run ml and create tibble
+  rf_performance <- run_ml_and_create_tibble(model_tb_11, 'asv11', seed_list[i])
+  
+  # Store the tibble in the list with a unique name
+  rf_performance_list[[paste0("rf_performance_", i)]] <- rf_performance
 }
 
-#tic()
-iterative_run_ml_results <- map(c(1:3), get_results) #100 iterations
-#toc()
-## 7 min/ ASV to run it 100 times.
-## do i need to paralelize?
-## library(furrr)
-## plan ('multicore') ## 
-## plan('sequential') we need to go back to the sequential after runing the multicore
-iterative_run_ml |>
-  str()
+combined_rf_performance_11 <- bind_rows(rf_performance_list)
 
-get_hyperparams_list(dataset = model_tb_23, method = 'rf')
-get_hyperparams_list(dataset = model_tb_62, method = 'rf')
+## asv62----
+# Initialize a list to store the tibbles
+rf_performance_list <- list()
 
-## interesed in the trained model for each seed
-performance <- iterative_run_ml_results |>
-  map(pluck, 'trained_model') |>
-  combine_hp_performance()
+# Loop through each run
+for (i in 1:num_runs) {
+  # Run ml and create tibble
+  rf_performance <- run_ml_and_create_tibble(model_tb_62, 'asv62', seed_list[i])
+  
+  # Store the tibble in the list with a unique name
+  rf_performance_list[[paste0("rf_performance_", i)]] <- rf_performance
+}
 
-plot_hp_performance(performance$dat, mtry, RMSE)
+# Bind all tibbles into one
+combined_rf_performance_62 <- bind_rows(rf_performance_list)
 
-performance$dat |>
-  group_by(mtry, RMSE) |>
-  dplyr::reframe(mean = mean(RMSE),
-                 lquartile = quantile(RMSE, prob = 0.25),
-                 uquartile = quantile(RMSE, prob = 0.75)) |>
-  top_n(n = 3, mean)
+## asv72----
+# Initialize a list to store the tibbles
+rf_performance_list <- list()
 
-## model performance
+# Loop through each run
+for (i in 1:num_runs) {
+  # Run ml and create tibble
+  rf_performance <- run_ml_and_create_tibble(model_tb_72, 'asv72', seed_list[i])
+  
+  # Store the tibble in the list with a unique name
+  rf_performance_list[[paste0("rf_performance_", i)]] <- rf_performance
+}
 
-model <- rf_mikro_23 
+# Bind all tibbles into one
+combined_rf_performance_72 <- bind_rows(rf_performance_list)
 
-prob <- predict(model$trained_model, model$test_data) #type = 'prob' no em funciona
-observed <- model$test_data$diff_rclr_time
+## asv17----
+# Initialize a list to store the tibbles
+rf_performance_list <- list()
 
-  bind_cols(predicted =prob, observed = observed) |>
-    arrange(desc(predicted))
+# Loop through each run
+for (i in 1:num_runs) {
+  # Run ml and create tibble
+  rf_performance <- run_ml_and_create_tibble(model_tb_17, 'asv17', seed_list[i])
+  
+  # Store the tibble in the list with a unique name
+  rf_performance_list[[paste0("rf_performance_", i)]] <- rf_performance
+}
+
+# Bind all tibbles into one
+combined_rf_performance_17 <- bind_rows(rf_performance_list)
+
+## asv11----
+# Initialize a list to store the tibbles
+rf_performance_list <- list()
+
+# Loop through each run
+for (i in 1:num_runs) {
+  # Run ml and create tibble
+  rf_performance <- run_ml_and_create_tibble(model_tb_11, 'asv11', seed_list[i])
+  
+  # Store the tibble in the list with a unique name
+  rf_performance_list[[paste0("rf_performance_", i)]] <- rf_performance
+}
+
+# Bind all tibbles into one
+combined_rf_performance_11 <- bind_rows(rf_performance_list)
 
 
+
+##bind all tibbles from all the different ASVs----
+combined_rf_performance_all <- combined_rf_performance_62 |>
+  bind_rows(combined_rf_performance_23) |>
+  bind_rows(combined_rf_performance_72) |>
+  bind_rows(combined_rf_performance_17) |>
+  bind_rows(combined_rf_performance_11)
+
+
+## add some infromation about my bloomers before ploting
+combined_rf_performance_all <- combined_rf_performance_all |>
+  dplyr::mutate(fraction = case_when(asv_num %in% c('asv62', 'asv11') ~ '0.2',
+                                     asv_num %in% c( 'asv72', 'asv17', 'asv23') ~ '3')) |>
+  left_join(summary_types_of_blooms)
+
+
+##plot RMSE and cv RMSE -----
+RMSE_cv <- combined_rf_performance_all %>%
+  pivot_longer(cols = contains('RMSE'), values_to = 'value', names_to = 'type') %>%
+  ggplot(aes(x = asv_num, y = value, fill = type, shape = recurrency)) +
+  geom_point(position = position_jitterdodge(jitter.width = 0.2), size = 1, color = 'black') +
+  geom_boxplot(position = position_dodge(width = 0.8), alpha = 0.7) +
+  scale_fill_manual(values = c('darkblue', 'grey')) +
+  labs(x = "ASV Number", y = "RMSE", fill = 'Type', shape = 'Reccurrent taxa') +
+  theme(strip.background = element_rect(fill = 'transparent'),
+        panel.grid = element_blank(),
+        text = element_text(size = 6))
+
+# ggsave(RMSE_cv, filename = 'RMSE_cv.pdf',
+#        path = 'Results/Figures/random_forest/',
+#        width = 120, height = 100, units = 'mm')
+
+
+##plot R2 and resample R2-----
+Rsquared_cv <- combined_rf_performance_all |>
+  pivot_longer(cols = contains('Rsquared'), values_to = 'value', names_to = 'type') |>
+  ggplot( aes(x = asv_num, y = value, fill = type, shape = recurrency)) +
+  geom_point(position = position_jitterdodge(jitter.width = 0.2), size = 1, color = 'black') +
+  geom_boxplot(position = position_dodge(width = 0.8), alpha = 0.7) +
+  scale_fill_manual(values = c('darkblue', 'grey')) +
+  scale_y_continuous(limits = c(0,1))+
+  #scale_color_manual(values = c('darkblue', 'grey'))+
+  labs(x = "ASV Number", y = expression('R'^2), color = 'Type', shape = 'Reccurrent taxa')+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        panel.grid = element_blank(),
+        text = element_text(size = 6))
+# # 
+# ggsave(Rsquared_cv, filename = 'Rsquared_cv.pdf',
+#        path = 'Results/Figures/random_forest/',
+#        width = 120, height = 100, units = 'mm')
+
+
+
+
+
+# 5. FEATURE IMPORTANCE ----
+### now that I have evaluated my models I compute the feature importance. 
+### Understanding the results feature_importance: If feature importances were calculated, a data frame 
+### where each row is a feature or correlated group. The columns are the performance metric of the 
+### permuted data, the difference between the true performance metric and the performance metric of the 
+### permuted data (true - permuted), the feature name, the ML method, the performance metric name, and 
+### the seed (if provided). For AUC and RMSE, the higher perf_metric_diff is, the more important that 
+### feature is for predicting the outcome. For log loss, the lower perf_metric_diff is, the more 
+### important that feature is for predicting the outcome.
+# 
+# There are several columns:
+# perf_metric: The performance value of the permuted feature.
+# perf_metric_diff: The difference between the performance for the actual and permuted data (i.e. test performance minus permuted performance). Features with a larger perf_metric_diff are more important.
+# pvalue: the probability of obtaining the actual performance value under the null hypothesis.
+# lower: the lower bound for the 95% confidence interval of perf_metric.
+# upper: the upper bound for the 95% confidence interval of perf_metric.
+# feat: The feature (or group of correlated features) that was permuted.
+# method: The ML method used.
+# perf_metric_name: The name of the performance metric represented by perf_metric & perf_metric_diff.
+# seed: The seed (if set).
+
+# Run the process 10 times with different seeds and create tibbles
+num_runs <- 10
+seed_list <- 101:115  # Example list of 100 different seeds
+
+## asv23----
+# Initialize a list to store the tibbles
+rf_importance_list <- list()
+
+# Loop through each run
+for (i in 1:num_runs) {
+  # Run ml and create tibble
+  rf_importance <- run_ml_importance_and_create_tibble(model_tb_02_asv11, 'asv11', seed = 101)
+  
+  # Store the tibble in the list with a unique name
+  rf_importance_list[[paste0("rf_importance_", i)]] <- rf_importance
+}
+
+combined_rf_importance_11 <- bind_rows(rf_importance_list)
+
+## asv62----
+# Initialize a list to store the tibbles
+rf_importance_list <- list()
+
+# Loop through each run
+for (i in 1:num_runs) {
+  # Run ml and create tibble
+  rf_importance <- run_ml_importance_and_create_tibble(model_tb_62, 'asv62', seed_list[i])
+  
+  # Store the tibble in the list with a unique name
+  rf_importance_list[[paste0("rf_importance_", i)]] <- rf_importance
+}
+
+combined_rf_importance_62 <- bind_rows(rf_importance_list)
+
+
+## asv72----
+# Initialize a list to store the tibbles
+rf_importance_list <- list()
+
+# Loop through each run
+for (i in 1:num_runs) {
+  # Run ml and create tibble
+  rf_importance <- run_ml_importance_and_create_tibble(model_tb_72, 'asv72', seed_list[i])
+  
+  # Store the tibble in the list with a unique name
+  rf_importance_list[[paste0("rf_importance_", i)]] <- rf_importance
+}
+
+combined_rf_importance_72 <- bind_rows(rf_importance_list)
+
+## asv17----
+# Initialize a list to store the tibbles
+rf_importance_list <- list()
+
+# Loop through each run
+for (i in 1:num_runs) {
+  # Run ml and create tibble
+  rf_importance <- run_ml_importance_and_create_tibble(model_tb_17, 'asv17', seed_list[i])
+  
+  # Store the tibble in the list with a unique name
+  rf_importance_list[[paste0("rf_importance_", i)]] <- rf_importance
+}
+
+combined_rf_importance_17 <- bind_rows(rf_importance_list)
+# 
+
+
+## asv11----
+# Initialize a list to store the tibbles
+rf_importance_list <- list()
+
+# Loop through each run
+for (i in 1:num_runs) {
+  # Run ml and create tibble
+  rf_importance <- run_ml_importance_and_create_tibble(model_tb_11, 'asv11', seed_list[i])
+  
+  # Store the tibble in the list with a unique name
+  rf_importance_list[[paste0("rf_importance_", i)]] <- rf_importance
+}
+
+combined_rf_importance_11 <- bind_rows(rf_importance_list)
+
+
+##bind all tibbles from all the different ASVs----
+combined_rf_importance_all <- combined_rf_importance_62 |>
+  bind_rows(combined_rf_importance_23) |>
+  bind_rows(combined_rf_importance_72) |>
+  bind_rows(combined_rf_importance_17) |>
+  bind_rows(combined_rf_importance_11)
+
+## add some information about my bloomers before ploting
+combined_rf_importance_all <- combined_rf_importance_all |>
+  dplyr::mutate(fraction = case_when(asv_num %in% c('asv62', 'asv11') ~ '0.2',
+                                     asv_num %in% c('asv72', 'asv17', 'asv23') ~ '3')) |>
+  left_join(summary_types_of_blooms)  
+
+##plot
+combined_rf_importance_all |>
+  dplyr::mutate(feat = as.factor(feat)) |>
+  # dplyr::group_by(asv_num, seed) |>
+  # slice_max(order_by = abs(perf_metric_diff), n = 10) |>
+  ggplot(aes(fct_infreq(feat), perf_metric_diff, shape = recurrency))+
+  scale_x_discrete(labels = labs_env_models)+
+  geom_point()+
+  geom_boxplot(alpha = 0.6)+
+  labs(y = 'Perf metric difference', x = 'Explanatory variables')+
+  facet_grid(vars(asv_num), scales = 'free')+
+  coord_flip()+
+  theme(panel.grid = element_blank(), strip.background = element_rect(fill = 'transparent'))
+
+combined_rf_importance_all |>
+  dplyr::mutate(feat = as.factor(feat)) |>
+  # dplyr::group_by(asv_num, seed) |>
+  # slice_max(order_by = abs(perf_metric_diff), n = 5) |>
+  ggplot(aes(fct_infreq(feat), perf_metric, shape = recurrency))+
+  scale_x_discrete(labels = labs_env_models)+
+  geom_point()+
+  geom_boxplot(alpha = 0.6)+
+  labs(y = 'Perf metric difference', x = 'Explanatory variables')+
+  facet_grid(vars(asv_num), scales = 'free')+
+  coord_flip()+
+  theme(panel.grid = element_blank(), strip.background = element_rect(fill = 'transparent'))
+
+
+## I run the train with different seeds so that I get different splits of my data and extract the importance of variables ----
+control_cv <- trainControl(#method = 'cv', number = 10, 
+  savePredictions = 'final', 
+  returnResamp = 'final', 
+  returnData = T, 
+  p = 0.8,
+  method = "cv", 
+  number = 10#, # repeats = 3 tuneGrid = tibble(mtry = 4)
+)
+
+model_tb_list <- list(model_tb_62, model_tb_11, model_tb_17, model_tb_72, model_tb_23)
+
+# Names for the elements
+asv_names <- c("asv62", "asv11", "asv17", 'asv72', 'asv23')
+
+# Assign names to the list elements
+names(model_tb_list) <- asv_names
+
+# Seed list for cross-validation
+seed_list <- 101:201 #100 different splits
+
+# Usage example:
+importance_result <- train_rf_and_get_importance(model_tb_list, 'diff_rclr_time', seed_list)
+
+## plot the importance results----
+### add some information about my bloomers before ploting
+importance_result <- importance_result |>
+  dplyr::mutate(fraction = case_when(asv_num %in% c('asv62', 'asv11') ~ '0.2',
+                                     asv_num %in% c('asv72', 'asv17', 'asv23') ~ '3')) |>
+  left_join(summary_types_of_blooms)  |>
+  dplyr::mutate(feat = as.factor(env_variable))
+
+### varIMP: All measures of importance are scaled to have a maximum value of 100, unless the scale argument of varImp.train is set to FALSE.
+importance_result |>
+  ggplot()
+
+importance_result |>
+  colnames()
+
+importance_result |>
+  dplyr::mutate(feat = as.factor(env_variable)) |>
+  # dplyr::group_by(asv_num, seed) |>
+  # slice_max(order_by = abs(perf_metric_diff), n = 10) |>
+  ggplot(aes(fct_infreq(env_variable), Overall, shape = recurrency))+
+  scale_x_discrete(labels = labs_env_models)+
+  geom_point()+
+  geom_boxplot(alpha = 0.6)+
+  labs(y = 'Scaled Variable Importance', x = 'Explanatory variables', shape = 'Taxa recurrency')+
+  facet_grid(vars(asv_num), scales = 'free')+
+  coord_flip()+
+  theme(panel.grid = element_blank(), strip.background = element_rect(fill = 'transparent'))
+
+### %IncMSE
+importance_result_filt <- importance_result |>
+  dplyr::group_by(asv_num, env_variable) |>
+  slice_max(perc_IncMSE, n = 1) |>
+  ungroup()
+
+perc_importance <- importance_result |>
+  # dplyr::group_by(asv_num, seed) |>
+  # slice_max(order_by = abs(perf_metric_diff), n = 10) |>
+  ggplot(aes(fct_infreq(env_variable), perc_IncMSE, shape = recurrency))+
+  scale_x_discrete(labels = labs_env_models_no_nas)+
+  geom_col(data = importance_result_filt, aes(x = env_variable, y= perc_IncMSE), alpha = 0.4)+
+  geom_point(size = 1, alpha = 0.8)+
+  geom_boxplot(alpha = 0.6)+
+  labs(y = '%IncMSE', x = 'Explanatory variables', shape = 'Taxa recurrency')+
+  facet_wrap(vars(asv_num))+
+  coord_flip()+
+  theme(panel.grid = element_blank(), strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 6))
+
+perc_importance
+
+# ggsave(perc_importance, filename = 'perc_importance.pdf',
+#        path = 'Results/Figures/random_forest/',
+#        width = 180, height = 100, units = 'mm')
+
+### ImportanceSD ???
+
+
+
+# 6. PARTIAL DEPENDANCE-----
+### we explore how do the variables interact with each other
+### https://christophm.github.io/interpretable-ml-book/pdp.html
+## One important thing of this analysis is to see the direction of the relationship.
+## Ecological significance of the results based on the previous knowledge of this taxa.
+
+#### In this case we use the whole dataset to create the model, because we want to gain more confidence on the inferred patterns.
+
+### Save pdp data for plotting
+outcome_colname <- "diff_rclr_time"
+
+predictors <- c("bacteria_joint", "synechococcus", "temperature_no_nas", "day_length_no_nas",  "chla_total_no_nas",  "PO4_no_nas" ,       
+                 "NH4_no_nas" ,  "NO2_no_nas"  , "NO3_no_nas" , "Si_no_nas" , "PNF_Micro_no_nas",  "cryptomonas_no_nas",
+                "micromonas_no_nas" , "HNF_Micro_no_nas"  , "fitted_rclr" )
+
+seed_list <- 1:10
+
+train_rf_and_save_pdp(data = model_tb_list$asv62, outcome_colname = outcome_colname, predictors = predictors, seed_list = seed_list, 
+                      grid_resolution = 119, asv_num = 'asv62')
+
+train_rf_and_save_pdp(data = model_tb_list$asv11, outcome_colname = outcome_colname, predictors = predictors, seed_list = seed_list, 
+                      grid_resolution = 119, asv_num = 'asv11')
+
+train_rf_and_save_pdp(data = model_tb_list$asv23, outcome_colname = outcome_colname, predictors = predictors, seed_list = seed_list, 
+                      grid_resolution = 119, asv_num = 'asv23')
+
+train_rf_and_save_pdp(data = model_tb_list$asv72, outcome_colname = outcome_colname, predictors = predictors, seed_list = seed_list, 
+                      grid_resolution = 119, asv_num = 'asv72')
+
+train_rf_and_save_pdp(data = model_tb_list$asv17, outcome_colname = outcome_colname, predictors = predictors, seed_list = seed_list, 
+                      grid_resolution = 119, asv_num = 'asv17')
+
+##read RData----
+pdp_asv11_data <- readRDS("results/figures/random_forest/pdp/pdp_asv11_data.RDS")
+pdp_asv62_data <- readRDS("results/figures/random_forest/pdp/pdp_asv62_data.RDS")
+pdp_asv23_data <- readRDS("results/figures/random_forest/pdp/pdp_asv23_data.RDS")
+pdp_asv72_data <- readRDS("results/figures/random_forest/pdp/pdp_asv72_data.RDS")
+pdp_asv17_data <- readRDS("results/figures/random_forest/pdp/pdp_asv17_data.RDS")
+
+### 2. compute the partial dependence for each seed in the same plot. 
+
+## extraction of the importance variables result to order the partial dependence plots by importance----
+importance_order <- combined_rf_importance_all |>
+  dplyr::group_by(asv_num, feat) |>
+  dplyr::reframe(mean_diff = mean(perf_metric_diff)) |>
+  dplyr::arrange(abs(mean_diff)) 
+
+importance_order |>
+  dplyr::filter(asv_num == 'asv62') |>
+  slice_tail(n = 3)
+
+# Call the function with the pdp data list----
+plot_partial_dependence(pdp_asv62_data, importance_df =  importance_order, asv_num = 'asv62', num_plots = 3)
+plot_partial_dependence(pdp_asv11_data, importance_df =  importance_order, asv_num = 'asv11', num_plots = 3)
+plot_partial_dependence(pdp_asv72_data, importance_df =  importance_order, asv_num = 'asv72', num_plots = 3)
+plot_partial_dependence(pdp_asv17_data, importance_df =  importance_order, asv_num = 'asv17', num_plots = 3)
+plot_partial_dependence(pdp_asv23_data, importance_df =  importance_order, asv_num = 'asv23', num_plots = 3)
+
+# Composition with all the top 3 effects on each blooming example----
+pdp_bloomers_example <- gridExtra::grid.arrange(pdp_all_plots_grid_asv62,
+                        pdp_all_plots_grid_asv72,
+                        pdp_all_plots_grid_asv23, 
+                        pdp_all_plots_grid_asv17, 
+                        pdp_all_plots_grid_asv11, 
+                        ncol = 1)
+
+ggsave(pdp_bloomers_example, filename = 'pdp_bloomers_example.pdf',
+       path = 'Results/Figures/random_forest/pdp/',
+       width = 188, height = 220, units = 'mm')
+
+
+#--------------- ######## RANDOM FOREST FOR THE OTHER POTENTIAL BLOOMERS IN THE BBMO10Y ########### -----------
+## Taxa that we can perform the random forest should have less than 80% of 0 in the dataset-------
+occurrence_bloo_bbmo |>
+  colnames()
+
+bloo_rf <- occurrence_bloo_bbmo  |>
+  dplyr::filter(occurrence_perc > 0.2) |>
+  dplyr::select(asv_num, fraction)
+
+bloo_02
+
+bloo_rf_02 <- bloo_rf |>
+  dplyr::filter(fraction == '0.2') |>
+  dplyr::filter(!asv_num %in% c('asv2', 'asv3', 'asv5', 'asv8')) |> # SAR11 clade not real bloomers just increasing when the others decrease 
+  dplyr::filter(asv_num %in% bloo_02$value)
+
+bloo_rf_3 <- bloo_rf |>
+    dplyr::filter(fraction == '3') |>
+    dplyr::filter(asv_num %in% bloo_3$value)
+
+##35 bloomers I could build a random forest with------
+10+25
+
+#### first I need to smooth my response variable (ASV rCLR)-----
+
+# Define a function to smooth ASV data
+smooth_asv <- function(data, asv_num) {
+  # Fit the loess model
+  fit <- loess(data[[asv_num]] ~ decimal_date, data = data, span = 0.084)
+  
+  # Predict the fitted values
+  predicted_values <- predict(fit)
+  
+  # Create a tibble with the smoothed values
+  smoothed_data <- tibble::tibble(
+    decimal_date = data$decimal_date,
+    fitted_rclr = predicted_values,
+    asv_num = asv_num
+  )
+  
+  return(smoothed_data)
+}
+
+# List of ASVs to smooth (FL)----
+asv_list <- as.list(bloo_rf_02$asv_num)  # Add more ASVs as needed
+
+# Apply the smoothing function to each ASV
+smoothed_data_list <- lapply(asv_list, function(asv) smooth_asv(rclr_time_tb_02, asv))
+
+# Combine the smoothed data into a single tibble
+smoothed_combined_02 <- do.call(bind_rows, smoothed_data_list) |>
+  dplyr::mutate(fraction = '0.2')
+
+# List of ASVs to smooth (PA)-----
+asv_list <- as.list(bloo_rf_3$asv_num)  # Add more ASVs as needed
+
+# Apply the smoothing function to each ASV
+smoothed_data_list <- lapply(asv_list, function(asv) smooth_asv(rclr_time_tb_3, asv))
+
+# Combine the smoothed data into a single tibble
+smoothed_combined_3 <- do.call(bind_rows, smoothed_data_list) |>
+  dplyr::mutate(fraction = '3')
+
+### calculate change in rCLR----
+## calculate the increase in the new smoothed variables----
+asvs_sm_diff <- smoothed_combined_02 |>
+  bind_rows(smoothed_combined_3) |>
+  arrange(decimal_date) |>
+  left_join(date_tb) |>
+  arrange(decimal_date) |>
+  group_by(asv_num, fraction) |>
+  dplyr::mutate(diff_rclr = c(NA, diff(fitted_rclr)),
+                diff_time = c(NA, diff(date))) |>
+  dplyr::mutate(diff_rclr_time = diff_rclr/diff_time) |>
+  dplyr::mutate(sample_id_num = row_number()) 
+
+##previous rCLR value
+ asvs_sm <- asvs_sm_diff |>
+   dplyr::select(asv_num, fraction, decimal_date, fitted_rclr) |>
+   ungroup()
+
+ 
+### 1. PREPARE THE INPUT DATA FOR MODELING ------
+## general env data 
+env_data_interpolated_values_all_red <- env_data_interpolated_values_all_red[-120,] # last row of env data is not needed since it won't give us information (there is no next timepoint)
+
+## FL----
+bloo_rf_02
+
+ # Loop through each asv_num
+ for (asv_num in bloo_rf_02$asv_num) {
+   # Create the asv_num_id with quotes
+   asv_num_id <- asv_num
+   
+   # Create the model with the appropriate name
+   assign(paste0('model_tb_02_', asv_num), 
+          create_model_tb(data_diff = asvs_sm_diff,
+                          data_previous_ab = asvs_sm,
+                          asv_num = asv_num_id, fraction = "0.2"))
+ }
+ 
+##one by one
+# model_tb_15 <- create_model_tb(data_diff = asvs_sm_diff,
+#                                data_previous_ab = asvs_sm,
+#                                asv_num =  'asv23', fraction = "0.2")
+ 
+ 
+## PA----
+bloo_rf_3
+
+ # Loop through each asv_num
+ for (asv_num in bloo_rf_3$asv_num) {
+   # Create the asv_num_id with quotes
+   asv_num_id <- asv_num
+   
+   # Create the model with the appropriate name
+   assign(paste0('model_tb_3_', asv_num), 
+          create_model_tb(data_diff = asvs_sm_diff,
+                          data_previous_ab = asvs_sm,
+                          asv_num = asv_num_id, fraction = "3"))
+ }
+ 
+# The inputs are
+## model_tb_02_11, model_tb_3_62... (for example)
+
+ 
+ # 2. PREPROCESS DATA (remove those variables that have near 0 variance, variables that perfectly correlate... )-----
+ ## It is not the case for my data so I can skip this step
+ ### examples 
+ # model_tb_11_pre <- preprocess_data(model_tb_11, outcome_colname = 'diff_rclr_time')
+ # 
+ # model_tb_11_pre <-  preprocess_data(model_tb_11, outcome_colname = 'diff_rclr_time',
+ #                 collapse_corr_feats = TRUE, ### perfectly correlated env variables do not add inormation to the model #not the case for my data
+ #                 group_neg_corr = TRUE, # none of my variables are in this case
+ #                 method =  "center") #if we want to normalize the data 
+ 
+ ##continue without preprocessing
+ 
+ 
+ # 3. MODEL ENGINEERING -----
+ ## In this step I will explore my models, change parammeters, explore the differences to be sure that the model I'm building is correct.
+ ### I do not perform the feature importance so that the model runs faster and then I can evaluate which parameters I should use
+ ### define a general trainControl for the parammeter tunning with not a lot of cv so that it runs faster 
+ control_cv <- trainControl(#method = 'cv', number = 10, 
+   savePredictions = 'final', 
+   returnResamp = 'final', 
+   returnData = T, 
+   p = 0.8,
+   method = "cv", 
+   number = 10#, # repeats = 3 tuneGrid = tibble(mtry = 4)
+ )
+ 
+ # FL----
+ # Define a list of your model_tb_02_ objects
+ bloo_rf_02
+model_tb_list <-  bloo_rf_02 |>
+   dplyr::select(asv_num) |>
+   dplyr::mutate(name = paste0('model_tb_02_', asv_num)) |>
+   dplyr::select(name) 
+   
+concatenated_names <- paste0(model_tb_list)
+
+model_names_clean <- gsub("\"|\\\\", "", concatenated_names )
+
+
+asv_id_clean 
+
+ model_02_list <- list(model_tb_02_asv38, model_tb_02_asv15, model_tb_02_asv27, model_tb_02_asv17,
+                    model_tb_02_asv62, model_tb_02_asv58, model_tb_02_asv1, model_tb_02_asv7, 
+                       model_tb_02_asv178, model_tb_02_asv11)
+ 
+ model_tb_list_asv <-  bloo_rf_02 |>
+   dplyr::select(asv_num) 
+ 
+ concat_asv_id <-  paste0(model_tb_list_asv)
+ asv_id_clean <- gsub("\"|\\\\", "'", concat_asv_id )
+ 
+ # Define a list of corresponding ASV IDs
+ asv_id_02_list <- c('asv38', 'asv15', 'asv27', 'asv17', 'asv62', 'asv58', 'asv1', 'asv7', 
+                     'asv178', 'asv11')
+ 
+ # Loop through each model and ASV ID
+ for (i in seq_along(model_02_list)) {
+   # Run the model
+   rf <- run_ml(model_list[[i]], method = 'rf',
+                outcome_colname = 'diff_rclr_time',
+                find_feature_importance = F,
+                cross_val = control_cv,
+                training_frac = 0.8,
+                ntree = 1000,
+                perf_metric_name = 'RMSE',
+                seed = 1030)
+   
+   # Assign the result to a variable with a suitable name
+   assign(paste0("rf_02_", asv_id_02_list[i]), rf)
+ }
+ 
+ # PA----
+ # Define a list of your model_tb_3_ objects
+ bloo_rf_3
+ model_tb_list <-  bloo_rf_3 |>
+   dplyr::select(asv_num) |>
+   dplyr::mutate(name = paste0('model_tb_3_', asv_num)) |>
+   dplyr::select(name) 
+ 
+ concatenated_names <- paste0(model_tb_list)
+ 
+ model_names_clean <- gsub("\"|\\\\", "", concatenated_names )
+ 
+ model_3_list <- list(model_tb_3_asv179, model_tb_3_asv15, model_tb_3_asv72, model_tb_3_asv27, model_tb_3_asv17, 
+                    model_tb_3_asv192, model_tb_3_asv84, model_tb_3_asv118, model_tb_3_asv23, model_tb_3_asv85, 
+                    model_tb_3_asv25, model_tb_3_asv163, model_tb_3_asv80, model_tb_3_asv116, model_tb_3_asv182, 
+                    model_tb_3_asv126, model_tb_3_asv105, model_tb_3_asv28, model_tb_3_asv1, model_tb_3_asv7, 
+                    model_tb_3_asv4, model_tb_3_asv31, model_tb_3_asv22, model_tb_3_asv11, model_tb_3_asv42)
+ 
+ model_tb_list_asv <-  bloo_rf_3 |>
+   dplyr::select(asv_num) 
+ 
+ concat_asv_id <-  paste0(model_tb_list_asv)
+ asv_id_clean <- gsub("\"|\\\\", "'", concat_asv_id )
+ 
+ # Define a list of corresponding ASV IDs
+ asv_id_3_list <- c('asv179', 'asv15', 'asv72', 'asv27', 'asv17', 'asv192', 'asv84', 'asv118', 'asv23', 'asv85', 
+                  'asv25', 'asv163', 'asv80', 'asv116', 'asv182', 'asv126', 'asv105', 'asv28', 'asv1', 'asv7', 
+                  'asv4', 'asv31', 'asv22', 'asv11', 'asv42')
+ 
+ # Loop through each model and ASV ID
+ for (i in seq_along(model_list)) {
+   # Run the model
+   rf <- run_ml(model_list[[i]], method = 'rf',
+                outcome_colname = 'diff_rclr_time',
+                find_feature_importance = F,
+                cross_val = control_cv,
+                training_frac = 0.8,
+                ntree = 1000,
+                perf_metric_name = 'RMSE',
+                seed = 1030)
+   
+   # Assign the result to a variable with a suitable name
+   assign(paste0("rf_3_", asv_id_list[i]), rf)
+ }
+ 
+ 
+ # 4. EVALUATION OF THE MODELS -----
+ ### I do it 100 different times so that I get different values and I can evaluate the performance. Values from the training and the final model should be similar.
+ # Run the process 10 times with different seeds and create tibbles
+ num_runs <- 100
+ seed_list <- 101:201  # Example list of 100 different seeds
+ #seed_list <- 101:121
+ 
+ ## FL---- 
+ model_02_list
+ asv_id_02_list
+ 
+ names(model_02_list) <- asv_id_02_list
+ 
+ summary_types_of_blooms |>
+   dplyr::filter(fraction == '0.2') |>
+   distinct(asv_num) |>
+   as_vector()
+
+ ##all at the same time
+ # Initialize an empty list to store the combined results for all ASVs
+ combined_rf_02_performance_all <- list()
+ 
+ # Loop through each ASV in the model_tb_list
+ for (asv in names(model_02_list)) {
+   # Initialize a list to store the tibbles for each ASV
+   rf_02_performance_list <- list()
+   
+   # Loop through each run
+   for (i in 1:num_runs) {
+     # Run ml and create tibble for the current ASV and run
+     rf_02_performance <- run_ml_and_create_tibble(model_02_list[[asv]], asv, seed_list[i])
+     
+     # Store the tibble in the list with a unique name
+     rf_02_performance_list[[paste0("rf_02_performance_", i)]] <- rf_02_performance
+   }
+   
+   # Bind all tibbles for the current ASV into one
+   combined_rf_02_performance <- bind_rows(rf_02_performance_list)
+   
+   # Store the combined tibble for the current ASV in the list
+   combined_rf_02_performance_all[[asv]] <- combined_rf_02_performance
+ }
+ 
+ # Combine all tibbles from all ASVs into one
+ combined_rf_02_performance_all <- do.call(bind_rows, combined_rf_02_performance_all)
+ 
+ combined_rf_02_performance_all |>
+   distinct(asv_num)
+ 
+ summary_types_of_blooms |>
+   dplyr::filter(fraction == '0.2') |>
+   distinct(asv_num)
+ 
+ ## add some information about my bloomers before ploting (FL)-----
+ combined_rf_02_performance_all <- combined_rf_02_performance_all |>
+   dplyr::mutate(fraction =  '0.2') |>
+   left_join(summary_types_of_blooms, by = c('fraction', 'asv_num'))
+ 
+ ## PA-----
+ model_3_list
+ asv_id_3_list
+ 
+ names(model_3_list) <- asv_id_3_list
+ 
+ ##all at the same time
+ # Initialize an empty list to store the combined results for all ASVs
+ combined_rf_3_performance_all <- list()
+ 
+ # Loop through each ASV in the model_tb_list
+ for (asv in names(model_3_list)) {
+   # Initialize a list to store the tibbles for each ASV
+   rf_3_performance_list <- list()
+   
+   # Loop through each run
+   for (i in 1:num_runs) {
+     # Run ml and create tibble for the current ASV and run
+     rf_3_performance <- run_ml_and_create_tibble(model_3_list[[asv]], asv, seed_list[i])
+     
+     # Store the tibble in the list with a unique name
+     rf_3_performance_list[[paste0("rf_3_performance_", i)]] <- rf_3_performance
+   }
+   
+   # Bind all tibbles for the current ASV into one
+   combined_rf_3_performance <- bind_rows(rf_3_performance_list)
+   
+   # Store the combined tibble for the current ASV in the list
+   combined_rf_3_performance_all[[asv]] <- combined_rf_3_performance
+ }
+ 
+ # Combine all tibbles from all ASVs into one
+ combined_rf_3_performance_all <- do.call(bind_rows, combined_rf_3_performance_all)
+ 
+ ## add some information about my bloomers before plotting (FL)-----
+ combined_rf_3_performance_all <- combined_rf_3_performance_all |>
+   dplyr::mutate(fraction =  '3') |>
+   left_join(summary_types_of_blooms)
+ 
+ combined_rf_3_performance_all$recurrency <- factor(combined_rf_3_performance_all$recurrency, levels = c('no', 'yes'))
+ 
+ ##plot RMSE and cv RMSE -----
+ labs_recurrent <- as_labeller(c('no' = 'Non-recurrent', 'yes' = 'Recurrent'))
+ 
+ RMSE_cv <- combined_rf_02_performance_all |>
+   pivot_longer(cols = contains('RMSE'), values_to = 'value', names_to = 'type') %>%
+   ggplot(aes(x = asv_num, y = value, fill = type)) +
+   geom_point(position = position_jitterdodge(jitter.width = 0.2), size = 0.2, color = 'black') +
+   geom_boxplot(position = position_dodge(width = 0.8), alpha = 0.7) +
+   facet_wrap(vars(recurrency), scales = 'free_x', labeller = labs_recurrent)+
+   scale_fill_manual(values = c('darkblue', 'grey')) +
+   labs(x = "ASV Number", y = "RMSE", fill = 'Type', shape = 'Reccurrent taxa') +
+   theme(strip.background = element_rect(fill = 'transparent'),
+         panel.grid = element_blank(),
+         legend.position = 'bottom',
+         text = element_text(size = 6),
+         plot.margin = margin(2,2,2,8))
+ 
+ RMSE_cv 
+ 
+ ggsave(RMSE_cv, filename = 'RMSE_cv_fl.pdf',
+        path = 'Results/Figures/random_forest/',
+        width = 188, height = 100, units = 'mm')
+ 
+ RMSE_cv <- combined_rf_3_performance_all |>
+   pivot_longer(cols = contains('RMSE'), values_to = 'value', names_to = 'type') %>%
+   ggplot(aes(x = asv_num, y = value, fill = type)) +
+   geom_point(position = position_jitterdodge(jitter.width = 0.2), size = 0.2, color = 'black') +
+   geom_boxplot(position = position_dodge(width = 0.8), alpha = 0.7) +
+   facet_wrap(vars(recurrency), scales = 'free_x', labeller = labs_recurrent)+
+   scale_fill_manual(values = c('darkblue', 'grey')) +
+   labs(x = "ASV Number", y = "RMSE", fill = 'Type', shape = 'Reccurrent taxa') +
+   theme(strip.background = element_rect(fill = 'transparent'),
+         panel.grid = element_blank(),
+         legend.position = 'bottom',
+         text = element_text(size = 6),
+         plot.margin = margin(2,2,2,8))
+ 
+ RMSE_cv 
+ 
+ # ggsave(RMSE_cv, filename = 'RMSE_cv_pa.pdf',
+ #        path = 'Results/Figures/random_forest/',
+ #        width = 188, height = 100, units = 'mm')
+ 
+ ##plot R2 and resample R2-----
+ Rsquared_cv <- combined_rf_02_performance_all |>
+   pivot_longer(cols = contains('Rsquared'), values_to = 'value', names_to = 'type') |>
+   ggplot( aes(x = asv_num, y = value, fill = type)) +
+   geom_point(position = position_jitterdodge(jitter.width = 0.2), size = 0.2, color = 'black') +
+   geom_boxplot(position = position_dodge(width = 0.8), alpha = 0.7) +
+   scale_fill_manual(values = c('darkblue', 'grey')) +
+   scale_y_continuous(limits = c(0,1))+
+   facet_wrap(vars(recurrency), scales = 'free_x', labeller = labs_recurrent)+
+   #scale_color_manual(values = c('darkblue', 'grey'))+
+   labs(x = "ASV Number", y = expression('R'^2), fill = 'Type', shape = 'Reccurrent taxa')+
+   theme(strip.background = element_rect(fill = 'transparent'),
+         panel.grid = element_blank(),
+         text = element_text(size = 6),
+         legend.position = 'bottom',
+         plot.margin = margin(2,2,2,8))
+ 
+ Rsquared_cv 
+ 
+ # ggsave(Rsquared_cv, filename = 'Rsquared_cv_fl.pdf',
+ #        path = 'Results/Figures/random_forest/',
+ #        width = 188, height = 100, units = 'mm')
+ 
+ Rsquared_cv <- combined_rf_3_performance_all |>
+   pivot_longer(cols = contains('Rsquared'), values_to = 'value', names_to = 'type') |>
+   ggplot( aes(x = asv_num, y = value, fill = type)) +
+   geom_point(position = position_jitterdodge(jitter.width = 0.2), size = 0.2, color = 'black') +
+   geom_boxplot(position = position_dodge(width = 0.8), alpha = 0.7) +
+   scale_fill_manual(values = c('darkblue', 'grey')) +
+   scale_y_continuous(limits = c(0,1))+
+   facet_wrap(vars(recurrency), scales = 'free_x', labeller = labs_recurrent)+
+   #scale_color_manual(values = c('darkblue', 'grey'))+
+   labs(x = "ASV Number", y = expression('R'^2), fill = 'Type', shape = 'Reccurrent taxa')+
+   theme(strip.background = element_rect(fill = 'transparent'),
+         panel.grid = element_blank(),
+         text = element_text(size = 6),
+         legend.position = 'bottom',
+         plot.margin = margin(2,2,2,8))
+ 
+Rsquared_cv 
+
+ # ggsave(Rsquared_cv, filename = 'Rsquared_cv_pa.pdf',
+ #        path = 'Results/Figures/random_forest/',
+ #        width = 188, height = 100, units = 'mm')
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ # 5. FEATURE IMPORTANCE ----
+ ### now that I have evaluated my models I compute the feature importance. 
+ ### Understanding the results feature_importance: If feature importances were calculated, a data frame 
+ ### where each row is a feature or correlated group. The columns are the performance metric of the 
+ ### permuted data, the difference between the true performance metric and the performance metric of the 
+ ### permuted data (true - permuted), the feature name, the ML method, the performance metric name, and 
+ ### the seed (if provided). For AUC and RMSE, the higher perf_metric_diff is, the more important that 
+ ### feature is for predicting the outcome. For log loss, the lower perf_metric_diff is, the more 
+ ### important that feature is for predicting the outcome.
+ # 
+ # There are several columns:
+ # perf_metric: The performance value of the permuted feature.
+ # perf_metric_diff: The difference between the performance for the actual and permuted data (i.e. test performance minus permuted performance). Features with a larger perf_metric_diff are more important.
+ # pvalue: the probability of obtaining the actual performance value under the null hypothesis.
+ # lower: the lower bound for the 95% confidence interval of perf_metric.
+ # upper: the upper bound for the 95% confidence interval of perf_metric.
+ # feat: The feature (or group of correlated features) that was permuted.
+ # method: The ML method used.
+ # perf_metric_name: The name of the performance metric represented by perf_metric & perf_metric_diff.
+ # seed: The seed (if set).
+ 
+ # Run the process 10 times with different seeds and create tibbles
+ num_runs <- 10
+ seed_list <- 101:111  # Example list of 10 different seeds
+ 
+ ## FL ----
+ model_02_list
+ asv_id_02_list
+ 
+ model_02_list |>
+   names()
+
+ rf_importance_list <- list()
+ 
+ ## run with fixed seed and the we will see if I can compute it for different seeds
+ 
+ # Loop through each run
+ for (i in seq_along(asv_id_02_list)) {
+   # Run ml and create tibble
+   rf_importance <- run_ml_importance_and_create_tibble(model_02_list[[i]], asv_id_02_list[i], seed = 2002)
+   
+   # Store the tibble in the list with a unique name
+   rf_importance_list[[paste0("rf_importance_", i)]] <- rf_importance
+ }
+ 
+ # Combine all tibbles into one
+ combined_rf_importance <- bind_rows(rf_importance_list)
+ 
+ # Combine all tibbles from all ASVs into one
+ combined_rf_02_importance_all <- do.call(bind_rows, combined_rf_importance)
+ 
+ combined_rf_02_importance_all |>
+   distinct(asv_num)
+ 
+ ## PA -----
+ model_3_list
+ asv_id_3_list
+ 
+ model_3_list |>
+   names()
+ 
+ rf_importance_list <- list()
+ 
+ ## run with fixed seed and the we will see if I can compute it for different seeds
+ 
+ # Loop through each run
+ for (i in seq_along(asv_id_3_list)) {
+   # Run ml and create tibble
+   rf_importance <- run_ml_importance_and_create_tibble(model_3_list[[i]], asv_id_3_list[i], seed = 203)
+   
+   # Store the tibble in the list with a unique name
+   rf_importance_list[[paste0("rf_importance_", i)]] <- rf_importance
+ }
+ 
+ # Combine all tibbles into one
+ combined_rf_importance <- bind_rows(rf_importance_list)
+ 
+ # Combine all tibbles from all ASVs into one
+ combined_rf_3_importance_all <- do.call(bind_rows, combined_rf_importance) |>
+   dplyr::mutate(fraction = '3')
+ 
+ ## add some information about my bloomers before ploting
+ combined_rf_importance_all <- combined_rf_02_importance_all |>
+   dplyr::mutate(fraction = '0.2') |>
+   bind_rows(combined_rf_3_importance_all) |>
+   left_join(summary_types_of_blooms)  
+ 
+ combined_rf_importance_all |>
+   group_by(asv_num, fraction) |>
+   distinct(asv_num, fraction) |>
+   group_by(fraction) |>
+   reframe(n = n())
+ 
+ ##plot
+ combined_rf_importance_all |>
+   dplyr::mutate(feat = as.factor(feat)) |>
+   # dplyr::group_by(asv_num, seed) |>
+   # slice_max(order_by = abs(perf_metric_diff), n = 10) |>
+   ggplot(aes(fct_infreq(feat), perf_metric_diff, shape = recurrency))+
+   scale_x_discrete(labels = labs_env_models_no_nas)+
+   geom_point()+
+   geom_boxplot(alpha = 0.6)+
+   #facet_wrap(vars(fraction), labeller = labs_fraction, scales = 'free_x')+
+   labs(y = 'Perf metric difference', x = 'Explanatory variables')+
+   facet_grid(asv_num~fraction, scales = 'free_y')+
+   coord_flip()+
+   theme(panel.grid = element_blank(), strip.background = element_rect(fill = 'transparent'))
+ 
+ combined_rf_importance_all |>
+   dplyr::filter(fraction == '0.2' ) |>
+   dplyr::mutate(feat = as.factor(feat)) |>
+   # dplyr::group_by(asv_num, seed) |>
+   # slice_max(order_by = abs(perf_metric_diff), n = 5) |>
+   ggplot(aes(fct_infreq(feat), perf_metric, shape = recurrency))+
+   scale_x_discrete(labels = labs_env_models_no_nas)+
+   geom_point()+
+   geom_boxplot(alpha = 0.6)+
+   labs(y = 'Perf metric difference', x = 'Explanatory variables')+
+   facet_wrap(vars(asv_num), scales = 'free_y')+
+   coord_flip()+
+   theme(panel.grid = element_blank(), strip.background = element_rect(fill = 'transparent'))
+ 
+ 
+ 
+ 
+ 
+ # 6. PARTIAL DEPENDANCE-----
+ ### we explore how do the variables interact with each other
+ ### https://christophm.github.io/interpretable-ml-book/pdp.html
+ ## One important thing of this analysis is to see the direction of the relationship.
+ ## Ecological significance of the results based on the previous knowledge of this taxa.
+ 
+ #### In this case we use the whole dataset to create the model, because we want to gain more confidence on the inferred patterns.
+ 
+ ### Save pdp data for plotting
+ outcome_colname <- "diff_rclr_time"
+ 
+ predictors <- c("bacteria_joint", "synechococcus", "temperature_no_nas", "day_length_no_nas",  "chla_total_no_nas",  "PO4_no_nas" ,       
+                 "NH4_no_nas" ,  "NO2_no_nas"  , "NO3_no_nas" , "Si_no_nas" , "PNF_Micro_no_nas",  "cryptomonas_no_nas",
+                 "micromonas_no_nas" , "HNF_Micro_no_nas"  , "fitted_rclr" )
+ 
+ seed_list <- 1:10
+ 
+ asv_id_02_list
+ model_02_list
+ 
+ for (asv_num in asv_id_02_list) {
+   train_rf_and_save_pdp(data =  model_02_list[[asv_num]], 
+                         outcome_colname = outcome_colname, 
+                         predictors = predictors, 
+                         seed_list = seed_list, 
+                         grid_resolution = 119, 
+                         asv_num = asv_num)
+ }
+ 
+ ##read RData----
+ # Initialize a list to store the data
+ pdp_data_02_list <- list()
+ 
+ # Loop through each asv_num
+ for (asv_num in asv_id_02_list) {
+   # Construct the file path
+   file_path <- paste0("results/figures/random_forest/pdp/pdp_", asv_num, "_data.RDS")
+   
+   # Read the RDS file
+   pdp_data <- readRDS(file_path)
+   
+   # Store the data in the list with a unique name
+   pdp_data_02_list[[asv_num]] <- pdp_data
+ } 
+ 
+ ### 2. compute the partial dependence for each seed in the same plot. 
+ 
+ ## extraction of the importance variables result to order the partial dependence plots by importance----
+ combined_rf_02_importance_all |>
+   distinct(asv_num) #check that I have the information for all my ASVs
+ 
+ importance_order <- combined_rf_02_importance_all |>
+   dplyr::group_by(asv_num, feat) |>
+   dplyr::reframe(mean_diff = mean(perf_metric_diff)) |>
+   dplyr::arrange(abs(mean_diff)) 
+ 
+ # Call the function with the pdp data list----
+ plot_partial_dependence(pdp_asv62_data, importance_df =  importance_order, asv_num = 'asv62', num_plots = 3)
+ plot_partial_dependence(pdp_asv11_data, importance_df =  importance_order, asv_num = 'asv11', num_plots = 3)
+ plot_partial_dependence(pdp_asv72_data, importance_df =  importance_order, asv_num = 'asv72', num_plots = 3)
+ plot_partial_dependence(pdp_asv17_data, importance_df =  importance_order, asv_num = 'asv17', num_plots = 3)
+ plot_partial_dependence(pdp_asv23_data, importance_df =  importance_order, asv_num = 'asv23', num_plots = 3)
+ 
+ for (asv_num in asv_id_02_list) {
+
+     data <- pdp_data_02_list[[asv_num]]
+     #asv_num <- paste0("'", [[asv_num]], "'")
+  
+   plot_partial_dependence(data = , importance_df =  importance_order, asv_num = 'asv62', num_plots = 3)
+   
+ }
+ 
+ plot_partial_dependence(pdp_asv38_data, importance_df =  importance_order, asv_num = 'asv38', num_plots = 3)
+ 
+ # Composition with all the top 3 effects on each blooming example----
+ pdp_bloomers_02 <- gridExtra::grid.arrange(pdp_all_plots_grid_asv62,
+                                                 pdp_all_plots_grid_asv72,
+                                                 pdp_all_plots_grid_asv23, 
+                                                 pdp_all_plots_grid_asv17, 
+                                                 pdp_all_plots_grid_asv11, 
+                                                 ncol = 1)
+ 
+ # ggsave(pdp_bloomers_02, filename = 'pdp_bloomers_02.pdf',
+ #        path = 'Results/Figures/random_forest/pdp/',
+ #        width = 188, height = 220, units = 'mm')
+ 
+ 
+ 
+ 
+ 
+##### WHAT HAPPENS WITH OTHER BLOOMERS (DESIGN A CODE TO DO IT FOR ALL OF THEM) ####-----
+# bloo_02$value #discard SAR11 clade "asv8"   "asv5"   "asv3"   "asv2"
+# bloo_3$value
+# 
+# ## ASV1 (in PA and FL)
+# #### PA----
+# #fit the loess model
+# fit <- loess(asv1 ~ decimal_date, data = rclr_time_tb_3, span = 0.084)
+# 
+# # predict the fited values
+# predicted_values <- predict(fit)
+# 
+# # Obtain the residuals from the loess model
+# residuals <- residuals(fit)
+# 
+# ## check the residuals
+# ## this function gets the residuals and we check that we are not oversmoothing our data, so that there is some remaining variability still in the residuals
+# # Compute the autocorrelation function (ACF) of the residuals
+# acf_res <- acf(residuals, main = "Autocorrelation Function of Residuals")
+# 
+# asv1_sm <- predicted_values |>
+#   as_tibble_col(column_name = 'asv1') |>
+#   bind_cols(decimal_date_tb) |>
+#   dplyr::select(decimal_date, 'fitted_rclr' = 'asv1') |>
+#   dplyr::mutate(asv_num = 'asv1') |>
+#   dplyr::left_join(fraction_date_3)
+# 
+# rclr_time_tb_3 |>
+#   dplyr::select(decimal_date, 'rclr' = 'asv1') |>
+#   left_join(asv1_sm) |>
+#   pivot_longer(cols = c('rclr', 'fitted_rclr'), names_to = 'approx', values_to = 'abundance_value') |>
+#   ggplot(aes(decimal_date, abundance_value))+
+#   geom_line(aes(group = approx, color = approx))+
+#   scale_color_manual(values = c('black', 'grey'))+
+#   theme_bw()+
+#   theme(panel.grid = element_blank())
+# 
+# 
+# 
+# ### BLOOMER asv1----
+# model_tb <- asv1_sm |>
+#   dplyr::filter(!is.na(diff_time)) |>
+#   #dplyr::select(-sample_id_num) |>
+#   dplyr::filter(asv_num == 'asv1' &
+#                   fraction == '3') |>
+#   ungroup() |>
+#   dplyr::select(-asv_num, -diff_rclr, -diff_time, -date, -fraction, -fitted_rclr) |>
+#   dplyr::select(-contains('_no_nas')) |>
+#   left_join(env_sm_diff_w) |>
+#   #left_join(env_data_new) |>
+#   dplyr::select(-decimal_date)
+# 
+# ##add previous CLR value as explanatory variable
+# asvs_sm_asv <- asvs_sm |>
+#   dplyr::filter(asv_num == 'asv1' &
+#                   fraction == '0.2') |>
+#   dplyr::arrange(decimal_date) |>
+#   dplyr::select(-asv_num, -fraction, -decimal_date)
+# 
+# asvs_sm_asv <- asvs_sm_asv[-120,] #the last abundance won't be necessary since we do not need it to predict the next one
+# 
+# model_tb <- model_tb |>
+#   bind_cols(asvs_sm_asv)|>
+#   dplyr::select(-BP_FC1.55_sm) ##BP from the previous month should not have a high impact on the change in abundance of the next
+# 
+# ### Split data to train and test
+# indices <- createDataPartition(y=model_tb$diff_rclr_time, p =0.75, list = F)
+# train_tb <- model_tb[indices,]
+# test_tb <- model_tb[-indices,]
+# 
+# ### Train RF
+# control <- trainControl(method = 'cv', number = 20)
+# bloo_rf <- train( diff_rclr_time ~., method='rf', trControl=control, data=train_tb, metric = 'RMSE', ntree=300, importance=T)
+# y <- predict(bloo_rf, newdata = test_tb[,-1])
+# test_tb$prediction <- y
+# fit <- lm(prediction~diff_rclr_time, data=test_tb)
+# summary(fit)
+# importance_df <- as.data.frame(bloo_rf$finalModel$importance)
+# importance_df <- importance_df[order(-importance_df$`%IncMSE`),]
+# 
+# ##try to define best parameters----
+# # Define train control
+# control <- trainControl(method = 'cv', number = 20)
+# 
+# # Define the tuning parameter grid
+# sqrt(ncol(train_tb)) ## the mtry should we a number arround this one
+# 
+# tunegrid <- expand.grid(
+#   mtry = c(4:6) #, # 
+#   #ntree = c(100, 200)
+# )
+# 
+# ## the ntree can not be changed using tunegrid that is why i need to loop over different numbers of ntree
+# modellist <- list()
+# for (i in 1:nrow(tunegrid)) {
+#   set.seed(100)
+#   mtry_val <- tunegrid$mtry[i]
+#   
+#   for (ntree_val in c(200, 300, 500, 100)) { # Iterate over ntree values
+#     fit <- train(diff_rclr_time ~ ., 
+#                  data = train_tb, 
+#                  method = 'rf', 
+#                  metric = 'RMSE', 
+#                  tuneGrid = tunegrid,
+#                  trControl = control)
+#     
+#     key <- paste("mtry_", mtry_val, "_ntree_", ntree_val, sep = "")
+#     modellist[[key]] <- fit
+#   }
+# }
+# 
+# # compare results
+# results <- resamples(modellist)
+# summary(results)
+# dotplot(results) ## ntree = 500
+# 
+# ## retrain model on entire dataset----
+# bloo_final_asv1_diff <- train( diff_rclr_time ~., method='rf', data=model_tb, metric = 'RMSE', ntree=500, importance=T)
+# bloo_final_asv1_diff
+# 
+# importance_df_asv1_diff <- as.data.frame(bloo_final_asv1_diff$finalModel$importance)
+# importance_df_asv1_diff <- importance_df_asv1_diff[order(-importance_df_asv1_diff$`%IncMSE`),]
+# importance_df_asv1_diff

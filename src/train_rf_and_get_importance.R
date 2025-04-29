@@ -2,8 +2,8 @@
 #' Title
 #'
 #' @param model_tb_list 
-#' @param outcome_colname 
-#' @param seed_list 
+#' @param outcome_colname column name of the response variable
+#' @param seed_list list of seeds that we want to evaluate
 #'
 #' @return
 #' @export

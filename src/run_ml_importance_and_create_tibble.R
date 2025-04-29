@@ -11,7 +11,7 @@
 #' @examples
 run_ml_importance_and_create_tibble <- function(model_tb, asv_num, seed) {
   # Run ml
-  rf <- run_ml(
+  rf <- mikropml::run_ml(
     model_tb,
     method = 'rf',
     outcome_colname = 'diff_rclr_time',

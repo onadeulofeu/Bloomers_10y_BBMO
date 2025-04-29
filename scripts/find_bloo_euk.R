@@ -1,4 +1,12 @@
-# packages----
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# +++++++++++++++++++++++                     data analysis pipeline                  ++++++++++++++++++++++++++++++++++++++++++++
+# +++++++++++++++++++++++                    BBMO timeseries 10-Y data                ++++++++++++++++++++++++++++++++++++++++++++
+# +++++++++++++++++++++++                         metabarcoding                       ++++++++++++++++++++++++++++++++++++++++++++
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# +++++++++++++++++++++++             Code developed by Ona Deulofeu-Capo 2024        ++++++++++++++++++++++++++++++++++++++++++++
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+# upload packages ----
 library(readxl)
 library(tidyverse)
 library(janitor)
@@ -931,8 +939,8 @@ asv_tab_10y_pico_clr <- decostand(euk_all_w_pico, method = 'rclr')|>
   rownames_to_column(var = 'sample_id') |>
   pivot_longer(cols = starts_with(c('A','C','G','T')), names_to = 'seq', values_to = 'clr')
 
-##dimensions are different from relative and pseudo dataset and clr understand why----
-##with this approximation I get more AVSs
+## dimensions are different from relative and pseudo dataset and clr understand why----
+## with this approximation I get more AVSs
 
 asv_tab_10y_nano_clr |>
   group_by(seq) |>
@@ -1015,7 +1023,7 @@ bloo_pico <- asv_tab_10y_pico_clr |>
   dplyr::distinct(seq) |>
   as_vector()
 
-#write_csv2(as_tibble(bloo_02), 'data/bloo_02_euk.csv')
+#write_csv2(as_tibble(bloo_pico), 'data/bloo_02_euk.csv')
 
 n_bloomers_nano <-  asv_tab_10y_nano_clr |>
   inner_join(euk_all_nano, by = c('sample_id', 'seq')) |> #asv_tab_10y_02_clr vull afegir el clr per calcular també les seves anomalies i veure si veiem el mateix
@@ -1040,7 +1048,7 @@ bloo_nano <- asv_tab_10y_nano_clr |>
   dplyr::distinct(seq) |>
   as_vector()
 
-#write_csv2(as_tibble(bloo_3), 'data/bloo_3_euk.csv')
+#write_csv2(as_tibble(bloo_nano), 'data/bloo_3_euk.csv')
 
 # Filter the ASV_tab by only those ASVs that have an anomaly at some point of the dataset ----
 ##function
@@ -1096,7 +1104,8 @@ asv_anom_pico_tb <- asv_anom_pico |>
 common_bloomers_tax_euk <- asv_anom_nano_tb |>
   bind_rows(asv_anom_pico_tb) |>
   unique() |> ##86 totals >50% del dataset
-  left_join(tax_euk_def, by = c('value' = 'seq'))
+  #left_join(tax_euk_def, by = c('value' = 'seq')) |>
+  left_join(tax_euk_all, by = c('value' = 'seq'))
 
 asv_anom_nano_tb |>
   anti_join(asv_anom_pico_tb) #49 ASV only in 3
@@ -1167,7 +1176,6 @@ m_pico <- euk_all_pico |>
   right_join(sample_id_pico) |> #there's one missing sample, probably because of the transformation to CLR 
   dplyr::mutate(sample_id_num = str_c(1:nrow(sample_id_pico)))
 
-x <- 120*0.75
 z_scores_pico <- asv_tab_10y_pico_clr |>
   left_join(euk_all_pico) |>
   group_by(seq) |>
@@ -1184,7 +1192,7 @@ z_scores_pico <- asv_tab_10y_pico_clr |>
   dplyr::mutate(sample_id_num = str_c(1:nrow(sample_id_pico))) |>
   left_join(m_pico, by = 'sample_id_num')
 
-x <- 117*0.75 #number of 0s that we accept in the dataset to filter it by to calculate anomalies
+#x <- 117*0.75 #number of 0s that we accept in the dataset to filter it by to calculate anomalies
 
 sample_id_nano <- asv_tab_10y_nano_clr_bloo |>
   ungroup() |>
@@ -1232,12 +1240,12 @@ z_scores_all |>
   colnames()
 
 # Dataset with all information ----
-asv_tab_all_bloo_z_tax <- asv_tab_all_bloo |>
+euk_asv_tab_all_bloo_z_tax <- asv_tab_all_bloo |>
   left_join(z_scores_all)
 # |> 
 # left_join(euk_all_tax, by = 'seq') I don't add the taxonomy because it is already present
 
-#write.csv2(asv_tab_all_bloo_z_tax, 'data/18S/euk_asv_tab_all_bloo_z_tax.csv')
+#write.csv2(asv_tab_all_bloo_z_tax, 'data/18S/euk_asv_tab_all_bloo_z_tax_ed.csv')
 
 asv_tab_all_bloo_z_tax |>
   distinct(asv_num.x) |>
@@ -1258,7 +1266,7 @@ euk_asv_tab_all_bloo_z_tax |>
   colnames()
 
 euk_asv_tab_all_bloo_z_tax |>
-  dplyr::filter(is.na(fraction))
+  dplyr::filter(is.na(fraction)) ## crec que podria ser normal degut a les dades que tenim
 
 #labels----
 labs_fraction_euk <- as_labeller(c('pico' = 'Picoeukaryotes (0.2-3 um)',
@@ -1345,7 +1353,7 @@ euk_asv_tab_all_bloo_z_tax |>
                                                     ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
   
   #geom_stream(aes(fill = class_f, group = class_f), type = "ridge", bw=1)+
-  geom_area(aes(date, abund_order, fill = supergroup_f, group = supergroup_f), alpha = 0.8,  position='stack')+
+  geom_area(aes(date, abund_order, fill = supergroup_f, group = supergroup_f), alpha = 0.9,  position='stack')+
   #geom_line(data = bray_curtis_rar_all_m, aes(date, bray_curtis_result))+
   # geom_line(data = community_eveness_all_m, aes(date, community_eveness_rar/1.6), color = '#2D2A2B', alpha = 0.8)+
   # geom_point(data = community_eveness_all_m |>
@@ -1392,7 +1400,7 @@ euk_asv_tab_all_bloo_z_tax |>
                                                     ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
   
   #geom_stream(aes(fill = class_f, group = class_f), type = "ridge", bw=1)+
-  geom_area(aes(date, abund_order, fill = group_f, group = group_f), alpha = 0.8,  position='stack')+
+  geom_area(aes(date, abund_order, fill = group_f, group = group_f), alpha = 0.9,  position='stack')+
   #geom_line(data = bray_curtis_rar_all_m, aes(date, bray_curtis_result))+
   # geom_line(data = community_eveness_all_m, aes(date, community_eveness_rar/1.6), color = '#2D2A2B', alpha = 0.8)+
   # geom_point(data = community_eveness_all_m |>
@@ -1416,5 +1424,82 @@ euk_asv_tab_all_bloo_z_tax |>
         legend.position = 'bottom', axis.text.y = element_text(size = 8),
         axis.title = element_text(size = 8), strip.background = element_blank(), 
         legend.text = element_text(size = 7), legend.title = element_text(size = 8), strip.placement = 'outside') 
+
+## qui són els que están durant les obres del port -----
+
+blooms_port <- euk_asv_tab_all_bloo_z_tax |>
+  dplyr::filter(abundance_type == 'relative_abundance') |>
+  group_by(date, fraction)
+  
+  
+  
+  blooms_port |>  
+  dplyr::mutate(max_abund = sum(abundance_value)) |>
+  ungroup() |>
+  group_by(date, fraction, supergroup) |>
+  dplyr::mutate(abund_order = sum(abundance_value)) |>
+  ungroup() |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%d-%m-%y"))) |>
+  dplyr::filter(!is.na(fraction)) |>
+  dplyr::filter(is.na(supergroup)) |>
+  ggplot(aes(date, max_abund))+
+  #geom_line(aes(date, max_abund))+
+  #geom_segment(aes(x = '2005-01-01', y = 0, xend = '2005-01-02', yend =0.57),color="black")+
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0)
+                   #limits = c(min(asv_tab_all_bloo_z_tax$date), max(asv_tab_all_bloo_z_tax$date),
+                   #limits = c(as.POSIXct(2004-01-26, origin = '2004-01-26'), as.POSIXct(2014-01-01, origin = '2014-01-01'))
+  )+
+  geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
+                                                    ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
+  
+  #geom_stream(aes(fill = class_f, group = class_f), type = "ridge", bw=1)+
+  geom_area(aes(date, abund_order, fill = supergroup_f, group = supergroup_f), alpha = 0.9,  position='stack')+
+  #geom_line(data = bray_curtis_rar_all_m, aes(date, bray_curtis_result))+
+  # geom_line(data = community_eveness_all_m, aes(date, community_eveness_rar/1.6), color = '#2D2A2B', alpha = 0.8)+
+  # geom_point(data = community_eveness_all_m |>
+  #              dplyr::filter(anomaly_color == '#9F0011'),  
+  #            aes(date, community_eveness_rar/1.6, color = anomaly_color, alpha = 0.8))+
+  scale_y_continuous(labels = percent_format(), expand = c(0,0), limits = c(0,1))+
+  #,
+  #                    sec.axis = sec_axis(~.* 1 , name = 'Community Evenness'))+
+  scale_color_identity()+
+  scale_fill_manual(values = 
+                      palette_supergroup_assigned, na.value = "#000000")+
+  labs(x = 'Time', y = 'Relative abundance (%)', fill = 'Supergroup')+
+  facet_wrap(vars(fraction), dir = 'v', scales = 'free_y',  labeller = labs_fraction_euk)+
+  #facet_wrap(fraction~phylum_f, dir = 'v', scales = 'free_y',  labeller = labs_fraction)+
+  guides(fill = guide_legend(ncol = 6, size = 10,
+                             override.aes = aes(label = '')),
+         alpha = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 7), panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(), strip.text = element_text(size = 7),
+        legend.position = 'bottom', axis.text.y = element_text(size = 8),
+        axis.title = element_text(size = 8), strip.background = element_blank(), 
+        legend.text = element_text(size = 7), legend.title = element_text(size = 8), strip.placement = 'outside')  ## the most abundant euk just after the harbor restoration is Helkesimastix marina n. sp. (Cercozoa: Sainouroidea superfam. n.) a Gliding Zooflagellate of Novel Ultrastructure and Unusual Ciliary Behaviour 
+  
+  ### observe these "potential blooming euk" and their changes over the years ------
+  euk_asv_tab_all_bloo_z_tax |>
+    dplyr::filter(!is.na(fraction)) |>
+    dplyr::filter(abundance_type == 'clr') |>
+    # group_by(date, fraction) |>
+    # #dplyr::mutate(max_abund = sum(abundance_value)) |>
+    # ungroup() |>
+    # group_by(date, fraction, group) |>
+    # dplyr::mutate(abund_order = sum(abundance_value)) |>
+    ungroup() |>
+    dplyr::mutate(date = (as.POSIXct(date, format = "%d-%m-%y"))) |>
+    ggplot(aes(date, abundance_value))+
+    facet_grid(supergroup~fraction)+
+    geom_line(aes(color = supergroup, group = asv_num))+
+    scale_color_manual(values = palette_supergroup_assigned)+
+    labs(x = 'Time', y = 'rCLR')+
+    theme_bw()+
+    theme(axis.text.x = element_text(size = 7), panel.grid.minor = element_blank(),
+          panel.grid.major = element_blank(), strip.text = element_text(size = 7),
+          legend.position = 'bottom', axis.text.y = element_text(size = 8),
+          axis.title = element_text(size = 8), strip.background = element_blank(), 
+          legend.text = element_text(size = 7), legend.title = element_text(size = 8), strip.placement = 'outside') 
+  
 
   
