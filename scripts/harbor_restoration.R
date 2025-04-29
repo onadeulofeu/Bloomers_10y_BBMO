@@ -6,7 +6,7 @@
 # +++++++++++++++++++++++             Code developed by Ona Deulofeu-Capo 2024        ++++++++++++++++++++++
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-# pacakges ----
+# packages ----
 library(tidyverse)
 library(magrittr)
 library(ggplot2)
