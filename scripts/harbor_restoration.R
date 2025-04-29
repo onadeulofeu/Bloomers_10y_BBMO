@@ -79,6 +79,91 @@ shannon_rar_m$harbor_restoration <- factor(shannon_rar_m$harbor_restoration,
                                            levels = c('post_perturbation',
                                                       'perturbation',
                                                       'pre_perturbation'))
+shannon_rar_m |>
+  group_by(fraction, harbor_restoration) |>
+  dplyr::reframe(n = n())
+
+## add stats
+data_f <- shannon_rar_m |>
+  dplyr::filter(fraction == '0.2')
+
+## add stats
+data_f_3 <- shannon_rar_m |>
+  dplyr::filter(fraction == '3')
+
+data_f |>
+  colnames()
+
+data_f |>
+  distinct(harbor_restoration)
+
+## check normality 
+shapiro.test(as.numeric(shannon_rar_m |>
+                          dplyr::filter(fraction == '0.2') %$%
+                          diversity_shannon)) # => p-value = 0.0172 (NO NORMALITY)
+
+shapiro.test(as.numeric(shannon_rar_m |>
+                          dplyr::filter(fraction == '3') %$%
+                          diversity_shannon)) # => p-value = 0.0172 (NO NORMALITY)
+
+ggqqplot(as.numeric(shannon_rar_m |>
+                      dplyr::filter(fraction == '0.2') %$%
+                      diversity_shannon))
+
+## check homocedasticity 
+leveneTest(diversity_shannon ~ harbor_restoration, data = data_f) #p-value 0.844 > 0.05: Variances are homogeneous (equal), and the assumption for ANOVA is met
+
+# Levene's Test for Homogeneity of Variance (center = median)
+#        Df F value Pr(>F)
+# group   2  0.1698  0.844
+#       117                     
+# ---
+# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+leveneTest(diversity_shannon ~ harbor_restoration, data = data_f_3)
+
+# Levene's Test for Homogeneity of Variance (center = median)
+#        Df F value Pr(>F)
+# group   2  0.8704 0.4215
+#       114  
+
+## Since we don't have normality but we have homocedasticity we still need to change to a non parametric test kruskal.test
+
+# Perform one-way ANOVA to compare the means of Rho across the three groups
+## anova_result <- aov(rho ~ fraction_causal, data = data_ed2_f)  # Replace with your actual group variable
+kruskal_result <- kruskal.test(diversity_shannon ~ harbor_restoration, data = data_f) 
+
+# View the ANOVA summary
+##summary(anova_result)
+summary(kruskal_result)
+
+# Perform Dunn's test correctly
+dunn_result <- dunn.test(
+  x = data_f$diversity_shannon,                            # The values you are comparing
+  g = as.factor(data_f$harbor_restoration),    # The grouping variable
+  method = 'bonferroni'                          # Bonferroni correction
+)
+
+# Print the result
+print(dunn_result)  # no significant differences in the FL fraction
+
+# Perform one-way ANOVA to compare the means of Rho across the three groups
+## anova_result <- aov(rho ~ fraction_causal, data = data_ed2_f)  # Replace with your actual group variable
+kruskal_result <- kruskal.test(diversity_shannon ~ harbor_restoration, data = data_f_3) 
+
+# View the ANOVA summary
+##summary(anova_result)
+summary(kruskal_result)
+
+# Perform Dunn's test correctly
+dunn_result <- dunn.test(
+  x = data_f_3$diversity_shannon,                            # The values you are comparing
+  g = as.factor(data_f_3$harbor_restoration),    # The grouping variable
+  method = 'bonferroni'                          # Bonferroni correction
+)
+
+# Print the result
+print(dunn_result)  # no significant differences in the FL fraction
 
 shannon_harbor_rar_plot <- shannon_rar_m |>
   ggplot(aes(harbor_restoration, diversity_shannon))+
@@ -99,6 +184,7 @@ shannon_harbor_rar_plot
 # 
 # ggsave(shannon_harbor_rar_plot, file = 'results/figures/shannon_harbor_rar_plot.pdf',
 #        width = 110, height = 110, units = 'mm')
+
 shannon_harbor_rar_plot <- shannon_rar_m |>
   ggplot(aes(fraction, diversity_shannon))+
   geom_point( position = position_jitter(width = 0.15), aes(shape = fraction))+#aes(color = season),
@@ -117,8 +203,9 @@ shannon_harbor_rar_plot <- shannon_rar_m |>
 
 shannon_harbor_rar_plot 
 # 
-ggsave(shannon_harbor_rar_plot, file = 'results/figures/poster_svg_format/shannon_harbor_rar_plot.svg',
-       width = 260, height = 120, units = 'mm')
+# ggsave(shannon_harbor_rar_plot, 
+#        file = 'results/figures/poster_svg_format/shannon_harbor_rar_plot.svg',
+#        width = 260, height = 120, units = 'mm')
 
 ## exploring the community affected by the restoration -----
 asv_tab_all_bloo_z_tax_harbor |>  
@@ -538,34 +625,21 @@ blooming_asvs_increasing_over_the_years <- asv_tab_all_bloo_z_tax_harbor |>
 
 blooming_asvs_increasing_over_the_years
 
-ggsave(blooming_asvs_increasing_over_the_years, filename = 'blooming_asvs_increasing_over_the_years.svg',
-       path = 'Results/Figures/poster_svg_format/',
-       width = 300, height = 180, units = 'mm')
+# ggsave(blooming_asvs_increasing_over_the_years, filename = 'blooming_asvs_increasing_over_the_years.svg',
+#        path = 'Results/Figures/poster_svg_format/',
+#        width = 300, height = 180, units = 'mm')
 
 blooming_asvs_decreasing_over_the_years <- asv_tab_all_bloo_z_tax_harbor |>
   dplyr::mutate(famil_asv = paste0(family,' ', asv_num)) |>
   left_join(bloo_types_summary) |>
-  #dplyr::filter(frequency != 'seasonal') |>
   dplyr::filter(abundance_type == 'rclr') |>
   dplyr::filter(asv_num %in% c('asv28')) |>
   ggplot(aes(date, abundance_value, group = asv_num))+
   facet_wrap(vars(interaction(family_f, asv_num_f)), scales = 'free',  ncol = 3)+
-  # geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
-  #                                                   ymin = -Inf, ymax = Inf), fill = '#94969E', alpha = 0.6)+
   geom_line(aes(group = fraction, color = fraction), linewidth = 0.3, alpha = 0.6)+
   geom_smooth(aes(group = fraction, color = fraction), method = 'loess', linewidth = 0.8)+
   scale_color_manual(values = palette_fraction, labels = labs_fraction)+
-  #scale_y_continuous(labels = percent_format())+
   labs(x = 'Time', y = 'rCLR', color = 'Fraction')+
-  # annotate(geom = "text", x = (as.POSIXct('2006-04-12', format = "%Y-%m-%d")), 
-  #          y = 0.2, 
-  #          label = "Predisturbance", size = 2)+
-  # annotate(geom = "text", x = (as.POSIXct('2010-10-12', format = "%Y-%m-%d")), 
-  #          y = 0.2, 
-  #          label = "Disturbance", size = 2)+
-  # annotate(geom = "text", x = (as.POSIXct('2013-04-12', format = "%Y-%m-%d")), 
-  #          y = 0.2, 
-  #          label = "Postdisturbance", size = 2)+
   theme_bw()+
   theme(strip.background = element_rect(fill = 'transparent'),
         legend.position = 'bottom', 
@@ -1346,7 +1420,7 @@ differential_abundance_harbor_plot <- data |>
   ggplot(aes(harbor_restoration, abundance_value))+
   geom_point(aes(color = significant, shape = significant), position = position_jitter(width = 0.25))+
   geom_boxplot(alpha = 0.2)+
-  scale_color_manual(values = c('#4cb76a', '#2466BF'))+
+  #scale_color_manual(values = c('#4cb76a', '#2466BF'))+
   scale_x_discrete(labels = c('pre_perturbation' = 'Pre', 'perturbation' = 'Perturbation', 'after_perturbation' = 'Post'))+
   labs(x = '', y = 'rCLR', color = '', shape = '')+
   facet_wrap(vars(interaction(order_f, asv_num_f)), scales = 'free', ncol = 5)+
@@ -1364,6 +1438,77 @@ differential_abundance_harbor_plot
 #        plot = differential_abundance_harbor_plot,
 #        path = 'Results/Figures/',
 #        width = 180, height = 230, units = 'mm')
+
+## viruses differential abundances during the harbor restoration ----
+m_vir_harbor <- m_vir_tb |>
+  dplyr::mutate(date = as.POSIXct(date, format = "%Y-%m-%d")) |> 
+  dplyr::mutate(harbor_restoration = case_when(
+    date < '2010-03-24' ~ 'pre_perturbation',
+    date >= '2010-03-24' & date < '2012-06-09' ~ 'perturbation',
+    date >= '2012-06-09' ~ 'after_perturbation'
+  ))
+
+m_vir_harbor$harbor_restoration <- factor(m_vir_harbor$harbor_restoration, 
+                                          levels = c('pre_perturbation', 'perturbation', 'after_perturbation') )
+
+library(dplyr)
+library(rstatix)
+
+# Pairwise Wilcoxon test
+diff_abundance_wilcox <- m_vir_harbor |>
+  dplyr::filter(!is.na(total_vlp)) |>
+  pairwise_wilcox_test(total_vlp ~ year, p.adjust.method = "BH")
+
+print(diff_abundance_wilcox)
+
+plot_virus_abund_harbor <- m_vir_harbor |>
+  ggplot(aes( as.character(year), total_vlp))+
+  geom_point(position = position_jitter(width = 0.15), size = 0.25)+
+  scale_x_discrete()+
+  geom_boxplot(alpha = 0.2)+
+  #scale_x_discrete(labels = c('pre_perturbation' = 'Pre', 'perturbation' = 'Perturbation', 'after_perturbation' = 'Post'))+
+  labs(x = '', y = 'virus/mL', color = '', shape = '')+
+  theme_bw()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        legend.position = 'bottom',
+        panel.grid = element_blank(), text = element_text(size = 8),
+        strip.text = element_text(margin = margin(2, 2, 2, 2)),
+        #plot.margin = unit(c(0.2, 5, 0.5, 0.5), "cm"),
+        legend.key.size = unit(3, 'mm'))+
+  stat_compare_means(method = "wilcox.test", label = "p.signif", 
+                     comparisons = list(c("2010", "2012"), c("2011", "2012"))) # Add significance comparisons to boxplot
+
+plot_virus_abund_harbor
+
+# ggsave(filename = 'plot_virus_abund_harbor.pdf', 
+#               plot = plot_virus_abund_harbor,
+#               path = 'Results/Figures/',
+#               width = 100, height = 88, units = 'mm')
+
+diff_abundance_wilcox <- m_vir_harbor |>
+  dplyr::filter(!is.na(HNF_Micro)) |>
+  pairwise_wilcox_test(HNF_Micro ~ year, p.adjust.method = "BH")
+
+print(diff_abundance_wilcox)
+## non-significant the HNF 
+
+plot_HNF_abund_harbor <- m_vir_harbor |>
+  ggplot(aes( as.character(year), HNF_Micro))+
+  geom_point(position = position_jitter(width = 0.15))+
+  geom_boxplot(alpha = 0.2, notch = F)+
+  scale_x_discrete(labels = c('pre_perturbation' = 'Pre', 'perturbation' = 'Perturbation', 'after_perturbation' = 'Post'))+
+  labs(x = '', y = 'cells/mL', color = '', shape = '')+
+  theme_bw()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        legend.position = 'bottom',
+        panel.grid = element_blank(), text = element_text(size = 8),
+        strip.text = element_text(margin = margin(2, 2, 2, 2)),
+        #plot.margin = unit(c(0.2, 5, 0.5, 0.5), "cm"),
+        legend.key.size = unit(3, 'mm'))+
+  stat_compare_means(method = "wilcox.test", label = "p.signif", 
+                     comparisons = list(c("2010", "2012"), c("2011", "2012"))) # Add significance comparisons to boxplot
+
+plot_HNF_abund_harbor
 
 ## new categories related to harbor restoration -----
 ## relative abundance ----
@@ -1391,7 +1536,6 @@ harbor_pa_stats_plot <- asv_tab_all_bloo_z_tax_sig |>
   dplyr::group_by(date, fraction, order_f, family_f, abundance_type, type_of_bloomer, harbor_effect) |>
   dplyr::reframe(abund_max = sum(abundance_value)) |>
   ggplot(aes(date, abund_max))+
-  #scale_y_continuous(labels = percent_format())+
   geom_vline(xintercept = as.POSIXct('2010-03-24', format = "%Y-%m-%d"), linetype = 'dashed') +
   geom_vline(xintercept = as.POSIXct('2010-07-01', format = "%Y-%m-%d"), linetype = 'dashed') +
   geom_vline(xintercept = as.POSIXct('2012-06-09', format = "%Y-%m-%d"), linetype = 'dashed') +
@@ -1403,31 +1547,25 @@ harbor_pa_stats_plot <- asv_tab_all_bloo_z_tax_sig |>
                                                         ymin = -Inf, ymax = Inf), fill = '#94969E', alpha = 0.6)+
   scale_fill_manual(values = palette_family_assigned_bloo)+
   labs(y = 'Relative Abundance', x = 'Time', fill = 'Family')+
-  geom_area(aes(group = family_f, fill = family_f), position = 'stack')+
-  #facet_wrap(vars(harbor_group), ncol = 1, scales = 'free_y')+
-  #facet_grid(type_of_bloomer~harbor_effect,  scales = 'free_y')+
+  geom_area(aes(group = fct_rev(family_f), fill = fct_rev(family_f)), position = 'stack')+
   facet_wrap(vars(interaction(type_of_bloomer, harbor_effect)),  scales = 'free_y', ncol = 1)+
   guides(fill = guide_legend(ncol = 1))+
   theme_bw()+
   theme(strip.background = element_rect(fill = 'transparent'),
         legend.position = 'right',
-        #aspect.ratio = 6/11,
         panel.grid = element_blank(), text = element_text(size = 10),
         strip.text = element_text(margin = margin(2, 2, 2, 2)),
-        #plot.margin = unit(c(0.2, 5, 0.5, 0.5), "cm"),
         legend.key.size = unit(4, 'mm'))
 
 harbor_pa_stats_plot
-# # 
-# ggsave(filename = 'harbor_restoration_plot_photo_rel_abund_stats_v2.pdf',
+#
+# ggsave(filename = 'harbor_restoration_plot_photo_rel_abund_stats_v3.pdf',
 #        plot = harbor_pa_stats_plot,
 #        path = 'Results/Figures/',
 #        width = 180, height = 200, units = 'mm')
 
 ## rCLR plots ---
 asv_tab_all_bloo_z_tax_sig <- asv_tab_all_bloo_z_tax |>
-  #dplyr::filter(asv_num %in% wavelet_results_category_harbor_affected$asv_num) |>
-  #left_join(summary_types_of_blooms, by = c('asv_num', 'fraction')) |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
   dplyr::filter(abundance_type == 'rclr') |>
   dplyr::filter(fraction == '3') |>
@@ -1451,7 +1589,6 @@ harbor_pa_stats_plot <- asv_tab_all_bloo_z_tax_sig |>
   dplyr::group_by(date, fraction, order_f, family_f, abundance_type, type_of_bloomer, harbor_effect) |>
   dplyr::reframe(abund_max = sum(abundance_value)) |>
   ggplot(aes(date, abund_max))+
-  #scale_y_continuous(labels = percent_format())+
   geom_vline(xintercept = as.POSIXct('2010-03-24', format = "%Y-%m-%d"), linetype = 'dashed') +
   geom_vline(xintercept = as.POSIXct('2010-07-01', format = "%Y-%m-%d"), linetype = 'dashed') +
   geom_vline(xintercept = as.POSIXct('2012-06-09', format = "%Y-%m-%d"), linetype = 'dashed') +
@@ -1464,7 +1601,7 @@ harbor_pa_stats_plot <- asv_tab_all_bloo_z_tax_sig |>
   scale_fill_manual(values = palette_family_assigned_bloo)+
   labs(y = 'rCLR', x = 'Time', fill = 'Family')+
   geom_area(aes(group = family_f, fill = family_f), position = 'stack')+
-  #facet_wrap(vars(harbor_group), ncol = 1, scales = 'free_y')+
+  facet_wrap(vars(harbor_group), ncol = 1, scales = 'free_y')+
   #facet_grid(type_of_bloomer~harbor_effect,  scales = 'free_y')+
   facet_wrap(vars(interaction(type_of_bloomer, harbor_effect)),  scales = 'free_y', ncol = 1)+
   guides(fill = guide_legend(ncol = 1))+
@@ -1479,11 +1616,10 @@ harbor_pa_stats_plot <- asv_tab_all_bloo_z_tax_sig |>
 
 harbor_pa_stats_plot
 # 
-# ggsave(filename = 'harbor_restoration_plot_photo_rclr_stats_v2.pdf',
-#        plot = harbor_pa_stats_plot,
-#        path = 'Results/Figures/',
-#        width = 180, height = 200, units = 'mm')
-
+#ggsave(filename = 'harbor_restoration_plot_photo_rclr_stats_v3.pdf',
+       # plot = harbor_pa_stats_plot,
+       # path = 'Results/Figures/',
+       # width = 180, height = 200, units = 'mm')
 
 harbor_pa_stats_plot <- asv_tab_all_bloo_z_tax_sig |>
   dplyr::filter(significant == 'TRUE') |>
@@ -1663,3 +1799,14 @@ print(composition_with_labels)
 #        plot = composition_with_labels,
 #        path = 'Results/Figures/',
 #        width = 180, height = 200, units = 'mm')
+
+
+## harbor restoration reads ----
+asv_tab_10y_l_rel |>
+  colnames()
+
+asv_tab_10y_l_rel |>
+  dplyr::group_by(sample_id) |>
+  reframe(total_reads = sum(reads)) |>
+  arrange(total_reads)
+  
