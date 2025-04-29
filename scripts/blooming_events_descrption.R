@@ -1,4 +1,12 @@
-## packages
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# +++++++++++++++++++++++                     data analysis pipeline                  ++++++++++++++++++++++
+# +++++++++++++++++++++++                    BBMO timeseries 10-Y data                ++++++++++++++++++++++
+# +++++++++++++++++++++++                         metabarcoding                       ++++++++++++++++++++++
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# +++++++++++++++++++++++             Code developed by Ona Deulofeu-Capo 2024        ++++++++++++++++++++++
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+## packages ----- 
 library(tidyverse)
 library(ggplot2)
 library(magrittr)
@@ -7,9 +15,10 @@ library(phyloseq)
 library(speedyseq)
 library(Bloomers)
 library(gridExtra)
+library(EnvStats)
 #library(zCompositions)
 
-##palettes
+## palettes ----- 
 palete_gradient_cb <- c(#"#240023",
   "#4db2a2",
   "#005a47" = 1,
@@ -139,7 +148,7 @@ tax_bbmo_10y_new <- tax_bbmo_10y_old |>
   left_join(new_tax, by = c('seq' = 'sequence')) |>
   rename(domain = Kingdom, phylum = Phylum, class = Class, order = Order, family = Family, genus = Genus)
 
-#labels----
+# labels----
 labs_fraction <- as_labeller(c('0.2' = 'Free living (0.2-3 um)',
                                '3' = 'Particle attached (3-20 um)'))
 
@@ -192,14 +201,14 @@ bray_curtis_3_rar <- dissimilarity_matrix(data = asv_tab_10y_3_rel_rar,
                                           sample_id_col = sample_id,
                                           values_cols_prefix = 'BL')
 
-### plot Bray-Curtis dissimilarity and Community Eveness together----
+### plot Bray-Curtis dissimilarity and Community Evenness together----
 community_eveness_all <- community_eveness_02 |>
   bind_rows(community_eveness_3)
 
 bray_curtis_rar_all <- bray_curtis_02_rar |> ##one sample less, the first one can't be compared with the previous
   bind_rows(bray_curtis_3_rar)
 
-## At the level of community, we use the Eveness result and Bray Curtis dissimilarity ----
+## At the level of community, we use the Evenness result and Bray Curtis dissimilarity ----
 z_diversity <- bray_curtis_02_rar |>
   dplyr::right_join(community_eveness_02, by = join_by("samples" == "sample_id")) |> 
   #ungroup() %>%
@@ -310,20 +319,17 @@ community_eveness_all_m |>
 
 # Super blooming events -----
 source('src/calculate_and_plot_residuals.R')
-# asv_tab_bbmo_10y_w <- read.csv( 'data/.csv', 
-#                                 row.names = 'X')
+
 library(purrr)
 library(EnvStats)
 
 ## calculate the distance of each timepoint relative abundance from the geometric mean ----
 mean_abund_f_asv <- asv_tab_all_bloo_z_tax |>
   dplyr::filter(abundance_type == 'relative_abundance') |>
- # dplyr::filter(abundance_value > 0) |>
   dplyr::mutate(abundance_value = as.numeric(abundance_value),  # Convert abundance_value to numeric
                 abundance_value = ifelse(is.na(abundance_value) | abundance_value == 0, 1, abundance_value * 100)) |> # geometric mean does not work with < 1 because it usees square root and it needs values > 1 
   dplyr::group_by(asv_num, fraction) |>
   dplyr::reframe(mean_abund = geoMean(abundance_value, na.rm = T),
-                   #sd_abund = geoSD(abundance_value, na.rm = T),
                  sd_abund = geoSD(abundance_value, na.rm = T))
 
 timeseries_limits <- tibble(xmin = '2004-01-26', xmax = '2013-10-15') |>
@@ -337,59 +343,59 @@ asv_tab_all_bloo_z_tax <- asv_tab_all_bloo_z_tax |>
 anom_rel_abund_3 <- asv_tab_all_bloo_z_tax |>
   dplyr::filter(fraction == '3' &
                   abundance_type == 'relative_abundance' &
-                  asv_num %in% bloo_3$value) |>
-  # dplyr::filter(abundance_value >= 0.1 &
-  #                 z_score_ra >= 1.96) |>
-  dplyr::mutate(bloom_event = case_when(abundance_value > 0.1 &
-                                          z_score_ra > 1.96 ~ 'bloom',
-                                        abundance_value < 0.1 ~ 'no-bloom' ,
-                                        z_score_ra < 1.96 ~ 'no-bloom')) |>
+                  asv_num %in% bloo_3_tb$asv_num) |>
+  dplyr::mutate(bloom_event = case_when(z_score_ra >= cut_off_value_ra &
+                                          z_score_rclr >= cut_off_value_rclr &
+                                          abundance_value >= 0.1 ~ 'bloom',
+                                        TRUE ~ 'no-bloom')) |>
   dplyr::select(date, sample_id, asv_num, fraction, abundance_value, family, bloom_event)
 
 anom_rel_abund_02 <- asv_tab_all_bloo_z_tax |>
   dplyr::filter(fraction == '0.2' &
                   abundance_type == 'relative_abundance' &
-                  asv_num %in% bloo_02$value) |>
-  # dplyr::filter(abundance_value >= 0.1 &
-  #                 z_score_ra >= 1.96) |>
-  dplyr::filter(!asv_num %in% c('asv2', 'asv3', 'asv5', 'asv8')) |>
-  dplyr::mutate(bloom_event = case_when(abundance_value > 0.1 &
-                                          z_score_ra > 1.96 ~ 'bloom',
-                                        abundance_value < 0.1 ~ 'no-bloom' ,
-                                          z_score_ra < 1.96 ~ 'no-bloom')) |>
+                  asv_num %in% bloo_02_tb$asv_num) |>
+  dplyr::mutate(bloom_event = case_when(z_score_ra >= cut_off_value_ra &
+                                          z_score_rclr >= cut_off_value_rclr &
+                                          abundance_value >= 0.1 ~ 'bloom',
+                                        TRUE ~ 'no-bloom')) |>
   dplyr::select(date, sample_id, asv_num, fraction, abundance_value, bloom_event, family, z_score_ra) 
   
 anom_rel_abund <- anom_rel_abund_3 |>
   bind_rows(anom_rel_abund_02) |>
-  arrange(-abundance_value) |>
-  dplyr::mutate(abundance_value = abundance_value*100)
+  arrange(-abundance_value) 
+
+occurrence_bloo_bbmo_red <- occurrence_bloo_bbmo |>
+  dplyr::select(asv_num, fraction, occurrence_perc) |>
+  dplyr::mutate(fraction = as.double(fraction)) |>
+  distinct()
   
 ## little function to compute residuals for all ASVs in PA or FL
-bloo_02_filt <- bloo_02 |>
-  dplyr::filter(!value %in% c('asv2', 'asv3', 'asv5', 'asv8')) 
+bloo_02_filt <- bloo_02_tb 
 
 summary_types_of_blooms_02 <-
   summary_types_of_blooms |>
   dplyr::filter(fraction == '0.2')
 
-bloo_02_filt <-  bloo_02_filt |>
-  left_join(summary_types_of_blooms_02, by = c('value' = 'asv_num')) |>
-  arrange(-occurrence_perc)
+bloo_02_filt <-  bloo_02_filt |> 
+  dplyr::mutate(fraction = as.double(fraction)) |>
+  left_join(bloo_all_types_summary_tax, by = c('asv_num' = 'asv_num', 'fraction')) |>
+  left_join(occurrence_bloo_bbmo_red) |>
+  arrange(desc(occurrence_perc))
 
 create_plot_02 <- function(asv_num) {
   plot <- plot_residuals(
     data_anom_abund = anom_rel_abund,
     data_mean_abund_asv = mean_abund_f_asv,
-    asv_num = {{asv_num}},
+    asv_num =  {{asv_num}}, 
     community_fraction = '0.2'
   )
 }
 
-plots_list_02 <- purrr::map(bloo_02_filt$value, create_plot_02)
+plots_list_02 <- purrr::map(bloo_02_filt$asv_num, create_plot_02)
 
 residuals_02 <- gridExtra::grid.arrange(grobs = plots_list_02, ncol = 3) 
 
-ggsave("results/figures/residuals_02_plot_geo_mean.pdf", 
+ggsave("results/figures/residuals_02_plot_geo_mean_v2.pdf",
        plot = residuals_02, width = 188, height = 220, units = "mm")
 
 create_plot_3 <- function(asv_num) {
@@ -404,9 +410,10 @@ create_plot_3 <- function(asv_num) {
 summary_types_of_blooms_3 <- summary_types_of_blooms |>
   dplyr::filter(fraction == '3')
 
-bloo_3 <-  bloo_3 |>
-  left_join(summary_types_of_blooms_3, by = c('value' = 'asv_num')) |>
-  arrange(-occurrence_perc)
+bloo_3 <-  bloo_3_tb |>
+  left_join(summary_types_of_blooms_3, by = c('asv_num')) |>
+  left_join(occurrence_bloo_bbmo_red) |>
+  arrange(desc(occurrence_perc))
 
 bloo_3_1 <-  bloo_3 |>
   as_tibble() |>
@@ -414,25 +421,25 @@ bloo_3_1 <-  bloo_3 |>
 
 bloo_3_2 <-  bloo_3 |>
   as_tibble() |>
-  slice_tail(n= 23)
+  slice_tail(n = 23)
 
 #i divide the PA community because there's too much ASVs for one plot
-plots_list_3_1 <- map(bloo_3_1$value, create_plot_3)
+plots_list_3_1 <- map(bloo_3_1$asv_num, create_plot_3)
 
 residuals_3 <- grid.arrange(grobs = plots_list_3_1, ncol = 3) 
 
 # Assuming you have already created the plot and stored it in `residuals_3`
 
 # Save the plot to a file
-ggsave("results/figures/residuals_3.1_plot_geo_mean.pdf", plot = residuals_3, width = 188, height = 220, units = "mm")
+ggsave("results/figures/residuals_3.1_plot_geo_mean_v2.pdf", plot = residuals_3, width = 188, height = 220, units = "mm")
 
 #i divide the PA community because there's too much ASVs for one plot
 
-plots_list_3_2 <- map(unique(bloo_3_2$value), create_plot_3)
+plots_list_3_2 <- map(unique(bloo_3_2$asv_num), create_plot_3)
 
 residuals_3 <- grid.arrange(grobs = plots_list_3_2, ncol = 3)
 
-ggsave("results/figures/residuals_3.2_plot_geo_mean.pdf", plot = residuals_3, width = 188, height = 220, units = "mm")
+ggsave("results/figures/residuals_3.2_plot_geo_mean_v2.pdf", plot = residuals_3, width = 188, height = 220, units = "mm")
 
 ## I do the same with mean (non geometric) because the geometric mean does not deal with 0 and it creates noise for those occurrently narrow ASVs------
 mean_abund_f_asv <- asv_tab_all_bloo_z_tax |>
@@ -440,9 +447,7 @@ mean_abund_f_asv <- asv_tab_all_bloo_z_tax |>
   dplyr::group_by(asv_num, fraction) |>
   dplyr::group_by(asv_num, fraction) |>
   dplyr::mutate(abundance_value = abundance_value*100) |>
- # dplyr::filter(abundance_value > 0) |>
   dplyr::reframe(mean_abund = mean(abundance_value, na.rm = T),
-                 #sd_abund = geoSD(abundance_value, na.rm = T),
                  sd_abund = sd(abundance_value, na.rm = T))
 
 timeseries_limits <- tibble(xmin = '2004-01-26', xmax = '2013-10-15') |>
@@ -456,26 +461,22 @@ asv_tab_all_bloo_z_tax <- asv_tab_all_bloo_z_tax |>
 anom_rel_abund_3 <- asv_tab_all_bloo_z_tax |>
   dplyr::filter(fraction == '3' &
                   abundance_type == 'relative_abundance' &
-                  asv_num %in% bloo_3$value) |>
-  # dplyr::filter(abundance_value >= 0.1 &
-  #                 z_score_ra >= 1.96) |>
-  dplyr::mutate(bloom_event = case_when(abundance_value > 0.1 &
-                                          z_score_ra > 1.96 ~ 'bloom',
-                                        abundance_value < 0.1 ~ 'no-bloom' ,
-                                        z_score_ra < 1.96 ~ 'no-bloom')) |>
+                  asv_num %in% bloo_3_tb$asv_num) |>
+  dplyr::mutate(bloom_event = case_when(z_score_ra >= cut_off_value_ra &
+                                          z_score_rclr >= cut_off_value_rclr &
+                                          abundance_value >= 0.1 ~ 'bloom',
+                                        TRUE ~ 'no-bloom')) |>
   dplyr::select(date, sample_id, asv_num, fraction, abundance_value, family, bloom_event)
 
 anom_rel_abund_02 <- asv_tab_all_bloo_z_tax |>
   dplyr::filter(fraction == '0.2' &
                   abundance_type == 'relative_abundance' &
                   asv_num %in% bloo_02$value) |>
-  # dplyr::filter(abundance_value >= 0.1 &
-  #                 z_score_ra >= 1.96) |>
   dplyr::filter(!asv_num %in% c('asv2', 'asv3', 'asv5', 'asv8')) |>
-  dplyr::mutate(bloom_event = case_when(abundance_value > 0.1 &
-                                          z_score_ra > 1.96 ~ 'bloom',
-                                        abundance_value < 0.1 ~ 'no-bloom' ,
-                                        z_score_ra < 1.96 ~ 'no-bloom')) |>
+  dplyr::mutate(bloom_event = case_when(z_score_ra >= cut_off_value_ra &
+                                          z_score_rclr >= cut_off_value_rclr &
+                                          abundance_value >= 0.1 ~ 'bloom',
+                                        TRUE ~ 'no-bloom')) |>
   dplyr::select(date, sample_id, asv_num, fraction, abundance_value, bloom_event, family, z_score_ra) 
 
 anom_rel_abund <- anom_rel_abund_3 |>
@@ -484,16 +485,16 @@ anom_rel_abund <- anom_rel_abund_3 |>
   dplyr::mutate(abundance_value = abundance_value*100)
 
 ## little function to compute residuals for all ASVs in PA or FL
-bloo_02_filt <- bloo_02 |>
-  dplyr::filter(!value %in% c('asv2', 'asv3', 'asv5', 'asv8')) 
+bloo_02_filt <- bloo_02_tb 
 
 summary_types_of_blooms_02 <-
   summary_types_of_blooms |>
   dplyr::filter(fraction == '0.2')
 
 bloo_02_filt <-  bloo_02_filt |>
-  left_join(summary_types_of_blooms_02, by = c('value' = 'asv_num')) |>
-  arrange(-occurrence_perc)
+  left_join(summary_types_of_blooms_02, by = c( 'asv_num')) |>
+  left_join(occurrence_bloo_bbmo_red) |>
+  arrange(desc(occurrence_perc))
 
 create_plot_02 <- function(asv_num) {
   plot <- plot_residuals(
@@ -504,7 +505,7 @@ create_plot_02 <- function(asv_num) {
   )
 }
 
-plots_list_02 <- purrr::map(bloo_02_filt$value, create_plot_02)
+plots_list_02 <- purrr::map(bloo_02_filt$asv_num, create_plot_02)
 
 residuals_02 <- gridExtra::grid.arrange(grobs = plots_list_02, ncol = 3) 
 
@@ -524,8 +525,9 @@ summary_types_of_blooms_3 <- summary_types_of_blooms |>
   dplyr::filter(fraction == '3')
 
 bloo_3 <-  bloo_3 |>
-  left_join(summary_types_of_blooms_3, by = c('value' = 'asv_num')) |>
-  arrange(-occurrence_perc)
+  left_join(summary_types_of_blooms_3, by = c( 'asv_num')) |>
+  left_join(occurrence_bloo_bbmo_red) |>
+  arrange(desc(occurrence_perc))
 
 bloo_3_1 <-  bloo_3 |>
   as_tibble() |>
@@ -536,7 +538,7 @@ bloo_3_2 <-  bloo_3 |>
   slice_tail(n= 23)
 
 #i divide the PA community because there's too much ASVs for one plot
-plots_list_3_1 <- map(bloo_3_1$value, create_plot_3)
+plots_list_3_1 <- map(bloo_3_1$asv_num, create_plot_3)
 
 residuals_3 <- grid.arrange(grobs = plots_list_3_1, ncol = 3) 
 
@@ -648,7 +650,7 @@ asv_tab_10y_02_pseudo_rclr_bloo |>
  
  
 ## Types of blooms and their taxonomy------
-asv_tab_all_bloo_z_tax_summary_all <- read_csv( 'asv_tab_all_bloo_z_tax_summary.csv') |>
+asv_tab_all_bloo_z_tax_summary_all <- read_csv( 'data/asv_tab_all_bloo_z_tax_summary.csv') |>
    dplyr::filter(!asv_num %in% c('asv2', 'asv3', 'asv5', 'asv8')) |>
    dplyr::mutate(occurrence_category = ifelse(occurrence_perc > 2/3, 'broad',
                                               ifelse(occurrence_perc < 1/3, 'narrow',
@@ -820,6 +822,8 @@ bloom_events <- asv_tab_all_bloo_z_tax_summary_all |>
                   z_score_ra >= 1.96) |>
   dplyr::select(asv_num, date, fraction, recurrency, occurrence_category) |>
   dplyr::mutate(fraction = as_factor(fraction))
+
+#write.csv(bloom_events, 'results/tables/bloom_events.csv')
 
 unique(asv_tab_all_bloo_z_tax$abundance_type)
 bloom_events |>
@@ -1140,6 +1144,8 @@ labs_fraction_rec <-  as_labeller(c('0.2' = 'Free living (0.2-3 um)',
                                           no = 'Non-recurrent',
                                           yes = 'Recurrent'))
 
+
+
 total_blooming_events_time$variable <- total_blooming_events_time$variable |>
   factor(
     levels = c('winter', 'spring', 'summer', 'autumn',
@@ -1154,6 +1160,9 @@ total_blooming_events_time$variable <- total_blooming_events_time$variable |>
     )
   )
 
+total_blooming_events_time |>
+  group_by(fraction) |>
+  dplyr::reframe(n = sum(total_blooming_events))
 
 total_blooming_events_time |>
   ggplot(aes(time, total_blooming_events))+
@@ -1238,7 +1247,6 @@ asv_tab_bbmo_10y_l |>
   labs(x = 'Date', y = 'Total reads')+
   theme_bw()+
   theme(panel.grid = element_blank(), strip.background = element_rect('transparent'))
-
 
 bloo_reads_02 <- asv_tab_bbmo_10y_l |>
   dplyr::filter(str_detect(sample_id, '_0.2_')) |>
@@ -1348,7 +1356,6 @@ asv_tab_bbmo_10y_l |>
   geom_point()+
   facet_wrap(vars(frequency))
 
-
 m_02 <- m_02 |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d")))
 
@@ -1357,6 +1364,293 @@ bloom_events |>
   ggplot(aes(date, BP_FC1.55))+
   geom_line()
 
+## %of HNA and blooming events  ------
+bloom_events 
+
+m_02 |>
+  dplyr::mutate(perc_HNA = HNA/(HNA+LNA)) |>
+  # left_join(bloom_events) |>
+  # left_join(bloom_events_asvs) |>
+  ggplot(aes(date, perc_HNA))+
+  #geom_vline(xintercept = bloom_events$date, color = 'grey')+
+  scale_x_datetime()+
+  geom_line()+
+  labs(x = 'Time', y = '% HNA')+
+  theme_bw()+
+  theme(panel.grid = element_blank(), strip.background = element_blank())
+
+m_02_ed <- m_02 |>
+  dplyr::mutate(perc_HNA = HNA/(HNA+LNA)) |>
+  dplyr::select(date, perc_HNA, decimal_date)
+  #left_join(bloom_events) |>
+  # left_join(bloom_events_asvs) |>
+  # ggplot(aes(abund_anom, perc_HNA))+
+  # #geom_vline(xintercept = bloom_events$date, color = 'grey')+
+  # geom_point()+
+  # labs(x = 'Time', y = '% HNA')+
+  # theme_bw()+
+  # theme(panel.grid = element_blank(), strip.background = element_blank())
+
+asv_tab_all_bloo_z_tax_summary_all |>
+  dplyr::filter(abundance_type == 'relative_abundance') |>
+  group_by(date, fraction, decimal_date, recurrency) |>
+  dplyr::reframe(abund_frac = sum(abundance_value)) |>
+  left_join(m_02_ed, by = c('decimal_date')) |>
+  ggplot(aes(perc_HNA, abund_frac))+
+  geom_point(aes(shape = recurrency))+
+  facet_wrap(vars(fraction), labeller = labs_fraction)+
+  geom_smooth(aes(group = recurrency), method = 'loess')+
+  theme_bw()+
+  theme(panel.grid = element_blank(), strip.background = element_blank())
+
+asv_tab_all_bloo_z_tax_summary_all |>
+  dplyr::filter(!asv_num %in% c('asv2', 'asv3', 'asv5', 'asv8')) |>
+  dplyr::filter(abundance_type == 'relative_abundance') |>
+  dplyr::filter(abundance_value > 0) |>
+  group_by(date, fraction, decimal_date, family) |>
+  dplyr::reframe(abund_frac = sum(abundance_value)) |>
+  left_join(m_02_ed, by = c('decimal_date')) |>
+  ggplot(aes(perc_HNA, abund_frac))+
+  geom_point(aes(color = family))+
+  facet_wrap(fraction~family)+
+  geom_smooth(aes(group =family, color = family), method = 'loess', se = F)+
+  scale_color_manual(values = palette_family_assigned_bloo)+
+  theme_bw()+
+  theme(panel.grid = element_blank(), strip.background = element_blank())
+
+## CHl-a, BP abundance and % HNA -----
+m_02 <- m_02 |>
+  dplyr::mutate(date = as.Date(date, format = "%Y-%m-%d"))
+
+m_02 |>
+  colnames()
+
+perc_hna_plot <- m_02|>
+  #dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::mutate(perc_HNA = HNA/(HNA+LNA)) |>
+  # left_join(bloom_events) |>
+  # left_join(bloom_events_asvs) |>
+  ggplot(aes(as.Date(date), perc_HNA))+
+  #geom_vline(xintercept = bloom_events$date, color = 'grey')+
+  scale_y_continuous(limits = c(0, 1))+
+  scale_x_date(date_breaks = 'year', date_labels = '%Y')+
+  geom_smooth(method = 'loess', span = 0.1, color = 'black')+
+  #geom_line()+
+  labs(x = 'Date', y = '% HNA')+
+  theme_bw()+
+  theme(#panel.grid = element_blank(), 
+  strip.background = element_blank(), legend.position = 'none',
+  panel.grid.minor = element_blank(),
+  axis.title  = element_text(size = 9),
+  strip.text = element_text(size = 5),
+  axis.text = element_text(size = 8),
+  # axis.text.x = element_text(size = 7), 
+  panel.grid.major.y = element_blank(),
+  panel.border = element_blank(),
+  strip.placement = 'outside',
+  axis.ticks.length.y =  unit(0.2, "mm"))
+
+perc_hna_plot
+
+abund_bact_plot <- m_02 |>
+  #dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d")))|>
+  # left_join(bloom_events) |>
+  # left_join(bloom_events_asvs) |>
+  ggplot(aes(as.Date(date), bacteria_joint))+
+  #geom_vline(xintercept = bloom_events$date, color = 'grey')+
+  scale_y_continuous(limits = c(40000, 2000000), labels = scientific_format())+
+  scale_x_date(date_breaks = 'year', date_labels = '%Y')+
+  #geom_line()+
+  geom_smooth(method = 'loess', span = 0.1, color = 'black')+
+  labs(x = 'Date', y = 'Prokaryotic Cells / mL')+
+  theme_bw()+
+  theme(#panel.grid = element_blank(), 
+    strip.background = element_blank(), legend.position = 'none',
+    panel.grid.minor = element_blank(),
+    axis.title  = element_text(size = 9),
+    strip.text = element_text(size = 5),
+    axis.text = element_text(size = 8),
+    # axis.text.x = element_text(size = 7), 
+    panel.grid.major.y = element_blank(),
+    panel.border = element_blank(),
+    strip.placement = 'outside',
+    axis.ticks.length.y =  unit(0.2, "mm"))
+
+abund_bact_plot
+
+bp_bact_plot <- m_02 |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d")))|>
+  # left_join(bloom_events) |>
+  # left_join(bloom_events_asvs) |>
+  ggplot(aes(as.Date(date), BP_FC1.55))+
+  #geom_vline(xintercept = bloom_events$date, color = 'grey')+
+  scale_y_continuous()+
+  scale_x_date(date_breaks = 'year', date_labels = '%Y')+
+  geom_smooth(method = 'loess', span = 0.09, color = 'black')+
+  #geom_line()+
+  labs(x = 'Date', y = 'Bacterial Production')+
+  theme_bw()+
+  theme(#panel.grid = element_blank(), 
+    strip.background = element_blank(), legend.position = 'none',
+    panel.grid.minor = element_blank(),
+    axis.title  = element_text(size = 9),
+    strip.text = element_text(size = 5),
+    axis.text = element_text(size = 8),
+    # axis.text.x = element_text(size = 7), 
+    panel.grid.major.y = element_blank(),
+    panel.border = element_blank(),
+    strip.placement = 'outside',
+    axis.ticks.length.y =  unit(0.2, "mm"))
+
+bp_bact_plot
+
+m_02$date |>
+  class()
+
+chla_plot <- m_02 |>
+  #dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d")))|>
+  #dplyr::filter(date %in% as.POSIXct(c("2004-01-01", "2014-01-01")) |>
+  # left_join(bloom_events) |>
+  # left_join(bloom_events_asvs) |>
+  ggplot(aes(as.Date(date), chla_total))+
+  #geom_vline(xintercept = bloom_events$date, color = 'grey')+
+  scale_y_continuous()+
+  geom_smooth(method = 'loess', span = 0.1, color = 'black')+
+  scale_x_date(
+    date_breaks = 'year',
+    date_labels = '%Y'
+  )+
+ #geom_line()+
+ geom_smooth(data = m_02,
+           aes(as.Date(date), chla_3um ), linetype = 2, method = 'loess', span = 0.09, color = 'black')+
+  labs(x = 'Date', y = 'Chla-a')+
+  theme_bw()+
+  theme(#panel.grid = element_blank(), 
+    strip.background = element_blank(), legend.position = 'none',
+    panel.grid.minor = element_blank(),
+    axis.title  = element_text(size = 9),
+    strip.text = element_text(size = 5),
+    axis.text = element_text(size = 8),
+    # axis.text.x = element_text(size = 7), 
+    panel.grid.major.y = element_blank(),
+    panel.border = element_blank(),
+    strip.placement = 'outside',
+    axis.ticks.length.y =  unit(0.2, "mm"))
+
+chla_plot
+
+# Now arrange the full layout, with bray_unifrac_eucl_plot occupying the top row
+env_blooms_plot <- plot_grid(
+  abund_bact_plot,
+  perc_hna_plot,
+  bp_bact_plot,
+  chla_plot,
+  ncol = 1,                # One column layout for the main grid
+  rel_heights = c(1, 1, 1, 1),
+  labels = c('A', 'B', 'C', 'D'), label_fontface = 'plain'
+)
+
+# Print the final plot
+print(env_blooms_plot)
+
+ggsave( plot = env_blooms_plot,
+        filename = 'env_blooms_plot_v2.pdf',
+        path = 'results/figures/',
+        width = 180, height = 200, units = 'mm')
 
 
+## NMDS, clustering. Do blooming events cluster together? -----
 
+### NMDS ----
+row.names(asv_tab_bbmo_10y_w_rar) <- asv_tab_bbmo_10y_w_rar[,1]  
+
+asv_tab_bbmo_10y_w_rar_ed <- asv_tab_bbmo_10y_w_rar[,-1]
+
+data.hel <- asv_tab_bbmo_10y_w_rar_ed |>
+  decostand(method="hellinger"); str(data.hel)
+
+data.dist <- vegdist(data.hel, method="euclidean")
+head(data.dist)
+data.nmds<-metaMDS(data.dist)                   # càlcul per poder col·locar a l'espai les comparacions entre comunitats
+str(data.nmds)                                 # stress num 0.137 (per sota de 20; és acceptable)
+data.nmds.points<-data.frame(data.nmds$points)  # convertir dades a data.frame per utilitzar amb qplot
+plot(data.nmds.points)
+head(data.nmds.points)
+data.nmds.points |>
+  colnames()
+
+sample_id_col <- asv_tab_bbmo_10y_w_rar[,1]
+
+# Create a data frame with NMDS coordinates and cluster information
+nmds_bbmo_10y <- data.nmds.points |>
+  as_tibble() |>
+  bind_cols(sample_id_col) |>
+  as_tibble() |>
+  left_join(m_bbmo_10y, by = c('sample_id')) |>
+  left_join(community_eveness_all, by = 'sample_id')
+
+nmds_bbmo_10y |>
+  ggplot(aes(MDS1, MDS2, color = season, size = community_eveness_rar), shape = fraction)+ # shape = fraction,
+  geom_point(aes(color = season, shape = fraction))+
+  scale_color_manual(values = palette_seasons_4)+
+  theme_bw()
+
+## env fit
+env_data_interpolated_values_all <- read.csv2('data/env_data/env_data_interpolated_values_all.csv') |>
+  rename(sample_id_num = X)
+
+env <- m_bbmo_10y |>
+  dplyr::select(temperature, synechococcus, season, day_of_year, day_length, sample_id, fraction, salinity,
+                chla_total, PO4, NH4, NO2, NO3, Si, BP_FC1.55, PNF_Micro, cryptomonas, micromonas, HNF_Micro,
+                HNA, bacteria_joint, prochlorococcus_FC, Peuk1, Peuk2, month)
+## organize environmental data the same way than the community data ----
+env_reordered <- env[match(nmds_bbmo_10y$sample_id, env$sample_id), ]
+
+env_reordered_f <- env_reordered |>
+  dplyr::select(-sample_id)
+
+## env fit see which variables are better explaining the community ordination 
+envfit_result <- envfit(data.nmds, env_reordered_f, na.rm = TRUE,
+                        permutations = 999)
+
+str(envfit_result)
+
+vector_scores <- as.data.frame(scores(envfit_result, "vectors")) * ordiArrowMul(envfit_result)
+vector_pvals <- envfit_result$vectors$pvals
+vector_r2 <- envfit_result$vectors$r
+
+# Convert to tibble and add row names as a column
+vector_results <- vector_scores |>
+  rownames_to_column(var = "variable") |>  # Add row names as a column
+  as_tibble() |>
+  dplyr::mutate(p_value = vector_pvals) |>
+  dplyr::mutate(r2 = vector_r2)
+
+# Filter for significant variables
+vector_results_sig <- vector_results |>
+  dplyr::filter(p_value < 0.01) |>
+  arrange(-r2) |>
+  slice_min(order_by = p_value, n = 5) |>
+  slice_max(order_by = r2, n = 5) # R2 > 0.7
+
+vector_results_sig |>
+  dim()
+
+# Categorical Variables (Factors)
+factor_scores <- as.data.frame(scores(envfit_result, "factors"))  #* ordiArrowMul(envfit_result) # I do not scale this variable since it is too much
+factor_pvals <- envfit_result$factors$pvals
+
+# Convert to tibble and add row names as a column
+factor_results <- factor_scores |>
+  rownames_to_column(var = "variable") |>  # Add row names as a column
+  as_tibble() |>
+  dplyr::mutate(p_value = factor_pvals)
+
+factor_scores_sig <- factor_scores |>
+  rownames_to_column(var = 'group') |>
+  dplyr::filter(!str_detect(group, 'day_moment'))
+
+plot(data.nmds)
+plot(envfit_result, p.max = 0.01)
+
+### Conclusion: the community is basically structured by seasons and Temperature is the main driver

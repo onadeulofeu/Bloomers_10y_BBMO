@@ -1,8 +1,14 @@
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# +++++++++++++++++++++++                     data analysis pipeline                  ++++++++++++++++++++++
+# +++++++++++++++++++++++                    BBMO timeseries 10-Y data                ++++++++++++++++++++++
+# +++++++++++++++++++++++                         metabarcoding                       ++++++++++++++++++++++
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# +++++++++++++++++++++++             Code developed by Ona Deulofeu-Capo 2024        ++++++++++++++++++++++
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 library(seqinr)
 library(ape)
 library(bio3d)
-
-
 library(tidyverse)
 library(hrbrthemes)
 library(tm)
@@ -12,11 +18,10 @@ library(VennDiagram)
 palette_fraction <- c('0.2' = '#00808F', '3' = '#454545')
 
 ## upload data
-asv_tab_all_bloo_z_tax <- read.csv('data/detect_bloo/asv_tab_all_bloo_z_tax_new_assign_checked.csv') ## bloomers table
+asv_tab_all_bloo_z_tax <- read.csv('data/detect_bloo/asv_tab_all_bloo_z_tax_new_assign_checked.csv', sep = ';') ## bloomers table
 
-asv_tab_10y_02_pseudo_rclr <- read.csv('data/asv_tab_10y_02_pseudo_rclr.csv')  ## community table
-asv_tab_10y_3_pseudo_rclr <- read.csv('data/asv_tab_10y_3_pseudo_rclr.csv')  ## community table
-
+asv_tab_10y_02_pseudo_rclr <- read.csv('data/asv_tab_10y_02_pseudo_rclr.csv', sep = ';')  ## community table
+asv_tab_10y_3_pseudo_rclr <- read.csv('data/asv_tab_10y_3_pseudo_rclr.csv', sep = ';')  ## community table
 
 # FL and PA taxa in the whole community and in the bloomer's community-----
 ## I will use a Venn Diagram to illustrate the taxa that are exclusive of one fraction or in both 
@@ -52,6 +57,13 @@ venn_diagram <- venn.diagram(
   cat.dist = 0.05,
   cat.pos = 5,  # Adjust category name position as needed
   filename = NULL)
+
+
+# for the poster-----
+# Save the diagram to an SVG file
+svglite("venn_diagram.svg", width = 20, height = 15)  # Adjust width and height as needed
+grid.draw(venn_diagram)
+dev.off()
 
 # Save the diagram to a file
 png("venn_diagram.png", width = 800, height = 600)  # Adjust width and height as needed
@@ -96,6 +108,11 @@ venn_diagram <- venn.diagram(
   cat.pos = 5,  # Adjust category name position as needed
   filename = NULL
 )
+
+# Save the diagram to an SVG file
+svglite("venn_diagram_whole_community.svg", width = 20, height = 15)  # Adjust width and height as needed
+grid.draw(venn_diagram)
+dev.off()
 
 # Save the diagram to a file
 png("venn_diagram_whole_community.png", width = 800, height = 600)  # Adjust width and height as needed

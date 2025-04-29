@@ -37,14 +37,27 @@ palette_order_assigned_bloo <-  c("SAR11 clade" =      "#ca6094",
 
 # ------------------ ## --------- Community level ----------------------- ## ----------------------- ## -----
 ## upload data correlations datasets genes and community
-bray_unifrac_eucl_tb_02 <- read.csv('data/bray_unifrac_eucl_tb_02.csv')
+bray_unifrac_eucl_tb_02 <- read.csv('data/bray_unifrac_eucl_tb_02.csv') 
 bray_unifrac_eucl_tb <- read.csv('data/bray_unifrac_eucl_tb.csv')
 corr_bray_genes_community_tb <- read.csv('data/corr_bray_genes_community_tb_scg.csv')
+corr_bray_genes_communty_tb_scg <- read.csv2('data/genes_sergio/bray_curtis_genes_SCG_0003.csv', sep = '\t') |>
+  rename(bray_curtis_result_genes_scg = bray_curtis_diss) |>
+  dplyr::select(-X, -X.1) |>
+  add_row(.before = 1)
+
+## i computed the bc of genes in three subsets 
+corr_bray_genes_communty_tb |>
+  dim()
+  
+  bray_unifrac_eucl_tb_02_subset <- bray_unifrac_eucl_tb_02[c(1:60),]
+  
+  bray_unifrac_eucl_tb_02 <- bray_unifrac_eucl_tb_02_subset |>
+    bind_cols(corr_bray_genes_communty_tb_scg)
 
 ## Relationship between Bray Curtis Genes and Bray Curtis of the Community ----
 #### first correlation: Bray-Curtis genes vs Bray-Curtis community, and Bray-Curtis genes vs. weighted UNIFRAC distance ----
 corr_bray_02_plot <- bray_unifrac_eucl_tb_02 |>
-  ggplot(aes(bray_curtis_community, genes))+
+  ggplot(aes(as.numeric(bray_curtis_community), as.numeric(bray_curtis_result_genes_scg)))+
   scale_x_continuous(limits = c(0.05, 0.85))+
   scale_y_continuous(limits = c(0.05, 0.85))+
   geom_point(color = "#00808F", alpha = 0.8)+
@@ -58,7 +71,6 @@ corr_bray_02_plot <- bray_unifrac_eucl_tb_02 |>
            p.accuracy = 0.01, method = 'spearman',
            color = "#00808F")+
   geom_smooth(method = 'lm', color = "#00808F", fill = "#00808F")+
-  
   labs(x = 'Bray-Curtis Community-Based', y = 'Bray-Curtis Genes-Based')+
   theme_bw()+
   theme(
@@ -111,6 +123,11 @@ corr_bray_unifrac_kos_plot <- plot_grid(
 
 # Print the final plot
 print(corr_bray_unifrac_kos_plot)
+
+# ggsave( plot = corr_bray_unifrac_kos_plot,
+#         filename = 'corr_bray_unifrac_plot_v8.pdf',
+#         path = 'results/figures/',
+#         width = 88, height = 120, units = 'mm')
 
 # ------------------ ## --------- Bloomers level ----------------------- ## ----------------------- ## -----
 ## upload metabarcoding data ----
@@ -566,13 +583,13 @@ composition_plot <- plot_grid( corr_bray_unifrac_kos_plot,
 
 composition_plot
 
-ggsave( plot = composition_plot,
-        filename = 'genes_kos_bloomers_v3.pdf',
-        path = 'results/figures/',
-        width = 180, height = 160, units = 'mm')
+# ggsave( plot = composition_plot,
+#         filename = 'genes_kos_bloomers_v3.pdf',
+#         path = 'results/figures/',
+#         width = 180, height = 160, units = 'mm')
 
 
-## Supplementary comprovation: pre-bloom  -----
+## Supplementary comprobation: pre-bloom  -----
 ### Glaciecola
 genes_bloo_ko_1012_tb <- genes_bloo_tb_tax |>
   pivot_longer(cols = starts_with('BL'), names_to = 'sample_id') |>
@@ -653,3 +670,44 @@ relative_contribution_amy_plot <- relative_contribution_amy |>
 
 relative_contribution_amy_plot
 
+
+
+## Which were the most abundant KOs during bloom events, were they shared with the ones the bloomers where contributing the most? -------
+kos_tb_t |>
+  head()
+
+kos_tb_t |>
+  as_tibble() |>
+  dplyr::filter(annot == 'BL110112') |>
+  pivot_longer(cols = starts_with('K')) |>
+  arrange(-as.numeric(value)) |>
+  dplyr::filter(as.numeric(value) > 0 ) |>
+  dplyr::reframe(n = n()) # 7206 KOs in the sample
+
+25/7206*100
+
+kos_tb_t |>
+  as_tibble() |>
+  dplyr::filter(annot == 'BL110112') |>
+  pivot_longer(cols = starts_with('K')) |>
+  arrange(-as.numeric(value)) |>
+  slice_max(order_by = as.numeric(value), n = 25) |>
+  dplyr::filter(name %in% top25_kos_gla)
+
+kos_tb_t |>
+  as_tibble() |>
+  dplyr::filter(annot == 'BL090421') |>
+  pivot_longer(cols = starts_with('K')) |>
+  arrange(-as.numeric(value)) |>
+  dplyr::filter(as.numeric(value) > 0 ) |>
+  dplyr::reframe(n = n()) # 6886 KOs in the sample
+
+kos_tb_t |>
+  as_tibble() |>
+  dplyr::filter(annot == 'BL090421') |>
+  pivot_longer(cols = starts_with('K')) |>
+  arrange(-as.numeric(value)) |>
+  slice_max(order_by = as.numeric(value), n = 25) |>
+  dplyr::filter(name %in% top25_kos_amy)
+
+25/6886*100

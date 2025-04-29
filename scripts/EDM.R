@@ -7,7 +7,7 @@
 # +++++++++++++++++++++++             Results created by Carmen-García Comas          ++++++++++++++++++++++++++++++++++++++++++++
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-# EDM empircal dynamic modeling
+# EDM empirical dynamic modeling
 ## These methods can be used to provide a mechanistic understanding of dynamical systems. 
 ## These non-linear statistical methods are rooted in state space reconstruction (SSR), 
 ## i.e. lagged coordinate embedding of time series data
@@ -137,8 +137,7 @@ occurrence_bloo_bbmo |>
   head()
 
 ## Preparation of an ASV_tab with all ASVs of the temporal series that are present in 2/3 of the dataset and a tax table for them with bloomers identified ------
-setwd("~/Documentos/Doctorat/BBMO/BBMO_bloomers/data/")
-bbmo_10y <-readRDS("blphy10years.rds") ##8,052 asv amb totes les mostres, reads / ASV and sample
+bbmo_10y <-readRDS("~/Documentos/Doctorat/BBMO/BBMO_bloomers/data/blphy10years.rds") ##8,052 asv amb totes les mostres, reads / ASV and sample
 #str(bbmo_10y)
 #bbmo_10y <- prune_samples(sample_sums(bbmo_10y) > 10000, bbmo_10y) in case we want to filter samples by number of reads
 
@@ -179,7 +178,9 @@ colnames(asv_tab_bbmo_10y_l) <- c('asv_num', "sample_id", 'reads')
 colnames(tax_bbmo_10y_old) <- c("asv_num", "kingdom", "phylum", "class", "order", "family", "genus",
                                 "species", "curated", "otu_corr","seq")
 
-colnames(m_bbmo_10y) <- c( "project", "location", "code",             
+colnames(tax_bbmo_10y_new) <- c("asv_num",'seq', "kingdom", "phylum", "class", "order", "family", "genus")
+
+colnames(m_bbmo_10y) <- c("sample_id", "project", "location", "code",             
                           "type", "samname", "fraction", "run",               
                           "date", "basics", "julian_day", "day_of_year",       
                           "decimal_date", "position", "sampling_time", "day_length",        
@@ -246,7 +247,7 @@ asv_tab_10y_3_rel <- asv_tab_10y_l_rel %>%
 asv_tab_10y_02_rel <- asv_tab_10y_l_rel %>%
   dplyr::filter(sample_id %in% m_02$sample_id)
 
-## we could also do it with rCLR add here in case we want to do it----
+## we could also do it with rCLR add here in case we want to do it ----
 sample_id <- asv_tab_bbmo_10y_l |>
   pivot_wider(names_from = asv_num, values_from = reads, values_fill = 0) |>
   dplyr::select(sample_id)
@@ -263,8 +264,12 @@ asv_tab_bbmo_10y_rclr <- asv_tab_bbmo_10y_l |>
 asv_tab_10y_l_rel |> 
   colnames()
 
+asv_tab_10y_l_rel <- asv_tab_10y_l_rel |>
+  dplyr::mutate(sample_id = as.character(sample_id))
+
 m_bbmo_10y_sim <- m_bbmo_10y |>
-  dplyr::select(fraction, sample_id, Year, Month, Day)
+  dplyr::select(fraction, sample_id,  Year = year, Month = month, Day = day) |>
+  dplyr::mutate(sample_id = as.character(sample_id))
 
 asv_tab_10y_l_rel_occ <- asv_tab_10y_l_rel |>
   dplyr::left_join(m_bbmo_10y_sim) |>
@@ -507,7 +512,7 @@ asv_tab_bbmo_10y_rel_occ_filt_inter_noseas <- asv_tab_bbmo_10y_rel_occ_filt_inte
 
 #write.csv(asv_tab_bbmo_10y_rel_occ_filt_inter_noseas, file = '../EDM_carmen/asv_tab_bbmo_10y_rel_occ_filt_inter_noseas.csv')
 
-# Create a table with presence absence of each AS to not infiere relationships when an ASV is not there -----
+# Create a table with presence absence of each ASV to not infiere relationships when an ASV is not there -----
 ## In this table 0 will indicate presence of an ASV and 1 absence!
 
 asv_tab_bbmo_10y_rclr_occ_filt_inter |>
@@ -529,8 +534,6 @@ poszero_bloomBlanes_tb <- asv_tab_bbmo_10y_rclr_occ_filt_inter |>
 
 # ------ ####### ------ EXPLORE EDM RESULTS ------ ####### ------
 ## Boxplots causality -----
-#### Si tienes tiempo, puedes hacer boxplots de causalidad intra e inter clase taxonómica por ejemplo y 
-#### también ver un poco si las relaciones causales tops (primeros en cada ranking de las scatter plots que te mandé) tienen sentido
   
 ## CCM convergent cross mapping results computed in MARBITS (it's a bit computationally expensive) ----
 ### We have three different dataset 1. removed seasonality and rCLR data transformed, 2. removed seasonality and rel abund data, 
@@ -922,6 +925,10 @@ matrix_clean |>
 #### Exploration of the best way to visualize the results and what do they explain -----
 ##### play with some values: change the threshold of the NAs allowed per row or column 
 ##### upload taxonomic information ----
+bloo_taxonomy <- asv_tab_all_bloo_z_tax %>%
+  dplyr::select(phylum_f, class_f, order_f, family_f, genus_f, asv_num_f) |>
+  unique()
+
 tax_occ_filt_bbmo <- read_csv('../EDM_carmen/tax_occ_filt_bbmo_ed.csv', col_names = T) |>
   dplyr::select(-'...1') |>
   dplyr::select( 'domain' = 'Kingdom',
@@ -1505,7 +1512,7 @@ annotc_labs$variables_2 == ccm_rho_filt_f_reordered |>
 
 heatmap_noclustcols <-
   pheatmap(ccm_rho_filt_f_reordered,
-           color = palette_gradient(5),
+           #color = palette_gradient(5),
            annotation_row = annotr_reordered,
            annotation_col = annotc_reordered,
            annotation_colors = filtered_colors,
@@ -1693,7 +1700,7 @@ intra_causal_relationships_plot <- data_intrainter_class |>
   theme_bw()+
   theme(strip.background = element_rect(fill = 'transparent'),
         legend.position = 'right',
-        panel.grid = element_blank(), text = element_text(size = 10),
+        panel.grid = element_blank(), text = element_text(size = 8),
         axis.text.x = element_text(size = 7),
         strip.text = element_text(margin = margin(2, 2, 2, 2), size = 10),
         #plot.margin = unit(c(0.2, 5, 0.5, 0.5), "cm"),
@@ -1728,7 +1735,7 @@ intrer_causal_relationships_plot <- data_intrainter_class |>
   theme_bw()+
   theme(strip.background = element_rect(fill = 'transparent'),
         legend.position = 'bottom',
-        panel.grid = element_blank(), text = element_text(size = 10),
+        panel.grid = element_blank(), text = element_text(size = 8),
         strip.text = element_text(margin = margin(2, 2, 2, 2), size = 10),
         plot.margin = unit(c(0.2, 5, 0.5, 0.5), "cm"),
         legend.key.size = unit(3, 'mm'))+
@@ -1773,7 +1780,7 @@ data <- ccm_rho_filt  |>
                 bloom = case_when(is.na(bloom) ~ 'env',
                                   TRUE ~ bloom),
                 
-                asv_num = case_when
+                asv_num = case_when(
                   asv_num == 'synechococcus' ~ 'Synechococcus',
                   asv_num == 'joint' ~ 'Bacterial Abundance',
                   variables == 'day_length' ~ 'Day length',
@@ -1788,8 +1795,7 @@ data <- ccm_rho_filt  |>
                   variables == 'HNF2_5um_Micro' ~ 'HFN 2-5 um',
                   variables == 'HNF_Micro' ~ 'HNF',
                   variables == 'HNF_5um_Micro' ~ 'HNF 5 um',
-                  TRUE ~ asv_num)
-  ) |>
+                  TRUE ~ asv_num)) |>
   left_join(bloo_all_types_summary_tb) |>
   dplyr::mutate(frequency = case_when(
     recurrency == 'non-recurrent' ~ 'Non-Seasonal',
@@ -1802,7 +1808,7 @@ data <- ccm_rho_filt  |>
     is.na(recurrency) ~ 'No Bloomer',
     TRUE ~ recurrency  # Preserve other values if any
   )) |>
-  dplyr::filter(asv_num %in% bloo_02_filt$value & fraction == '0.2' |
+  dplyr::filter(asv_num %in% bloo_02$value & fraction == '0.2' |
                   asv_num %in% bloo_3$value & fraction == '3' )
   #dplyr::filter(frequency != 'No Bloomer') # I would only like to explore the causal relationships of my bloomers 
 
@@ -1875,7 +1881,7 @@ data2 <- ccm_rho_filt  |>
   dplyr::mutate(fraction_rows = case_when(fraction_rows == 'bp' ~ '0.2',
                                      fraction_rows == 'bn' ~ '3',
                                      TRUE ~ 'env')) |>
-  dplyr::filter(asv_num_rows %in% bloo_02_filt$value & fraction_rows == '0.2' |
+  dplyr::filter(asv_num_rows %in% bloo_02$value & fraction_rows == '0.2' |
                   asv_num_rows %in% bloo_3$value & fraction_rows == '3' )
 
 # ## Causal relationships dataset to see the effect of variables on my bloomers (CAUSAL RELATIONSHIP) ----
@@ -1972,7 +1978,7 @@ data2 <- ccm_rho_filt  |>
 #   facet_wrap(vars(fraction), labeller = labs_fraction, dir = 'v')+
 #   theme_bw()+
 #   theme(strip.background = element_rect(fill = 'transparent'),
-#         text = element_text(size = 10),
+#         text = element_text(size = 8),
 #         axis.text.x = element_text(size = 6))
 #   
 # top10_causal_bloomers_plot
@@ -2119,7 +2125,9 @@ data_ed$frequency_causal |>
 
 labs_fraction_env <- as_labeller(c('0.2' = 'Free living\n(0.2-3 um)',
                                '3' = 'Particle attached\n(3-20 um)',
-                               'env' = 'Environmental\nvariables'))
+                               'env' = 'Environmental\nvariables',
+                               'bio' = 'Biological Variables',
+                               'physicochem' = 'Physicochemical Variables'))
 
 labs_fraction_bloo <- as_labeller(c('0.2' = 'Free living\n(0.2-3 um)',
                                    '3' = 'Particle attached\n(3-20 um)',
@@ -2371,7 +2379,7 @@ causal_effects_on_community_plot <- data_ed |>
   geom_point(aes(
     alpha = 0.6),position = position_jitter(width = 0.1))+
   geom_boxplot(alpha = 0.5, notch = T)+
-  facet_wrap(fraction_predicted~bloom, labeller = labs_fraction, dir = 'v'_bloo)+
+  facet_wrap(fraction_predicted~bloom, labeller = labs_fraction, dir = 'v')+
   scale_x_discrete(labels = labs_fraction_env)+
   theme_bw()+
   labs(y = 'Prediction (Rho) ', x= 'Causal effects'#, color = 'Order predicted ASVs'
@@ -2380,7 +2388,7 @@ causal_effects_on_community_plot <- data_ed |>
   theme(strip.background = element_rect(fill = 'transparent'),
         legend.position = 'bottom',
         panel.grid.major.y  = element_blank(),
-        panel.grid.minor  = element_blank(), text = element_text(size = 10),
+        panel.grid.minor  = element_blank(), text = element_text(size = 8),
         strip.text = element_text(margin = margin(2, 2, 2, 2), size = 10),
         #plot.margin = unit(c(0.2, 5, 0.5, 0.5), "cm"),
         legend.key.size = unit(3, 'mm'))+
@@ -2569,7 +2577,7 @@ causal_effects_on_community_plot <- data_ed2 |>
   theme(strip.background = element_rect(fill = 'transparent'),
         legend.position = 'bottom',
         panel.grid.major.y  = element_blank(),
-        panel.grid.minor  = element_blank(), text = element_text(size = 10),
+        panel.grid.minor  = element_blank(), text = element_text(size = 8),
         strip.text = element_text(margin = margin(2, 2, 2, 2), size = 10),
         #plot.margin = unit(c(0.2, 5, 0.5, 0.5), "cm"),
         legend.key.size = unit(3, 'mm'))+
@@ -2669,6 +2677,261 @@ bloomers_effect_on_the_community_ccm_based_plot
 #        path = 'results/figures/',
 #        width = 88, height = 120, units = 'mm')
 
+### stats for environmental variables separated in physicochemical and biological (MAIN) --------
+data_ed2 |>
+  colnames()
+
+select_bloomers <- data_ed2 |>
+  dplyr::filter(frequency_predicted != 'env') |>
+  dplyr::distinct(asv_num_predicted, frequency_predicted, fraction_predicted) |>
+  dplyr::filter(frequency_predicted != 'No Bloomer')
+
+## add statistics (by group)
+### anova to compare mean of the different groups 
+data_ed3 <- data_ed2 |>
+  dplyr::filter(frequency_predicted != 'env') |>
+  dplyr::mutate(bloom = case_when(!asv_num_predicted %in%  unique(select_bloomers$asv_num_predicted)~ 'no_bloomer',
+                                  asv_num_predicted %in%  unique(select_bloomers$asv_num_predicted) ~ 'bloomer')) |>
+  dplyr::mutate(fraction_bloom = paste0(fraction_predicted,bloom))
+
+data_ed3 |>
+  str()
+
+data_ed3 |>
+  dplyr::filter(bloom == 'no_bloomer') %$%
+  unique(asv_num_predicted)
+
+library(car)  ## homocedasticity 
+library(dunn.test) ## significant groups in Kruskal Test
+library(ggpubr) ## ggqqplot
+
+# I need to perform an anova for each group in case that each group has a normal distribution and that they have homocedasticity ---- 
+## I group: 0.2 no bloomers 
+data_ed3_f <- data_ed3 |>
+  dplyr::filter(fraction_bloom == '0.2no_bloomer')
+
+## check normality 
+shapiro.test(as.numeric(data_ed3 |>
+                          dplyr::filter(fraction_causal == '0.2') %$%
+                          rho)) # => p-value < 2.2e-16 (NO NORMALITY)
+ggqqplot(as.numeric(data_ed3 |>
+                      dplyr::filter(fraction_causal == '0.2') %$%
+                      rho))
+
+## check homocedasticity 
+leveneTest(rho ~ fraction_causal, data = data_ed3_f) #p-value > 0.05: Variances are homogeneous (equal), and the assumption for ANOVA is met
+
+# Levene's Test for Homogeneity of Variance (center = median)
+#         Df F value    Pr(>F)    
+# group    3  74.161 < 2.2e-16 ***
+#       2464                      
+# ---
+# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+## Since we don't have normality nor homocedasticity we change to a non parametric test kruskal.test
+
+# Perform one-way ANOVA to compare the means of Rho across the three groups
+## anova_result <- aov(rho ~ fraction_causal, data = data_ed3_f)  # Replace `bloom` with your actual group variable
+kruskal_result <- kruskal.test(rho ~ fraction_causal, data = data_ed3_f) 
+
+# View the ANOVA summary
+##summary(anova_result)
+summary(kruskal_result)
+
+# Perform Dunn's test correctly
+dunn_result <- dunn.test(
+  x = data_ed3_f$rho,                            # The values you are comparing
+  g = as.factor(data_ed3_f$fraction_causal),    # The grouping variable
+  method = 'bonferroni'                          # Bonferroni correction
+)
+
+# Print the result
+print(dunn_result)
+
+# Col Mean-|
+#   Row Mean |        0.2          3
+# -------------------------------
+#   3 |  -0.144353
+# |     1.0000
+# |
+#   env |   15.66140   13.97643
+# |    0.0000*    0.0000*
+
+### group II ------
+## II group: 0.2 bloomers 
+data_ed3_f <- data_ed3 |>
+  dplyr::filter(fraction_bloom == '0.2bloomer')
+
+## check normality 
+shapiro.test(as.numeric(data_ed3 |>
+                          dplyr::filter(fraction_causal == '0.2') %$%
+                          rho)) # => p-value < 2.2e-16 (NO NORMALITY)
+ggqqplot(as.numeric(data_ed3 |>
+                      dplyr::filter(fraction_causal == '0.2') %$%
+                      rho))
+
+## check homocedasticity 
+leveneTest(rho ~ fraction_causal, data = data_ed3_f) #p-value > 0.05: Variances are homogeneous (equal), and the assumption for ANOVA is met
+
+# Levene's Test for Homogeneity of Variance (center = median)
+#        Df F value   Pr(>F)   
+# group   3  4.8133 0.002743 **
+#       296                        
+# # ---
+# # Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+# 
+# ## Since we don't have normality nor homocedasticity we change to a non parametric test kruskal.test
+
+# Perform one-way ANOVA to compare the means of Rho across the three groups
+## anova_result <- aov(rho ~ fraction_causal, data = data_ed3_f)  # Replace `bloom` with your actual group variable
+kruskal_result <- kruskal.test(rho ~ fraction_causal, data = data_ed3_f) 
+
+# View the ANOVA summary
+##summary(anova_result)
+summary(kruskal_result)
+
+# Perform Dunn's test correctly
+dunn_result <- dunn.test(
+  x = data_ed3_f$rho,                            # The values you are comparing
+  g = as.factor(data_ed3_f$fraction_causal),    # The grouping variable
+  method = 'bonferroni'                          # Bonferroni correction
+)
+
+# Print the result
+print(dunn_result)
+# 
+# Comparison of x by group                            
+# (Bonferroni)                                  
+# Col Mean-|
+#   Row Mean |        0.2          3        bio
+# ---------+--------------------------------- #
+#   3 |  -1.039124
+# |     0.8962
+# |
+#   bio |   2.550914   3.012838
+# |     0.0322    0.0078*
+#   |
+#   phch |   0.453806   1.053441  -1.391741
+# |     1.0000     0.8764     0.4920
+
+## group III ----
+## I group: 0.2 bloomers 
+data_ed3_f <- data_ed3 |>
+  dplyr::filter(fraction_bloom == '3no_bloomer')
+
+## check normality 
+shapiro.test(as.numeric(data_ed3 |>
+                          dplyr::filter(fraction_causal == '0.2') %$%
+                          rho)) # => p-value < 2.2e-16 (NO NORMALITY)
+ggqqplot(as.numeric(data_ed3 |>
+                      dplyr::filter(fraction_causal == '0.2') %$%
+                      rho))
+
+## check homocedasticity 
+leveneTest(rho ~ fraction_causal, data = data_ed3_f) #p-value > 0.05: Variances are homogeneous (equal), and the assumption for ANOVA is met
+
+# Levene's Test for Homogeneity of Variance (center = median)
+#        Df F value    Pr(>F)    
+# group   3  21.837 1.236e-13 ***
+#       859                      
+# ---
+# # Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+# 
+# ## Since we don't have normality nor homocedasticity we change to a non parametric test kruskal.test
+
+# Perform one-way ANOVA to compare the means of Rho across the three groups
+## anova_result <- aov(rho ~ fraction_causal, data = data_ed3_f)  # Replace `bloom` with your actual group variable
+kruskal_result <- kruskal.test(rho ~ fraction_causal, data = data_ed3_f) 
+
+# View the ANOVA summary
+##summary(anova_result)
+summary(kruskal_result)
+
+# Perform Dunn's test correctly
+dunn_result <- dunn.test(
+  x = data_ed3_f$rho,                            # The values you are comparing
+  g = as.factor(data_ed3_f$fraction_causal),    # The grouping variable
+  method = 'bonferroni'                          # Bonferroni correction
+)
+
+# Print the result
+print(dunn_result)
+# 
+# Comparison of x by group                            
+# (Bonferroni)                                  
+# Col Mean-|
+# Col Mean-|
+#   Row Mean |        0.2          3        bio
+# ---------+--------------------------------- #
+#   3 |  -16.43611
+# |    0.0000*
+#   |
+#   bio |   3.514799   13.49203
+# |    0.0013*    0.0000*
+#   |
+#   phch |  -0.043184   9.947252  -2.677929
+# |     1.0000    0.0000*    0.0222*
+
+## Group IV -----
+## IV group: 3 bloomers 
+data_ed3_f <- data_ed3 |>
+  dplyr::filter(fraction_bloom == '3bloomer')
+
+## check normality 
+shapiro.test(as.numeric(data_ed3 |>
+                          dplyr::filter(fraction_causal == '0.2') %$%
+                          rho)) # => p-value < 2.2e-16 (NO NORMALITY)
+ggqqplot(as.numeric(data_ed3 |>
+                      dplyr::filter(fraction_causal == '0.2') %$%
+                      rho))
+
+## check homocedasticity 
+leveneTest(rho ~ fraction_causal, data = data_ed3_f) #p-value > 0.05: Variances are homogeneous (equal), and the assumption for ANOVA is met
+
+# Levene's Test for Homogeneity of Variance (center = median)
+#        Df F value    Pr(>F)    
+# group   3  9.0201 8.058e-06 ***
+#       478     
+# # Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+# 
+# ## Since we don't have normality nor homocedasticity we change to a non parametric test kruskal.test
+
+# Perform one-way ANOVA to compare the means of Rho across the three groups
+## anova_result <- aov(rho ~ fraction_causal, data = data_ed3_f)  # Replace `bloom` with your actual group variable
+kruskal_result <- kruskal.test(rho ~ fraction_causal, data = data_ed3_f) 
+
+# View the ANOVA summary
+##summary(anova_result)
+summary(kruskal_result)
+
+# Perform Dunn's test correctly
+dunn_result <- dunn.test(
+  x = data_ed3_f$rho,                            # The values you are comparing
+  g = as.factor(data_ed3_f$fraction_causal),    # The grouping variable
+  method = 'bonferroni'                          # Bonferroni correction
+)
+
+# Print the result
+print(dunn_result)
+# 
+# Comparison of x by group                            
+# (Bonferroni)                                  
+# Comparison of x by group                            
+# (Bonferroni)                                  
+# Col Mean-|
+#   Row Mean |        0.2          3        bio
+# ---------+---------------------------------#
+#   3 |  -12.47094
+# |    0.0000*
+#   |
+#   bio |   3.737682   11.62683
+# |    0.0006*    0.0000*
+#   |
+#   phch |  -0.336589   6.414832  -2.794449
+# |     1.0000    0.0000*    0.0156*
+
+
+
 ### ARE BLOOMERS KEYSTONE TAXA? -----
 ### They need to have strong causal interactions with other taxa 
 bloomers_effect_on_the_community_ccm_based_plot <- data_ed |>
@@ -2680,7 +2943,7 @@ bloomers_effect_on_the_community_ccm_based_plot <- data_ed |>
   ggplot(aes(x = interaction(fraction_causal), y = rho))+
   geom_point(aes( color = order_causal),position = position_jitter(width = 0.1))+
   geom_boxplot(alpha = 0.1, notch = T)+
-  facet_wrap(fraction_predicted~bloom, labeller = labs_fraction, dir = 'v'_bloo, ncol = 1)+
+  facet_wrap(fraction_predicted~bloom, labeller = labs_fraction, dir = 'v', ncol = 1)+
   scale_color_manual(values = palette_order_assigned_all)+
   scale_x_discrete(labels = labs_fraction_env)+
   guides(color = guide_legend(ncol = 2))+
@@ -2731,6 +2994,8 @@ data_causal_relationships <- data_ed |>
 
 relative_rho_value |>
   colnames()
+labs_bloom <- as_labeller(c('no_bloomer' = 'No Bloomer',
+                            'bloomer' = 'Bloomer'))
 
 plot_ccm_asvs_causally_affecting_other_asvs_ordered <- relative_rho_value  |>
   left_join(tax_bbmo_10y_new, by = c('asv_num_causal' = 'asv_num')) |>
@@ -2742,17 +3007,20 @@ plot_ccm_asvs_causally_affecting_other_asvs_ordered <- relative_rho_value  |>
                                                                        family, ' ', asv_num_causal))) |>
   dplyr::mutate(order_family_asv_num = case_when(asv_num_causal %in% bloo_taxonomy$asv_num_f ~ paste0(order_family_asv_num,'*'),
                                                  TRUE ~ order_family_asv_num)) |>
+  dplyr::mutate(bloom = case_when(asv_num_causal %in% bloo_taxonomy$asv_num_f ~ 'bloomer',
+                                  TRUE ~ 'no_bloomer')) |>
   ggplot(aes(fct_reorder(order_family_asv_num, relative_rho), relative_rho))+
-  geom_point(data = data_causal_relationships, aes(order_family_asv_num, rho
-             #,color = fraction_predicted
-             ,
-             alpha = if_else((asv_num_causal %in% bloo_taxonomy$asv_num_f), 0.6, 0.1)), position = position_jitter(width = 0.25),  size = 0.6)+
+  # geom_point(data = data_causal_relationships, aes(order_family_asv_num, rho
+  #            #,color = fraction_predicted
+  #            ,
+  #            alpha = if_else((asv_num_causal %in% bloo_taxonomy$asv_num_f), 0.6, 0.1)), position = position_jitter(width = 0.25),  size = 0.6)+
   geom_boxplot(data = data_causal_relationships, aes(order_family_asv_num, rho,
                                                      alpha = if_else((asv_num_causal %in% bloo_taxonomy$asv_num_f), 0.8, 0.3)),
                notch = T, outliers = F)+ # I already plot the with the geom point
-  geom_point(shape = 18)+
+  geom_point(shape = 18, alpha = 0.1)+
+  facet_wrap(vars(bloom), labeller = labs_bloom)+
   coord_flip()+
-  labs(y = 'Rho', x= 'ASVs causally effectting other ASVs', color = 'Fraction ASVs being causally effected')+
+  labs(y = 'Rho', x= 'ASVs causally affectting other ASVs', color = 'Fraction ASVs being causally affected')+
   theme_bw()+
   theme(strip.background = element_rect(fill = 'transparent'),
         legend.position = 'bottom',
@@ -2767,12 +3035,55 @@ plot_ccm_asvs_causally_affecting_other_asvs_ordered <- relative_rho_value  |>
 
 plot_ccm_asvs_causally_affecting_other_asvs_ordered
 
-# ggsave(plot = plot_ccm_asvs_causally_affecting_other_asvs_ordered, 
-#         filename = 'plot_ccm_asvs_causally_affecting_other_asvs_ordered.pdf',
+# ggsave(plot = plot_ccm_asvs_causally_affecting_other_asvs_ordered,
+#         filename = 'plot_ccm_asvs_causally_affecting_other_asvs_ordered_v2.pdf',
 #        path = 'results/figures/',
-#        width = 130, height = 150, units = 'mm')
+#        width = 170, height = 150, units = 'mm')
   
-  occurrence_bloo_bbmo |>
+## Not ordered by relative rho value simply by the distribution ----
+data_causal_relationships |>
+  colnames()
+
+plot_ccm_asvs_causally_affecting_other_asvs_ordered <- data_causal_relationships |>
+  dplyr::group_by(order_family_asv_num) |>
+  dplyr::mutate(mean = mean(rho)) |>
+  dplyr::ungroup() |>
+  dplyr::mutate(bloom = case_when(asv_num_causal %in% bloo_taxonomy$asv_num_f ~ 'bloomer',
+                                  TRUE ~ 'no_bloomer')) |>
+  ggplot(aes(fct_reorder(order_family_asv_num, mean), rho)) +
+  # geom_point(aes(
+  #                 alpha = if_else((asv_num_causal %in% bloo_taxonomy$asv_num_f), 
+  #                                 0.6, 0.1)), position = position_jitter(width = 0.25),  
+  #            size = 0.6)+
+  geom_boxplot( aes(
+                    alpha = if_else((asv_num_causal %in% bloo_taxonomy$asv_num_f), 0.8, 0.3)),
+                notch = T, outliers = F)+ # I already plot the with the geom point
+  coord_flip()+
+  labs(y = 'Predictive skill (rho)',
+       x = 'ASVs causally affectting other ASVs', 
+       color = 'Fraction ASVs being causally affected')+
+  facet_wrap(vars(bloom), labeller = labs_bloom)+
+  theme_bw()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        legend.position = 'bottom',
+        #panel.grid.major.y  = element_blank(),
+        panel.grid.minor  = element_blank(), text = element_text(size = 5),
+        strip.text = element_text(margin = margin(2, 2, 2, 2), size = 7),
+        #plot.margin = unit(c(0.2, 5, 0.5, 0.5), "cm"),
+        legend.key.size = unit(3, 'mm'),
+        panel.border = element_blank(),
+        axis.ticks.length = unit(0.2, "mm"))+
+  guides(alpha = 'none')
+
+plot_ccm_asvs_causally_affecting_other_asvs_ordered 
+
+# ggsave(plot = plot_ccm_asvs_causally_affecting_other_asvs_ordered,
+#         filename = 'plot_ccm_asvs_causally_affecting_other_asvs_ordered_v3.pdf',
+#        path = 'results/figures/',
+#        width = 170, height = 150, units = 'mm')
+
+##
+occurrence_bloo_bbmo |>
   colnames()
 
 occurrence_bloo_bbmo_sim <- occurrence_bloo_bbmo |>
@@ -2795,7 +3106,7 @@ data_ed |>
   theme(strip.background = element_rect(fill = 'transparent'),
         legend.position = 'bottom',
         panel.grid.major.y  = element_blank(),
-        panel.grid.minor  = element_blank(), text = element_text(size = 10),
+        panel.grid.minor  = element_blank(), text = element_text(size = 8),
         strip.text = element_text(margin = margin(2, 2, 2, 2), size = 10),
         #plot.margin = unit(c(0.2, 5, 0.5, 0.5), "cm"),
         legend.key.size = unit(3, 'mm'))+
@@ -2809,8 +3120,9 @@ data_ed |>
 ## which is more consistent with the findings of empirical addition/removal experiments
 ## The interaction Jacobian is time-varying as it integrates two sources of temporal variability: (i) species abundance changed with time; 
 ## and (ii) the interaction coefficient is time-varying (i.e., αij  =  αij(t);
+### Important for the MDR analysis we need to mantain seasonality otherwise it could uncover interactions
 ## upload data ----
-mdr_tb <- read.csv2('../EDM_carmen/MDR/Bl_nin120_cvunit0.025_aenet_jcof_Nmvx_Rallx_demo_v2.csv', header = T ) |>
+mdr_tb <- read.csv2('../EDM_carmen/MDR/Bl_nin120_cvunit0.025_aenet_jcof_Nmvx_Rallx_demo_seas.csv', header = T ) |> 
   as_tibble() ## new data
 
 mdr_tb |>
@@ -2929,7 +3241,7 @@ palette_gradient <- c('#0A6260',"#BDBEBE","#545454",
                       "#F2A218")
 
 palette_gradient <- colorRampPalette(c('#0A6260',"#BDBEBE", '#ffffff', "#545454",
-                                       "#F2A218"))(10)
+                                       "#F2A218"))(6)
 
 breaks <- seq(-1, 1, length.out = 10) # Ensure breaks match the number of colors + 1
 
@@ -3031,7 +3343,7 @@ for (t in time_points) {
 ## prepare bloomers abundance data ----
 asv_tab_all_bloo_z_tax_red <- asv_tab_all_bloo_z_tax |>
   dplyr::filter(abundance_type == 'relative_abundance') |>
-  dplyr::select(asv_num, fraction, date, abundance_value) |>
+  dplyr::select(asv_num, fraction, date, abundance_value, z_score_ra) |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
   dplyr::filter(asv_num %in% c('asv11', 'asv7', 'asv1', 'asv22', 
                                'asv23', 'asv31', 'asv15', 'asv17')) 
@@ -3057,14 +3369,15 @@ asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
 
 data <- mdr_tb_m_rclr |> 
   dplyr::mutate(value = as.numeric(value)) |> 
-  dplyr::group_by(date, fraction_eff, fraction_b, fraction, asv_num) |> 
+  dplyr::group_by(date, #fraction_eff, 
+                  fraction_b, fraction, asv_num) |> 
   dplyr::filter(value != 0) |> 
   dplyr::reframe(n  = n(),
                  interactions_pos = sum(value[value > 0], na.rm = TRUE),
                  interaction_neg = sum(value[value < 0], na.rm = TRUE)) |>
-  dplyr::mutate(balance = interactions_pos+interaction_neg) |>
-  dplyr::mutate(fraction_eff_ed = case_when(str_detect(fraction_eff, 'bp') ~ '0.2',
-                                     str_detect(fraction_eff, 'bn') ~ '3'))
+  dplyr::mutate(balance = interactions_pos+interaction_neg) #|>
+  # dplyr::mutate(fraction_eff_ed = case_when(str_detect(fraction_eff, 'bp') ~ '0.2',
+  #                                    str_detect(fraction_eff, 'bn') ~ '3'))
 data <- data |> 
   dplyr::mutate(balance_color = if_else(balance > 0, '#000000', '#8C0009'))
 
@@ -3073,12 +3386,12 @@ asv11_affectedby_community_plot <- data |>
   geom_col(aes(y = interactions_pos), fill = '#000000') + 
   geom_col(aes(y = interaction_neg), fill = '#8C0009') + 
   geom_point(aes(y = balance, color = balance_color), size = 0.75, alpha = 0.6) + 
-  facet_wrap(vars(fraction_eff_ed), labeller = labs_fraction, dir = 'v') + 
+  facet_wrap(vars(fraction), labeller = labs_fraction, dir = 'v') + 
   scale_color_identity()+
   theme_bw() + 
   labs(x = 'Date', y = 'Interaction Strength', color = 'Order', title = 'The microbial community effect on ASV11 (0.2)') + 
   theme(strip.background = element_rect(fill = 'transparent'),
-        text = element_text(size = 10),
+        text = element_text(size = 8),
         axis.text.x = element_text(size = 10),
         axis.text.y = element_text(size = 8),
         panel.border = element_blank(),
@@ -3091,17 +3404,22 @@ asv11_rclr_plot <- asv_tab_all_bloo_z_tax_red_asv |>
   ggplot(aes(date, abundance_value, color = order_f)) + 
   #geom_point( size = 0.75, alpha = 0.6) + 
   geom_line()+
+  geom_hline(yintercept = 0.1, linetype = 'dashed', alpha = 0.5)+
+  geom_area(aes(fill = order_f), alpha = 0.5)+
+  geom_point(aes(shape = if_else((abundance_value > 0.1 & z_score_ra > 2), 4, NA )))+
+  scale_shape_identity()+
   scale_color_manual(values = palette_order_assigned_bloo)+
-  facet_wrap(vars(fraction), labeller = labs_fraction, dir = 'v') + 
+  scale_fill_manual(values = palette_order_assigned_bloo)+
+  facet_wrap(vars(fraction), labeller = labs_fraction) + 
   theme_bw() + 
   labs(x = 'Date', y = 'Relative Abundance', color = 'Order') + 
   theme(strip.background = element_rect(fill = 'transparent'),
-        text = element_text(size = 10),
+        text = element_text(size = 8),
         axis.text.x = element_text(size = 10),
         panel.border = element_blank(),
+        panel.grid.minor = element_blank(),
         title = element_text(size = 8),
-        legend.position = 'none',
-        plot.margin = unit(c(0, 0, 0, 0.75), units = "lines"))
+        legend.position = 'none')
 
 asv11_rclr_plot
 
@@ -3114,20 +3432,20 @@ effect_community_on_ASV11 <- plot_grid(
   asv11_rclr_plot,
   asv11_affectedby_community_plot, # Second row
   rel_heights = c(1, 1.75), # Heights of the rows
-  labels = c('A', 'B'), # Labels for the plots
+  labels = c('F'), # Labels for the plots
   label_size = 10,
   label_fontface = 'plain',
   ncol = 1 # Arrange in one column
 )
 
-ggsave(
-  plot = effect_community_on_ASV11, 
-  filename = 'effect_community_on_ASV11.pdf',
-  path = 'results/figures/MDR/v2/',
-  width = 150, 
-  height = 150, 
-  units = 'mm'
-)
+# ggsave(
+#   plot = effect_community_on_ASV11, 
+#   filename = 'effect_community_on_ASV11_v2.pdf',
+#   path = 'results/figures/MDR/v2/',
+#   width = 150, 
+#   height = 150, 
+#   units = 'mm'
+# )
 
 ### ASV23 ----
 mdr_tb_m_rclr <- mdr_tb_m |>
@@ -3144,14 +3462,15 @@ asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
 
 data <- mdr_tb_m_rclr |> 
   dplyr::mutate(value = as.numeric(value)) |> 
-  dplyr::group_by(date, fraction_eff, fraction_b, fraction, asv_num) |> 
+  dplyr::group_by(date, #fraction_eff, 
+                  fraction_b, fraction, asv_num) |> 
   dplyr::filter(value != 0) |> 
   dplyr::reframe(n  = n(),
                  interactions_pos = sum(value[value > 0], na.rm = TRUE),
                  interaction_neg = sum(value[value < 0], na.rm = TRUE)) |>
-  dplyr::mutate(balance = interactions_pos+interaction_neg) |>
-  dplyr::mutate(fraction_eff_ed = case_when(str_detect(fraction_eff, 'bp') ~ '0.2',
-                                            str_detect(fraction_eff, 'bn') ~ '3'))
+  dplyr::mutate(balance = interactions_pos+interaction_neg) #|>
+  # dplyr::mutate(fraction_eff_ed = case_when(str_detect(fraction_eff, 'bp') ~ '0.2',
+  #                                           str_detect(fraction_eff, 'bn') ~ '3'))
 data <- data |> 
   dplyr::mutate(balance_color = if_else(balance > 0, '#000000', '#8C0009'))
 
@@ -3160,12 +3479,14 @@ asv23_affectedby_community_plot <- data |>
   geom_col(aes(y = interactions_pos), fill = '#000000') + 
   geom_col(aes(y = interaction_neg), fill = '#8C0009') + 
   geom_point(aes(y = balance, color = balance_color), size = 0.75, alpha = 0.6) + 
-  facet_wrap(fraction~fraction_eff_ed, labeller = labs_fraction, dir = 'v') + 
+  facet_wrap(vars(fraction)#~fraction_eff_ed
+             , labeller = labs_fraction#, dir = 'v'
+             ) + 
   scale_color_identity()+
   theme_bw() + 
   labs(x = 'Date', y = 'Interaction Strength', color = 'Order', title = 'The microbial community effect on asv23 (0.2 & 3)') + 
   theme(strip.background = element_rect(fill = 'transparent'),
-        text = element_text(size = 10),
+        text = element_text(size = 8),
         axis.text.x = element_text(size = 10),
         panel.border = element_blank(),
         title = element_text(size = 8))
@@ -3180,35 +3501,41 @@ asv23_rclr_plot <- asv_tab_all_bloo_z_tax_red_asv |>
   ggplot(aes(date, abundance_value, color = order_f)) + 
   #geom_point( size = 0.75, alpha = 0.6) + 
   geom_line()+
+  geom_hline(yintercept = 0.1, linetype = 'dashed', alpha = 0.5)+
+  geom_area(aes(fill = order_f), alpha = 0.5)+
+  geom_point(aes(shape = if_else((abundance_value > 0.1 & z_score_ra > 2), 4, NA )))+
+  scale_shape_identity()+
   scale_color_manual(values = palette_order_assigned_bloo)+
+  scale_fill_manual(values = palette_order_assigned_bloo)+
   facet_wrap(vars(fraction), labeller = labs_fraction) + 
   theme_bw() + 
   labs(x = 'Date', y = 'Relative Abundance', color = 'Order') + 
   theme(strip.background = element_rect(fill = 'transparent'),
-        text = element_text(size = 10),
+        text = element_text(size = 8),
         axis.text.x = element_text(size = 10),
         panel.border = element_blank(),
+        panel.grid.minor = element_blank(),
         title = element_text(size = 8),
         legend.position = 'none')
 
 effect_community_on_ASV23 <- plot_grid(asv23_rclr_plot, 
           asv23_affectedby_community_plot,
           rel_heights = c(1, 2),
-          labels = c('A', 'B'), # Labels for the plots
+          labels = c('B'), # Labels for the plots
           label_size = 10,
           label_fontface = 'plain',
           ncol = 1) # Arrange in one column
 
 effect_community_on_ASV23
 
-ggsave(
-  plot = effect_community_on_ASV23, 
-  filename = 'effect_community_on_ASV23.pdf',
-  path = 'results/figures/MDR/v2/',
-  width = 180, 
-  height = 180, 
-  units = 'mm'
-)
+# ggsave(
+#   plot = effect_community_on_ASV23, 
+#   filename = 'effect_community_on_ASV23_v2.pdf',
+#   path = 'results/figures/MDR/v2/',
+#   width = 180, 
+#   height = 180, 
+#   units = 'mm'
+# )
  
 ### ASV7 ----
 mdr_tb_m_rclr <- mdr_tb_m |>
@@ -3225,14 +3552,15 @@ asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
 
 data <- mdr_tb_m_rclr |> 
   dplyr::mutate(value = as.numeric(value)) |> 
-  dplyr::group_by(date, fraction_eff, fraction_b, fraction, asv_num) |> 
+  dplyr::group_by(date, #fraction_eff, 
+                  fraction_b, fraction, asv_num) |> 
   dplyr::filter(value != 0) |> 
   dplyr::reframe(n  = n(),
                  interactions_pos = sum(value[value > 0], na.rm = TRUE),
                  interaction_neg = sum(value[value < 0], na.rm = TRUE)) |>
-  dplyr::mutate(balance = interactions_pos+interaction_neg) |>
-  dplyr::mutate(fraction_eff_ed = case_when(str_detect(fraction_eff, 'bp') ~ '0.2',
-                                            str_detect(fraction_eff, 'bn') ~ '3'))
+  dplyr::mutate(balance = interactions_pos+interaction_neg) #|>
+  # dplyr::mutate(fraction_eff_ed = case_when(str_detect(fraction_eff, 'bp') ~ '0.2',
+  #                                           str_detect(fraction_eff, 'bn') ~ '3'))
 data <- data |> 
   dplyr::mutate(balance_color = if_else(balance > 0, '#000000', '#8C0009'))
 
@@ -3241,12 +3569,15 @@ asv7_affectedby_community_plot <- data |>
   geom_col(aes(y = interactions_pos), fill = '#000000') + 
   geom_col(aes(y = interaction_neg), fill = '#8C0009') + 
   geom_point(aes(y = balance, color = balance_color), size = 0.75, alpha = 0.6) + 
-  facet_wrap(fraction~fraction_eff_ed, labeller = labs_fraction, dir = 'v') + 
+  facet_wrap(vars(fraction)
+             #~fraction_eff_ed
+             , labeller = labs_fraction#, dir = 'v'
+             ) + 
   scale_color_identity()+
   theme_bw() + 
   labs(x = 'Date', y = 'Interaction Strength', color = 'Order', title = 'The microbial community effect on asv7 (0.2 & 3)') + 
   theme(strip.background = element_rect(fill = 'transparent'),
-        text = element_text(size = 10),
+        text = element_text(size = 8),
         axis.text.x = element_text(size = 10),
         panel.border = element_blank(),
         title = element_text(size = 8))
@@ -3260,13 +3591,18 @@ asv7_rclr_plot <- asv_tab_all_bloo_z_tax_red_asv |>
   left_join(bloo_taxonomy, by = c('asv_num' = 'asv_num_f')) |>
   ggplot(aes(date, abundance_value, color = order_f)) + 
   #geom_point( size = 0.75, alpha = 0.6) + 
+  geom_hline(yintercept = 0.1, linetype = 'dashed', alpha = 0.5)+
+  geom_area(aes(fill = order_f), alpha = 0.5)+
   geom_line()+
+  geom_point(aes(shape = if_else((abundance_value > 0.1 & z_score_ra > 2), 4, NA )))+
+  scale_shape_identity()+
   scale_color_manual(values = palette_order_assigned_bloo)+
+  scale_fill_manual(values = palette_order_assigned_bloo)+
   facet_wrap(vars(fraction), labeller = labs_fraction) + 
   theme_bw() + 
   labs(x = 'Date', y = 'Relative Abundance', color = 'Order') + 
   theme(strip.background = element_rect(fill = 'transparent'),
-        text = element_text(size = 10),
+        text = element_text(size = 8),
         axis.text.x = element_text(size = 10),
         panel.border = element_blank(),
         title = element_text(size = 8),
@@ -3282,14 +3618,14 @@ effect_community_on_ASV7 <- plot_grid(asv7_rclr_plot,
           label_fontface = 'plain',
           ncol = 1) # Arrange in one column
 
-ggsave(
-  plot = effect_community_on_ASV7, 
-  filename = 'effect_community_on_ASV7.pdf',
-  path = 'results/figures/MDR/v2/',
-  width = 180, 
-  height = 180, 
-  units = 'mm'
-)
+# ggsave(
+#   plot = effect_community_on_ASV7, 
+#   filename = 'effect_community_on_ASV7_v2.pdf',
+#   path = 'results/figures/MDR/v2/',
+#   width = 180, 
+#   height = 180, 
+#   units = 'mm'
+# )
 
 ### ASV1 ----
 mdr_tb_m_rclr <- mdr_tb_m |>
@@ -3306,14 +3642,15 @@ asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
 
 data <- mdr_tb_m_rclr |> 
   dplyr::mutate(value = as.numeric(value)) |> 
-  dplyr::group_by(date, fraction_eff, fraction_b, fraction, asv_num) |> 
+  dplyr::group_by(date, #fraction_eff, 
+                  fraction_b, fraction, asv_num) |> 
   dplyr::filter(value != 0) |> 
   dplyr::reframe(n  = n(),
                  interactions_pos = sum(value[value > 0], na.rm = TRUE),
                  interaction_neg = sum(value[value < 0], na.rm = TRUE)) |>
-  dplyr::mutate(balance = interactions_pos+interaction_neg) |>
-  dplyr::mutate(fraction_eff_ed = case_when(str_detect(fraction_eff, 'bp') ~ '0.2',
-                                            str_detect(fraction_eff, 'bn') ~ '3'))
+  dplyr::mutate(balance = interactions_pos+interaction_neg) #|>
+  # dplyr::mutate(fraction_eff_ed = case_when(str_detect(fraction_eff, 'bp') ~ '0.2',
+  #                                           str_detect(fraction_eff, 'bn') ~ '3'))
 data <- data |> 
   dplyr::mutate(balance_color = if_else(balance > 0, '#000000', '#8C0009'))
 
@@ -3322,12 +3659,16 @@ asv1_affectedby_community_plot <- data |>
   geom_col(aes(y = interactions_pos), fill = '#000000') + 
   geom_col(aes(y = interaction_neg), fill = '#8C0009') + 
   geom_point(aes(y = balance, color = balance_color), size = 0.75, alpha = 0.6) + 
-  facet_wrap(fraction~fraction_eff_ed, labeller = labs_fraction, dir = 'v') + 
+  facet_wrap(vars(fraction)
+             #~fraction_eff_ed
+             , labeller = labs_fraction
+             #, dir = 'v'
+             ) + 
   scale_color_identity()+
   theme_bw() + 
   labs(x = 'Date', y = 'Interaction Strength', color = 'Order', title = 'The microbial community effect on asv1 (0.2 & 3)') + 
   theme(strip.background = element_rect(fill = 'transparent'),
-        text = element_text(size = 10),
+        text = element_text(size = 8),
         axis.text.x = element_text(size = 10),
         panel.border = element_blank(),
         title = element_text(size = 8))
@@ -3342,12 +3683,17 @@ asv1_rclr_plot <- asv_tab_all_bloo_z_tax_red_asv |>
   ggplot(aes(date, abundance_value, color = order_f)) + 
   #geom_point( size = 0.75, alpha = 0.6) + 
   geom_line()+
+  geom_hline(yintercept = 0.1, linetype = 'dashed', alpha = 0.5)+
+  geom_area(aes(fill = order_f), alpha = 0.5)+
+  geom_point(aes(shape = if_else((abundance_value > 0.1 & z_score_ra > 2), 4, NA )))+
+  scale_shape_identity()+
   scale_color_manual(values = palette_order_assigned_bloo)+
+  scale_fill_manual(values = palette_order_assigned_bloo)+
   facet_wrap(vars(fraction), labeller = labs_fraction) + 
   theme_bw() + 
   labs(x = 'Date', y = 'Relative Abundance', color = 'Order') + 
   theme(strip.background = element_rect(fill = 'transparent'),
-        text = element_text(size = 10),
+        text = element_text(size = 8),
         axis.text.x = element_text(size = 10),
         panel.border = element_blank(),
         title = element_text(size = 8),
@@ -3358,19 +3704,19 @@ asv1_rclr_plot
 effect_community_on_ASV1 <- plot_grid(asv1_rclr_plot, 
           asv1_affectedby_community_plot,
           rel_heights = c(1, 1.75),
-          labels = c('A', 'B'), # Labels for the plots
+          labels = c('E'), # Labels for the plots
           label_size = 10,
           label_fontface = 'plain',
           ncol = 1) # Arrange in one column
 
-ggsave(
-  plot = effect_community_on_ASV1, 
-  filename = 'effect_community_on_ASV1.pdf',
-  path = 'results/figures/MDR/v2/',
-  width = 180, 
-  height = 180, 
-  units = 'mm'
-)
+# ggsave(
+#   plot = effect_community_on_ASV1, 
+#   filename = 'effect_community_on_ASV1_v2.pdf',
+#   path = 'results/figures/MDR/v2/',
+#   width = 180, 
+#   height = 180, 
+#   units = 'mm'
+# )
 
 ### ASV22 -----
 mdr_tb_m_rclr <- mdr_tb_m |>
@@ -3387,14 +3733,15 @@ asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
 
 data <- mdr_tb_m_rclr |> 
   dplyr::mutate(value = as.numeric(value)) |> 
-  dplyr::group_by(date, fraction_eff, fraction_b, fraction, asv_num) |> 
+  dplyr::group_by(date, #fraction_eff, 
+                  fraction_b, fraction, asv_num) |> 
   dplyr::filter(value != 0) |> 
   dplyr::reframe(n  = n(),
                  interactions_pos = sum(value[value > 0], na.rm = TRUE),
                  interaction_neg = sum(value[value < 0], na.rm = TRUE)) |>
-  dplyr::mutate(balance = interactions_pos+interaction_neg) |>
-  dplyr::mutate(fraction_eff_ed = case_when(str_detect(fraction_eff, 'bp') ~ '0.2',
-                                            str_detect(fraction_eff, 'bn') ~ '3'))
+  dplyr::mutate(balance = interactions_pos+interaction_neg)# |>
+  # dplyr::mutate(fraction_eff_ed = case_when(str_detect(fraction_eff, 'bp') ~ '0.2',
+  #                                           str_detect(fraction_eff, 'bn') ~ '3'))
 data <- data |> 
   dplyr::mutate(balance_color = if_else(balance > 0, '#000000', '#8C0009'))
 
@@ -3403,12 +3750,14 @@ asv22_affectedby_community_plot <- data |>
   geom_col(aes(y = interactions_pos), fill = '#000000') + 
   geom_col(aes(y = interaction_neg), fill = '#8C0009') + 
   geom_point(aes(y = balance, color = balance_color), size = 0.75, alpha = 0.6) + 
-  facet_wrap(fraction~fraction_eff_ed, labeller = labs_fraction, dir = 'v') + 
+  facet_wrap(vars(fraction)
+             #~fraction_eff_ed
+             , labeller = labs_fraction, dir = 'v') + 
   scale_color_identity()+
   theme_bw() + 
   labs(x = 'Date', y = 'Interaction Strength', color = 'Order', title = 'The microbial community effect on asv22 (0.2 & 3)') + 
   theme(strip.background = element_rect(fill = 'transparent'),
-        text = element_text(size = 10),
+        text = element_text(size = 8),
         axis.text.x = element_text(size = 10),
         panel.border = element_blank(),
         title = element_text(size = 8))
@@ -3423,13 +3772,18 @@ asv22_rclr_plot <- asv_tab_all_bloo_z_tax_red_asv |>
   left_join(bloo_taxonomy, by = c('asv_num' = 'asv_num_f')) |>
   ggplot(aes(date, abundance_value, color = order_f)) + 
   #geom_point( size = 0.75, alpha = 0.6) + 
+  geom_hline(yintercept = 0.1, linetype = 'dashed', alpha = 0.5)+
+  geom_area(aes(fill = order_f), alpha = 0.5)+
   geom_line()+
+  geom_point(aes(shape = if_else((abundance_value > 0.1 & z_score_ra > 2), 4, NA )))+
+  scale_shape_identity()+
   scale_color_manual(values = palette_order_assigned_bloo)+
+  scale_fill_manual(values = palette_order_assigned_bloo)+
   facet_wrap(vars(fraction), labeller = labs_fraction) + 
   theme_bw() + 
   labs(x = 'Date', y = 'Relative Abundance', color = 'Order') + 
   theme(strip.background = element_rect(fill = 'transparent'),
-        text = element_text(size = 10),
+        text = element_text(size = 8),
         axis.text.x = element_text(size = 10),
         panel.border = element_blank(),
         title = element_text(size = 8),
@@ -3440,19 +3794,19 @@ asv22_rclr_plot
 effect_community_on_ASV22 <- plot_grid(asv22_rclr_plot, 
           asv22_affectedby_community_plot,
           rel_heights = c(1, 1.75),
-          labels = c('A', 'B'), # Labels for the plots
+          labels = c('D'), # Labels for the plots
           label_size = 10,
           label_fontface = 'plain',
           ncol = 1) # Arrange in one column
 
-ggsave(
-  plot = effect_community_on_ASV22, 
-  filename = 'effect_community_on_ASV22.pdf',
-  path = 'results/figures/MDR/v2/',
-  width = 150, 
-  height = 180, 
-  units = 'mm'
-)
+# ggsave(
+#   plot = effect_community_on_ASV22, 
+#   filename = 'effect_community_on_ASV22_V2.pdf',
+#   path = 'results/figures/MDR/v2/',
+#   width = 150, 
+#   height = 180, 
+#   units = 'mm'
+# )
 
 ### ASV15 -----
 mdr_tb_m_rclr <- mdr_tb_m |>
@@ -3469,14 +3823,15 @@ asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
 
 data <- mdr_tb_m_rclr |> 
   dplyr::mutate(value = as.numeric(value)) |> 
-  dplyr::group_by(date, fraction_eff, fraction_b, fraction, asv_num) |> 
+  dplyr::group_by(date, #fraction_eff, 
+                  fraction_b, fraction, asv_num) |> 
   dplyr::filter(value != 0) |> 
   dplyr::reframe(n  = n(),
                  interactions_pos = sum(value[value > 0], na.rm = TRUE),
                  interaction_neg = sum(value[value < 0], na.rm = TRUE)) |>
-  dplyr::mutate(balance = interactions_pos+interaction_neg) |>
-  dplyr::mutate(fraction_eff_ed = case_when(str_detect(fraction_eff, 'bp') ~ '0.2',
-                                            str_detect(fraction_eff, 'bn') ~ '3'))
+  dplyr::mutate(balance = interactions_pos+interaction_neg) #|>
+  # dplyr::mutate(fraction_eff_ed = case_when(str_detect(fraction_eff, 'bp') ~ '0.2',
+  #                                           str_detect(fraction_eff, 'bn') ~ '3'))
 data <- data |> 
   dplyr::mutate(balance_color = if_else(balance > 0, '#000000', '#8C0009'))
 
@@ -3485,12 +3840,15 @@ asv15_affectedby_community_plot <- data |>
   geom_col(aes(y = interactions_pos), fill = '#000000') + 
   geom_col(aes(y = interaction_neg), fill = '#8C0009') + 
   geom_point(aes(y = balance, color = balance_color), size = 0.75, alpha = 0.6) + 
-  facet_wrap(fraction~fraction_eff_ed, labeller = labs_fraction, dir = 'v') + 
+  facet_wrap(vars(fraction),
+             #~fraction_eff_ed,
+             labeller = labs_fraction#, dir = 'v'
+             ) + 
   scale_color_identity()+
   theme_bw() + 
   labs(x = 'Date', y = 'Interaction Strength', color = 'Order', title = 'The microbial community effect on asv15 (0.2 & 3)') + 
   theme(strip.background = element_rect(fill = 'transparent'),
-        text = element_text(size = 10),
+        text = element_text(size = 8),
         axis.text.x = element_text(size = 10),
         panel.border = element_blank(),
         title = element_text(size = 8))
@@ -3505,12 +3863,17 @@ asv15_rclr_plot <- asv_tab_all_bloo_z_tax_red_asv |>
   ggplot(aes(date, abundance_value, color = order_f)) + 
   #geom_point( size = 0.75, alpha = 0.6) + 
   geom_line()+
+  geom_hline(yintercept = 0.1, linetype = 'dashed', alpha = 0.5)+
+  geom_area(aes(fill = order_f), alpha = 0.5)+
+  geom_point(aes(shape = if_else((abundance_value > 0.1 & z_score_ra > 2), 4, NA )))+
+  scale_shape_identity()+
+  scale_fill_manual(values = palette_order_assigned_bloo)+
   scale_color_manual(values = palette_order_assigned_bloo)+
   facet_wrap(vars(fraction), labeller = labs_fraction) + 
   theme_bw() + 
   labs(x = 'Date', y = 'Relative Abundance', color = 'Order') + 
   theme(strip.background = element_rect(fill = 'transparent'),
-        text = element_text(size = 10),
+        text = element_text(size = 8),
         axis.text.x = element_text(size = 10),
         panel.border = element_blank(),
         title = element_text(size = 8),
@@ -3521,19 +3884,19 @@ asv15_rclr_plot
 effect_community_on_ASV15 <- plot_grid(asv15_rclr_plot, 
           asv15_affectedby_community_plot,
           rel_heights = c(1, 1.75),
-          labels = c('A', 'B'), # Labels for the plots
+          labels = c('C', 'D'), # Labels for the plots
           label_size = 10,
           label_fontface = 'plain',
           ncol = 1) # Arrange in one column
 
- ggsave(
-  plot = effect_community_on_ASV15, 
-  filename = 'effect_community_on_ASV15.pdf',
-  path = 'results/figures/MDR/v2/',
-  width = 180, 
-  height = 180, 
-  units = 'mm'
-)
+#  ggsave(
+#   plot = effect_community_on_ASV15, 
+#   filename = 'effect_community_on_ASV15_v2.pdf',
+#   path = 'results/figures/MDR/v2/',
+#   width = 180, 
+#   height = 180, 
+#   units = 'mm'
+# )
 
 ### ASV31 -----
 mdr_tb_m_rclr <- mdr_tb_m |>
@@ -3550,14 +3913,15 @@ asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
 
 data <- mdr_tb_m_rclr |> 
   dplyr::mutate(value = as.numeric(value)) |> 
-  dplyr::group_by(date, fraction_eff, fraction_b, fraction, asv_num) |> 
+  dplyr::group_by(date, #fraction_eff, 
+                  fraction_b, fraction, asv_num) |> 
   dplyr::filter(value != 0) |> 
   dplyr::reframe(n  = n(),
                  interactions_pos = sum(value[value > 0], na.rm = TRUE),
                  interaction_neg = sum(value[value < 0], na.rm = TRUE)) |>
-  dplyr::mutate(balance = interactions_pos+interaction_neg) |>
-  dplyr::mutate(fraction_eff_ed = case_when(str_detect(fraction_eff, 'bp') ~ '0.2',
-                                            str_detect(fraction_eff, 'bn') ~ '3'))
+  dplyr::mutate(balance = interactions_pos+interaction_neg) #|>
+  # dplyr::mutate(fraction_eff_ed = case_when(str_detect(fraction_eff, 'bp') ~ '0.2',
+  #                                           str_detect(fraction_eff, 'bn') ~ '3'))
 data <- data |> 
   dplyr::mutate(balance_color = if_else(balance > 0, '#000000', '#8C0009'))
 
@@ -3566,12 +3930,15 @@ asv31_affectedby_community_plot <- data |>
   geom_col(aes(y = interactions_pos), fill = '#000000') + 
   geom_col(aes(y = interaction_neg), fill = '#8C0009') + 
   geom_point(aes(y = balance, color = balance_color), size = 0.75, alpha = 0.6) + 
-  facet_wrap(fraction~fraction_eff_ed, labeller = labs_fraction, dir = 'v') + 
+  facet_wrap(vars(fraction),
+             #~fraction_eff_ed, 
+             labeller = labs_fraction#, dir = 'v'
+             ) + 
   scale_color_identity()+
   theme_bw() + 
   labs(x = 'Date', y = 'Interaction Strength', color = 'Order', title = 'The microbial community effect on asv31 (0.2 & 3)') + 
   theme(strip.background = element_rect(fill = 'transparent'),
-        text = element_text(size = 10),
+        text = element_text(size = 8),
         axis.text.x = element_text(size = 10),
         panel.border = element_blank(),
         title = element_text(size = 8))
@@ -3586,13 +3953,18 @@ asv31_rclr_plot <- asv_tab_all_bloo_z_tax_red_asv |>
   left_join(bloo_taxonomy, by = c('asv_num' = 'asv_num_f')) |>
   ggplot(aes(date, abundance_value, color = order_f)) + 
   #geom_point( size = 0.75, alpha = 0.6) + 
+  geom_hline(yintercept = 0.1, linetype = 'dashed', alpha = 0.5)+
+  geom_area(aes(fill = order_f), alpha = 0.5)+
   geom_line()+
+  geom_point(aes(shape = if_else((abundance_value > 0.1 & z_score_ra > 2), 4, NA )))+
+  scale_shape_identity()+
   scale_color_manual(values = palette_order_assigned_bloo)+
+  scale_fill_manual(values = palette_order_assigned_bloo)+
   facet_wrap(vars(fraction), labeller = labs_fraction, dir = 'v') + 
   theme_bw() + 
   labs(x = 'Date', y = 'Relative Abundance', color = 'Order') + 
   theme(strip.background = element_rect(fill = 'transparent'),
-        text = element_text(size = 10),
+        text = element_text(size = 8),
         axis.text.x = element_text(size = 10),
         panel.border = element_blank(),
         title = element_text(size = 8),
@@ -3603,19 +3975,19 @@ asv31_rclr_plot
 effect_community_on_ASV31 <- plot_grid(asv31_rclr_plot, 
           asv31_affectedby_community_plot,
           rel_heights = c(1, 1.75),
-          labels = c('A', 'B'), # Labels for the plots
+          labels = c('C'), # Labels for the plots
           label_size = 10,
           label_fontface = 'plain',
           ncol = 1) # Arrange in one column
-
-ggsave(
-  plot = effect_community_on_ASV31, 
-  filename = 'effect_community_on_ASV31.pdf',
-  path = 'results/figures/MDR/v2/',
-  width = 180, 
-  height = 180, 
-  units = 'mm'
-)
+# 
+# ggsave(
+#   plot = effect_community_on_ASV31, 
+#   filename = 'effect_community_on_ASV31_V2.pdf',
+#   path = 'results/figures/MDR/v2/',
+#   width = 180, 
+#   height = 180, 
+#   units = 'mm'
+# )
 
 ### ASV17 -----
 mdr_tb_m_rclr <- mdr_tb_m |>
@@ -3632,14 +4004,16 @@ asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
 
 data <- mdr_tb_m_rclr |> 
   dplyr::mutate(value = as.numeric(value)) |> 
-  dplyr::group_by(date, fraction_eff, fraction_b, fraction, asv_num) |> 
+  dplyr::group_by(date, #fraction_eff, # account for all taxa affecting my bloomer
+                  fraction_b, 
+                  fraction, asv_num) |> 
   dplyr::filter(value != 0) |> 
   dplyr::reframe(n  = n(),
                  interactions_pos = sum(value[value > 0], na.rm = TRUE),
                  interaction_neg = sum(value[value < 0], na.rm = TRUE)) |>
-  dplyr::mutate(balance = interactions_pos+interaction_neg) |>
-  dplyr::mutate(fraction_eff_ed = case_when(str_detect(fraction_eff, 'bp') ~ '0.2',
-                                            str_detect(fraction_eff, 'bn') ~ '3'))
+  dplyr::mutate(balance = interactions_pos+interaction_neg) #|>
+  # dplyr::mutate(fraction_eff_ed = case_when(str_detect(fraction_eff, 'bp') ~ '0.2',
+  #                                           str_detect(fraction_eff, 'bn') ~ '3'))
 data <- data |> 
   dplyr::mutate(balance_color = if_else(balance > 0, '#000000', '#8C0009'))
 
@@ -3648,12 +4022,15 @@ asv17_affectedby_community_plot <- data |>
   geom_col(aes(y = interactions_pos), fill = '#000000') + 
   geom_col(aes(y = interaction_neg), fill = '#8C0009') + 
   geom_point(aes(y = balance, color = balance_color), size = 0.75, alpha = 0.6) + 
-  facet_wrap(fraction~fraction_eff_ed, labeller = labs_fraction, dir = 'v') + 
+  facet_wrap(vars(fraction)
+             #~fraction_eff_ed
+             , labeller = labs_fraction#, dir = 'v'
+             ) + 
   scale_color_identity()+
   theme_bw() + 
   labs(x = 'Date', y = 'Interaction Strength', color = 'Order', title = 'The microbial community effect on asv17 (0.2 & 3)') + 
   theme(strip.background = element_rect(fill = 'transparent'),
-        text = element_text(size = 10),
+        text = element_text(size = 8),
         axis.text.x = element_text(size = 10),
         panel.border = element_blank(),
         title = element_text(size = 8))
@@ -3667,13 +4044,18 @@ asv17_rclr_plot <- asv_tab_all_bloo_z_tax_red_asv |>
   left_join(bloo_taxonomy, by = c('asv_num' = 'asv_num_f')) |>
   ggplot(aes(date, abundance_value, color = order_f)) + 
   #geom_point( size = 0.75, alpha = 0.6) + 
+  geom_hline(yintercept = 0.1, linetype = 'dashed', alpha = 0.5)+
+  geom_area(aes(fill = order_f), alpha = 0.5)+
   geom_line()+
+  geom_point(aes(shape = if_else((abundance_value > 0.1 & z_score_ra > 2), 4, NA )))+
+  scale_shape_identity()+
   scale_color_manual(values = palette_order_assigned_bloo)+
+  scale_fill_manual(values = palette_order_assigned_bloo)+
   facet_wrap(vars(fraction), labeller = labs_fraction) + 
   theme_bw() + 
   labs(x = 'Date', y = 'Relative Abundance', color = 'Order') + 
   theme(strip.background = element_rect(fill = 'transparent'),
-        text = element_text(size = 10),
+        text = element_text(size = 8),
         axis.text.x = element_text(size = 10),
         panel.border = element_blank(),
         title = element_text(size = 8),
@@ -3683,21 +4065,146 @@ asv17_rclr_plot
 
 effect_community_on_ASV17 <- plot_grid(asv17_rclr_plot, 
           asv17_affectedby_community_plot,
-          rel_heights = c(1, 1.75),
-          labels = c('A', 'B'), # Labels for the plots
+          rel_heights = c(1, 1),
+          labels = c('A'), # Labels for the plots
           label_size = 10,
           label_fontface = 'plain',
           ncol = 1) # Arrange in one column
 
-ggsave(
-  plot = effect_community_on_ASV17, 
-  filename = 'effect_community_on_ASV17.pdf',
-  path = 'results/figures/MDR/v2/',
-  width = 180, 
-  height = 180, 
-  units = 'mm'
-)
+# ggsave(
+#   plot = effect_community_on_ASV17, 
+#   filename = 'effect_community_on_ASV17_v2.pdf',
+#   path = 'results/figures/MDR/v2/',
+#   width = 180, 
+#   height = 180, 
+#   units = 'mm'
+# )
 
+### summary of interactions during the time series -----
+composition_bloom_events_interactions_plots <- plot_grid(effect_community_on_ASV17,
+                                                         effect_community_on_ASV31,
+                                                         effect_community_on_ASV23,
+                                                         effect_community_on_ASV22,
+                                                         effect_community_on_ASV1,
+                                                         effect_community_on_ASV11,
+                                                         rel_widths = c(1, 0.6),
+                                                         ncol = 2)
+  
+composition_bloom_events_interactions_plots
+
+ ggsave(
+    plot = composition_bloom_events_interactions_plots, 
+    filename = 'composition_bloom_events_interactions_plots_v2.pdf',
+    path = 'results/figures/MDR/v2/',
+    width = 180, 
+    height = 260, 
+    units = 'mm'
+  )
+ 
+ composition_bloom_events_interactions_sup_plots <- plot_grid(effect_community_on_ASV7,
+                                                          effect_community_on_ASV15,
+                                                          rel_widths = c(1, 1),
+                                                          ncol = 2)
+ 
+ composition_bloom_events_interactions_sup_plots
+ 
+ ggsave(
+   plot = composition_bloom_events_interactions_sup_plots, 
+   filename = 'composition_bloom_events_interactions_sup_plots_v2.pdf',
+   path = 'results/figures/MDR/v2/',
+   width = 180, 
+   height = 150, 
+   units = 'mm'
+ )
+
+### HOW ARE BLOOMERS AFFECTING THE COMMUNITY? ----
+ ### ASV15 -----
+ mdr_tb_m_rclr <- mdr_tb_m |>
+   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+   #dplyr::filter(asv_num == 'asv15') |>
+   pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
+   separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+   left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+   dplyr::filter(asv_num_eff == 'asv15') |>
+   dplyr::filter(asv_num_eff != asv_num) 
+ 
+ asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
+   dplyr::mutate(abundance_value_scaled = scale(abundance_value))|>
+   dplyr::filter(asv_num == 'asv15')
+ 
+ data <- mdr_tb_m_rclr |> 
+   dplyr::mutate(value = as.numeric(value)) |> 
+   dplyr::group_by(date, fraction_eff, 
+                   #fraction_b, fraction, 
+                   asv_num_eff) |> 
+   dplyr::filter(value != 0) |> 
+   dplyr::reframe(n  = n(),
+                  interactions_pos = sum(value[value > 0], na.rm = TRUE),
+                  interaction_neg = sum(value[value < 0], na.rm = TRUE)) |>
+   dplyr::mutate(balance = interactions_pos+interaction_neg) |>
+ dplyr::mutate(fraction_eff_ed = case_when(str_detect(fraction_eff, 'bp') ~ '0.2',
+                                           str_detect(fraction_eff, 'bn') ~ '3'))
+ data <- data |> 
+   dplyr::mutate(balance_color = if_else(balance > 0, '#000000', '#8C0009'))
+ 
+ asv15_affectting_community_plot <- data |>     
+   ggplot(aes(date, interactions_pos)) + 
+   geom_col(aes(y = interactions_pos), fill = '#000000') + 
+   geom_col(aes(y = interaction_neg), fill = '#8C0009') + 
+   geom_point(aes(y = balance, color = balance_color), size = 0.75, alpha = 0.6) + 
+   facet_wrap(vars(fraction_eff_ed),
+              #~fraction_eff_ed,
+              labeller = labs_fraction#, dir = 'v'
+   ) + 
+   scale_color_identity()+
+   theme_bw() + 
+   labs(x = 'Date', y = 'Interaction Strength', color = 'Order', title = 'The microbial community being affected by ASV15 (0.2 & 3)') + 
+   theme(strip.background = element_rect(fill = 'transparent'),
+         text = element_text(size = 8),
+         axis.text.x = element_text(size = 10),
+         panel.border = element_blank(),
+         title = element_text(size = 8))
+ 
+ asv15_affectting_community_plot 
+ 
+ asv_tab_all_bloo_z_tax_red_asv |>
+   colnames()
+ 
+ asv15_rclr_plot <- asv_tab_all_bloo_z_tax_red_asv |>
+   left_join(bloo_taxonomy, by = c('asv_num' = 'asv_num_f')) |>
+   ggplot(aes(date, abundance_value, color = order_f)) + 
+   #geom_point( size = 0.75, alpha = 0.6) + 
+   geom_line()+
+   geom_hline(yintercept = 0.1, linetype = 'dashed', alpha = 0.5)+
+   geom_area(aes(fill = order_f), alpha = 0.5)+
+   geom_point(aes(shape = if_else((abundance_value > 0.1 & z_score_ra > 2), 4, NA )))+
+   scale_shape_identity()+
+   scale_fill_manual(values = palette_order_assigned_bloo)+
+   scale_color_manual(values = palette_order_assigned_bloo)+
+   facet_wrap(vars(fraction), labeller = labs_fraction) + 
+   theme_bw() + 
+   labs(x = 'Date', y = 'Relative Abundance', color = 'Order') + 
+   theme(strip.background = element_rect(fill = 'transparent'),
+         text = element_text(size = 8),
+         axis.text.x = element_text(size = 10),
+         panel.border = element_blank(),
+         title = element_text(size = 8),
+         legend.position = 'none')
+ 
+ asv15_rclr_plot
+ 
+ effect_community_on_ASV15 <- plot_grid(asv15_rclr_plot, 
+                                        asv15_affectting_community_plot,
+                                        rel_heights = c(1, 1.75),
+                                        labels = c('C', 'D'), # Labels for the plots
+                                        label_size = 10,
+                                        label_fontface = 'plain',
+                                        ncol = 1) # Arrange in one column
+ 
+ 
+ effect_community_on_ASV15
+ 
+ 
 ## ASV1 and ASV7 closely related taxa how are they interacting? -----
 
 
@@ -3809,6 +4316,7 @@ asv7_affectedby_asv15_plot <- data |>
   geom_point(aes(y = balance, color = balance_color, shape = fraction_eff_ed), size = 0.75, alpha = 0.6) + 
   facet_wrap(vars(fraction), labeller = labs_fraction) + 
   scale_color_identity()+
+  scale_y_continuous(limits = c(-0.2, 0.5))+
   scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0)
                    #limits = c(min(asv_tab_all_bloo_z_tax$date), max(asv_tab_all_bloo_z_tax$date),
                    #limits = c(as.POSIXct(2004-01-26, origin = '2004-01-26'), as.POSIXct(2014-01-01, origin = '2014-01-01'))
@@ -3838,7 +4346,7 @@ interaction_asv7_and_asv15
 
 ggsave(
   plot = interaction_asv7_and_asv15 , 
-  filename = 'interaction_asv7_and_asv15.pdf',
+  filename = 'interaction_asv7_and_asv15_v2.pdf',
   path = 'results/figures/MDR/v2/',
   width = 180, 
   height = 200, 
@@ -3847,1063 +4355,4479 @@ ggsave(
 
 ggsave(
   plot = asv7_affectedby_asv15_plot , 
-  filename = 'asv7_affectedby_asv15_plot.pdf',
+  filename = 'asv7_affectedby_asv15_plot_v2.pdf',
   path = 'results/figures/MDR/v2/',
   width = 180, 
   height = 100, 
   units = 'mm'
 )
 
-#### DOWN HERE I THINK THAT WE SHOULD REMOVE IT ____ ------------
-
-## Role of total bacterial abundance and blooming events 
-mdr_tb_m |>
-  colnames()
-
-### relationship between interactions and rCLR ----
-asv_tab_all_bloo_z_tax_red <- asv_tab_all_bloo_z_tax |>
-  dplyr::filter(abundance_type == 'rclr') |>
-  dplyr::select(asv_num, fraction, date, abundance_value) |>
+## ----- Different interactions during harbor restoration ? ## -----
+### ASV11 -----
+mdr_tb_m_rclr <- mdr_tb_m |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::filter(
-    (asv_num == 'asv1'  & fraction %in% c('0.2', '3')) |
-      (asv_num == 'asv15'  & fraction %in% c('0.2', '3')) |
-      (asv_num == 'asv11' & fraction %in% c('0.2'))       |
-      (asv_num == 'asv23' & fraction %in% c('0.2', '3'))  |
-      (asv_num == 'asv31' & fraction %in% c('3'))         |
-      (asv_num == 'asv7'  & fraction %in% c('0.2', '3'))  |
-      (asv_num == 'asv22' & fraction %in% c('3')) |
-      (asv_num == 'asv17' & fraction %in% c('3', '0.2')))
-
-bloom_event_red <- bloom_event |>
-  dplyr::filter(
-    (asv_num == 'asv1'  & fraction %in% c('0.2', '3')) |
-      (asv_num == 'asv11' & fraction %in% c('0.2'))       |
-      (asv_num == 'asv23' & fraction %in% c('0.2', '3'))  |
-      (asv_num == 'asv31' & fraction %in% c('3'))         |
-      (asv_num == 'asv7'  & fraction %in% c('0.2', '3'))  |
-      (asv_num == 'asv22' & fraction %in% c('3')) |
-      (asv_num == 'asv17' & fraction %in% c('3', '0.2')))
-
-asv_tab_all_bloo_z_tax_red_ed <- asv_tab_all_bloo_z_tax_red |>
-  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  left_join(bloom_event_red, by = c('date', 'asv_num', 'fraction')) |>
-  dplyr::mutate(date = as.Date(date))
-
-mdr_abund <- mdr_tb_m |>
-  dplyr::filter(asv_num %in% c('asv11', 'asv7', 'asv1', 'asv22', 'asv23', 'asv31', 'asv17')) |> 
+  dplyr::filter(asv_num == 'asv11') |>
   pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
   separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
   left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
-  dplyr::filter(asv_num != asv_num_eff) |>
-  dplyr::mutate(date = as.Date(date)) |>
-  dplyr::mutate(date = as.Date(date)) |>
-  left_join(asv_tab_all_bloo_z_tax_red_ed, by = c('date', 'fraction', 'asv_num'))
+  dplyr::filter(asv_num != asv_num_eff) 
 
-mdr_abund_ed <- mdr_abund |>
-  left_join(tax_bbmo_10y_new, by = c('asv_num' = 'asv_num')) ## add affecting ASVs to the tb
+asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(abundance_value_scaled = scale(abundance_value))|>
+  dplyr::filter(asv_num == 'asv11' & fraction == '0.2')
 
-mdr_abund_ed$bloom_event
+data <- mdr_tb_m_rclr |> 
+  dplyr::mutate(value = as.numeric(value)) |> 
+  dplyr::group_by(date, fraction_eff, fraction_b, fraction, asv_num) |> 
+  dplyr::filter(value != 0) |> 
+  dplyr::reframe(n  = n(),
+                 interactions_pos = sum(value[value > 0], na.rm = TRUE),
+                 interaction_neg = sum(value[value < 0], na.rm = TRUE)) |>
+  dplyr::mutate(balance = interactions_pos+interaction_neg) |>
+  dplyr::mutate(fraction_eff_ed = case_when(str_detect(fraction_eff, 'bp') ~ '0.2',
+                                            str_detect(fraction_eff, 'bn') ~ '3')) 
+data <- data |> 
+  dplyr::mutate(balance_color = if_else(balance > 0, '#000000', '#8C0009')) |>
+  dplyr::mutate(harbor_restoration = case_when(
+    date < '2010-03-24' ~ 'pre_perturbation',
+    date >= '2010-03-24' & date < '2012-06-09' ~ 'perturbation',
+    date >= '2012-06-09' ~ 'after_perturbation'
+  ))
 
-mdr_abund |>
-  colnames()
+data$harbor_restoration <- factor(data$harbor_restoration,
+                                  levels = c('pre_perturbation',
+                                             'perturbation',
+                                             'after_perturbation'))
 
-mdr_abund |>
-  dplyr::select(asv_num, asv_num_eff, order.x, order.y)
-
-mdr_abund |>
-  colnames()
-
-mdr_abund |>
-  dplyr::filter(abs(as.numeric(value)) > 0.05) |>
-  ggplot(aes(abundance_value, as.numeric(value)))+
-  geom_smooth(aes(group = fraction), method = 'loess',  color = 'darkgrey')+
-  geom_point(aes(shape = fraction, alpha = if_else(bloom_event == 'bloom', 0.9, 0.1)))+
-  facet_wrap(vars(asv_num))+
-  scale_color_manual(values = palette_order_assigned_all)+
-  theme_bw()+
-  guides(alpha = 'none')+
-  labs(x = 'rCLR', y = 'Interaction Strength', color = 'Order')+
+asv11_affectedby_community_harbor_plot <- data |>   
+  ggplot(aes(harbor_restoration, interactions_pos)) + 
+  geom_boxplot(aes(), width = 0.25)+
+  geom_point(aes(y = balance, color = balance_color), size = 0.75, 
+             alpha = 0.6, position = position_jitter(0.25)) + 
+  facet_wrap(vars(fraction_eff_ed), labeller = labs_fraction, dir = 'v') + 
+  scale_color_identity()+
+  theme_bw() + 
+  labs(x = '', y = 'Interaction Strength', color = 'Order', title = 'The microbial community effect on ASV11 (0.2)') + 
   theme(strip.background = element_rect(fill = 'transparent'),
-        text = element_text(size = 12),
+        text = element_text(size = 8),
         axis.text.x = element_text(size = 10),
-        panel.border = element_blank())
+        axis.text.y = element_text(size = 8),
+        panel.border = element_blank(),
+        title = element_text(size = 8))
 
-## relative abundances ----
-## prepare bloomers abundance data
-asv_tab_all_bloo_z_tax_red <- asv_tab_all_bloo_z_tax |>
-  dplyr::filter(abundance_type == 'relative_abundance') |>
-  dplyr::select(asv_num, fraction, date, abundance_value) |>
+asv11_affectedby_community_harbor_plot 
+
+### ASV23 ----
+mdr_tb_m_rclr <- mdr_tb_m |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::filter(asv_num %in% c('asv11', 'asv7', 'asv1', 'asv22', 'asv23', 'asv31', 'asv17')) |>
-  left_join(bloom_event)
-
-asv_tab_all_bloo_z_tax_red_ed <- asv_tab_all_bloo_z_tax_red |>
-  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::mutate(date = as.Date(date))
-
-mdr_abund <- mdr_tb_m |>
-  dplyr::filter(asv_num %in% c('asv11', 'asv7', 'asv1', 'asv22', 'asv23', 'asv31', 'asv17')) |> 
+  dplyr::filter(asv_num == 'asv23') |>
   pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
   separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
   left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
-  dplyr::filter(asv_num != asv_num_eff) |>
-  dplyr::mutate(date = as.Date(date)) |>
-  left_join(asv_tab_all_bloo_z_tax_red_ed, by = c('date', 'fraction', 'asv_num'))
-
-mdr_abund %$% date
-asv_tab_all_bloo_z_tax_red_ed %$% date
-
-mdr_abund$abundance_value
-
-mdr_abund |>
-  ggplot(aes(abundance_value, as.numeric(value)))+
-  geom_point(aes(shape = fraction, alpha = if_else(bloom_event == 'bloom', 0.6, 0.2)))+
-  facet_wrap(vars(asv_num))+
-  scale_color_manual(values = palette_order_assigned_all)+
-  theme_bw()+
-  guides(alpha = 'none')+
-  labs(x = 'Date', y = 'Interaction Strength', color = 'Order')+
-  theme(strip.background = element_rect(fill = 'transparent'),
-        text = element_text(size = 12),
-        axis.text.x = element_text(size = 10),
-        panel.border = element_blank())
-
-### Plotting the summary of interactions on each ASV and their abundances ----
-palette_interactions <- c('interaction_negative' = '#304C57',
-                           'interaction_positive' = '#A1D6C1')
-
-labs_interactions <- as_labeller(c('interaction_negative' = 'Negative',
-                                 'interaction_positive' = 'Positive'))
-
-labs_fraction <- as_labeller(c('0.2' = 'Free living (0.2-3 um)',
-                               '3' = 'Particle attached (3-20 um)',
-                               'asv11' = 'Alteromonadaceae asv11',
-                              'asv1' =  'Cyanobiaceae asv1', 
-                              'asv7' =  'Cyanobiaceae asv7', 
-                              'asv31' =  'Cyanobiaceae asv31', 
-                              'asv23' = 'Rubritaleaceae asv23',
-                              'asv22' = 'Alcanivoracaceae1 asv22',
-                               'asv17' = 'Sphingomonadaceae asv17'))
-
-mdr_interactions_rclr |>
-  distinct(asv_num, family)
-
-#### rCLR -----
-bloom_event <- bloom_event |>
-  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) 
-  
-asv_tab_all_bloo_z_tax_red <- asv_tab_all_bloo_z_tax |>
-  dplyr::filter(abundance_type == 'rclr') |>
-  dplyr::select(asv_num, fraction, date, abundance_value) |>
-  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::filter(asv_num %in% c('asv11', 'asv7', 'asv1', 'asv22', 'asv23', 'asv31', 'asv17')) |>
-  left_join(bloom_event, by = c('date', 'asv_num', 'fraction'))
-
-asv_tab_all_bloo_z_tax_red$bloom_event |>
-  unique()
-
-mdr_tb_m_positive <- mdr_tb_m |>
-  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::filter(asv_num %in% c ('asv23', 'asv1', 'asv11', 'asv22', 'asv31', 'asv7', 'asv17')) |>
-  pivot_longer(cols = starts_with(c('bp', 'bn')), values_to = 'interaction_strength') |>
-  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
-  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
-  dplyr::filter(asv_num != asv_num_eff) |>
-  dplyr::filter(as.numeric(interaction_strength) > 0) |>
-  dplyr::group_by(date, fraction, asv_num) |>
-  dplyr::reframe(interaction_positive = sum(as.numeric(interaction_strength)))
-
-mdr_tb_m_negative <- mdr_tb_m |>
-  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::filter(asv_num %in% c ('asv23', 'asv1', 'asv11', 'asv22', 'asv31', 'asv7', 'asv17')) |>
-  pivot_longer(cols = starts_with(c('bp', 'bn')), values_to = 'interaction_strength') |>
-  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
-  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
-  dplyr::filter(asv_num != asv_num_eff) |>
-  dplyr::filter(as.numeric(interaction_strength) < 0) |>
-  dplyr::group_by(date, fraction, asv_num) |>
-  dplyr::reframe(interaction_negative = sum(as.numeric(interaction_strength)))
-
-mdr_tb_m_interactions <- mdr_tb_m_positive |>
-  left_join(mdr_tb_m_negative) |>
-  dplyr::mutate(date = as.Date(date))
-
-asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
-  dplyr::mutate(abundance_value_scaled = scale(abundance_value.x))|>
-  dplyr::filter(asv_num %in% c ('asv23', 'asv1', 'asv11', 'asv22', 'asv31', 'asv7', 'asv17')) |>
-  dplyr::filter(
-    (asv_num == 'asv1'  & fraction %in% c('0.2', '3')) |
-      (asv_num == 'asv11' & fraction %in% c('0.2'))       |
-      (asv_num == 'asv23' & fraction %in% c('0.2', '3'))  |
-      (asv_num == 'asv31' & fraction %in% c('3'))         |
-      (asv_num == 'asv7'  & fraction %in% c('0.2', '3'))  |
-      (asv_num == 'asv22' & fraction %in% c('3')) |
-      (asv_num == 'asv17' & fraction %in% c('3', '0.2'))) |>
-  dplyr::mutate(date = as.Date(date))
-
-asv_tab_all_bloo_z_tax_red_asv$date
-mdr_tb_m_interactions$date
-
-mdr_interactions_rclr <- mdr_tb_m_interactions |>
-  left_join(asv_tab_all_bloo_z_tax_red_asv) |>
-  pivot_longer(cols = c('interaction_positive', 'interaction_negative'), 
-               values_to = 'value', names_to = 'variable') |>
-  left_join(bloo_taxonomy, by = c('asv_num' = 'asv_num_f'))
-
-plot_interactions_summary_rclr <- mdr_interactions_rclr  |>
-  ggplot(aes(date, as.numeric(value)))+
-  scale_y_continuous(sec.axis = sec_axis(~./1 , name = 'rCLR'))+
-  geom_smooth(aes(date, y = as.numeric(abundance_value.x)*1), span = 0.1, 
-              color = '#D6AAA1',  fill = '#D6AAA1', se = T, linetype = 'dotted')+
-  geom_smooth(method = 'loess', span = 0.1, aes(color = variable, group = variable, fill = variable))+
-  geom_point(aes(alpha = if_else(bloom_event == 'bloom', 0.9, 0),color = variable, group = variable, fill = variable))+
-  facet_wrap(asv_num~fraction, labeller = labs_fraction, dir = 'v', ncol = 3, scales = 'free_y')+#, labeller = labs_fraction, dir = 'v'
-  scale_color_manual(values = palette_interactions, labels = labs_interactions)+
-  scale_fill_manual(values = palette_interactions, labels = labs_interactions)+
-  theme_bw()+
-  labs(x = 'Date', y = 'Interaction Strength', color = 'Interactions', fill = 'Interactions')+
-  theme(strip.background = element_rect(fill = 'transparent'),
-        text = element_text(size = 12),
-        axis.text.x = element_text(size = 8),
-        strip.text = element_text(size = 8),
-        panel.border = element_blank(),
-        legend.position = 'bottom')
-
-plot_interactions_summary_rclr
-
-# ggsave(filename = 'plot_interactions_summary_rclr_v3.pdf',
-#        plot = plot_interactions_summary_rclr,
-#        path = 'results/figures/',
-#        width = 180, height = 300, units = 'mm')
-
-### When there is a bloom event are the interactions stronger? ---- 
-mdr_abund |>
-  colnames()
-
-mdr_tb_m_positive <- mdr_tb_m |>
-  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::filter(asv_num %in% c ('asv23', 'asv1', 'asv11', 'asv22', 'asv31', 'asv7', 'asv17')) |>
-  pivot_longer(cols = starts_with(c('bp', 'bn')), values_to = 'interaction_strength') |>
-  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
-  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
-  dplyr::filter(asv_num != asv_num_eff) |>
-  dplyr::filter(as.numeric(interaction_strength) > 0) |>
-  dplyr::group_by(date, fraction, asv_num) |>
-  dplyr::reframe(interaction_positive = sum(as.numeric(interaction_strength)))
-
-mdr_tb_m_negative <- mdr_tb_m |>
-  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::filter(asv_num %in% c ('asv23', 'asv1', 'asv11', 'asv22', 'asv31', 'asv7', 'asv17')) |>
-  pivot_longer(cols = starts_with(c('bp', 'bn')), values_to = 'interaction_strength') |>
-  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
-  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
-  dplyr::filter(asv_num != asv_num_eff) |>
-  dplyr::filter(as.numeric(interaction_strength) < 0) |>
-  dplyr::group_by(date, fraction, asv_num) |>
-  dplyr::reframe(interaction_negative = sum(as.numeric(interaction_strength)))
-
-mdr_tb_m_interactions <- mdr_tb_m_positive |>
-  left_join(mdr_tb_m_negative) |>
-  dplyr::mutate(date = as.Date(date))
-
-bloom_event_red <-  bloom_event_red |>
-  dplyr::mutate(date = as.character(date)) 
+  dplyr::filter(asv_num != asv_num_eff) 
 
 asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
   dplyr::mutate(abundance_value_scaled = scale(abundance_value))|>
-  dplyr::filter(
-    (asv_num == 'asv1'  & fraction %in% c('0.2', '3')) |
-      (asv_num == 'asv11' & fraction %in% c('0.2'))       |
-      (asv_num == 'asv23' & fraction %in% c('0.2', '3'))  |
-      (asv_num == 'asv31' & fraction %in% c('3'))         |
-      (asv_num == 'asv7'  & fraction %in% c('0.2', '3'))  |
-      (asv_num == 'asv22' & fraction %in% c('3')) |
-      (asv_num == 'asv17' & fraction %in% c('3', '0.2'))) |>
-  dplyr::mutate(date = as.Date(date)) |>
-  dplyr::mutate(date = as.character(date)) |>
-  left_join(bloom_event_red, by = c('asv_num', 'fraction', 'date'))
+  dplyr::filter(asv_num == 'asv23')
 
-unique(asv_tab_all_bloo_z_tax_red_asv$date)
-unique(bloom_event_red$date)
-unique(mdr_tb_m_interactions$date)
+data <- mdr_tb_m_rclr |> 
+  dplyr::mutate(value = as.numeric(value)) |> 
+  dplyr::group_by(date, fraction_eff, fraction_b, fraction, asv_num) |> 
+  dplyr::filter(value != 0) |> 
+  dplyr::reframe(n  = n(),
+                 interactions_pos = sum(value[value > 0], na.rm = TRUE),
+                 interaction_neg = sum(value[value < 0], na.rm = TRUE)) |>
+  dplyr::mutate(balance = interactions_pos+interaction_neg) |>
+  dplyr::mutate(fraction_eff_ed = case_when(str_detect(fraction_eff, 'bp') ~ '0.2',
+                                            str_detect(fraction_eff, 'bn') ~ '3'))
+data <- data |> 
+  dplyr::mutate(balance_color = if_else(balance > 0, '#000000', '#8C0009')) |>
+  dplyr::mutate(harbor_restoration = case_when(
+    date < '2010-03-24' ~ 'pre_perturbation',
+    date >= '2010-03-24' & date < '2012-06-09' ~ 'perturbation',
+    date >= '2012-06-09' ~ 'after_perturbation'
+  ))
 
-asv_tab_all_bloo_z_tax_red_asv$date
-mdr_tb_m_interactions$date
+data$harbor_restoration <- factor(data$harbor_restoration,
+                                  levels = c('pre_perturbation',
+                                             'perturbation',
+                                             'after_perturbation'))
 
-mdr_tb_m_interactions |>
-  str()
-
-asv_tab_all_bloo_z_tax_red_asv |>
-  str()
-
-asv_tab_all_bloo_z_tax_red_asv$bloom_event |>
-  is.na() |>
-  summary() 
-
-test <-  asv_tab_all_bloo_z_tax_red_asv |>
-dplyr::filter(date %in% c('2004-03-22', '2005-02-15', '2005-05-10')) 
-
-test2 <- mdr_tb_m_interactions |>
-  dplyr::mutate(date = as.Date(date)) |>
-  dplyr::mutate(date = as.character(date)) |>
-  dplyr::filter(date %in% c('2004-03-22', '2005-02-15', '2005-05-10')) 
-
-test |>
-  left_join(test2)
-
-test2 |>
-  left_join(test)
-
-mdr_interactions_rclr <- mdr_tb_m_interactions |>
-  dplyr::mutate(date = as.Date(date)) |>
-  dplyr::mutate(date = as.character(date)) |>
-  left_join(asv_tab_all_bloo_z_tax_red_asv, by = c('asv_num', 'fraction', 'date' = 'date')) |>
-  left_join(bloo_taxonomy, by = 'asv_num') |>
-  dplyr::mutate(
-    interaction_negative = case_when(is.na(interaction_negative) ~ 0,  # Numeric '0'
-                                     TRUE ~ as.numeric(interaction_negative)),
-    interaction_positive = case_when(is.na(interaction_positive) ~ 0,  # Numeric '0'
-                                     TRUE ~ as.numeric(interaction_positive))
-  ) |>
-  dplyr::mutate(interaction_balance = interaction_positive+interaction_negative)
-
-mdr_interactions_rclr |>
-  dplyr::filter(is.na(bloom_event))
-
-mdr_interactions_rclr |>
-  colnames()
-
-mdr_interactions_rclr |>
-  dplyr::filter(!is.na(bloom_event)) |>
-  ggplot(aes(bloom_event, as.numeric(interaction_balance)))+
-  geom_point(aes(shape = fraction), position = position_dodge(width = 0.25))+ #alpha = if_else(bloom_event == 'bloom', 0.9, 0.1)
-  geom_boxplot(aes(), notch = T, alpha = 0.2)+
-  facet_wrap(vars(asv_num), ncol = 2)+
-  scale_x_discrete(labels = c('bloom' = 'Bloom', 'no-bloom' = 'No Bloom'))+
-  scale_color_manual(values = palette_order_assigned_all)+
-  theme_bw()+
-  guides(alpha = 'none')+
-  labs(x = '', y = 'Interaction Balance', color = '')+
+asv23_affectedby_community_harbor_plot <- data |>     
+  ggplot(aes(harbor_restoration, interactions_pos)) + 
+  geom_boxplot(aes(), width = 0.25)+
+  geom_point(aes(y = balance, color = balance_color), size = 0.75, 
+             alpha = 0.6, position = position_jitter(0.25)) + 
+  facet_wrap(vars(fraction_eff_ed), labeller = labs_fraction, dir = 'v') + 
+  scale_color_identity()+
+  theme_bw() + 
+  labs(x = '', y = 'Interaction Strength', color = 'Order',
+       title = 'The microbial community effect on ASV23 (0.2)') + 
   theme(strip.background = element_rect(fill = 'transparent'),
-        text = element_text(size = 12),
+        text = element_text(size = 8),
         axis.text.x = element_text(size = 10),
-        panel.border = element_blank())
+        axis.text.y = element_text(size = 8),
+        panel.border = element_blank(),
+        title = element_text(size = 8))
 
-#### Relative abundance ----
-asv_tab_all_bloo_z_tax_red <- asv_tab_all_bloo_z_tax |>
-  dplyr::filter(abundance_type == 'relative_abundance') |>
-  dplyr::select(asv_num, fraction, date, abundance_value) |>
-  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::filter(asv_num %in% c('asv11', 'asv7', 'asv1', 'asv22', 'asv23', 'asv31', 'asv17'))
+asv23_affectedby_community_harbor_plot 
 
-mdr_tb_m_positive <- mdr_tb_m |>
+### ASV7 ----
+mdr_tb_m_rclr <- mdr_tb_m |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::filter(asv_num %in% c ('asv23', 'asv1', 'asv11', 'asv22', 'asv31', 'asv7', 'asv17')) |>
-  pivot_longer(cols = starts_with(c('bp', 'bn')), values_to = 'interaction_strength') |>
+  dplyr::filter(asv_num == 'asv7') |>
+  pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
   separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
   left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
-  dplyr::filter(asv_num != asv_num_eff) |>
-  dplyr::filter(as.numeric(interaction_strength) > 0) |>
-  dplyr::group_by(date, fraction, asv_num) |>
-  dplyr::reframe(interaction_positive = sum(as.numeric(interaction_strength)))
+  dplyr::filter(asv_num != asv_num_eff) 
 
-mdr_tb_m_negative <- mdr_tb_m |>
+asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(abundance_value_scaled = scale(abundance_value))|>
+  dplyr::filter(asv_num == 'asv7')
+
+data <- mdr_tb_m_rclr |> 
+  dplyr::mutate(value = as.numeric(value)) |> 
+  dplyr::group_by(date, fraction_eff, fraction_b, fraction, asv_num) |> 
+  dplyr::filter(value != 0) |> 
+  dplyr::reframe(n  = n(),
+                 interactions_pos = sum(value[value > 0], na.rm = TRUE),
+                 interaction_neg = sum(value[value < 0], na.rm = TRUE)) |>
+  dplyr::mutate(balance = interactions_pos+interaction_neg) |>
+  dplyr::mutate(fraction_eff_ed = case_when(str_detect(fraction_eff, 'bp') ~ '0.2',
+                                            str_detect(fraction_eff, 'bn') ~ '3'))
+
+data <- data |> 
+  dplyr::mutate(balance_color = if_else(balance > 0, '#000000', '#8C0009')) |>
+  dplyr::mutate(harbor_restoration = case_when(
+    date < '2010-03-24' ~ 'pre_perturbation',
+    date >= '2010-03-24' & date < '2012-06-09' ~ 'perturbation',
+    date >= '2012-06-09' ~ 'after_perturbation'
+  ))
+
+data$harbor_restoration <- factor(data$harbor_restoration,
+                                  levels = c('pre_perturbation',
+                                             'perturbation',
+                                             'after_perturbation'))
+
+
+asv7_affectedby_community_harbor_plot <- data |>     
+  ggplot(aes(harbor_restoration, interactions_pos)) + 
+  geom_boxplot(aes(), width = 0.25)+
+  geom_point(aes(y = balance, color = balance_color), size = 0.75, 
+             alpha = 0.6, position = position_jitter(0.25)) + 
+  facet_wrap(vars(fraction_eff_ed), labeller = labs_fraction, dir = 'v') + 
+  scale_color_identity()+
+  theme_bw() + 
+  labs(x = '', y = 'Interaction Strength', color = 'Order',
+       title = 'The microbial community effect on ASV7 (0.2 & 3)') + 
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 8),
+        axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(size = 8),
+        panel.border = element_blank(),
+        title = element_text(size = 8))
+
+asv7_affectedby_community_harbor_plot 
+
+### ASV1 ----
+mdr_tb_m_rclr <- mdr_tb_m |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::filter(asv_num %in% c ('asv23', 'asv1', 'asv11', 'asv22', 'asv31', 'asv7', 'asv17')) |>
-  pivot_longer(cols = starts_with(c('bp', 'bn')), values_to = 'interaction_strength') |>
+  dplyr::filter(asv_num == 'asv1') |>
+  pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
   separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
   left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
-  dplyr::filter(asv_num != asv_num_eff) |>
-  dplyr::filter(as.numeric(interaction_strength) < 0) |>
-  dplyr::group_by(date, fraction, asv_num) |>
-  dplyr::reframe(interaction_negative = sum(as.numeric(interaction_strength)))
-
-mdr_tb_m_interactions <- mdr_tb_m_positive |>
-  left_join(mdr_tb_m_negative) |>
-  dplyr::mutate(date = as.Date(date))
+  dplyr::filter(asv_num != asv_num_eff) 
 
 asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
   dplyr::mutate(abundance_value_scaled = scale(abundance_value))|>
-  dplyr::filter(asv_num %in% c ('asv23', 'asv1', 'asv11', 'asv22', 'asv31', 'asv7', 'asv17')) |>
-  dplyr::filter(
-    (asv_num == 'asv1'  & fraction %in% c('0.2', '3')) |
-      (asv_num == 'asv11' & fraction %in% c('0.2'))       |
-      (asv_num == 'asv23' & fraction %in% c('0.2', '3'))  |
-      (asv_num == 'asv31' & fraction %in% c('3'))         |
-      (asv_num == 'asv7'  & fraction %in% c('0.2', '3'))  |
-      (asv_num == 'asv22' & fraction %in% c('3')) |
-      (asv_num == 'asv17' & fraction %in% c('3', '0.2'))) |>
-  dplyr::mutate(date = as.Date(date))
+  dplyr::filter(asv_num == 'asv1')
 
-# asv_tab_all_bloo_z_tax_red_asv$date
-# mdr_tb_m_interactions$date
+data <- mdr_tb_m_rclr |> 
+  dplyr::mutate(value = as.numeric(value)) |> 
+  dplyr::group_by(date, fraction_eff, fraction_b, fraction, asv_num) |> 
+  dplyr::filter(value != 0) |> 
+  dplyr::reframe(n  = n(),
+                 interactions_pos = sum(value[value > 0], na.rm = TRUE),
+                 interaction_neg = sum(value[value < 0], na.rm = TRUE)) |>
+  dplyr::mutate(balance = interactions_pos+interaction_neg) |>
+  dplyr::mutate(fraction_eff_ed = case_when(str_detect(fraction_eff, 'bp') ~ '0.2',
+                                            str_detect(fraction_eff, 'bn') ~ '3'))
+data <- data |> 
+  dplyr::mutate(balance_color = if_else(balance > 0, '#000000', '#8C0009')) |>
+  dplyr::mutate(harbor_restoration = case_when(
+    date < '2010-03-24' ~ 'pre_perturbation',
+    date >= '2010-03-24' & date < '2012-06-09' ~ 'perturbation',
+    date >= '2012-06-09' ~ 'after_perturbation'
+  ))
 
-mdr_interactions_rclr <- mdr_tb_m_interactions |>
-  left_join(asv_tab_all_bloo_z_tax_red_asv) |>
-  #dplyr::mutate(abundance_value = abundance_value) |>
-  pivot_longer(cols = c('interaction_positive', 'interaction_negative'), 
-               values_to = 'value', names_to = 'variable') |>
-  left_join(bloo_taxonomy, by = 'asv_num')
+data$harbor_restoration <- factor(data$harbor_restoration,
+                                  levels = c('pre_perturbation',
+                                             'perturbation',
+                                             'after_perturbation'))
 
-plot_interactions_summary_relative_abundance <- mdr_interactions_rclr  |>
-  ggplot(aes(date, as.numeric(value)))+
-  scale_y_continuous(sec.axis = sec_axis(~./10 , name = 'Relative abundance'))+
-  # geom_line(aes(date, y = as.numeric(abundance_value)*3), 
-  #             color = '#D6AAA1', linetype = 'dotted')+
-  # geom_smooth(aes(date, y = as.numeric(abundance_value)*10), span = 0.1,
-  #             color = '#D6AAA1',  fill = '#D6AAA1', se = T, linetype = 'dotted')+
-  geom_smooth(method = 'loess', span = 0.1, aes(color = variable, group = variable, fill = variable), alpha = 0.5)+
-  geom_smooth(aes(date, y = as.numeric(abundance_value)*10), span = 0.1,
-              color = '#D6AAA1',  fill = '#D6AAA1', se = T, linetype = 'dotted', alpha = 0.5)+
-  #geom_line( aes(color = variable, group = variable))+
-  facet_wrap(asv_num~fraction, labeller = labs_fraction, dir = 'v', ncol = 3, scales = 'free_y')+#, labeller = labs_fraction, dir = 'v'
-  scale_color_manual(values = palette_interactions, labels = labs_interactions)+
-  scale_fill_manual(values = palette_interactions, labels = labs_interactions)+
-  #scale_linetype_manual()+
-  theme_bw()+
-  labs(x = 'Date', y = 'Interaction Strength', color = 'Interactions', fill = 'Interactions')+
+asv1_affectedby_community_harbor_plot <- data |>     
+  ggplot(aes(harbor_restoration, interactions_pos)) + 
+  geom_boxplot(aes(), width = 0.25)+
+  geom_point(aes(y = balance, color = balance_color), size = 0.75, 
+             alpha = 0.6, position = position_jitter(0.25)) + 
+  facet_wrap(vars(fraction_eff_ed), labeller = labs_fraction, dir = 'v') + 
+  scale_color_identity()+
+  theme_bw() + 
+  labs(x = '', y = 'Interaction Strength', color = 'Order',
+       title = 'The microbial community effect on ASV1 (0.2 & 3)') + 
   theme(strip.background = element_rect(fill = 'transparent'),
-        text = element_text(size = 12),
-        axis.text.x = element_text(size = 8),
-        strip.text = element_text(size = 8),
-        panel.border = element_blank(),
-        legend.position = 'bottom')
-
-plot_interactions_summary_relative_abundance
-# 
-# ggsave(filename = 'plot_interactions_summary_relative_abundance_v2.pdf',
-#        plot = plot_interactions_summary_relative_abundance,
-#        path = 'results/figures/',
-#        width = 180, height = 280, units = 'mm')
-
-## Relationship between interactions and abundances ----
-### rCLR ----
-asv_tab_all_bloo_z_tax_red <- asv_tab_all_bloo_z_tax |>
-  dplyr::filter(abundance_type == 'rclr') |>
-  dplyr::select(asv_num, fraction, date, abundance_value) |>
-  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::filter(asv_num %in% c('asv11', 'asv7', 'asv1', 'asv22', 'asv23', 'asv31', 'asv17'))
-
-asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
-  dplyr::mutate(abundance_value_scaled = scale(abundance_value))|>
-  dplyr::filter(asv_num %in% c('asv23', 'asv1', 'asv11', 'asv22', 'asv31', 'asv7', 'asv17')) |> 
-  dplyr::filter(
-    (asv_num == 'asv1'  & fraction %in% c('0.2', '3')) |
-      (asv_num == 'asv11' & fraction %in% c('0.2'))       |
-      (asv_num == 'asv23' & fraction %in% c('0.2', '3'))  |
-      (asv_num == 'asv31' & fraction %in% c('3'))         |
-      (asv_num == 'asv7'  & fraction %in% c('0.2', '3'))  |
-      (asv_num == 'asv22' & fraction %in% c('3')) |
-      (asv_num == 'asv17'  & fraction %in% c('0.2', '3')) ) |>
-  dplyr::mutate(date = as.Date(date))
-
-mdr_interactions_rclr <- mdr_tb_m_interactions |>
-  left_join(asv_tab_all_bloo_z_tax_red_asv) |>
-  #dplyr::mutate(abundance_value = abundance_value) |>
-  # pivot_longer(cols = c('interaction_positive', 'interaction_negative'), 
-  #              values_to = 'value', names_to = 'variable') |>
-  left_join(bloo_taxonomy, by = 'asv_num') |>
-  dplyr::mutate(
-    interaction_negative = case_when(is.na(interaction_negative) ~ 0,  # Numeric '0'
-                                     TRUE ~ as.numeric(interaction_negative)),
-    interaction_positive = case_when(is.na(interaction_positive) ~ 0,  # Numeric '0'
-                                     TRUE ~ as.numeric(interaction_positive))
-  )
-
-##check normality before correlation
-shapiro.test(as.numeric(mdr_interactions_rclr$interaction_positive)) # => p-value < 2.2e-16 ( NO NORMALITY)
-ggqqplot(as.numeric(mdr_interactions_rclr$interaction_positive))
-
-shapiro.test(as.numeric(mdr_interactions_rclr$interaction_negative)) # => p-value < 2.2e-16 ( NO NORMALITY)
-ggqqplot(as.numeric(mdr_interactions_rclr$interaction_negative))
-
-## for non normal data
-cor_spearman <- rcorr(as.matrix(mdr_interactions_rclr[,c(4,5)]), type = 'spearman')
-
-plot_interactions_summary_rclr_relationship <- mdr_interactions_rclr  |>
-  dplyr::mutate(abundance_value = case_when(
-    is.na(as.numeric(abundance_value)) ~ 0,   # Use numeric 0 instead of '0'
-    TRUE ~ as.numeric(abundance_value)        # Ensure the value is numeric
-  )) |>
-  ggplot(aes(interaction_positive, abs(interaction_negative)))+
-  geom_abline(slope = 1, intercept = 0, color = '#0F3331', linetype = 'dashed')+
-  #scale_y_continuous(sec.axis = sec_axis(~./10 , name = 'rCLR'))+
-  geom_point(aes(size = as.numeric(abundance_value), shape = fraction, color = fraction, fill = fraction, alpha = 0.7))+
-  stat_poly_line(aes(group = fraction, color = fraction, fill = fraction))+
-  stat_cor(aes(group = fraction, color = fraction,  label = paste0(..p.label..)),label.x = 0.2, label.y = 7, 
-           p.digits = 0.01, digits = 2, 
-           p.accuracy = 0.01, method = 'spearman')+
-  stat_cor(aes(group = fraction, color = fraction,  label = paste0(..r.label..)),label.x = 0.2, label.y = 8, 
-           p.digits = 0.01, digits = 2, 
-           p.accuracy = 0.01, method = 'spearman')+
-  #facet_wrap(vars(asv_num), labeller = labs_fraction, dir = 'v')+#, labeller = labs_fraction, dir = 'v'
-  scale_color_manual(values = palette_fraction, labels = labs_fraction)+
-  scale_fill_manual(values = palette_fraction, labels = labs_fraction)+
-  scale_shape_discrete(labels = labs_fraction)+
-  scale_size_continuous(range = c(0, 5), limits = c(0, 10), breaks = c(0, 2.5, 5, 10) )+
-  #scale_linetype_manual()+
-  guides(alpha = 'none')+
-  theme_bw()+
-  labs(x = 'Interaction positive', y = 'Interaction negative', color = 'Interactions', fill = 'Interactions',
-       shape = 'Fraction', size = 'rCLR')+
-  theme(strip.background = element_rect(fill = 'transparent'),
-        text = element_text(size = 12),
+        text = element_text(size = 8),
         axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(size = 8),
         panel.border = element_blank(),
-        aspect.ratio = 10/10)
+        title = element_text(size = 8))
 
-plot_interactions_summary_rclr_relationship
+asv1_affectedby_community_harbor_plot 
 
-# ggsave(filename = 'plot_interactions_summary_rclr_relationship_v2.pdf',
-#        plot = plot_interactions_summary_rclr_relationship,
-#        path = 'results/figures/',
-#        width = 180, height = 180, units = 'mm')
-
-### Relative abundance ----
-asv_tab_all_bloo_z_tax_red <- asv_tab_all_bloo_z_tax |>
-  dplyr::filter(abundance_type == 'relative_abundance') |>
-  dplyr::select(asv_num, fraction, date, abundance_value) |>
+### ASV22 -----
+mdr_tb_m_rclr <- mdr_tb_m |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::filter(asv_num %in% c('asv11', 'asv7', 'asv1', 'asv22', 'asv23', 'asv31', 'asv17'))
+  dplyr::filter(asv_num == 'asv22') |>
+  pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff) 
 
 asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
   dplyr::mutate(abundance_value_scaled = scale(abundance_value))|>
-  dplyr::filter(asv_num %in% c ('asv23', 'asv1', 'asv11', 'asv22', 'asv31', 'asv7', 'asv17')) |>
-  dplyr::filter(
-    (asv_num == 'asv1'  & fraction %in% c('0.2', '3')) |
-      (asv_num == 'asv11' & fraction %in% c('0.2'))       |
-      (asv_num == 'asv23' & fraction %in% c('0.2', '3'))  |
-      (asv_num == 'asv31' & fraction %in% c('3'))         |
-      (asv_num == 'asv7'  & fraction %in% c('0.2', '3'))  |
-      (asv_num == 'asv22' & fraction %in% c('3'))|
-      (asv_num == 'asv17'  & fraction %in% c('0.2', '3')) ) |>
-  dplyr::mutate(date = as.Date(date))
+  dplyr::filter(asv_num == 'asv22')
 
-mdr_interactions_rclr <- mdr_tb_m_interactions |>
-  left_join(asv_tab_all_bloo_z_tax_red_asv) |>
-  #dplyr::mutate(abundance_value = abundance_value) |>
-  # pivot_longer(cols = c('interaction_positive', 'interaction_negative'), 
-  #              values_to = 'value', names_to = 'variable') |>
-  left_join(bloo_taxonomy, by = 'asv_num') |>
-  dplyr::mutate(
-    interaction_negative = case_when(is.na(interaction_negative) ~ 0,  # Numeric '0'
-                                     TRUE ~ as.numeric(interaction_negative)),
-    interaction_positive = case_when(is.na(interaction_positive) ~ 0,  # Numeric '0'
-                                     TRUE ~ as.numeric(interaction_positive))
-  )
+data <- mdr_tb_m_rclr |> 
+  dplyr::mutate(value = as.numeric(value)) |> 
+  dplyr::group_by(date, fraction_eff, fraction_b, fraction, asv_num) |> 
+  dplyr::filter(value != 0) |> 
+  dplyr::reframe(n  = n(),
+                 interactions_pos = sum(value[value > 0], na.rm = TRUE),
+                 interaction_neg = sum(value[value < 0], na.rm = TRUE)) |>
+  dplyr::mutate(balance = interactions_pos+interaction_neg) |>
+  dplyr::mutate(fraction_eff_ed = case_when(str_detect(fraction_eff, 'bp') ~ '0.2',
+                                            str_detect(fraction_eff, 'bn') ~ '3'))
+data <- data |> 
+  dplyr::mutate(balance_color = if_else(balance > 0, '#000000', '#8C0009')) |>
+  dplyr::mutate(harbor_restoration = case_when(
+    date < '2010-03-24' ~ 'pre_perturbation',
+    date >= '2010-03-24' & date < '2012-06-09' ~ 'perturbation',
+    date >= '2012-06-09' ~ 'after_perturbation'
+  ))
 
-##check normality before correlation
-shapiro.test(as.numeric(mdr_interactions_rclr$interaction_positive)) # => p-value < 2.2e-16 ( NO NORMALITY)
-ggqqplot(as.numeric(mdr_interactions_rclr$interaction_positive))
+data$harbor_restoration <- factor(data$harbor_restoration,
+                                  levels = c('pre_perturbation',
+                                             'perturbation',
+                                             'after_perturbation'))
 
-shapiro.test(as.numeric(mdr_interactions_rclr$interaction_negative)) # => p-value < 2.2e-16 ( NO NORMALITY)
-ggqqplot(as.numeric(mdr_interactions_rclr$interaction_negative))
-
-## for non normal data
-cor_spearman <- rcorr(as.matrix(mdr_interactions_rclr[,c(4,5)]), type = 'spearman')
-
-plot_interactions_summary_relative_abundance_relationship <- mdr_interactions_rclr  |>
-  dplyr::mutate(abundance_value = case_when(
-    is.na(as.numeric(abundance_value)) ~ 0,   # Use numeric 0 instead of '0'
-    TRUE ~ as.numeric(abundance_value)        # Ensure the value is numeric
-  )) |>
-  ggplot(aes(interaction_positive, abs(interaction_negative)))+
-  geom_abline(slope = 1, intercept = 0, color = '#0F3331', linetype = 'dashed')+
-  #scale_y_continuous(sec.axis = sec_axis(~./10 , name = 'Relative abundance'))+
-  geom_point(aes(size = abundance_value, shape = fraction, color = fraction, fill = fraction, alpha = 0.7))+
-  stat_poly_line(aes(group = fraction, color = fraction, fill = fraction))+
-  stat_cor(aes(group = fraction, color = fraction,  label = paste0(..p.label..)),label.x = 0.2, label.y = 7, 
-           p.digits = 0.01, digits = 2, 
-           p.accuracy = 0.01, method = 'spearman')+
-  stat_cor(aes(group = fraction, color = fraction,  label = paste0(..r.label..)),label.x = 0.2, label.y = 8, 
-           p.digits = 0.01, digits = 2, 
-           p.accuracy = 0.01, method = 'spearman')+
-  #facet_wrap(vars(asv_num), labeller = labs_fraction, dir = 'v')+#, labeller = labs_fraction, dir = 'v'
-  scale_color_manual(values = palette_fraction, labels = labs_fraction)+
-  scale_fill_manual(values = palette_fraction, labels = labs_fraction)+
-  scale_shape_discrete(labels = labs_fraction)+
-  scale_size_continuous(range = c(0, 5), limits = c(0, 0.5), breaks = c(0, 0.25, 0.5) )+
-  #scale_linetype_manual()+
-  guides(alpha = 'none')+
-  theme_bw()+
-  labs(x = 'Interaction positive', y = 'Interaction negative', color = 'Interactions', fill = 'Interactions',
-       shape = 'Fraction', size = 'Relative Abundance')+
+asv22_affectedby_community_harbor_plot <- data |>     
+  ggplot(aes(harbor_restoration, interactions_pos)) + 
+  geom_boxplot(aes(), width = 0.25)+
+  geom_point(aes(y = balance, color = balance_color), size = 0.75, 
+             alpha = 0.6, position = position_jitter(0.25)) + 
+  facet_wrap(vars(fraction_eff_ed), labeller = labs_fraction, dir = 'v') + 
+  scale_color_identity()+
+  theme_bw() + 
+  labs(x = '', y = 'Interaction Strength', color = 'Order',
+       title = 'The microbial community effect on ASV22 (0.2 & 3)') + 
   theme(strip.background = element_rect(fill = 'transparent'),
-        text = element_text(size = 12),
+        text = element_text(size = 8),
         axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(size = 8),
         panel.border = element_blank(),
-        aspect.ratio = 10/10)
+        title = element_text(size = 8))
+asv22_affectedby_community_harbor_plot 
 
-plot_interactions_summary_relative_abundance_relationship
-
-# ggsave(filename = 'plot_interactions_summary_relative_abundance_relationship_v2.pdf',
-#        plot = plot_interactions_summary_relative_abundance_relationship,
-#        path = 'results/figures/',
-#        width = 180, height = 180, units = 'mm')
-
-## Bloomers effects ON other ASVs -----
-### I would like to observe what is the effect that some bloomers have on other community members -----
-asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax |>
-  dplyr::filter(abundance_type == 'rclr') |>
-  dplyr::select(asv_num, fraction, date, abundance_value) |>
+### ASV15 -----
+mdr_tb_m_rclr <- mdr_tb_m |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  #dplyr::mutate(abundance_value_scaled = scale(abundance_value))|>
-  dplyr::filter(asv_num %in% c ('asv23', 'asv1', 'asv11', 'asv22', 'asv31', 'asv7', 'asv17')) |>
-  dplyr::filter(
-    (asv_num == 'asv1'  & fraction %in% c('0.2', '3')) |
-      (asv_num == 'asv11' & fraction %in% c('0.2'))       |
-      (asv_num == 'asv23' & fraction %in% c('0.2', '3'))  |
-      (asv_num == 'asv31' & fraction %in% c('3'))         |
-      (asv_num == 'asv7'  & fraction %in% c('0.2', '3'))  |
-      (asv_num == 'asv22' & fraction %in% c('3')) |
-      (asv_num == 'asv17' & fraction %in% c('3', '0.2')),
-    ) |>
-  dplyr::mutate(date = as.Date(date))
-
-mdr_tb_m_positive <- mdr_tb_m |>
-  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::select(time, variable, bp_asv1, bn_asv1, bp_asv11, bp_asv23, bn_asv23,
-                bn_asv31, bn_asv7, bp_asv7, bn_asv7) |>
-  pivot_longer(cols = starts_with(c('bp', 'bn')), values_to = 'interaction_strength') |>
+  dplyr::filter(asv_num == 'asv15') |>
+  pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
   separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
-  #left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
-  left_join(variable_num_tb, by = c('variable' = 'variable_num')) |>
-  separate(variable_name, sep = '_', into = c('fraction_aff', 'asv_num_aff')) |>
-  dplyr::filter(asv_num_aff != asv_num_eff) |>
-  dplyr::filter(as.numeric(interaction_strength) > 0) |>
-  dplyr::group_by(asv_num_aff, time, fraction_aff) |>
-  dplyr::reframe(interaction_strength = sum(as.numeric(interaction_strength)))
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff) 
 
-mdr_tb_m_negative <- mdr_tb_m |>
+asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(abundance_value_scaled = scale(abundance_value))|>
+  dplyr::filter(asv_num == 'asv15')
+
+data <- mdr_tb_m_rclr |> 
+  dplyr::mutate(value = as.numeric(value)) |> 
+  dplyr::group_by(date, fraction_eff, fraction_b, fraction, asv_num) |> 
+  dplyr::filter(value != 0) |> 
+  dplyr::reframe(n  = n(),
+                 interactions_pos = sum(value[value > 0], na.rm = TRUE),
+                 interaction_neg = sum(value[value < 0], na.rm = TRUE)) |>
+  dplyr::mutate(balance = interactions_pos+interaction_neg) |>
+  dplyr::mutate(fraction_eff_ed = case_when(str_detect(fraction_eff, 'bp') ~ '0.2',
+                                            str_detect(fraction_eff, 'bn') ~ '3'))
+data <- data |> 
+  dplyr::mutate(balance_color = if_else(balance > 0, '#000000', '#8C0009')) |>
+  dplyr::mutate(harbor_restoration = case_when(
+    date < '2010-03-24' ~ 'pre_perturbation',
+    date >= '2010-03-24' & date < '2012-06-09' ~ 'perturbation',
+    date >= '2012-06-09' ~ 'after_perturbation'
+  ))
+
+data$harbor_restoration <- factor(data$harbor_restoration,
+                                  levels = c('pre_perturbation',
+                                             'perturbation',
+                                             'after_perturbation'))
+
+asv15_affectedby_community_harbor_plot <- data |>     
+  ggplot(aes(harbor_restoration, interactions_pos)) + 
+  geom_boxplot(aes(), width = 0.25)+
+  geom_point(aes(y = balance, color = balance_color), size = 0.75, 
+             alpha = 0.6, position = position_jitter(0.25)) + 
+  facet_wrap(vars(fraction_eff_ed), labeller = labs_fraction, dir = 'v') + 
+  scale_color_identity()+
+  theme_bw() + 
+  labs(x = '', y = 'Interaction Strength', color = 'Order',
+       title = 'The microbial community effect on ASV15 (0.2 & 3)') + 
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 8),
+        axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(size = 8),
+        panel.border = element_blank(),
+        title = element_text(size = 8))
+
+asv15_affectedby_community_harbor_plot 
+
+### ASV31 -----
+mdr_tb_m_rclr <- mdr_tb_m |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::select(time, variable, bp_asv1, bn_asv1, bp_asv11, bp_asv23, bn_asv23,
-                bn_asv31, bn_asv7, bp_asv7, bn_asv7) |>
-  pivot_longer(cols = starts_with(c('bp', 'bn')), values_to = 'interaction_strength') |>
+  dplyr::filter(asv_num == 'asv31') |>
+  pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
   separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
-  #left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
-  left_join(variable_num_tb, by = c('variable' = 'variable_num')) |>
-  separate(variable_name, sep = '_', into = c('fraction_aff', 'asv_num_aff')) |>
-  dplyr::filter(asv_num_aff != asv_num_eff) |>
-  dplyr::filter(as.numeric(interaction_strength) < 0) |>
-  dplyr::group_by(asv_num_aff, time, fraction_aff) |>
-  dplyr::reframe(interaction_strength = sum(as.numeric(interaction_strength)))
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff) 
 
-mdr_tb_m_interactions <- mdr_tb_m_positive |>
-  full_join(mdr_tb_m_negative) |>
-  dplyr::mutate(fraction = case_when(str_detect(fraction_aff, 'bp') ~ '0.2',
-                                     str_detect(fraction_aff, 'bn') ~ '3')) |>
-  left_join(time_num, by = c('time' = 'time_num', 'fraction')) |>
-  dplyr::mutate(date = as.Date(date)) |>
-  left_join(tax_bbmo_10y_new, by = c('asv_num_aff' = 'asv_num'))
+asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(abundance_value_scaled = scale(abundance_value))|>
+  dplyr::filter(asv_num == 'asv31')
 
-asv_tab_all_bloo_z_tax_red_asv$date
-mdr_tb_m_interactions$date
+data <- mdr_tb_m_rclr |> 
+  dplyr::mutate(value = as.numeric(value)) |> 
+  dplyr::group_by(date, fraction_eff, fraction_b, fraction, asv_num) |> 
+  dplyr::filter(value != 0) |> 
+  dplyr::reframe(n  = n(),
+                 interactions_pos = sum(value[value > 0], na.rm = TRUE),
+                 interaction_neg = sum(value[value < 0], na.rm = TRUE)) |>
+  dplyr::mutate(balance = interactions_pos+interaction_neg) |>
+  dplyr::mutate(fraction_eff_ed = case_when(str_detect(fraction_eff, 'bp') ~ '0.2',
+                                            str_detect(fraction_eff, 'bn') ~ '3'))
+data <- data |> 
+  dplyr::mutate(balance_color = if_else(balance > 0, '#000000', '#8C0009')) |>
+  dplyr::mutate(harbor_restoration = case_when(
+    date < '2010-03-24' ~ 'pre_perturbation',
+    date >= '2010-03-24' & date < '2012-06-09' ~ 'perturbation',
+    date >= '2012-06-09' ~ 'after_perturbation'
+  ))
 
-# mdr_interactions_rclr <- mdr_tb_m_interactions |>
-#   #left_join(asv_tab_all_bloo_z_tax_red_asv) |>
-#   pivot_longer(cols = c('interaction_positive', 'interaction_negative'), 
-#                values_to = 'value', names_to = 'variable') |>
-#   left_join(bloo_taxonomy, by = 'asv_num')
-mdr_tb_m_interactions$order |>
-  unique()
+data$harbor_restoration <- factor(data$harbor_restoration,
+                                  levels = c('pre_perturbation',
+                                             'perturbation',
+                                             'after_perturbation'))
 
-mdr_tb_m_interactions$order <- factor(mdr_tb_m_interactions$order, levels = c('Synechococcales',
-                                                                              'Enterobacterales',
-                                                                              'Pseudomonadales',
-                                                                              'SAR11 clade',
-                                                                              'Puniceispirillales',
-                                                                              'Rhodobacterales',
-                                                                              'Sphingomonadales',
-                                                                              'Rhodospirillales',
-                                                                              'Flavobacteriales',
-                                                                              'Verrucomicrobiales'))
+asv31_affectedby_community_harbor_plot <- data |>     
+  ggplot(aes(harbor_restoration, interactions_pos)) + 
+  geom_boxplot(aes(), width = 0.25)+
+  geom_point(aes(y = balance, color = balance_color), size = 0.75, 
+             alpha = 0.6, position = position_jitter(0.25)) + 
+  facet_wrap(vars(fraction_eff_ed), labeller = labs_fraction, dir = 'v') + 
+  scale_color_identity()+
+  theme_bw() + 
+  labs(x = '', y = 'Interaction Strength', color = 'Order',
+       title = 'The microbial community effect on ASV31 (0.2 & 3)') + 
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 8),
+        axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(size = 8),
+        panel.border = element_blank(),
+        title = element_text(size = 8))
 
-mdr_tb_m_interactions |>
-  colnames()
+asv31_affectedby_community_harbor_plot 
 
-plot_interactions_summary_rclr <- mdr_tb_m_interactions  |>
-  left_join(asv_tab_all_bloo_z_tax_red_asv, by = c('asv_num_aff' = 'asv_num')) |>
-  ggplot(aes(date, as.numeric(interaction_strength)))+
+### ASV17 -----
+mdr_tb_m_rclr <- mdr_tb_m |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num == 'asv17') |>
+  pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff) 
+
+asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(abundance_value_scaled = scale(abundance_value))|>
+  dplyr::filter(asv_num == 'asv17')
+
+data <- mdr_tb_m_rclr |> 
+  dplyr::mutate(value = as.numeric(value)) |> 
+  dplyr::group_by(date, fraction_eff, fraction_b, fraction, asv_num) |> 
+  dplyr::filter(value != 0) |> 
+  dplyr::reframe(n  = n(),
+                 interactions_pos = sum(value[value > 0], na.rm = TRUE),
+                 interaction_neg = sum(value[value < 0], na.rm = TRUE)) |>
+  dplyr::mutate(balance = interactions_pos+interaction_neg) |>
+  dplyr::mutate(fraction_eff_ed = case_when(str_detect(fraction_eff, 'bp') ~ '0.2',
+                                            str_detect(fraction_eff, 'bn') ~ '3'))
+data <- data |> 
+  dplyr::mutate(balance_color = if_else(balance > 0, '#000000', '#8C0009')) |>
+  dplyr::mutate(harbor_restoration = case_when(
+    date < '2010-03-24' ~ 'pre_perturbation',
+    date >= '2010-03-24' & date < '2012-06-09' ~ 'perturbation',
+    date >= '2012-06-09' ~ 'after_perturbation'
+  ))
+
+data$harbor_restoration <- factor(data$harbor_restoration,
+                                  levels = c('pre_perturbation',
+                                             'perturbation',
+                                             'after_perturbation'))
+
+asv17_affectedby_community_harbor_plot <- data |>     
+  ggplot(aes(harbor_restoration, interactions_pos)) + 
+  geom_point(aes(y = balance, color = balance_color), size = 0.75, 
+             alpha = 0.6, position = position_jitter(0.25)) + 
+  geom_boxplot(aes(), width = 0.25)+
+  facet_wrap(vars(fraction_eff_ed), labeller = labs_fraction, dir = 'v') + 
+  scale_color_identity()+
+  theme_bw() + 
+  labs(x = '', y = 'Interaction Strength', color = 'Order',
+       title = 'The microbial community effect on ASV17 (0.2 & 3)') + 
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 8),
+        axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(size = 8),
+        panel.border = element_blank(),
+        title = element_text(size = 8))
+
+asv17_affectedby_community_harbor_plot 
+
+## composition harbor interactions ----
+harbor_interactions_plot <- plot_grid(asv11_affectedby_community_harbor_plot,
+                                      asv23_affectedby_community_harbor_plot,
+                                      asv7_affectedby_community_harbor_plot,
+                                      asv31_affectedby_community_harbor_plot,
+                                      asv22_affectedby_community_harbor_plot,
+                                      asv1_affectedby_community_harbor_plot,
+                                      asv15_affectedby_community_harbor_plot,
+                                      asv17_affectedby_community_harbor_plot,
+                                       rel_heights = c(1, 1),
+                                       labels = c('A', 'B', 'C', 'D',
+                                                  'E', 'F', 'G', 'H'), # Labels for the plots
+                                       label_size = 10,
+                                       label_fontface = 'plain',
+                                       ncol = 4) # Arrange in one column
+harbor_interactions_plot
+
+ggsave(
+  plot = harbor_interactions_plot, 
+  filename = 'harbor_interactions_plot.pdf',
+  path = 'results/figures/MDR/v2/',
+  width = 180, 
+  height = 180, 
+  units = 'mm'
+)
+
+## Different approach during the harbor restoration ----
+### Did the community interactions changed in the PA and FL fractions? ----
+#### Plus, is there any difference between bloomers and non-blooming taxa?
+### Mean interaction strength ------
+#### +0 to sample id_num abundance 
+mdr_tb_m_rclr <- mdr_tb_m |>
+  # dplyr::filter(asv_num %in% c('asv17', 'asv22', 'asv23',
+  #                              'asv11', 'asv1', 'asv31', 'asv7', 'asv15')) |>
+  pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff)
+
+mdr_tb_m_rclr_pos <- mdr_tb_m_rclr |>
+  dplyr::filter(value > 0) |>
+  dplyr::mutate(value = as.numeric(value)) |>
+  dplyr::mutate(value = case_when(value > 0 ~ value,
+                                  value < 0 ~ 0)) |>
+  dplyr::group_by(asv_num, fraction_b, date, time) |>
+  dplyr::reframe(pos_interactions = sum(value),
+                 n = n()) |>
+  dplyr::mutate(mean_pos_int = pos_interactions/n,
+                sd_pos_int = sd(mean_pos_int)) |>
+  dplyr::select(-n, -pos_interactions)
+
+mdr_tb_m_rclr_neg <- mdr_tb_m_rclr |>
+  dplyr::filter(value < 0) |>
+  dplyr::mutate(value = as.numeric(value)) |>
+  dplyr::mutate(value = case_when(value < 0 ~ value,
+                                  value > 0 ~ 0)) |>
+  dplyr::group_by(asv_num, fraction_b, date, time ) |>
+  dplyr::reframe(neg_interactions = sum(value),
+                 n = n()) |>
+  dplyr::mutate(mean_neg_int = neg_interactions/n,
+                sd_neg_int = sd(mean_neg_int))|>
+  dplyr::select(-n, -neg_interactions)
+
+mdr_tb_m_rclr_int <- mdr_tb_m_rclr_pos |>
+  left_join(mdr_tb_m_rclr_neg)
+
+m_sample_num <- m_02 |>
+  dplyr::select(date, sample_id_num)
+
+data <- mdr_tb_m_rclr_int |> 
+  dplyr::mutate(fraction = case_when(str_detect(fraction_b, 'bp') ~ '0.2',
+                                     str_detect(fraction_b, 'bn') ~ '3')) |>
+ dplyr::mutate(bloomer = case_when(asv_num %in% c('asv1', 'asv7', 'asv11',
+                                                  'asv22', 'asv23', 'asv17',
+                                                  'asv31', 'asv15') ~ 'bloomer',
+                                   TRUE ~ 'no-bloomer')) |>
+  dplyr::mutate(harbor_restoration = case_when(
+    date < '2010-03-24' ~ 'pre_perturbation',
+    date >= '2010-03-24' & date < '2012-06-09' ~ 'perturbation',
+    date >= '2012-06-09' ~ 'after_perturbation'
+  ))
+
+data <- data |>
+  pivot_longer(cols = starts_with('mean')) 
+
+summary_interactions_boxplot_community_during_harbor_restoration <- data |>
+  dplyr::filter(!is.na(fraction)) |>
+  ggplot(aes(interaction( name, harbor_restoration), abs(value))) + 
+  geom_boxplot(notch = F, aes(fill = name, color = name), alpha = 0.7)+
+  scale_color_manual(values = c('mean_pos_int' = '#000000',
+                                'mean_neg_int' = '#8C0009'),
+                     labels = c('Negative', 'Positive'))+
+  scale_fill_manual(values = c('mean_pos_int' = '#000000',
+                               'mean_neg_int' = '#8C0009'),
+                    labels = c('Negative', 'Positive'))+
+  facet_wrap(fraction~bloomer)+ #, labeller = labs_fraction
+  theme_bw() + 
+  labs(x = '', y = 'Mean Interaction Strength', color = 'Interaction',
+       fill = 'Interaction',
+       title = 'The microbial community effect on blooming taxa
+       during the harbor restoration') + 
   coord_flip()+
-  geom_point(aes(shape = fraction, color = order, fill = order))+
-  #scale_y_continuous(sec.axis = sec_axis(~./1 , name = 'rCLR'))+
-  # geom_smooth(aes(date, y = as.numeric(abundance_value)*1), span = 0.1, 
-  #             color = '#D6AAA1',  fill = '#D6AAA1', se = T, linetype = 'dotted')+
-  #geom_smooth(method = 'loess', span = 0.1, aes(color = variable, group = variable, fill = variable))+
-  geom_line( aes(x = as.numeric(abundance_value), color = order, group = asv_num))+
-  facet_wrap(vars(order))+#, labeller = labs_fraction, dir = 'v'
-  geom_violin(alpha = 0.1)+
-  scale_color_manual(values = palette_order_assigned_all)+
-  scale_fill_manual(values = palette_order_assigned_all)+
-  theme_bw()+
-  labs(x = 'Date', y = 'Interaction Strength', color = 'Interactions', fill = 'Interactions')+
   theme(strip.background = element_rect(fill = 'transparent'),
-        text = element_text(size = 12),
-        axis.text.x = element_text(size = 8),
-        strip.text = element_text(size = 10),
+        text = element_text(size = 8),
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 8),
         panel.border = element_blank(),
-        legend.position = 'bottom')
+        panel.grid = element_blank(),
+        title = element_text(size = 6),
+        legend.position = 'bottom',
+        axis.ticks.length = unit(0.2, "mm"))
 
-plot_interactions_summary_rclr
+summary_interactions_boxplot_community_during_harbor_restoration
 
-# ggsave(filename = 'plot_interactions_summary_rclr.pdf',
-#        plot = plot_interactions_summary_rclr,
-#        path = 'results/figures/',
-#        width = 180, height = 280, units = 'mm')
+# ggsave(
+#   plot = summary_interactions_boxplot_community_during_harbor_restoration , 
+#   filename = 'summary_interactions_boxplot_community_during_harbor_restoration.pdf',
+#   path = 'results/figures/MDR/v2/',
+#   width = 100, 
+#   height = 150, 
+#   units = 'mm'
+# )
 
-## -----  MDR visualization of the ASVs that affect my bloomers (in a boxplot) ----- ##
-mdr_abund |>
-  colnames()
+## in 0 and 1 
+mdr_tb_m_rclr_pos <- mdr_tb_m_rclr |>
+  dplyr::filter(value > 0) |>
+  dplyr::mutate(value = as.numeric(value)) |>
+  dplyr::mutate(value = case_when(value > 0 ~ 1,
+                                  value < 0 ~ 0)) |>
+  dplyr::group_by(asv_num, fraction_b, date, time) |>
+  dplyr::reframe(pos_interactions = sum(value),
+                 n = n()) |>
+  dplyr::mutate(mean_pos_int = pos_interactions/1,
+                sd_pos_int = sd(mean_pos_int)) |>
+  dplyr::select(-n, -pos_interactions)
 
-mdr_abund %$%
-  asv_num |>
-  unique()
+mdr_tb_m_rclr_neg <- mdr_tb_m_rclr |>
+  dplyr::filter(value < 0) |>
+  dplyr::mutate(value = as.numeric(value)) |>
+  dplyr::mutate(value = case_when(value < 0 ~ 1,
+                                  value > 0 ~ 0)) |>
+  dplyr::group_by(asv_num, fraction_b, date, time ) |>
+  dplyr::reframe(neg_interactions = sum(value),
+                 n = n()) |>
+  dplyr::mutate(mean_neg_int = neg_interactions/1,
+                sd_neg_int = sd(mean_neg_int))|>
+  dplyr::select(-n, -neg_interactions)
 
-max_interactions <- mdr_abund |>
-  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
-  dplyr::group_by(asv_num) |>
-  slice_max(order_by = as.numeric(value), n = 10) |>
-  distinct(asv_num_eff)
+mdr_tb_m_rclr_int <- mdr_tb_m_rclr_pos |>
+  left_join(mdr_tb_m_rclr_neg)
 
-mdr_abund |>
-  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
-  dplyr::filter(asv_num_eff %in% max_interactions$asv_num_eff) |>
-  ggplot(aes(fct_infreq(asv_num_eff), as.numeric(value)))+
-  facet_wrap(vars(asv_num), scales = 'free_x', ncol = 1)+
-  geom_point(aes(shape = fraction, color = order.y, alpha = ifelse(bloom_event == 'bloom', 1, '0.2')), 
-             position = position_jitter(width =  0.25))+
-  scale_color_manual(values = palette_order_assigned_all)+
-  geom_boxplot( alpha = 0.2)+ #notch = T
-  scale_shape_discrete(labels = labs_fraction)+
-  theme_bw()+  
+m_sample_num <- m_02 |>
+  dplyr::select(date, sample_id_num)
+
+data |>
+  group_by(date, harbor_restoration, fraction) |>
+  distinct(date, harbor_restoration, fraction) |>
+  group_by(harbor_restoration, fraction) |>
+  dplyr::reframe(n = n())
+
+data <- mdr_tb_m_rclr_int |> 
+  dplyr::mutate(fraction = case_when(str_detect(fraction_b, 'bp') ~ '0.2',
+                                     str_detect(fraction_b, 'bn') ~ '3')) |>
+  dplyr::mutate(bloomer = case_when(asv_num %in% c('asv1', 'asv7', 'asv11',
+                                                   'asv22', 'asv23', 'asv17',
+                                                   'asv31', 'asv15') ~ 'bloomer',
+                                    TRUE ~ 'no-bloomer')) |>
+  dplyr::mutate(harbor_restoration = case_when(
+    date < '2010-03-24' ~ 'pre_perturbation',
+    date >= '2010-03-24' & date < '2012-06-09' ~ 'perturbation',
+    date >= '2012-06-09' ~ 'after_perturbation'
+  )) |>
+  dplyr::mutate(samples_period = case_when(harbor_restoration == 'pre_perturbation' ~ 75,
+                                           harbor_restoration == 'perturbation' ~ 26 ,
+                                           harbor_restoration == 'after_perturbation' ~ 18)) 
+
+data <- data |>
+  pivot_longer(cols = starts_with('mean')) |>
+  dplyr::mutate(value = value/samples_period)
+
+summary_interactions_boxplot_community_during_harbor_restoration <- data |>
+  dplyr::filter(!is.na(fraction)) |>
+  ggplot(aes(interaction( harbor_restoration, name), abs(value))) + 
+  geom_boxplot(notch = F, aes(fill = name, color = name), alpha = 0.7)+
+  scale_color_manual(values = c('mean_pos_int' = '#000000',
+                                'mean_neg_int' = '#8C0009'),
+                     labels = c('Negative', 'Positive'))+
+  scale_fill_manual(values = c('mean_pos_int' = '#000000',
+                               'mean_neg_int' = '#8C0009'),
+                    labels = c('Negative', 'Positive'))+
+  facet_wrap(fraction~bloomer)+ #, labeller = labs_fraction
+  theme_bw() + 
+  labs(x = '', y = 'Interaction (0,1) / nº samples considered', color = 'Interaction',
+       fill = 'Interaction',
+       title = 'The microbial community effect on blooming taxa
+       during the harbor restoration') + 
+  coord_flip()+
   theme(strip.background = element_rect(fill = 'transparent'),
-                     text = element_text(size = 12),
-                     axis.text.x = element_text(size = 8),
-                     strip.text = element_text(size = 10),
-                     panel.border = element_blank(),
-                     legend.position = 'bottom')
-
-## only bloomers interaction between them ----
-mdr_abund |>
-  colnames()
-
-mdr_abund$bloom_event |>
-  unique()
-
-mdr_abund |>
-  dplyr::filter(bloom_event == 'bloom')
-  
-mdr_abund |>
-  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
-  dplyr::filter(asv_num_eff %in% c('asv23', 'asv1', 'asv11', 'asv22', 'asv31', 'asv7', 'asv17')) |>
-  ggplot(aes(fct_infreq(asv_num_eff), as.numeric(value)))+
-  facet_grid(vars(asv_num), scales = 'free')+
-  geom_point(aes(shape = fraction, color = order.y, alpha = ifelse(bloom_event == 'bloom', 1, '0.2')), position = position_jitter(width =  0.25))+
-  scale_color_manual(values = palette_order_assigned_all)+
-  #geom_boxplot( alpha = 0.2)+ #notch = T
-  geom_violin(alpha = 0.2)+
-  guides(alpha = 'none')+
-  scale_shape_discrete(labels = labs_fraction)+
-  theme_bw()+  
-  theme(strip.background = element_rect(fill = 'transparent'),
-        text = element_text(size = 12),
-        axis.text.x = element_text(size = 8),
-        strip.text = element_text(size = 10),
+        text = element_text(size = 8),
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 8),
         panel.border = element_blank(),
-        legend.position = 'bottom')
+        panel.grid = element_blank(),
+        title = element_text(size = 6),
+        legend.position = 'bottom',
+        axis.ticks.length = unit(0.2, "mm"))
 
-## MDR jacobians -1, 0, 1 ----
-### additionally normalize by richness 
-asv_tab_bbmo_10y_w_rar <- read.csv2('data/asv_tab_bbmo_10y_w_rar.csv') |>
-  as_tibble()|> 
-  rename('sample_id' = 'X')  ## richness should always be calculated with the rarefied dataset
+summary_interactions_boxplot_community_during_harbor_restoration
 
-asv_tab_bbmo_10y_w_rar |>
-  colnames()
+# ggsave(
+#   plot = summary_interactions_boxplot_community_during_harbor_restoration , 
+#   filename = 'summary_interactions_boxplot_community_during_harbor_restoration_binary.pdf',
+#   path = 'results/figures/MDR/v2/',
+#   width = 100, 
+#   height = 150, 
+#   units = 'mm'
+# )
 
-## calculate shannon index normalize interactions by diversity ----
-asv_tab_bbmo_10y_w_rar_t <- asv_tab_bbmo_10y_w_rar |>
-  t() |>
-  as_tibble(rownames = NULL)
+## I do not separate bloomers and non bloomers ----
 
-asv_tab_bbmo_10y_w_rar_t |>
-  colnames() <- asv_tab_bbmo_10y_w_rar_t[1,]
+summary_interactions_boxplot_community_during_harbor_restoration <- data |>
+  dplyr::filter(!is.na(fraction)) |>
+  ggplot(aes(interaction( harbor_restoration, name), abs(value))) + 
+  geom_boxplot(notch = F, aes(fill = name, color = name), alpha = 0.7)+
+  scale_color_manual(values = c('mean_pos_int' = '#000000',
+                                'mean_neg_int' = '#8C0009'),
+                     labels = c('Negative', 'Positive'))+
+  scale_fill_manual(values = c('mean_pos_int' = '#000000',
+                               'mean_neg_int' = '#8C0009'),
+                    labels = c('Negative', 'Positive'))+
+  facet_wrap(vars(fraction), labeller = labs_fraction)+ #
+  theme_bw() + 
+  labs(x = '', y = 'Interaction (0,1) / nº samples considered', color = 'Interaction',
+       fill = 'Interaction',
+       title = 'The microbial community interactions
+       during the harbor restoration') + 
+  coord_flip()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 8),
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 8),
+        panel.border = element_blank(),
+        panel.grid = element_blank(),
+        title = element_text(size = 6),
+        legend.position = 'bottom',
+        axis.ticks.length = unit(0.2, "mm"))
 
-asv_tab_bbmo_10y_w_rar_t <- asv_tab_bbmo_10y_w_rar_t[-1,]
+summary_interactions_boxplot_community_during_harbor_restoration
 
-shannon_rar <- asv_tab_bbmo_10y_w_rar_t |>
-  dplyr::mutate(across(everything(), as.numeric)) |>
-  microbiome::alpha('shannon') |>
-  rownames_to_column(var = 'sample_id') |>
-  as_tibble() |>
-  left_join(m_bbmo_10y) 
+ggsave(
+  plot = summary_interactions_boxplot_community_during_harbor_restoration , 
+  filename = 'summary_interactions_boxplot_community_during_harbor_restoration_binary_grouped.pdf',
+  path = 'results/figures/MDR/v2/',
+  width = 120, 
+  height = 100, 
+  units = 'mm'
+)
 
-observed_rar <- asv_tab_bbmo_10y_w_rar_t |>
-  dplyr::mutate(across(everything(), as.numeric)) |>
-  microbiome::alpha(index = 'observed') |>
-  rownames_to_column(var = 'sample_id') |>
-  as_tibble() |>
-  left_join(m_bbmo_10y) 
-
-shannon_rar |>
-  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  ggplot(aes(date, diversity_shannon))+
-  scale_color_manual(values = palette_fraction, labels = labs_fraction)+
-  geom_line(aes(date, group = fraction, color = fraction, linetype = fraction), linewidth = 0.75, alpha = 1)+ #, linetype = bray_curtis_type
-  scale_linetype_manual( labels = labs_fraction, values = c('0.2' = 1, '3' = 2))+
-  scale_x_datetime(date_breaks = 'year', date_labels = '%Y')+
-  geom_line(data = shannon_rar |>
-              dplyr::filter(fraction == '3'), aes(date, diversity_shannon), alpha = 0.3)+
-  labs(x = 'Date', y = 'Shannon Index', color = '', linetype = '')+
-  scale_shape_discrete(labels = labs_fraction)+
-  guides(shape = 'none',
-         color = guide_legend(ncol = 3, keywidth = unit(1, "cm")))+
-  theme_bw()+
-  theme(#panel.grid = element_blank(), 
-    strip.background = element_blank(), legend.position = 'bottom',
-    panel.grid.minor = element_blank(),
-    axis.title  = element_text(size = 9),
-    strip.text = element_text(size = 5),
-    axis.text = element_text(size = 5),
-    # axis.text.x = element_text(size = 7), 
-    panel.grid.major.y = element_blank(),
-    panel.border = element_blank(),
-    strip.placement = 'outside',
-    axis.ticks.length.y =  unit(0.2, "mm"))
-
-observed_rar  |>
-  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  ggplot(aes(date, observed))+
-  scale_color_manual(values = palette_fraction, labels = labs_fraction)+
-  geom_line(aes(date, group = fraction, color = fraction, linetype = fraction), linewidth = 0.75, alpha = 1)+ #, linetype = bray_curtis_type
-  scale_linetype_manual( labels = labs_fraction, values = c('0.2' = 1, '3' = 2))+
-  scale_x_datetime(date_breaks = 'year', date_labels = '%Y')+
-  geom_line(data = observed_rar |>
-              dplyr::filter(fraction == '3'), aes(date, observed), alpha = 0.3)+
-  labs(x = 'Date', y = 'Observed Richness', color = '', linetype = '')+
-  scale_shape_discrete(labels = labs_fraction)+
-  guides(shape = 'none',
-         color = guide_legend(ncol = 3, keywidth = unit(1, "cm")))+
-  theme_bw()+
-  theme(#panel.grid = element_blank(), 
-    strip.background = element_blank(), legend.position = 'bottom',
-    panel.grid.minor = element_blank(),
-    axis.title  = element_text(size = 9),
-    strip.text = element_text(size = 5),
-    axis.text = element_text(size = 5),
-    # axis.text.x = element_text(size = 7), 
-    panel.grid.major.y = element_blank(),
-    panel.border = element_blank(),
-    strip.placement = 'outside',
-    axis.ticks.length.y =  unit(0.2, "mm"))
-
+## MDR differences between bloom and no-bloom ----
+### number of interactions 
+### 1, 0 , -1 
+## sum + and - interactions 
+### ASV17 -----
 mdr_tb_m |>
-  colnames()
+  dim()
 
-mdr_tb_m_bin <- mdr_tb_m |>
+mdr_tb_m_rclr <- mdr_tb_m |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::filter(asv_num %in% c('asv11', 'asv7', 'asv1', 'asv22', 'asv23', 'asv31', 'asv17')) |> 
-  pivot_longer(cols = starts_with(c('bp', 'bn')), values_to = 'interaction_strength') |>
+  dplyr::filter(asv_num == 'asv17') |>
+  pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
   separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
   left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
-  dplyr::filter(asv_num != asv_num_eff) |>
-  dplyr::mutate(interaction_strength_ed = case_when(as.numeric(interaction_strength) > 0 ~ '1',
-                                                    as.numeric(interaction_strength) < 0 ~ '-1',
-                                                    as.numeric(interaction_strength) == 0 ~ '0')) |>
-  left_join(m_bbmo_10y)
+  dplyr::filter(asv_num != asv_num_eff)
 
-mdr_tb_m_bin |>
+mdr_tb_m_rclr$date |>
+  unique()
+
+mdr_tb_m_rclr  |>
   colnames()
 
-# abundance data 
-abund_data <- asv_tab_all_bloo_z_tax |>
-  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |> 
-  dplyr::filter(asv_num %in% c('asv11', 'asv7', 'asv1', 'asv22', 'asv23', 'asv31', 'asv17')) |>
-  dplyr::filter(abundance_type == 'rclr') |>
-  dplyr::select(sample_id, abundance_value, asv_num, fraction) 
+mdr_tb_m_rclr_pos <- mdr_tb_m_rclr |>
+  dplyr::filter(value > 0) |>
+  dplyr::mutate(value = case_when(value > 0 ~ 1,
+                                  value < 0 ~ 0)) |>
+  dplyr::group_by(asv_num, fraction_b, date, time ) |>
+  dplyr::reframe(pos_interactions = sum(value))
 
-data <- mdr_tb_m_bin |>
-  group_by(fraction, asv_num, date, sample_id, recurrency) |>
-  dplyr::reframe(interactions = sum(as.numeric(interaction_strength_ed))) |>
-  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d")))|>
-  left_join(abund_data, by = c('sample_id', 'fraction', 'asv_num'))
+mdr_tb_m_rclr_neg <- mdr_tb_m_rclr |>
+  dplyr::filter(value < 0) |>
+  dplyr::mutate(value = case_when(value < 0 ~ 1,
+                                  value > 0 ~ 0)) |>
+  dplyr::group_by(asv_num, fraction_b, date, time ) |>
+  dplyr::reframe(neg_interactions = sum(value))
+
+mdr_tb_m_rclr_int <- mdr_tb_m_rclr_pos |>
+  left_join(mdr_tb_m_rclr_neg)
+  
+asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(abundance_value_scaled = scale(abundance_value))|>
+  dplyr::filter(asv_num == 'asv17')
+
+bloom_event <- asv_tab_all_bloo_z_tax_red_asv |>
+  dplyr::mutate(bloom_event = case_when((z_score_ra > 2 &
+                                          abundance_value > 0.1) ~ 'bloom',
+                TRUE ~ 'no-bloom')) |>
+  #dplyr::filter(bloom_event == 'bloom') |>
+  dplyr::select(bloom_event, date, fraction) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d")))
+
+ data <- mdr_tb_m_rclr_int |> 
+#   dplyr::mutate(value = as.numeric(value))# |> 
+  #dplyr::group_by(date, fraction_eff, fraction_b, fraction, asv_num) |> 
+  #dplyr::filter(value != 0) |> 
+  # dplyr::reframe(n  = n(),
+  #                interactions_pos = sum(value[value > 0], na.rm = TRUE),
+  #                interaction_neg = sum(value[value < 0], na.rm = TRUE)) |>
+  # #dplyr::mutate(balance = interactions_pos+interaction_neg) |>
+  dplyr::mutate(fraction = case_when(str_detect(fraction_b, 'bp') ~ '0.2',
+                                            str_detect(fraction_b, 'bn') ~ '3'))
+
+# Convert bloom_event$date to POSIXct
+bloom_event$date <- as.POSIXct(bloom_event$date, format = "%Y-%m-%d %H:%M:%S", tz = "Europe/Berlin")
+
+# Convert data$date to POSIXct
+data$date <- as.POSIXct(data$date, format = "%Y-%m-%d %H:%M:%S", tz = "Europe/Berlin")
+
+palette_interactions <- c('neg_interactions' = '#8C0009',
+  'pos_interactions' = '#000000')
+
+unique(data$name)
+
+data <- data |>
+  #dplyr::mutate(date = as.POSIXct(date, format = "%Y-%m-%d")) |>
+  #dplyr::mutate(balance_color = if_else(balance > 0, '#000000', '#8C0009')) |>
+  left_join(bloom_event, by = c('date', 'fraction'))
+
+data <- data |>
+  dplyr::mutate(neg_interactions = -neg_interactions) |>
+  pivot_longer(cols = matches('pos|neg'))
+
+interactions_01_asv17_plot <- data |>
+  ggplot(aes(date, value, group = name, color = name)) + 
+  # geom_point(#aes(y = balance, color = balance_color), 
+  #   size = 0.75, 
+  #            alpha = 0.6) + 
+  geom_line(aes(group = name))+
+  scale_color_manual(values = c('pos_interactions' = '#000000',
+                                'neg_interactions' = '#8C0009'))+
+  #geom_boxplot(aes(), width = 0.25)+
+  facet_wrap(vars(fraction), labeller = labs_fraction) + 
+  theme_bw() + 
+  labs(x = '', y = 'Interaction Strength', color = 'Order',
+       title = 'The microbial community effect on ASV17 (0.2 & 3)') + 
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 8),
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 8),
+        panel.border = element_blank(),
+        title = element_text(size = 8),
+        legend.position = 'none')
+
+interactions_01_asv17_plot
+
+asv17_rclr_plot <- asv_tab_all_bloo_z_tax_red_asv |>
+  left_join(bloo_taxonomy, by = c('asv_num' = 'asv_num_f')) |>
+  ggplot(aes(date, abundance_value, color = order_f)) + 
+  #geom_point( size = 0.75, alpha = 0.6) + 
+  geom_hline(yintercept = 0.1, linetype = 'dashed', alpha = 0.5)+
+  geom_area(aes(fill = order_f), alpha = 0.5)+
+  geom_line()+
+  geom_point(aes(shape = if_else((abundance_value > 0.1 & z_score_ra > 2), 4, NA )))+
+  scale_shape_identity()+
+  scale_color_manual(values = palette_order_assigned_bloo)+
+  scale_fill_manual(values = palette_order_assigned_bloo)+
+  facet_wrap(vars(fraction), labeller = labs_fraction) + 
+  theme_bw() + 
+  labs(x = 'Date', y = 'Relative Abundance', color = 'Order') + 
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 8),
+        axis.text.x = element_text(size = 7),
+        panel.border = element_blank(),
+        title = element_text(size = 8),
+        legend.position = 'none')
+
+asv17_rclr_plot
+
+plot_grid(interactions_01_asv17_plot, 
+          asv17_rclr_plot,
+          cols = 1)
+
+### is the j0 the eigenvalue? ---
+mdr_tb_m |>
+  dplyr::select(j0, time) |>
+  ggplot(aes(as.numeric(time), as.numeric(j0)))+
+  geom_point()
+
+### the same without transforming to 1, 0 interactions -----
+mdr_tb_m_rclr <- mdr_tb_m |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num == 'asv17') |>
+  pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff)
+
+mdr_tb_m_rclr_pos <- mdr_tb_m_rclr |>
+  dplyr::filter(value > 0) |>
+  dplyr::mutate(value = as.numeric(value)) |>
+  dplyr::mutate(value = case_when(value > 0 ~ value,
+                                  value < 0 ~ 0)) |>
+  dplyr::group_by(asv_num, fraction_b, date, time ) |>
+  dplyr::reframe(pos_interactions = sum(value),
+                 n = n()) |>
+  dplyr::mutate(mean_pos_int = pos_interactions/n,
+                sd_pos_int = sd(mean_pos_int))
+
+mdr_tb_m_rclr_neg <- mdr_tb_m_rclr |>
+  dplyr::filter(value < 0) |>
+  dplyr::mutate(value = as.numeric(value)) |>
+  dplyr::mutate(value = case_when(value < 0 ~ value,
+                                  value > 0 ~ 0)) |>
+  dplyr::group_by(asv_num, fraction_b, date, time ) |>
+  dplyr::reframe(neg_interactions = sum(value),
+                 n = n()) |>
+  dplyr::mutate(mean_neg_int = neg_interactions/n,
+                sd_neg_int = sd(mean_neg_int))
+
+mdr_tb_m_rclr_int <- mdr_tb_m_rclr_pos |>
+  left_join(mdr_tb_m_rclr_neg)
+
+asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(abundance_value_scaled = scale(abundance_value))|>
+  dplyr::filter(asv_num == 'asv17')
+
+bloom_event <- asv_tab_all_bloo_z_tax_red_asv |>
+  dplyr::mutate(bloom_event = case_when((z_score_ra > 2 &
+                                           abundance_value > 0.1) ~ 'bloom',
+                                        TRUE ~ 'no-bloom')) |>
+  dplyr::select(bloom_event, date, fraction) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d")))
+
+data <- mdr_tb_m_rclr_int |> 
+  #   dplyr::mutate(value = as.numeric(value))# |> 
+  #dplyr::group_by(date, fraction_eff, fraction_b, fraction, asv_num) |> 
+  #dplyr::filter(value != 0) |> 
+  # dplyr::reframe(n  = n(),
+  #                interactions_pos = sum(value[value > 0], na.rm = TRUE),
+  #                interaction_neg = sum(value[value < 0], na.rm = TRUE)) |>
+  # #dplyr::mutate(balance = interactions_pos+interaction_neg) |>
+  dplyr::mutate(fraction = case_when(str_detect(fraction_b, 'bp') ~ '0.2',
+                                     str_detect(fraction_b, 'bn') ~ '3'))
+
+# Convert bloom_event$date to POSIXct
+bloom_event$date <- as.POSIXct(bloom_event$date, format = "%Y-%m-%d %H:%M:%S", tz = "Europe/Berlin")
+
+# Convert data$date to POSIXct
+data$date <- as.POSIXct(data$date, 
+                        format = "%Y-%m-%d %H:%M:%S", 
+                        tz = "Europe/Berlin")
+
+palette_interactions <- c('neg_interactions' = '#8C0009',
+                          'pos_interactions' = '#000000')
+
+data <- data |>
+  #dplyr::mutate(date = as.POSIXct(date, format = "%Y-%m-%d")) |>
+  #dplyr::mutate(balance_color = if_else(balance > 0, '#000000', '#8C0009')) |>
+  left_join(bloom_event, by = c('date', 'fraction'))
+
+data <- data |>
+  dplyr::mutate(mean_neg_int = -mean_neg_int) |>
+  pivot_longer(cols = starts_with('mean'))
 
 data |>
-  dplyr::filter(fraction == '3') |>
-  ggplot(aes(date, interactions))+
-  geom_line(aes(group = fraction))+
-  facet_wrap(vars(asv_num), ncol = 2)+
-  scale_color_manual(values = palette_fraction, labels = labs_fraction)+
-  geom_line(data = data |>
-              dplyr::filter(fraction == '3'), aes(date, abundance_value), color = 'darkred')+
-  # geom_line(data =  data |>
-  #             dplyr::filter(fraction == '0.2'), aes(date, abundance_value), color = 'purple')+
-  geom_line(aes(date, group = fraction, color = fraction, linetype = fraction), linewidth = 0.75, alpha = 1)+ #, linetype = bray_curtis_type
-  scale_linetype_manual( labels = labs_fraction, values = c('0.2' = 1, '3' = 2))+
-  scale_x_datetime(date_breaks = 'year', date_labels = '%Y')+
-  geom_line(data = data |>
-              dplyr::filter(fraction == '3'), aes(date, interactions), alpha = 0.3)+
-  labs(x = 'Date', y = 'Observed Richness', color = '', linetype = '')+
-  scale_shape_discrete(labels = labs_fraction)+
-  guides(shape = 'none',
-         color = guide_legend(ncol = 3, keywidth = unit(1, "cm")))+
-  theme_bw()+
-  theme(#panel.grid = element_blank(), 
-    strip.background = element_blank(), legend.position = 'bottom',
-    panel.grid.minor = element_blank(),
-    axis.title  = element_text(size = 9),
-    strip.text = element_text(size = 5),
-    axis.text = element_text(size = 5),
-    # axis.text.x = element_text(size = 7), 
-    panel.grid.major.y = element_blank(),
-    panel.border = element_blank(),
-    strip.placement = 'outside',
-    axis.ticks.length.y =  unit(0.2, "mm"))
+  colnames()
+
+data$name |>
+  unique()
+
+interactions_01_asv17_plot <- data |>
+  ggplot(aes(date, value, group = name, color = name)) + 
+  geom_point(#aes(y = balance, color = balance_color),
+    size = 0.75,
+             alpha = 0.6) +
+  geom_line(aes(group = name))+
+  scale_color_manual(values = c('pos_interactions' = '#000000',
+                                'neg_interactions' = '#8C0009'))+
+  #geom_boxplot(aes(), width = 0.25)+
+  facet_wrap(vars(fraction), labeller = labs_fraction) + 
+  theme_bw() + 
+  labs(x = '', y = 'Interaction Strength', color = 'Order',
+       title = 'The microbial community effect on ASV17 (0.2 & 3)') + 
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 8),
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 8),
+        panel.border = element_blank(),
+        title = element_text(size = 8),
+        legend.position = 'none')
+
+interactions_01_asv17_plot
+
+asv17_rclr_plot <- asv_tab_all_bloo_z_tax_red_asv |>
+  left_join(bloo_taxonomy, by = c('asv_num' = 'asv_num_f')) |>
+  ggplot(aes(date, abundance_value, color = order_f)) + 
+  #geom_point( size = 0.75, alpha = 0.6) + 
+  geom_hline(yintercept = 0.1, linetype = 'dashed', alpha = 0.5)+
+  geom_area(aes(fill = order_f), alpha = 0.5)+
+  geom_line()+
+  geom_point(aes(shape = if_else((abundance_value > 0.1 & z_score_ra > 2), 4, NA )))+
+  scale_shape_identity()+
+  scale_color_manual(values = palette_order_assigned_bloo)+
+  scale_fill_manual(values = palette_order_assigned_bloo)+
+  facet_wrap(vars(fraction), labeller = labs_fraction) + 
+  theme_bw() + 
+  labs(x = 'Date', y = 'Relative Abundance', color = 'Order') + 
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 8),
+        axis.text.x = element_text(size = 7),
+        panel.border = element_blank(),
+        title = element_text(size = 8),
+        legend.position = 'none')
+
+asv17_rclr_plot
+
+plot_grid(interactions_01_asv17_plot, 
+          asv17_rclr_plot,
+          cols = 1)
+
+# HOW IS THE COMMUNITY INTERACTING WITH MY APPARENT BLOOMERS OVER THE TIME SERIES? -----
+### abundance at t and interaction t -> t+1
+### in this case I'm considering as bloom event in the conditions fulfilled in t
+## ---- EVALUATE THE ABUNDANCE BEFORE THE INTERACTION ## ----
+### Mean interaction strength ------
+#### t+0 to sample id_num abundance 
+mdr_tb_m_rclr <- mdr_tb_m |>
+  dplyr::filter(asv_num %in% c('asv17', 'asv22', 'asv23',
+                               'asv11', 'asv1', 'asv31', 'asv7', 'asv15')) |>
+  pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff)
+
+mdr_tb_m_rclr_pos <- mdr_tb_m_rclr |>
+  dplyr::filter(value > 0) |>
+  dplyr::mutate(value = as.numeric(value)) |>
+  dplyr::mutate(value = case_when(value > 0 ~ value,
+                                  value < 0 ~ 0)) |>
+  dplyr::group_by(asv_num, fraction_b, date, time) |>
+  dplyr::reframe(pos_interactions = sum(value),
+                 n = n()) |>
+  dplyr::mutate(mean_pos_int = pos_interactions/n,
+                sd_pos_int = sd(mean_pos_int)) |>
+  dplyr::select(-n, -pos_interactions)
+
+mdr_tb_m_rclr_neg <- mdr_tb_m_rclr |>
+  dplyr::filter(value < 0) |>
+  dplyr::mutate(value = as.numeric(value)) |>
+  dplyr::mutate(value = case_when(value < 0 ~ value,
+                                  value > 0 ~ 0)) |>
+  dplyr::group_by(asv_num, fraction_b, date, time ) |>
+  dplyr::reframe(neg_interactions = sum(value),
+                 n = n()) |>
+  dplyr::mutate(mean_neg_int = neg_interactions/n,
+                sd_neg_int = sd(mean_neg_int))|>
+  dplyr::select(-n, -neg_interactions)
+
+mdr_tb_m_rclr_int <- mdr_tb_m_rclr_pos |>
+  left_join(mdr_tb_m_rclr_neg)
+
+m_sample_num <- m_02 |>
+  dplyr::select(date, sample_id_num)
+
+bloom_event <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(bloom_event = case_when((z_score_ra > 2 &
+                                           abundance_value > 0.1) ~ 'bloom',
+                                        TRUE ~ 'no-bloom')) |>
+  dplyr::select(bloom_event, date, fraction, asv_num) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  left_join(m_sample_num) |>## add sample_number
+  dplyr::select(-date)
+
+data <- mdr_tb_m_rclr_int |> 
+  dplyr::mutate(fraction = case_when(str_detect(fraction_b, 'bp') ~ '0.2',
+                                     str_detect(fraction_b, 'bn') ~ '3')) |>
+  left_join(bloom_event , by = c('fraction', 'asv_num', 'time' = 'sample_id_num'))
+
+n_bloom_events <- bloom_event |>
+  dplyr::group_by(asv_num, fraction, bloom_event) |>
+  dplyr::reframe(n = paste0('n=', n()))
+
+data <- data |>
+  pivot_longer(cols = starts_with('mean')) |>
+  left_join(n_bloom_events)
+
+interactions_pre_mean_plot <- data |>
+  ggplot(aes(as.numeric(time), interaction( name,fraction,  asv_num), fill = value)) + 
+  geom_tile()+
+  geom_point(data = data |>
+               dplyr::filter(bloom_event == 'bloom'), 
+             aes(as.numeric(time), interaction( name,fraction,  asv_num)),
+             size = 0.75,
+             alpha = 0.6, 
+             shape = 4) +
+  scale_fill_gradient2(low = "#8C0009", mid = "white", 
+                       high = "#000000", midpoint = 0, na.value = 'white')+
+  theme_bw() + 
+  scale_x_continuous(breaks = c(12, 12*2, 12*3, 12*4, 12*5, 12*6, 12*7, 12*8, 12*9),
+                     labels = c('2005', '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013'))+
+  labs(x = 'Time', y  = 'Blooming ASVs being affected by the community', fill = 'Mean Interaction Strength',
+       title = 'The microbial community effect on blooming taxa 
+       and the pre abundance after interaction') + 
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 8),
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 6),
+        panel.border = element_blank(),
+        panel.grid = element_blank(),
+        title = element_text(size = 5),
+        legend.position = 'bottom',
+        legend.key.size = unit(3, 'mm'),
+        legend.text = element_text(size = 4),
+        axis.ticks.length = unit(0.2, "mm"))
+
+interactions_pre_mean_plot
+
+ggsave(
+  plot = interactions_pre_mean_plot , 
+  filename = 'community_interactions_pre_mean_plot.pdf',
+  path = 'results/figures/MDR/v2/',
+  width = 150, 
+  height = 100, 
+  units = 'mm'
+)
+
+## group all those data points in which there is a blooming event vs. those that there is not 
+genus_data <- tax_bbmo_10y_new |>
+  dplyr::filter(asv_num %in% unique(bloo_taxonomy$asv_num_f)) |>
+  dplyr::distinct(asv_num, family, genus)
+
+data <- data |>
+  dplyr::filter(!is.na(bloom_event)) |> # missing and non interpolated values
+  left_join(bloo_taxonomy, by = c('asv_num' = 'asv_num_f')) 
+
+custom_labels <- data |>
+  distinct(asv_num, family_f, genus) |>    # Ensure one label per `asv_num`
+  dplyr::mutate(
+    label = case_when(
+      !is.na(genus) ~ paste0(family_f," ", genus, " ", asv_num),
+      is.na(genus) ~ paste0(family_f, " ", asv_num),  # Case with missing species
+      !is.na(genus) ~ paste0(family_f, " ", genus, " ", asv_num)
+    )
+  ) |> 
+  pull(label, name = asv_num) 
+
+summary_interactions_boxplot_community_pre_int <- data |>
+  ggplot(aes(interaction( bloom_event, name, fraction), abs(value))) + 
+  geom_boxplot(notch = F, aes(fill = name, color = name))+
+  geom_text(aes(label = n), 
+            position = position_nudge(y = max(abs(data$value), na.rm = TRUE) * 0.1), 
+            size = 1, vjust = 0.5,hjust = 1,  check_overlap = T) + 
+  scale_color_manual(values = c('mean_pos_int' = '#000000',
+                                'mean_neg_int' = '#8C0009'),
+                     labels = c('Negative', 'Positive'))+
+  scale_fill_manual(values = c('mean_pos_int' = '#000000',
+                               'mean_neg_int' = '#8C0009'),
+                    labels = c('Negative', 'Positive'))+
+  facet_wrap(vars(asv_num), labeller = as_labeller(custom_labels)#)+
+             ,ncol = 2)+
+  theme_bw() + 
+  labs(x = '', y = 'Mean Interaction Strength', color = 'Interaction',
+       fill = 'Interaction',
+       title = 'The microbial community effect on blooming taxa
+       pre interaction') + 
+  coord_flip()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 8),
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 8),
+        panel.border = element_blank(),
+        panel.grid = element_blank(),
+        title = element_text(size = 6),
+        legend.position = 'bottom',
+        axis.ticks.length = unit(0.2, "mm"))
+
+summary_interactions_boxplot_community_pre_int
+
+ggsave(
+  plot = summary_interactions_boxplot_community_pre_int , 
+  filename = 'community_summary_interactions_boxplot_community_pre_int.pdf',
+  path = 'results/figures/MDR/v2/',
+  width = 100, 
+  height = 150, 
+  units = 'mm'
+)
+
+### Sum interactions transformed to 0 and 1 -----
+#### +0 to sample id_num abundance 
+mdr_tb_m_rclr <- mdr_tb_m |>
+  #dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num %in% c('asv17', 'asv22', 'asv23',
+                               'asv11', 'asv1', 'asv31', 'asv7', 'asv15')) |>
+  pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff)
+
+mdr_tb_m_rclr_pos <- mdr_tb_m_rclr |>
+  dplyr::filter(value > 0) |>
+  dplyr::mutate(value = as.numeric(value)) |>
+  dplyr::mutate(value = case_when(value > 0 ~ 1,
+                                  value < 0 ~ 0)) |>
+  dplyr::group_by(asv_num, fraction_b, date, time) |>
+  dplyr::reframe(pos_interactions = sum(value),
+                 n = n()) |>
+  dplyr::mutate(mean_pos_int = pos_interactions/1,
+                sd_pos_int = sd(mean_pos_int)) |>
+  dplyr::select(-n, -pos_interactions)
+
+mdr_tb_m_rclr_neg <- mdr_tb_m_rclr |>
+  dplyr::filter(value < 0) |>
+  dplyr::mutate(value = as.numeric(value)) |>
+  dplyr::mutate(value = case_when(value < 1 ~ -1,
+                                  value > 0 ~ 0)) |>
+  dplyr::group_by(asv_num, fraction_b, date, time ) |>
+  dplyr::reframe(neg_interactions = sum(value),
+                 n = n()) |>
+  dplyr::mutate(mean_neg_int = neg_interactions/1,
+                sd_neg_int = sd(mean_neg_int))|>
+  dplyr::select(-n, -neg_interactions)
+
+mdr_tb_m_rclr_int <- mdr_tb_m_rclr_pos |>
+  left_join(mdr_tb_m_rclr_neg)
+
+m_sample_num <- m_02 |>
+  dplyr::select(date, sample_id_num)
+
+bloom_event <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(bloom_event = case_when((z_score_ra > 2 &
+                                           abundance_value > 0.1) ~ 'bloom',
+                                        TRUE ~ 'no-bloom')) |>
+  dplyr::select(bloom_event, date, fraction, asv_num) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  left_join(m_sample_num) |>## add sample_number
+  dplyr::select(-date)
+
+data <- mdr_tb_m_rclr_int |> 
+  dplyr::mutate(fraction = case_when(str_detect(fraction_b, 'bp') ~ '0.2',
+                                     str_detect(fraction_b, 'bn') ~ '3')) |>
+  left_join(bloom_event , by = c('fraction', 'asv_num', 'time' = 'sample_id_num'))
+
+n_bloom_events <- bloom_event |>
+  dplyr::group_by(asv_num, fraction, bloom_event) |>
+  dplyr::reframe(n = paste0('n=', n()),
+                 n_blooms = n()) 
+
+data <- data |>
+  left_join(n_bloom_events) |>
+  dplyr::mutate(dates_considered = case_when(bloom_event == 'bloom' ~ n_blooms,
+                                             TRUE ~ 120-n_blooms)) |>
+  pivot_longer(cols = starts_with('mean')) |>
+  dplyr::mutate(value = value/dates_considered)
+
+interactions_pre_mean_plot <- data |>
+  dplyr::filter(!is.na(bloom_event)) |>
+  ggplot(aes(as.numeric(time), interaction(name,fraction,  asv_num), fill = value)) + 
+  geom_tile()+
+  geom_point(data = data |>
+               dplyr::filter(bloom_event == 'bloom'), 
+             aes(as.numeric(time), interaction( name,fraction,  asv_num)),
+             size = 0.75,
+             alpha = 0.6, 
+             shape = 4) +
+  scale_fill_gradient2(low = "#8C0009", mid = "white", 
+                       high = "#000000", midpoint = 0, na.value = 'white')+
+  theme_bw() + 
+  scale_x_continuous(breaks = c(12, 12*2, 12*3, 12*4, 12*5, 12*6, 12*7, 12*8, 12*9),
+                     labels = c('2005', '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013'))+
+  labs(x = 'Time', y  = 'Blooming ASVs being affected by the community', fill = 'Mean Interaction Strength',
+       title = 'The microbial community effect on blooming taxa 
+       and the pre abundance after interaction') + 
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 8),
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 6),
+        panel.border = element_blank(),
+        panel.grid = element_blank(),
+        title = element_text(size = 5),
+        legend.position = 'bottom',
+        legend.key.size = unit(3, 'mm'),
+        legend.text = element_text(size = 4),
+        axis.ticks.length = unit(0.2, "mm"))
+
+interactions_pre_mean_plot
+
+ggsave(
+  plot = interactions_pre_mean_plot , 
+  filename = 'community_interactions_pre_mean_binary_norm_plot.pdf',
+  path = 'results/figures/MDR/v2/',
+  width = 150, 
+  height = 100, 
+  units = 'mm'
+)
+
+## group all those data points in which there is a blooming event vs. those that there is not 
+data$name |>
+  unique()
+
+genus_data <- tax_bbmo_10y_new |>
+  dplyr::filter(asv_num %in% unique(bloo_taxonomy$asv_num_f)) |>
+  dplyr::distinct(asv_num, family, genus)
+
+data <- data |>
+  dplyr::filter(!is.na(bloom_event)) |> # missing and non interpolated values
+  left_join(bloo_taxonomy, by = c('asv_num' = 'asv_num_f')) 
+
+custom_labels <- data |>
+  distinct(asv_num, family_f, genus) |>    # Ensure one label per `asv_num`
+  dplyr::mutate(
+    label = case_when(
+      !is.na(genus) ~ paste0(family_f," ", genus, " ", asv_num),
+      is.na(genus) ~ paste0(family_f, " ", asv_num),  # Case with missing species
+      !is.na(genus) ~ paste0(family_f, " ", genus, " ", asv_num)
+    )
+  ) |> 
+  pull(label, name = asv_num) 
+
+summary_interactions_boxplot_community_pre_int <- data |>
+  ggplot(aes(interaction( bloom_event, name, fraction), abs(value))) + 
+  geom_boxplot(notch = F, aes(fill = name, color = name))+
+  geom_text(aes(label = n), 
+            position = position_nudge(y = max(abs(data$value), na.rm = TRUE) * 0.1), 
+            size = 1, vjust = 0.5,hjust = 1,  check_overlap = T) + 
+  scale_color_manual(values = c('mean_pos_int' = '#000000',
+                                'mean_neg_int' = '#8C0009'),
+                     labels = c('Negative', 'Positive'))+
+  scale_fill_manual(values = c('mean_pos_int' = '#000000',
+                               'mean_neg_int' = '#8C0009'),
+                    labels = c('Negative', 'Positive'))+
+  facet_wrap(vars(asv_num), labeller = as_labeller(custom_labels)#)+
+             ,ncol = 2,
+             scales = 'free_x')+
+  theme_bw() + 
+  labs(x = '', y = 'Mean Interaction Strength', color = 'Interaction',
+       fill = 'Interaction',
+       title = 'The microbial community effect on blooming taxa
+       pre interaction') + 
+  coord_flip()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 8),
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 8),
+        panel.border = element_blank(),
+        panel.grid = element_blank(),
+        title = element_text(size = 6),
+        legend.position = 'bottom',
+        axis.ticks.length = unit(0.2, "mm"))
+
+summary_interactions_boxplot_community_pre_int
+
+ggsave(
+  plot = summary_interactions_boxplot_community_pre_int , 
+  filename = 'community_summary_interactions_boxplot_community_norm_pre_int.pdf',
+  path = 'results/figures/MDR/v2/',
+  width = 100, 
+  height = 150, 
+  units = 'mm'
+)
+
+## ---- EVALUATE RESULTING ABUNDANCE AFTER INTERACTION ##  ----
+### Mean interaction strength ------
+#### +1 to sample id_num abundance 
+mdr_tb_m_rclr <- mdr_tb_m |>
+  #dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num %in% c('asv17', 'asv22', 'asv23',
+                               'asv11', 'asv1', 'asv31', 'asv7', 'asv15')) |>
+  pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff)
+
+mdr_tb_m_rclr_pos <- mdr_tb_m_rclr |>
+  dplyr::filter(value > 0) |>
+  dplyr::mutate(value = as.numeric(value)) |>
+  dplyr::mutate(value = case_when(value > 0 ~ value,
+                                  value < 0 ~ 0)) |>
+  dplyr::group_by(asv_num, fraction_b, date, time) |>
+  dplyr::reframe(pos_interactions = sum(value),
+                 n = n()) |>
+  dplyr::mutate(mean_pos_int = pos_interactions/n,
+                sd_pos_int = sd(mean_pos_int)) |>
+  dplyr::select(-n, -pos_interactions)
+
+mdr_tb_m_rclr_neg <- mdr_tb_m_rclr |>
+  dplyr::filter(value < 0) |>
+  dplyr::mutate(value = as.numeric(value)) |>
+  dplyr::mutate(value = case_when(value < 0 ~ value,
+                                  value > 0 ~ 0)) |>
+  dplyr::group_by(asv_num, fraction_b, date, time ) |>
+  dplyr::reframe(neg_interactions = sum(value),
+                 n = n()) |>
+  dplyr::mutate(mean_neg_int = neg_interactions/n,
+                sd_neg_int = sd(mean_neg_int))|>
+  dplyr::select(-n, -neg_interactions)
+
+mdr_tb_m_rclr_int <- mdr_tb_m_rclr_pos |>
+  left_join(mdr_tb_m_rclr_neg)
+
+m_sample_num <- m_02 |>
+  dplyr::select(date, sample_id_num) |>
+  dplyr::mutate(sample_id_num = as.numeric(sample_id_num)+1) |>
+  dplyr::mutate(sample_id_num = as.character(sample_id_num))
+
+bloom_event <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(bloom_event = case_when((z_score_ra > 2 &
+                                           abundance_value > 0.1) ~ 'bloom',
+                                        TRUE ~ 'no-bloom')) |>
+  dplyr::select(bloom_event, date, fraction, asv_num) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  left_join(m_sample_num) |>## add sample_number
+  dplyr::select(-date)
+
+data <- mdr_tb_m_rclr_int |> 
+  dplyr::mutate(fraction = case_when(str_detect(fraction_b, 'bp') ~ '0.2',
+                                     str_detect(fraction_b, 'bn') ~ '3')) |>
+  left_join(bloom_event , by = c('fraction', 'asv_num', 'time' = 'sample_id_num'))
+
+n_bloom_events <- bloom_event |>
+  dplyr::group_by(asv_num, fraction, bloom_event) |>
+  dplyr::reframe(n = paste0('n=', n()))
+
+data <- data |>
+  pivot_longer(cols = starts_with('mean')) |>
+  left_join(n_bloom_events)
+
+interactions_resulting_mean_plot <- data |>
+  ggplot(aes(as.numeric(time), interaction( name,fraction,  asv_num), fill = value)) + 
+  geom_tile()+
+  geom_point(data = data |>
+               dplyr::filter(bloom_event == 'bloom'), 
+             aes(as.numeric(time), interaction( name,fraction,  asv_num)),
+             size = 0.75,
+             alpha = 0.6, 
+             shape = 4) +
+  scale_fill_gradient2(low = "#8C0009", mid = "white", 
+                       high = "#000000", midpoint = 0, na.value = 'white')+
+  theme_bw() + 
+  scale_x_continuous(breaks = c(12, 12*2, 12*3, 12*4, 12*5, 12*6, 12*7, 12*8, 12*9),
+                     labels = c('2005', '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013'))+
+  labs(x = 'Time', y  = 'Blooming ASVs being affected by the community', fill = 'Mean Interaction Strength',
+       title = 'The microbial community effect on blooming taxa 
+       and the resulting abundance after interaction') + 
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 8),
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 6),
+        panel.border = element_blank(),
+        panel.grid = element_blank(),
+        title = element_text(size = 5),
+        legend.position = 'bottom',
+        legend.key.size = unit(3, 'mm'),
+        legend.text = element_text(size = 4),
+        axis.ticks.length = unit(0.2, "mm"))
+
+interactions_resulting_mean_plot
+
+ggsave(
+  plot = interactions_resulting_mean_plot , 
+  filename = 'community_interactions_resulting_mean_plot.pdf',
+  path = 'results/figures/MDR/v2/',
+  width = 150, 
+  height = 100, 
+  units = 'mm'
+)
+
+ ## group all those data points in which there is a blooming event vs. those that there is not 
+data$name |>
+  unique()
+
+genus_data <- tax_bbmo_10y_new |>
+  dplyr::filter(asv_num %in% unique(bloo_taxonomy$asv_num_f)) |>
+  dplyr::distinct(asv_num, family, genus)
+
+data <- data |>
+  dplyr::filter(!is.na(bloom_event)) |> # missing and non interpolated values
+  left_join(bloo_taxonomy, by = c('asv_num' = 'asv_num_f')) 
+
+custom_labels <- data |>
+  distinct(asv_num, family_f, genus) |>    # Ensure one label per `asv_num`
+  dplyr::mutate(
+    label = case_when(
+      !is.na(genus) ~ paste0(family_f," ", genus, " ", asv_num),
+      is.na(genus) ~ paste0(family_f, " ", asv_num),  # Case with missing species
+      !is.na(genus) ~ paste0(family_f, " ", genus, " ", asv_num)
+    )
+  ) |> 
+  pull(label, name = asv_num) 
 
 data |>
-  dplyr::filter(fraction == '0.2') |>
-  ggplot(aes(date, interactions))+
-  geom_line(aes(group = fraction))+
-  facet_wrap(vars(asv_num), ncol = 2)+
-  scale_color_manual(values = palette_fraction, labels = labs_fraction)+
-  # geom_line(data = data |>
-  #             dplyr::filter(fraction == '3'), aes(date, abundance_value), color = 'darkred')+
-  geom_line(data =  data |>
-              dplyr::filter(fraction == '0.2'), aes(date, abundance_value), color = 'grey')+
-  geom_line(data =  data |>
-              dplyr::filter(fraction == '0.2'), aes(date, group = fraction, color = fraction, linetype = fraction), linewidth = 0.75, alpha = 1)+ #, linetype = bray_curtis_type
-  scale_linetype_manual( labels = labs_fraction, values = c('0.2' = 1, '3' = 2))+
-  scale_x_datetime(date_breaks = 'year', date_labels = '%Y')+
-  labs(x = 'Date', y = 'Interaction', color = '', linetype = '', shape = '')+
-  scale_shape_discrete(labels = labs_fraction)+
-  guides(shape = 'none',
-         color = guide_legend(ncol = 3, keywidth = unit(1, "cm")))+
-  theme_bw()+
-  theme(#panel.grid = element_blank(), 
-    strip.background = element_blank(), legend.position = 'bottom',
-    panel.grid.minor = element_blank(),
-    axis.title  = element_text(size = 9),
-    strip.text = element_text(size = 5),
-    axis.text = element_text(size = 5),
-    # axis.text.x = element_text(size = 7), 
-    panel.grid.major.y = element_blank(),
-    panel.border = element_blank(),
-    strip.placement = 'outside',
-    axis.ticks.length.y =  unit(0.2, "mm"))
+  str()
 
-observed_rar_red <- observed_rar |>
-  dplyr::select(sample_id, observed)
+summary_interactions_boxplot_community_resulting_int <- data |>
+  ggplot(aes(interaction( bloom_event, name, fraction), abs(value))) + 
+  geom_boxplot(notch = F, aes(fill = name, color = name))+
+  geom_text(aes(label = n), 
+            position = position_nudge(y = max(abs(data$value), na.rm = TRUE) * 0.1), 
+            size = 1, vjust = 0.5,hjust = 1,  check_overlap = T) + 
+  scale_color_manual(values = c('mean_pos_int' = '#000000',
+                                'mean_neg_int' = '#8C0009'),
+                     labels = c('Negative', 'Positive'))+
+  scale_fill_manual(values = c('mean_pos_int' = '#000000',
+                               'mean_neg_int' = '#8C0009'),
+                    labels = c('Negative', 'Positive'))+
+  facet_wrap(vars(asv_num), labeller = as_labeller(custom_labels)#)+
+               ,ncol = 2)+
+  theme_bw() + 
+  labs(x = '', y = 'Mean Interaction Strength', color = 'Interaction',
+       fill = 'Interaction',
+       title = 'The microbial community effect on blooming taxa
+       resulting interaction') + 
+  coord_flip()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 8),
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 8),
+        panel.border = element_blank(),
+        panel.grid = element_blank(),
+        title = element_text(size = 6),
+        legend.position = 'bottom',
+        axis.ticks.length = unit(0.2, "mm"))
 
-shannon_rar_red <- shannon_rar |>
-  dplyr::select(sample_id, diversity_shannon)
+summary_interactions_boxplot_community_resulting_int
 
-interactions_binnary_mdr_plot <- data |>
-  left_join(shannon_rar_red) |>
-  #dplyr::filter(fraction == '0.2') |>
-  ggplot(aes(abundance_value, interactions/diversity_shannon))+
-  geom_vline(xintercept = 0)+
-  geom_hline(yintercept = 0)+
-  geom_point(aes(shape = fraction, color = fraction))+
-  facet_wrap(vars(interaction(asv_num, recurrency)), ncol = 3)+
-  scale_shape_discrete(labels = labs_fraction)+
-  scale_color_manual(values = palette_fraction, labels = labs_fraction)+
+ggsave(
+  plot = summary_interactions_boxplot_community_resulting_int , 
+  filename = 'community_summary_interactions_boxplot_community_resulting_int.pdf',
+  path = 'results/figures/MDR/v2/',
+  width = 100, 
+  height = 150, 
+  units = 'mm'
+)
 
-  geom_smooth(method = 'loess', aes(group = fraction, color = fraction))+
-  labs(x = 'Abundance robust - Centered Log Ratio', y = 'Interactions summary', color = '', linetype = '', shape = '')+
-  theme_bw()+
-  theme(#panel.grid = element_blank(), 
-    strip.background = element_blank(), legend.position = 'bottom',
-    panel.grid.minor = element_blank(),
-    axis.title  = element_text(size = 9),
-    strip.text = element_text(size = 5),
-    axis.text = element_text(size = 5),
-    # axis.text.x = element_text(size = 7), 
-    panel.grid.major.y = element_blank(),
-    panel.border = element_blank(),
-    strip.placement = 'outside',
-    axis.ticks.length.y =  unit(0.2, "mm"))
+### Sum interactions transformed to 0 and 1 -----
+#### +1 to sample id_num abundance 
+mdr_tb_m_rclr <- mdr_tb_m |>
+  #dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num %in% c('asv17', 'asv22', 'asv23',
+                               'asv11', 'asv1', 'asv31', 'asv7', 'asv15')) |>
+  pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff)
 
-interactions_binnary_mdr_plot
+mdr_tb_m_rclr_pos <- mdr_tb_m_rclr |>
+  dplyr::filter(value > 0) |>
+  dplyr::mutate(value = as.numeric(value)) |>
+  dplyr::mutate(value = case_when(value > 0 ~ 1,
+                                  value < 0 ~ 0)) |>
+  dplyr::group_by(asv_num, fraction_b, date, time) |>
+  dplyr::reframe(pos_interactions = sum(value),
+                 n = n()) |>
+  dplyr::mutate(mean_pos_int = pos_interactions/1,
+                sd_pos_int = sd(mean_pos_int)) |>
+  dplyr::select(-n, -pos_interactions)
 
-# ggsave(plot = interactions_binnary_mdr_plot, filename = 'interactions_binnary_mdr_plot_norm_shannon.pdf',
-#        path = 'results/figures/',
-#        width = 180, height = 180, units = 'mm')
+mdr_tb_m_rclr_neg <- mdr_tb_m_rclr |>
+  dplyr::filter(value < 0) |>
+  dplyr::mutate(value = as.numeric(value)) |>
+  dplyr::mutate(value = case_when(value < 1 ~ -1,
+                                  value > 0 ~ 0)) |>
+  dplyr::group_by(asv_num, fraction_b, date, time ) |>
+  dplyr::reframe(neg_interactions = sum(value),
+                 n = n()) |>
+  dplyr::mutate(mean_neg_int = neg_interactions/1,
+                sd_neg_int = sd(mean_neg_int))|>
+  dplyr::select(-n, -neg_interactions)
 
-## relative abundance ----
-# abundance data 
-abund_data <- asv_tab_all_bloo_z_tax |>
-  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |> 
-  dplyr::filter(asv_num %in% c('asv11', 'asv7', 'asv1', 'asv22', 'asv23', 'asv31', 'asv17')) |>
-  dplyr::filter(abundance_type == 'relative_abundance') |>
-  dplyr::select(sample_id, abundance_value, asv_num, fraction) 
+mdr_tb_m_rclr_int <- mdr_tb_m_rclr_pos |>
+  left_join(mdr_tb_m_rclr_neg)
 
-data <- mdr_tb_m_bin |>
-  group_by(fraction, asv_num, date, sample_id, recurrency) |>
-  dplyr::reframe(interactions = sum(as.numeric(interaction_strength_ed))) |>
-  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d")))|>
-  left_join(abund_data, by = c('sample_id', 'fraction', 'asv_num'))
+m_sample_num <- m_02 |>
+  dplyr::select(date, sample_id_num) |>
+  dplyr::mutate(sample_id_num = as.numeric(sample_id_num)+1) |>
+  dplyr::mutate(sample_id_num = as.character(sample_id_num))
 
-interactions_binnary_mdr_plot <- data |>
-  left_join(shannon_rar_red) |>
-  #dplyr::filter(fraction == '0.2') |>
-  ggplot(aes(abundance_value, interactions/diversity_shannon))+
-  geom_vline(xintercept = 0)+
-  geom_hline(yintercept = 0)+
-  geom_point(aes(shape = fraction, color = fraction))+
-  facet_wrap(vars(interaction(asv_num, recurrency)), ncol = 3)+
-  scale_shape_discrete(labels = labs_fraction)+
-  scale_color_manual(values = palette_fraction, labels = labs_fraction)+
+bloom_event <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(bloom_event = case_when((z_score_ra > 2 &
+                                           abundance_value > 0.1) ~ 'bloom',
+                                        TRUE ~ 'no-bloom')) |>
+  dplyr::select(bloom_event, date, fraction, asv_num) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  left_join(m_sample_num) |>## add sample_number
+  dplyr::select(-date)
+
+data <- mdr_tb_m_rclr_int |> 
+  dplyr::mutate(fraction = case_when(str_detect(fraction_b, 'bp') ~ '0.2',
+                                     str_detect(fraction_b, 'bn') ~ '3')) |>
+  left_join(bloom_event , by = c('fraction', 'asv_num', 'time' = 'sample_id_num'))
+
+n_bloom_events <- bloom_event |>
+  dplyr::group_by(asv_num, fraction, bloom_event) |>
+  dplyr::reframe(n = paste0('n=', n()))
+
+data <- data |>
+  pivot_longer(cols = starts_with('mean')) |>
+  left_join(n_bloom_events)
+
+interactions_resulting_mean_plot <- data |>
+  dplyr::filter(!is.na(bloom_event)) |>
+  ggplot(aes(as.numeric(time), interaction(name,fraction,  asv_num), fill = value)) + 
+  geom_tile()+
+  geom_point(data = data |>
+               dplyr::filter(bloom_event == 'bloom'), 
+             aes(as.numeric(time), interaction( name,fraction,  asv_num)),
+             size = 0.75,
+             alpha = 0.6, 
+             shape = 4) +
+  scale_fill_gradient2(low = "#8C0009", mid = "white", 
+                       high = "#000000", midpoint = 0, na.value = 'white')+
+  theme_bw() + 
+  scale_x_continuous(breaks = c(12, 12*2, 12*3, 12*4, 12*5, 12*6, 12*7, 12*8, 12*9),
+                     labels = c('2005', '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013'))+
+  labs(x = 'Time', y  = 'Blooming ASVs being affected by the community', fill = 'Mean Interaction Strength',
+       title = 'The microbial community effect on blooming taxa 
+       and the resulting abundance after interaction') + 
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 8),
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 6),
+        panel.border = element_blank(),
+        panel.grid = element_blank(),
+        title = element_text(size = 5),
+        legend.position = 'bottom',
+        legend.key.size = unit(3, 'mm'),
+        legend.text = element_text(size = 4),
+        axis.ticks.length = unit(0.2, "mm"))
+
+interactions_resulting_mean_plot
+
+ggsave(
+  plot = interactions_resulting_mean_plot , 
+  filename = 'community_interactions_resulting_mean_binary_plot.pdf',
+  path = 'results/figures/MDR/v2/',
+  width = 150, 
+  height = 100, 
+  units = 'mm'
+)
+
+## group all those data points in which there is a blooming event vs. those that there is not 
+data$name |>
+  unique()
+
+genus_data <- tax_bbmo_10y_new |>
+  dplyr::filter(asv_num %in% unique(bloo_taxonomy$asv_num_f)) |>
+  dplyr::distinct(asv_num, family, genus)
+
+data <- data |>
+  dplyr::filter(!is.na(bloom_event)) |> # missing and non interpolated values
+  left_join(bloo_taxonomy, by = c('asv_num' = 'asv_num_f')) 
+
+custom_labels <- data |>
+  distinct(asv_num, family_f, genus) |>    # Ensure one label per `asv_num`
+  dplyr::mutate(
+    label = case_when(
+      !is.na(genus) ~ paste0(family_f," ", genus, " ", asv_num),
+      is.na(genus) ~ paste0(family_f, " ", asv_num),  # Case with missing species
+      !is.na(genus) ~ paste0(family_f, " ", genus, " ", asv_num)
+    )
+  ) |> 
+  pull(label, name = asv_num) 
+
+data |>
+  str()
+
+summary_interactions_boxplot_community_resulting_int <- data |>
+  ggplot(aes(interaction( bloom_event, name, fraction), abs(value))) + 
+  geom_boxplot(notch = F, aes(fill = name, color = name))+
+  geom_text(aes(label = n), 
+            position = position_nudge(y = max(abs(data$value), na.rm = TRUE) * 0.1), 
+            size = 1, vjust = 0.5,hjust = 1,  check_overlap = T) + 
+  scale_color_manual(values = c('mean_pos_int' = '#000000',
+                                'mean_neg_int' = '#8C0009'),
+                     labels = c('Negative', 'Positive'))+
+  scale_fill_manual(values = c('mean_pos_int' = '#000000',
+                               'mean_neg_int' = '#8C0009'),
+                    labels = c('Negative', 'Positive'))+
+  facet_wrap(vars(asv_num), labeller = as_labeller(custom_labels)#)+
+             ,ncol = 2)+
+  theme_bw() + 
+  labs(x = '', y = 'Mean Interaction Strength', color = 'Interaction',
+       fill = 'Interaction',
+       title = 'The microbial community effect on blooming taxa
+       resulting interaction') + 
+  coord_flip()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 8),
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 8),
+        panel.border = element_blank(),
+        panel.grid = element_blank(),
+        title = element_text(size = 6),
+        legend.position = 'bottom',
+        axis.ticks.length = unit(0.2, "mm"))
+
+summary_interactions_boxplot_community_resulting_int
+
+ggsave(
+  plot = summary_interactions_boxplot_community_resulting_int , 
+  filename = 'community_summary_interactions_boxplot_community_resulting_int.pdf',
+  path = 'results/figures/MDR/v2/',
+  width = 100, 
+  height = 150, 
+  units = 'mm'
+)
+
+# HOW ARE MY APPARENT BLOOMERS INTERACTING WITH THE COMMUNITY OVER THE TIME SERIES? -----
+## ---- EVALUATE RESULTING ABUNDANCE PRE INTERACTION ##  ----
+### abundance at t interaction t -> t+1
+### Mean interaction strength ------
+#### +0 to sample id_num abundance 
+mdr_tb_m_rclr <- mdr_tb_m |>
+  pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  dplyr::filter(asv_num != asv_num_eff) |>
+  dplyr::filter(asv_num_eff %in% c('asv17', 'asv22' , 'asv23' , 'asv11', 
+                                   'asv1', 'asv31', 'asv7', 'asv15')) |>
+  dplyr::filter(fraction_b %in% c('bn', 'bp'))
+
+mdr_tb_m_rclr_pos <- mdr_tb_m_rclr |>
+  dplyr::filter(value > 0) |>
+  dplyr::mutate(value = as.numeric(value)) |>
+  dplyr::mutate(value = case_when(value > 0 ~ value,
+                                  value < 0 ~ 0)) |>
+  dplyr::group_by(asv_num_eff, fraction_b, date, time) |>
+  dplyr::reframe(pos_interactions = sum(value),
+                 n = n()) |>
+  dplyr::mutate(mean_pos_int = pos_interactions/n,
+                sd_pos_int = sd(mean_pos_int)) |>
+  dplyr::select(-n, -pos_interactions)
+
+mdr_tb_m_rclr_neg <- mdr_tb_m_rclr |>
+  dplyr::filter(value < 0) |>
+  dplyr::mutate(value = as.numeric(value)) |>
+  dplyr::mutate(value = case_when(value < 0 ~ value,
+                                  value > 0 ~ 0)) |>
+  dplyr::group_by(asv_num_eff, fraction_b, date, time ) |>
+  dplyr::reframe(neg_interactions = sum(value),
+                 n = n()) |>
+  dplyr::mutate(mean_neg_int = neg_interactions/n,
+                sd_neg_int = sd(mean_neg_int))|>
+  dplyr::select(-n, -neg_interactions)
+
+mdr_tb_m_rclr_int <- mdr_tb_m_rclr_pos |>
+  left_join(mdr_tb_m_rclr_neg)
+
+m_sample_num <- m_02 |>
+  dplyr::select(date, sample_id_num)
+
+bloom_event <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(bloom_event = case_when((z_score_ra > 2 &
+                                           abundance_value > 0.1) ~ 'bloom',
+                                        TRUE ~ 'no-bloom')) |>
+  dplyr::select(bloom_event, date, fraction, asv_num) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  left_join(m_sample_num) |> ## add sample_number
+  dplyr::select(-date)
+
+data <- mdr_tb_m_rclr_int |> 
+  dplyr::mutate(fraction = case_when(str_detect(fraction_b, 'bp') ~ '0.2',
+                                     str_detect(fraction_b, 'bn') ~ '3')) |>
+  full_join(bloom_event , by = c('fraction', 'asv_num_eff' = 'asv_num', 'time' = 'sample_id_num')) 
+
+data <- data |>
+  pivot_longer(cols = starts_with('mean')) 
+
+interactions_pre_mean_plot <- data |>
+  ggplot(aes(as.numeric(time), interaction( name, fraction,  asv_num_eff), fill = value)) + 
+  geom_tile()+
+  geom_point(data = data |>
+               dplyr::filter(bloom_event == 'bloom'), 
+             aes(as.numeric(time), interaction( name,fraction,  asv_num_eff)),
+             size = 0.75,
+             alpha = 0.6, 
+             shape = 4) +
+  scale_fill_gradient2(low = "#8C0009", mid = "white", 
+                       high = "#000000", midpoint = 0, na.value = 'white')+
+  theme_bw() + 
+  scale_x_continuous(breaks = c(12, 12*2, 12*3, 12*4, 12*5, 12*6, 12*7, 12*8, 12*9),
+                     labels = c('2005', '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013'))+
+  labs(x = 'Time', y  = 'Blooming ASVs affectting the community',
+       fill = 'Mean Interaction Strength',
+       title = 'Blooming taxa effect on the community
+       and the pre abundance before interaction') + 
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 8),
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 6),
+        panel.border = element_blank(),
+        panel.grid = element_blank(),
+        title = element_text(size = 5),
+        legend.position = 'bottom',
+        legend.key.size = unit(3, 'mm'),
+        legend.text = element_text(size = 4),
+        axis.ticks.length = unit(0.2, "mm"))
+
+interactions_pre_mean_plot
+
+ggsave(
+  plot = interactions_pre_mean_plot , 
+  filename = 'interactions_pre_mean_plot.pdf',
+  path = 'results/figures/MDR/v2/',
+  width = 150, 
+  height = 100, 
+  units = 'mm'
+)
+
+## group all those data points in which there is a blooming event vs. those that there is not 
+genus_data <- tax_bbmo_10y_new |>
+  dplyr::filter(asv_num %in% unique(bloo_taxonomy$asv_num_f)) |>
+  dplyr::distinct(asv_num, family, genus)
+
+data <- data |>
+  dplyr::filter(!is.na(bloom_event)) |> # missing and non interpolated values
+  left_join(bloo_taxonomy, by = c('asv_num_eff' = 'asv_num_f')) 
+
+custom_labels <- data |>
+  distinct(asv_num_eff, family_f, genus) |>    # Ensure one label per `asv_num`
+  dplyr::mutate(
+    label = case_when(
+      !is.na(genus) ~ paste0(family_f," ", genus, " ", asv_num_eff),
+      is.na(genus) ~ paste0(family_f, " ", asv_num_eff),  # Case with missing species
+      !is.na(genus) ~ paste0(family_f, " ", genus, " ", asv_num_eff)
+    )
+  ) |> 
+  pull(label, name = asv_num_eff) 
+
+summary_interactions_boxplot_community_pre_int <- data |>
+  ggplot(aes(interaction( bloom_event, name, fraction), abs(value))) + 
+  geom_boxplot(notch = F, aes(fill = name, color = name))+
+  # geom_text(aes(label = n), 
+  #           position = position_nudge(y = max(abs(data$value), na.rm = TRUE) * 0.1), 
+  #           size = 1, vjust = 0.5,hjust = 1,  check_overlap = T) + 
+  scale_color_manual(values = c('mean_pos_int' = '#000000',
+                                'mean_neg_int' = '#8C0009'),
+                     labels = c('Negative', 'Positive'))+
+  scale_fill_manual(values = c('mean_pos_int' = '#000000',
+                               'mean_neg_int' = '#8C0009'),
+                    labels = c('Negative', 'Positive'))+
+  facet_wrap(vars(asv_num_eff), labeller = as_labeller(custom_labels)#)+
+             ,ncol = 2)+
+  theme_bw() + 
+  labs(x = '', y = 'Mean Interaction Strength', color = 'Interaction',
+       fill = 'Interaction',
+       title = 'Blooming taxa effect on the community
+       and the pre abundance before interaction') + 
+  coord_flip()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 8),
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 8),
+        panel.border = element_blank(),
+        panel.grid = element_blank(),
+        title = element_text(size = 6),
+        legend.position = 'bottom',
+        axis.ticks.length = unit(0.2, "mm"))
+
+summary_interactions_boxplot_community_pre_int
+
+ggsave(
+  plot = summary_interactions_boxplot_community_pre_int , 
+  filename = 'summary_interactions_boxplot_community_pre_int.pdf',
+  path = 'results/figures/MDR/v2/',
+  width = 100, 
+  height = 150, 
+  units = 'mm'
+)
+
+### Sum interactions transformed to 0 and 1 ----
+mdr_tb_m_rclr <- mdr_tb_m |>
+  pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  dplyr::filter(asv_num != asv_num_eff) |>
+  dplyr::filter(asv_num_eff %in% c('asv17', 'asv22' , 'asv23' , 'asv11', 
+                                   'asv1', 'asv31', 'asv7', 'asv15')) |>
+  dplyr::filter(fraction_b %in% c('bn', 'bp'))
+
+mdr_tb_m_rclr_pos <- mdr_tb_m_rclr |>
+  dplyr::filter(value > 0) |>
+  dplyr::mutate(value = as.numeric(value)) |>
+  dplyr::mutate(value = case_when(value > 0 ~ 1,
+                                  value < 0 ~ 0)) |>
+  dplyr::group_by(asv_num_eff, fraction_b, date, time) |>
+  dplyr::reframe(pos_interactions = sum(value),
+                 n = n()) |>
+  dplyr::mutate(mean_pos_int = pos_interactions/1,
+                sd_pos_int = sd(mean_pos_int)) |>
+  dplyr::select(-n, -pos_interactions)
+
+mdr_tb_m_rclr_neg <- mdr_tb_m_rclr |>
+  dplyr::filter(value < 0) |>
+  dplyr::mutate(value = as.numeric(value)) |>
+  dplyr::mutate(value = case_when(value < 0 ~ 1,
+                                  value > 0 ~ 0)) |>
+  dplyr::group_by(asv_num_eff, fraction_b, date, time ) |>
+  dplyr::reframe(neg_interactions = sum(value),
+                 n = n()) |>
+  dplyr::mutate(mean_neg_int = neg_interactions/1,
+                sd_neg_int = sd(mean_neg_int))|>
+  dplyr::select(-n, -neg_interactions)
+
+mdr_tb_m_rclr_int <- mdr_tb_m_rclr_pos |>
+  left_join(mdr_tb_m_rclr_neg)
+
+m_sample_num <- m_02 |>
+  dplyr::select(date, sample_id_num)
+
+bloom_event <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(bloom_event = case_when((z_score_ra > 2 &
+                                           abundance_value > 0.1) ~ 'bloom',
+                                        TRUE ~ 'no-bloom')) |>
+  dplyr::select(bloom_event, date, fraction, asv_num) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  left_join(m_sample_num) |> ## add sample_number
+  dplyr::select(-date)
+
+data <- mdr_tb_m_rclr_int |> 
+  dplyr::mutate(fraction = case_when(str_detect(fraction_b, 'bp') ~ '0.2',
+                                     str_detect(fraction_b, 'bn') ~ '3')) |>
+  full_join(bloom_event , by = c('fraction', 'asv_num_eff' = 'asv_num', 'time' = 'sample_id_num')) 
+
+data <- data |>
+  dplyr::mutate(mean_neg_int = -mean_neg_int) |>
+  pivot_longer(cols = starts_with('mean')) 
+
+interactions_pre_mean_plot <- data |>
+  ggplot(aes(as.numeric(time), interaction( name, fraction,  asv_num_eff), fill = value)) + 
+  geom_tile()+
+  geom_point(data = data |>
+               dplyr::filter(bloom_event == 'bloom'), 
+             aes(as.numeric(time), interaction( name,fraction,  asv_num_eff)),
+             size = 0.75,
+             alpha = 0.6, 
+             shape = 4) +
+  scale_fill_gradient2(low = "#8C0009", mid = "white", 
+                       high = "#000000", midpoint = 0, na.value = 'white')+
+  theme_bw() + 
+  scale_x_continuous(breaks = c(12, 12*2, 12*3, 12*4, 12*5, 12*6, 12*7, 12*8, 12*9),
+                     labels = c('2005', '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013'))+
+  labs(x = 'Time', y  = 'Blooming ASVs affectting the community',
+       fill = 'Mean Interaction Strength',
+       title = 'Blooming taxa effect on the community
+       and the pre abundance before interaction') + 
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 8),
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 6),
+        panel.border = element_blank(),
+        panel.grid = element_blank(),
+        title = element_text(size = 5),
+        legend.position = 'bottom',
+        legend.key.size = unit(3, 'mm'),
+        legend.text = element_text(size = 4),
+        axis.ticks.length = unit(0.2, "mm"))
+
+interactions_pre_mean_plot
+
+ggsave(
+  plot = interactions_pre_mean_plot , 
+  filename = 'interactions_pre_mean_binary_plot.pdf',
+  path = 'results/figures/MDR/v2/',
+  width = 150, 
+  height = 100, 
+  units = 'mm'
+)
+
+## group all those data points in which there is a blooming event vs. those that there is not 
+genus_data <- tax_bbmo_10y_new |>
+  dplyr::filter(asv_num %in% unique(bloo_taxonomy$asv_num_f)) |>
+  dplyr::distinct(asv_num, family, genus)
+
+data <- data |>
+  dplyr::filter(!is.na(bloom_event)) |> # missing and non interpolated values
+  left_join(bloo_taxonomy, by = c('asv_num_eff' = 'asv_num_f')) 
+
+custom_labels <- data |>
+  distinct(asv_num_eff, family_f, genus) |>    # Ensure one label per `asv_num`
+  dplyr::mutate(
+    label = case_when(
+      !is.na(genus) ~ paste0(family_f," ", genus, " ", asv_num_eff),
+      is.na(genus) ~ paste0(family_f, " ", asv_num_eff),  # Case with missing species
+      !is.na(genus) ~ paste0(family_f, " ", genus, " ", asv_num_eff)
+    )
+  ) |> 
+  pull(label, name = asv_num_eff) 
+
+summary_interactions_boxplot_community_pre_int <- data |>
+  ggplot(aes(interaction( bloom_event, name, fraction), abs(value))) + 
+  geom_boxplot(notch = F, aes(fill = name, color = name))+
+  # geom_text(aes(label = n), 
+  #           position = position_nudge(y = max(abs(data$value), na.rm = TRUE) * 0.1), 
+  #           size = 1, vjust = 0.5,hjust = 1,  check_overlap = T) + 
+  scale_color_manual(values = c('mean_pos_int' = '#000000',
+                                'mean_neg_int' = '#8C0009'),
+                     labels = c('Negative', 'Positive'))+
+  scale_fill_manual(values = c('mean_pos_int' = '#000000',
+                               'mean_neg_int' = '#8C0009'),
+                    labels = c('Negative', 'Positive'))+
+  facet_wrap(vars(asv_num_eff), labeller = as_labeller(custom_labels)#)+
+             ,ncol = 2)+
+  theme_bw() + 
+  labs(x = '', y = 'Mean Interaction Strength', color = 'Interaction',
+       fill = 'Interaction',
+       title = 'Blooming taxa effect on the community
+       and the pre abundance before interaction') + 
+  coord_flip()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 8),
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 8),
+        panel.border = element_blank(),
+        panel.grid = element_blank(),
+        title = element_text(size = 6),
+        legend.position = 'bottom',
+        axis.ticks.length = unit(0.2, "mm"))
+
+summary_interactions_boxplot_community_pre_int
+
+ggsave(
+  plot = summary_interactions_boxplot_community_pre_int , 
+  filename = 'summary_interactions_boxplot_community_binary_pre_int.pdf',
+  path = 'results/figures/MDR/v2/',
+  width = 100, 
+  height = 150, 
+  units = 'mm'
+)
+
+## ---- EVALUATE RESULTING ABUNDANCE AFTER INTERACTION ##  ----
+### abundance at t+1 interaction t -> t+1
+### Mean interaction strength ------
+#### +1 to sample id_num abundance 
+mdr_tb_m_rclr <- mdr_tb_m |>
+  pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  dplyr::filter(asv_num != asv_num_eff) |>
+  dplyr::filter(asv_num_eff %in% c('asv17', 'asv22' , 'asv23' , 'asv11', 
+                                   'asv1', 'asv31', 'asv7', 'asv15')) |>
+  dplyr::filter(fraction_b %in% c('bn', 'bp'))
+
+mdr_tb_m_rclr_pos <- mdr_tb_m_rclr |>
+  dplyr::filter(value > 0) |>
+  dplyr::mutate(value = as.numeric(value)) |>
+  dplyr::mutate(value = case_when(value > 0 ~ value,
+                                  value < 0 ~ 0)) |>
+  dplyr::group_by(asv_num_eff, fraction_b, date, time) |>
+  dplyr::reframe(pos_interactions = sum(value),
+                 n = n()) |>
+  dplyr::mutate(mean_pos_int = pos_interactions/n,
+                sd_pos_int = sd(mean_pos_int)) |>
+  dplyr::select(-n, -pos_interactions)
+
+mdr_tb_m_rclr_neg <- mdr_tb_m_rclr |>
+  dplyr::filter(value < 0) |>
+  dplyr::mutate(value = as.numeric(value)) |>
+  dplyr::mutate(value = case_when(value < 0 ~ value,
+                                  value > 0 ~ 0)) |>
+  dplyr::group_by(asv_num_eff, fraction_b, date, time ) |>
+  dplyr::reframe(neg_interactions = sum(value),
+                 n = n()) |>
+  dplyr::mutate(mean_neg_int = neg_interactions/n,
+                sd_neg_int = sd(mean_neg_int))|>
+  dplyr::select(-n, -neg_interactions)
+
+mdr_tb_m_rclr_int <- mdr_tb_m_rclr_pos |>
+  left_join(mdr_tb_m_rclr_neg)
+
+m_sample_num <- m_02 |>
+  dplyr::select(date, sample_id_num) |>
+  dplyr::mutate(sample_id_num = as.numeric(sample_id_num)+1) |>
+  dplyr::mutate(sample_id_num = as.character(sample_id_num))
+
+bloom_event <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(bloom_event = case_when((z_score_ra > 2 &
+                                           abundance_value > 0.1) ~ 'bloom',
+                                        TRUE ~ 'no-bloom')) |>
+  dplyr::select(bloom_event, date, fraction, asv_num) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  left_join(m_sample_num) |> ## add sample_number
+  dplyr::select(-date)
+
+data <- mdr_tb_m_rclr_int |> 
+  dplyr::mutate(fraction = case_when(str_detect(fraction_b, 'bp') ~ '0.2',
+                                     str_detect(fraction_b, 'bn') ~ '3')) |>
+  full_join(bloom_event , by = c('fraction', 'asv_num_eff' = 'asv_num', 'time' = 'sample_id_num')) 
+
+data <- data |>
+  pivot_longer(cols = starts_with('mean')) 
+
+interactions_resulting_mean_plot <- data |>
+  ggplot(aes(as.numeric(time), interaction( name, fraction,  asv_num_eff), fill = value)) + 
+  geom_tile()+
+  geom_point(data = data |>
+               dplyr::filter(bloom_event == 'bloom'), 
+             aes(as.numeric(time), interaction( name,fraction,  asv_num_eff)),
+             size = 0.75,
+             alpha = 0.6, 
+             shape = 4) +
+  scale_fill_gradient2(low = "#8C0009", mid = "white", 
+                       high = "#000000", midpoint = 0, na.value = 'white')+
+  theme_bw() + 
+  scale_x_continuous(breaks = c(12, 12*2, 12*3, 12*4, 12*5, 12*6, 12*7, 12*8, 12*9),
+                     labels = c('2005', '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013'))+
+  labs(x = 'Time', y  = 'Blooming ASVs affectting the community',
+       fill = 'Mean Interaction Strength',
+       title = 'Blooming taxa effect on the community
+       and the resulting abundance pos interaction') + 
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 8),
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 6),
+        panel.border = element_blank(),
+        panel.grid = element_blank(),
+        title = element_text(size = 5),
+        legend.position = 'bottom',
+        legend.key.size = unit(3, 'mm'),
+        legend.text = element_text(size = 4),
+        axis.ticks.length = unit(0.2, "mm"))
+
+interactions_resulting_mean_plot
+
+ggsave(
+  plot = interactions_resulting_mean_plot , 
+  filename = 'bloomers_interactions_resulting_mean_plot.pdf',
+  path = 'results/figures/MDR/v2/',
+  width = 150, 
+  height = 100, 
+  units = 'mm'
+)
+
+## group all those data points in which there is a blooming event vs. those that there is not 
+genus_data <- tax_bbmo_10y_new |>
+  dplyr::filter(asv_num %in% unique(bloo_taxonomy$asv_num_f)) |>
+  dplyr::distinct(asv_num, family, genus)
+
+data <- data |>
+  dplyr::filter(!is.na(bloom_event)) |> # missing and non interpolated values
+  left_join(bloo_taxonomy, by = c('asv_num_eff' = 'asv_num_f')) 
+
+custom_labels <- data |>
+  distinct(asv_num_eff, family_f, genus) |>    # Ensure one label per `asv_num`
+  dplyr::mutate(
+    label = case_when(
+      !is.na(genus) ~ paste0(family_f," ", genus, " ", asv_num_eff),
+      is.na(genus) ~ paste0(family_f, " ", asv_num_eff),  # Case with missing species
+      !is.na(genus) ~ paste0(family_f, " ", genus, " ", asv_num_eff)
+    )
+  ) |> 
+  pull(label, name = asv_num_eff) 
+
+summary_interactions_boxplot_community_resulting_int <- data |>
+  ggplot(aes(interaction( bloom_event, name, fraction), abs(value))) + 
+  geom_boxplot(notch = F, aes(fill = name, color = name))+
+  # geom_text(aes(label = n), 
+  #           position = position_nudge(y = max(abs(data$value), na.rm = TRUE) * 0.1), 
+  #           size = 1, vjust = 0.5,hjust = 1,  check_overlap = T) + 
+  scale_color_manual(values = c('mean_pos_int' = '#000000',
+                                'mean_neg_int' = '#8C0009'),
+                     labels = c('Negative', 'Positive'))+
+  scale_fill_manual(values = c('mean_pos_int' = '#000000',
+                               'mean_neg_int' = '#8C0009'),
+                    labels = c('Negative', 'Positive'))+
+  facet_wrap(vars(asv_num_eff), labeller = as_labeller(custom_labels)#)+
+             ,ncol = 2)+
+  theme_bw() + 
+  labs(x = '', y = 'Mean Interaction Strength', color = 'Interaction',
+       fill = 'Interaction',
+       title = 'Blooming taxa effect on the community
+       and the resulting abundance post interaction') + 
+  coord_flip()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 8),
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 8),
+        panel.border = element_blank(),
+        panel.grid = element_blank(),
+        title = element_text(size = 6),
+        legend.position = 'bottom',
+        axis.ticks.length = unit(0.2, "mm"))
+
+summary_interactions_boxplot_community_resulting_int
+
+ggsave(
+  plot = summary_interactions_boxplot_community_resulting_int , 
+  filename = 'bloomers_summary_interactions_boxplot_community_resulting_int.pdf',
+  path = 'results/figures/MDR/v2/',
+  width = 100, 
+  height = 150, 
+  units = 'mm'
+)
+
+### Sum interactions transformed to 0 and 1 ----
+mdr_tb_m_rclr <- mdr_tb_m |>
+  pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  dplyr::filter(asv_num != asv_num_eff) |>
+  dplyr::filter(asv_num_eff %in% c('asv17', 'asv22' , 'asv23' , 'asv11', 
+                                   'asv1', 'asv31', 'asv7', 'asv15')) |>
+  dplyr::filter(fraction_b %in% c('bn', 'bp'))
+
+mdr_tb_m_rclr_pos <- mdr_tb_m_rclr |>
+  dplyr::filter(value > 0) |>
+  dplyr::mutate(value = as.numeric(value)) |>
+  dplyr::mutate(value = case_when(value > 0 ~ 1,
+                                  value < 0 ~ 0)) |>
+  dplyr::group_by(asv_num_eff, fraction_b, date, time) |>
+  dplyr::reframe(pos_interactions = sum(value),
+                 n = n()) |>
+  dplyr::mutate(mean_pos_int = pos_interactions/1,
+                sd_pos_int = sd(mean_pos_int)) |>
+  dplyr::select(-n, -pos_interactions)
+
+mdr_tb_m_rclr_neg <- mdr_tb_m_rclr |>
+  dplyr::filter(value < 0) |>
+  dplyr::mutate(value = as.numeric(value)) |>
+  dplyr::mutate(value = case_when(value < 0 ~ 1,
+                                  value > 0 ~ 0)) |>
+  dplyr::group_by(asv_num_eff, fraction_b, date, time ) |>
+  dplyr::reframe(neg_interactions = sum(value),
+                 n = n()) |>
+  dplyr::mutate(mean_neg_int = neg_interactions/1,
+                sd_neg_int = sd(mean_neg_int))|>
+  dplyr::select(-n, -neg_interactions)
+
+mdr_tb_m_rclr_int <- mdr_tb_m_rclr_pos |>
+  left_join(mdr_tb_m_rclr_neg)
+
+m_sample_num <- m_02 |>
+  dplyr::select(date, sample_id_num) |>
+  dplyr::mutate(sample_id_num = as.numeric(sample_id_num)+1) |>
+  dplyr::mutate(sample_id_num = as.character(sample_id_num))
+
+bloom_event <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(bloom_event = case_when((z_score_ra > 2 &
+                                           abundance_value > 0.1) ~ 'bloom',
+                                        TRUE ~ 'no-bloom')) |>
+  dplyr::select(bloom_event, date, fraction, asv_num) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  left_join(m_sample_num) |> ## add sample_number
+  dplyr::select(-date)
+
+data <- mdr_tb_m_rclr_int |> 
+  dplyr::mutate(fraction = case_when(str_detect(fraction_b, 'bp') ~ '0.2',
+                                     str_detect(fraction_b, 'bn') ~ '3')) |>
+  full_join(bloom_event , by = c('fraction', 'asv_num_eff' = 'asv_num', 'time' = 'sample_id_num')) 
+
+data <- data |>
+  dplyr::mutate(mean_neg_int = -mean_neg_int) |>
+  pivot_longer(cols = starts_with('mean')) 
+
+interactions_resulting_mean_plot <- data |>
+  ggplot(aes(as.numeric(time), interaction( name, fraction,  asv_num_eff), fill = value)) + 
+  geom_tile()+
+  geom_point(data = data |>
+               dplyr::filter(bloom_event == 'bloom'), 
+             aes(as.numeric(time), interaction( name,fraction,  asv_num_eff)),
+             size = 0.75,
+             alpha = 0.6, 
+             shape = 4) +
+  scale_fill_gradient2(low = "#8C0009", mid = "white", 
+                       high = "#000000", midpoint = 0, na.value = 'white')+
+  theme_bw() + 
+  scale_x_continuous(breaks = c(12, 12*2, 12*3, 12*4, 12*5, 12*6, 12*7, 12*8, 12*9),
+                     labels = c('2005', '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013'))+
+  labs(x = 'Time', y  = 'Blooming ASVs affectting the community',
+       fill = 'Mean Interaction Strength',
+       title = 'Blooming taxa effect on the community
+       and the resulting abundance pos interaction') + 
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 8),
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 6),
+        panel.border = element_blank(),
+        panel.grid = element_blank(),
+        title = element_text(size = 5),
+        legend.position = 'bottom',
+        legend.key.size = unit(3, 'mm'),
+        legend.text = element_text(size = 4),
+        axis.ticks.length = unit(0.2, "mm"))
+
+interactions_resulting_mean_plot
+
+ggsave(
+  plot = interactions_resulting_mean_plot , 
+  filename = 'bloomers_interactions_resulting_mean_binary_plot.pdf',
+  path = 'results/figures/MDR/v2/',
+  width = 150, 
+  height = 100, 
+  units = 'mm'
+)
+
+## group all those data points in which there is a blooming event vs. those that there is not 
+genus_data <- tax_bbmo_10y_new |>
+  dplyr::filter(asv_num %in% unique(bloo_taxonomy$asv_num_f)) |>
+  dplyr::distinct(asv_num, family, genus)
+
+data <- data |>
+  dplyr::filter(!is.na(bloom_event)) |> # missing and non interpolated values
+  left_join(bloo_taxonomy, by = c('asv_num_eff' = 'asv_num_f')) 
+
+custom_labels <- data |>
+  distinct(asv_num_eff, family_f, genus) |>    # Ensure one label per `asv_num`
+  dplyr::mutate(
+    label = case_when(
+      !is.na(genus) ~ paste0(family_f," ", genus, " ", asv_num_eff),
+      is.na(genus) ~ paste0(family_f, " ", asv_num_eff),  # Case with missing species
+      !is.na(genus) ~ paste0(family_f, " ", genus, " ", asv_num_eff)
+    )
+  ) |> 
+  pull(label, name = asv_num_eff) 
+
+summary_interactions_boxplot_community_resulting_int <- data |>
+  ggplot(aes(interaction( bloom_event, name, fraction), abs(value))) + 
+  geom_boxplot(notch = F, aes(fill = name, color = name))+
+  # geom_text(aes(label = n), 
+  #           position = position_nudge(y = max(abs(data$value), na.rm = TRUE) * 0.1), 
+  #           size = 1, vjust = 0.5,hjust = 1,  check_overlap = T) + 
+  scale_color_manual(values = c('mean_pos_int' = '#000000',
+                                'mean_neg_int' = '#8C0009'),
+                     labels = c('Negative', 'Positive'))+
+  scale_fill_manual(values = c('mean_pos_int' = '#000000',
+                               'mean_neg_int' = '#8C0009'),
+                    labels = c('Negative', 'Positive'))+
+  facet_wrap(vars(asv_num_eff), labeller = as_labeller(custom_labels)#)+
+             ,ncol = 2)+
+  theme_bw() + 
+  labs(x = '', y = 'Mean Interaction Strength', color = 'Interaction',
+       fill = 'Interaction',
+       title = 'Blooming taxa effect on the community
+       and the resulting abundance post interaction') + 
+  coord_flip()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        text = element_text(size = 8),
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 8),
+        panel.border = element_blank(),
+        panel.grid = element_blank(),
+        title = element_text(size = 6),
+        legend.position = 'bottom',
+        axis.ticks.length = unit(0.2, "mm"))
+
+summary_interactions_boxplot_community_resulting_int
+
+ggsave(
+  plot = summary_interactions_boxplot_community_resulting_int , 
+  filename = 'bloomers_summary_interactions_boxplot_community_binary_resulting_int.pdf',
+  path = 'results/figures/MDR/v2/',
+  width = 100, 
+  height = 150, 
+  units = 'mm'
+)
+
+# HOW IS THE COMMUNITY INTERACTING WITH MY APPARENT BLOOMERS OVER THE TIME SERIES? -----
+## Individual plots for each ASV and fraction 
+## interaction t -> t+1 and abundance at t ----
+#### t+0 to sample id_num abundance 
+#### sum total (+) and total (-)
+mdr_tb_m_rclr <- mdr_tb_m |>
+  dplyr::filter(asv_num %in% c('asv17', 'asv22', 'asv23',
+                               'asv11', 'asv1', 'asv31', 'asv7', 'asv15')) |>
+  pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff)
+
+mdr_tb_m_rclr_pos <- mdr_tb_m_rclr |>
+  dplyr::filter(value > 0) |>
+  dplyr::mutate(value = as.numeric(value)) |>
+  dplyr::mutate(value = case_when(value > 0 ~ value,
+                                  value < 0 ~ 0)) |>
+  dplyr::group_by(asv_num, fraction_b, date, time) |>
+  dplyr::reframe(pos_interactions = sum(value),
+                 n = n()) 
+
+mdr_tb_m_rclr_neg <- mdr_tb_m_rclr |>
+  dplyr::filter(value < 0) |>
+  dplyr::mutate(value = as.numeric(value)) |>
+  dplyr::mutate(value = case_when(value < 0 ~ value,
+                                  value > 0 ~ 0)) |>
+  dplyr::group_by(asv_num, fraction_b, date, time ) |>
+  dplyr::reframe(neg_interactions = sum(value),
+                 n = n()) 
+
+mdr_tb_m_rclr_int <- mdr_tb_m_rclr_pos |>
+  left_join(mdr_tb_m_rclr_neg)
+
+m_sample_num <- m_02 |>
+  dplyr::select(date, sample_id_num)
+
+bloom_event <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(bloom_event = case_when((z_score_ra > 2 &
+                                           abundance_value > 0.1) ~ 'bloom',
+                                        TRUE ~ 'no-bloom')) |>
+  dplyr::select(bloom_event, date, fraction, asv_num, abundance_value) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  left_join(m_sample_num) |>## add sample_number
+  dplyr::select(-date) |>
+  dplyr::filter(!(asv_num == 'asv22' & fraction == '0.2') &
+                !(asv_num == 'asv31' & fraction == '0.2') &
+                !(asv_num == 'asv23' & fraction == '0.2') &
+                !(asv_num == 'asv11' & fraction == '3')) 
+
+data <- mdr_tb_m_rclr_int |> 
+  dplyr::mutate(fraction = case_when(str_detect(fraction_b, 'bp') ~ '0.2',
+                                     str_detect(fraction_b, 'bn') ~ '3')) |>
+  full_join(bloom_event , by = c('fraction', 'asv_num', 'time' = 'sample_id_num')) |>
+  left_join(bloo_taxonomy, by = c('asv_num' = 'asv_num_f')) |>
+  dplyr::filter(!(asv_num == 'asv23' & fraction == '0.2'))
+
+n_bloom_events <- bloom_event |>
+  dplyr::group_by(asv_num, fraction, bloom_event) |>
+  dplyr::reframe(n = paste0('n=', n()))
+
+data <- data |>
+  pivot_longer(cols = matches('pos|neg')) |>
+  dplyr::select(-n) |>
+  left_join(n_bloom_events)
+
+data$asv_num <- factor(data$asv_num,
+                       levels = c('asv17','asv22',
+                                  'asv1', 'asv31',
+                                  'asv7', 'asv11',
+                                   'asv15','asv23'))
+
+custom_labels <- data |>
+  distinct(asv_num, family_f, genus) |>    # Ensure one label per `asv_num`
+  dplyr::mutate(
+    label = case_when(
+      !is.na(genus) ~ paste0(family_f," ", genus, " ", asv_num),
+      is.na(genus) ~ paste0(family_f, " ", asv_num),  # Case with missing species
+      !is.na(genus) ~ paste0(family_f, " ", genus, " ", asv_num)
+    )
+  ) |> 
+  pull(label, name = asv_num)
+
+labs_fraction <-  (c('0.2' = 'Free living (0.2-3 um)',
+                     '3' = 'Particle attached (3-20 um)'))
+   
+# Merge both labellers into one named vector
+merged_labels <- c(custom_labels, labs_fraction)
+
+# Use as_labeller
+final_labeller <- as_labeller(merged_labels)
+
+interactions_timeseries_pre_plot <- data |> 
+  ggplot(aes(as.numeric(time), as.numeric(value))) +  
+  geom_hline(yintercept = 4, alpha = 0.7) + 
+  geom_hline(yintercept = 0, alpha = 0.7) + 
+  scale_fill_manual(values = palette_interactions) + 
+  scale_color_manual(values = palette_interactions) + 
+  facet_wrap(asv_num ~ fraction, ncol = 3, labeller = final_labeller) + 
+  geom_area(aes(y = abundance_value * 16 + 4), fill = '#371215', alpha = 0.2) +  
+  geom_line(aes(y = abundance_value * 16 + 4), color = '#371215', alpha = 0.8) + 
+  geom_rect(aes(
+    xmin = 0, xmax = 120, 
+    ymin = 0, ymax = 4
+  ), fill = "#ffffff", color = NA, alpha = 1) + 
+  geom_col(aes(group = name, fill = name, color = name), alpha = 0.6) +  # Bars are drawn first
+  scale_y_continuous(expand = c(0,0), 
+                     sec.axis = sec_axis(~./16 , name = 'Relative Abundance', 
+                                         breaks = c(0.00, 0.25, 0.50, 0.75),  
+                                         labels = c('-0.25', '0.00', '0.25', '0.50'))) + 
+  geom_point(data = data |> 
+               dplyr::filter(bloom_event == 'bloom'), 
+             aes(as.numeric(time), y = abundance_value * 16 + 4), 
+             size = 0.75, 
+             alpha = 0.6, 
+             shape = 4) + 
+  theme_bw() +  
+  scale_x_continuous(breaks = c(12, 12*2, 12*3, 12*4, 12*5, 12*6, 12*7, 12*8, 12*9), 
+                     labels = c('2005', '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013')) + 
+  labs(x = 'Time', y  = 'Blooming ASVs being affected by the community', 
+       fill = 'Sum Interaction Strength', 
+       color = 'Sum Interaction Strength', 
+       title = 'The microbial community effect on blooming taxa  
+       and the pre abundance (t) during interaction') +  
+  theme(strip.background = element_rect(fill = 'transparent'), 
+        text = element_text(size = 8), 
+        axis.text.x = element_text(size = 5), 
+        axis.text.y = element_text(size = 6), 
+        panel.border = element_blank(), 
+        panel.grid = element_blank(), 
+        strip.text = element_text(size = 2), 
+        title = element_text(size = 5), 
+        legend.position = 'bottom', 
+        legend.key.size = unit(3, 'mm'), 
+        legend.text = element_text(size = 4), 
+        axis.ticks.length = unit(0.2, "mm"))
+
+interactions_timeseries_pre_plot
+
+ggsave(
+  plot = interactions_timeseries_pre_plot , 
+  filename = 'interactions_timeseries_pre_plot.pdf',
+  path = 'results/figures/MDR/v2/',
+  width = 180, 
+  height = 200, 
+  units = 'mm'
+)
+
+## interaction t -> t+1 and abundance at t+1 ----
+#### t+0 to sample id_num abundance 
+#### sum total (+) and total (-)
+mdr_tb_m_rclr <- mdr_tb_m |>
+  dplyr::filter(asv_num %in% c('asv17', 'asv22', 'asv23',
+                               'asv11', 'asv1', 'asv31', 'asv7', 'asv15')) |>
+  pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff)
+
+mdr_tb_m_rclr_pos <- mdr_tb_m_rclr |>
+  dplyr::filter(value > 0) |>
+  dplyr::mutate(value = as.numeric(value)) |>
+  dplyr::mutate(value = case_when(value > 0 ~ value,
+                                  value < 0 ~ 0)) |>
+  dplyr::group_by(asv_num, fraction_b, date, time) |>
+  dplyr::reframe(pos_interactions = sum(value),
+                 n = n()) 
+
+mdr_tb_m_rclr_neg <- mdr_tb_m_rclr |>
+  dplyr::filter(value < 0) |>
+  dplyr::mutate(value = as.numeric(value)) |>
+  dplyr::mutate(value = case_when(value < 0 ~ value,
+                                  value > 0 ~ 0)) |>
+  dplyr::group_by(asv_num, fraction_b, date, time ) |>
+  dplyr::reframe(neg_interactions = sum(value),
+                 n = n()) 
+
+mdr_tb_m_rclr_int <- mdr_tb_m_rclr_pos |>
+  left_join(mdr_tb_m_rclr_neg)
+
+m_sample_num <- m_02 |>
+  dplyr::select(date, sample_id_num) |>
+  dplyr::mutate(sample_id_num = as.numeric(sample_id_num)+1) |>
+  dplyr::mutate(sample_id_num = as.character(sample_id_num))
+
+bloom_event <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(bloom_event = case_when((z_score_ra > 2 &
+                                           abundance_value > 0.1) ~ 'bloom',
+                                        TRUE ~ 'no-bloom')) |>
+  dplyr::select(bloom_event, date, fraction, asv_num, abundance_value) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  left_join(m_sample_num) |>## add sample_number
+  dplyr::select(-date) |>
+  dplyr::filter(!(asv_num == 'asv22' & fraction == '0.2') &
+                  !(asv_num == 'asv31' & fraction == '0.2') &
+                  !(asv_num == 'asv23' & fraction == '0.2') &
+                  !(asv_num == 'asv11' & fraction == '3')) 
+
+data <- mdr_tb_m_rclr_int |> 
+  dplyr::mutate(fraction = case_when(str_detect(fraction_b, 'bp') ~ '0.2',
+                                     str_detect(fraction_b, 'bn') ~ '3')) |>
+  full_join(bloom_event , by = c('fraction', 'asv_num', 'time' = 'sample_id_num')) |>
+  left_join(bloo_taxonomy, by = c('asv_num' = 'asv_num_f')) |>
+  dplyr::filter(!(asv_num == 'asv23' & fraction == '0.2'))
+
+n_bloom_events <- bloom_event |>
+  dplyr::group_by(asv_num, fraction, bloom_event) |>
+  dplyr::reframe(n = paste0('n=', n()))
+
+data <- data |>
+  pivot_longer(cols = matches('pos|neg')) |>
+  dplyr::select(-n) |>
+  left_join(n_bloom_events)
+
+data |>
+  colnames()
+
+data$asv_num <- factor(data$asv_num,
+                       levels = c('asv17','asv22',
+                                  'asv1', 'asv31',
+                                  'asv7', 'asv11',
+                                  'asv15','asv23'
+                       ))
+
+custom_labels <- data |>
+  distinct(asv_num, family_f, genus) |>    # Ensure one label per `asv_num`
+  dplyr::mutate(
+    label = case_when(
+      !is.na(genus) ~ paste0(family_f," ", genus, " ", asv_num),
+      is.na(genus) ~ paste0(family_f, " ", asv_num),  # Case with missing species
+      !is.na(genus) ~ paste0(family_f, " ", genus, " ", asv_num)
+    )
+  ) |> 
+  pull(label, name = asv_num)
+
+labs_fraction <-  (c('0.2' = 'Free living (0.2-3 um)',
+                     '3' = 'Particle attached (3-20 um)'))
+
+
+# Merge both labellers into one named vector
+merged_labels <- c(custom_labels, labs_fraction)
+
+# Use as_labeller
+final_labeller <- as_labeller(merged_labels)
+
+interactions_timeseries_post_plot <- data |> 
+  # dplyr::filter(!is.na(value)) |>
+  # dplyr::filter(!is.na(abundance_value)) |>
+  ggplot(aes(as.numeric(time), as.numeric(value))) +  
+  geom_hline(yintercept = 4, alpha = 0.7) + 
+  geom_hline(yintercept = 0, alpha = 0.7) + 
+  scale_fill_manual(values = palette_interactions) + 
+  scale_color_manual(values = palette_interactions) + 
+  facet_wrap(asv_num ~ fraction, ncol = 3, labeller = final_labeller) + 
+  geom_area(aes(y = abundance_value * 16 + 4), fill = '#371215', alpha = 0.2) +  
+  geom_line(aes(y = abundance_value * 16 + 4), color = '#371215', alpha = 0.8) + 
+  geom_rect(aes(
+    xmin = 0, xmax = 125, 
+    ymin = 0, ymax = 4
+  ), fill = "#ffffff", color = NA, alpha = 1) + 
+  geom_col(aes(group = name, fill = name, color = name), alpha = 0.7) +  # Bars are drawn first
+  scale_y_continuous(expand = c(0,0), 
+                     sec.axis = sec_axis(~./16 , name = 'Relative Abundance', 
+                                         breaks = c(0.00, 0.25, 0.50, 0.75),  
+                                         labels = c('-0.25', '0.00', '0.25', '0.50'))) + 
+  geom_point(data = data |> 
+               dplyr::filter(bloom_event == 'bloom'), 
+             aes(as.numeric(time), y = abundance_value * 16 + 4), 
+             size = 0.75, 
+             alpha = 0.6, 
+             shape = 4) + 
+  theme_bw() +  
+  scale_x_continuous(expand = c(0,0),
+    breaks = c(12, 12*2, 12*3, 12*4, 12*5, 12*6, 12*7, 12*8, 12*9), 
+                     labels = c('2005', '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013')) + 
+  labs(x = 'Time', y  = 'Blooming ASVs being affected by the community', 
+       fill = 'Sum Interaction Strength', 
+       color = 'Sum Interaction Strength', 
+       title = 'The microbial community effect on blooming taxa  
+       and the post abundance (t+1) during interaction') +  
+  theme(strip.background = element_rect(fill = 'transparent'), 
+        text = element_text(size = 8), 
+        axis.text.x = element_text(size = 5), 
+        axis.text.y = element_text(size = 6), 
+        panel.border = element_blank(), 
+        panel.grid = element_blank(), 
+        strip.text = element_text(size = 2), 
+        title = element_text(size = 5), 
+        legend.position = 'bottom', 
+        legend.key.size = unit(3, 'mm'), 
+        legend.text = element_text(size = 4), 
+        axis.ticks.length = unit(0.2, "mm"))
+
+interactions_timeseries_post_plot
+
+ggsave(
+  plot = interactions_timeseries_post_plot , 
+  filename = 'interactions_timeseries_post_plot.pdf',
+  path = 'results/figures/MDR/v2/',
+  width = 180, 
+  height = 200, 
+  units = 'mm'
+)
+
+### BLOOMERS EFFECT ON THE COMMUNITY (abundance at (t)) ----
+#### after a bloom event how do they interact with the community
+### abundance at t interaction t -> t+1
+mdr_tb_m_rclr <- mdr_tb_m |>
+  pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  dplyr::filter(asv_num != asv_num_eff) |>
+  dplyr::filter(asv_num_eff %in% c('asv17', 'asv22' , 'asv23' , 'asv11', 
+                                   'asv1', 'asv31', 'asv7', 'asv15')) |>
+  dplyr::filter(fraction_b %in% c('bn', 'bp'))
+
+mdr_tb_m_rclr_pos <- mdr_tb_m_rclr |>
+  dplyr::filter(value > 0) |>
+  dplyr::mutate(value = as.numeric(value)) |>
+  dplyr::mutate(value = case_when(value > 0 ~ value,
+                                  value < 0 ~ 0)) |>
+  dplyr::group_by(asv_num_eff, fraction_b, date, time) |>
+  dplyr::reframe(pos_interactions = sum(value),
+                 n = n())
+
+mdr_tb_m_rclr_neg <- mdr_tb_m_rclr |>
+  dplyr::filter(value < 0) |>
+  dplyr::mutate(value = as.numeric(value)) |>
+  dplyr::mutate(value = case_when(value < 0 ~ value,
+                                  value > 0 ~ 0)) |>
+  dplyr::group_by(asv_num_eff, fraction_b, date, time ) |>
+  dplyr::reframe(neg_interactions = sum(abs(value)),
+                 n = n())
+
+mdr_tb_m_rclr_int <- mdr_tb_m_rclr_pos |>
+  left_join(mdr_tb_m_rclr_neg)
+
+m_sample_num <- m_02 |>
+  dplyr::select(date, sample_id_num)
+
+bloom_event <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(bloom_event = case_when((z_score_ra > 2 &
+                                           abundance_value > 0.1) ~ 'bloom',
+                                        TRUE ~ 'no-bloom')) |>
+  dplyr::select(bloom_event, date, fraction, asv_num, abundance_value) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  left_join(m_sample_num) |>## add sample_number
+  dplyr::select(-date) |>
+  dplyr::filter(!(asv_num == 'asv22' & fraction == '0.2') &
+                  !(asv_num == 'asv31' & fraction == '0.2') &
+                  !(asv_num == 'asv23' & fraction == '0.2') &
+                  !(asv_num == 'asv11' & fraction == '3')) 
+
+data <- mdr_tb_m_rclr_int |> 
+  dplyr::mutate(fraction = case_when(str_detect(fraction_b, 'bp') ~ '0.2',
+                                     str_detect(fraction_b, 'bn') ~ '3')) |>
+  full_join(bloom_event , by = c('fraction', 'asv_num_eff' = 'asv_num', 'time' = 'sample_id_num')) |>
+  left_join(bloo_taxonomy, by = c('asv_num_eff' = 'asv_num_f')) |>
+  dplyr::filter(!(asv_num_eff == 'asv22' & fraction == '0.2') &
+                  !(asv_num_eff == 'asv31' & fraction == '0.2') &
+                  !(asv_num_eff == 'asv23' & fraction == '0.2') &
+                  !(asv_num_eff == 'asv11' & fraction == '3'))
+
+data <- data |>
+  dplyr::mutate(neg_interactions = -neg_interactions) |>
+  pivot_longer(cols = matches('pos|neg')) |>
+  dplyr::select(-n)
+
+data |>
+  colnames()
+
+data$asv_num_eff <- factor(data$asv_num_eff,
+                       levels = c('asv17','asv22',
+                                  'asv1', 'asv31',
+                                  'asv7', 'asv11',
+                                  'asv15','asv23'
+                       ))
+
+custom_labels <- data |>
+  distinct(asv_num_eff, family_f, genus) |>    # Ensure one label per `asv_num`
+  dplyr::mutate(
+    label = case_when(
+      !is.na(genus) ~ paste0(family_f," ", genus, " ", asv_num_eff),
+      is.na(genus) ~ paste0(family_f, " ", asv_num_eff),  # Case with missing species
+      !is.na(genus) ~ paste0(family_f, " ", genus, " ", asv_num_eff)
+    )
+  ) |> 
+  pull(label, name = asv_num_eff)
+
+labs_fraction <-  (c('0.2' = 'Free living (0.2-3 um)',
+                     '3' = 'Particle attached (3-20 um)'))
+
+
+# Merge both labellers into one named vector
+merged_labels <- c(custom_labels, labs_fraction)
+
+# Use as_labeller
+final_labeller <- as_labeller(merged_labels)
+
+interactions_timeseries_pre_plot <- data |> 
+  ggplot(aes(as.numeric(time), as.numeric(value))) +  
+  geom_hline(yintercept = 4, alpha = 0.7) + 
+  geom_hline(yintercept = 0, alpha = 0.7) + 
+  scale_fill_manual(values = palette_interactions) + 
+  scale_color_manual(values = palette_interactions) + 
+  facet_wrap(asv_num_eff ~ fraction, ncol = 3, labeller = final_labeller) + 
+  geom_area(aes(y = abundance_value * 16 + 4), fill = '#371215', alpha = 0.2) +  
+  geom_line(aes(y = abundance_value * 16 + 4), color = '#371215', alpha = 0.8) + 
+  geom_rect(aes(
+    xmin = 0, xmax = 120, 
+    ymin = 0, ymax = 4
+  ), fill = "#ffffff", color = NA, alpha = 1) + 
+  geom_col(aes(group = name, fill = name, color = name), alpha = 0.6) +  # Bars are drawn first
+  scale_y_continuous(expand = c(0,0), 
+                     sec.axis = sec_axis(~./16 , name = 'Relative Abundance', 
+                                         breaks = c(0.00, 0.25, 0.50, 0.75),  
+                                         labels = c('-0.25', '0.00', '0.25', '0.50'))) + 
+  geom_point(data = data |> 
+               dplyr::filter(bloom_event == 'bloom'), 
+             aes(as.numeric(time), y = abundance_value * 16 + 4), 
+             size = 0.75, 
+             alpha = 0.6, 
+             shape = 4) + 
+  theme_bw() +  
+  scale_x_continuous(breaks = c(12, 12*2, 12*3, 12*4, 12*5, 12*6, 12*7, 12*8, 12*9), 
+                     labels = c('2005', '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013')) + 
+  labs(x = 'Time', y  = 'Blooming ASVs affecting the community', 
+       fill = 'Sum Interaction Strength', 
+       color = 'Sum Interaction Strength', 
+       title = 'Blooming taxa effect on the community
+       abundance (t) during interaction') +  
+  theme(strip.background = element_rect(fill = 'transparent'), 
+        text = element_text(size = 8), 
+        axis.text.x = element_text(size = 5), 
+        axis.text.y = element_text(size = 6), 
+        panel.border = element_blank(), 
+        panel.grid = element_blank(), 
+        strip.text = element_text(size = 2), 
+        title = element_text(size = 5), 
+        legend.position = 'bottom', 
+        legend.key.size = unit(3, 'mm'), 
+        legend.text = element_text(size = 4), 
+        axis.ticks.length = unit(0.2, "mm"))
+
+interactions_timeseries_pre_plot
+
+ggsave(
+  plot = interactions_timeseries_pre_plot , 
+  filename = 'bloomers_interactions_timeseries_pre_plot.pdf',
+  path = 'results/figures/MDR/v2/',
+  width = 180, 
+  height = 200, 
+  units = 'mm'
+)
+
+### Community interactions at t-1 (bloom) and t ----
+data_blooms <- data |>
+  dplyr::filter(bloom_event == 'bloom') 
+
+data_pre_blooms <- data_blooms |>
+  dplyr::mutate(time = as.numeric(time)) |>
+  dplyr::mutate(time = time-1) |>
+  dplyr::filter(time > 0) |>
+  dplyr::mutate(time = as.character(time)) |>
+  dplyr::select(asv_num, time, fraction, abundance_value) |>
+  distinct(asv_num, time, fraction) |>
+  dplyr::mutate(bloom_event = 'pre-bloom') |>
+  full_join(data_blooms)
+
+data_pre_blooms <- data |>
+  right_join(data_pre_blooms) |>
+  dplyr::mutate(bloom_event = 'pre-bloom')
+
+data_pre_blooms |>
+  dim()
+
+data |>
+  dim()
+
+data_blooms_preblooms <- data_blooms |>
+  bind_rows(data_pre_blooms)
+
+data_blooms_preblooms$bloom_event <- factor(data_blooms_preblooms$bloom_event,
+                                            levels = c('pre-bloom', 'bloom'))
+
+blooms_pre_blooms <- data_blooms_preblooms|>
+  ggplot(aes(bloom_event, value)) +
+  geom_boxplot(notch = T)+
+  facet_wrap(asv_num~fraction)
+
+blooms_pre_blooms
+
+# ggsave(
+#   plot = blooms_pre_blooms , 
+#   filename = 'blooms_pre_bloom_plot.pdf',
+#   path = 'results/figures/MDR/v2/',
+#   width = 100, 
+#   height = 120, 
+#   units = 'mm'
+# )
+
+# ----- ### ----- MDR REPEAT ANALYSIS without seasonality ----- ### -----
+
+palette_gradient <- c('#0A6260',"#BDBEBE","#545454",
+                      "#F2A218")
+
+palette_gradient <- colorRampPalette(c('#ffffff', "#BDBEBE", #"#545454",
+                                       '#0A6260', "#F2A218"))(10)
+
+## Is the community affecting differently my blooming ASVs during blooming events or not?
+### 1, 0 bloom y no bloom
+## heatmap + and - 
+### abundance at t
+mdr_tb_m_rclr <- mdr_tb_m |>
+  dplyr::filter(asv_num %in% c('asv17', 'asv22', 'asv23',
+                               'asv11', 'asv1', 'asv31', 'asv7', 'asv15')) |>
+  pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff)
+
+mdr_tb_m_rclr_pos <- mdr_tb_m_rclr |>
+  dplyr::mutate(value = if_else(as.numeric(value) > 0, 1, NA_real_)) 
+
+mdr_tb_m_rclr_neg <- mdr_tb_m_rclr |>
+  dplyr::mutate(value = if_else(as.numeric(value) < 0, 1, NA_real_))
+
+m_sample_num <- m_02 |>
+  dplyr::select(date, sample_id_num)
+
+bloom_event <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(bloom_event = case_when((z_score_ra > 2 &
+                                           abundance_value > 0.1) ~ 'bloom',
+                                        TRUE ~ 'no-bloom')) |>
+  dplyr::select(bloom_event, date, fraction, asv_num, abundance_value) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  left_join(m_sample_num) |>## add sample_number
+  dplyr::select(-date) |>
+  dplyr::filter(!(asv_num == 'asv22' & fraction == '0.2') &
+                  !(asv_num == 'asv31' & fraction == '0.2') &
+                  !(asv_num == 'asv23' & fraction == '0.2') &
+                  !(asv_num == 'asv11' & fraction == '3')) 
+
+n_dates_fraction_asv_tb <- mdr_tb_m_rclr_pos |>
+  left_join(bloom_event, by = c('asv_num', 'time' = 'sample_id_num', 'fraction')) |>
+  group_by(asv_num, bloom_event, fraction, date) |>
+  distinct(asv_num, bloom_event, fraction, date) |>
+  group_by(asv_num, bloom_event, fraction) |>
+  dplyr::reframe(n_dates = n()) |>
+  dplyr::filter(!is.na(bloom_event))
+
+# mdr_tb_m_rclr_pos_bloo <- mdr_tb_m_rclr_pos |>
+#   left_join(bloom_event, by = c('asv_num', 'time' = 'sample_id_num', 'fraction')) |>
+#   dplyr::filter(!is.na(bloom_event)) |>
+#   group_by(asv_num, bloom_event, fraction, asv_num_eff) |>
+#   dplyr::reframe(pos_interactions = sum(as.numeric(value), na.rm = T)) |>
+#   group_by(asv_num, bloom_event, fraction) |>
+#   dplyr::mutate(n = n()) |>
+#   group_by(asv_num, bloom_event, fraction) |>
+#   dplyr::mutate(n_interactions = sum(pos_interactions)) |>
+#   dplyr::mutate(rel_interactions = pos_interactions/(n_interactions)) |>
+#   dplyr::mutate(type_interaction = 'positive')
+
+mdr_tb_m_rclr_neg_bloo <- mdr_tb_m_rclr_neg |>
+  left_join(bloom_event, by = c('asv_num', 'time' = 'sample_id_num', 'fraction')) |>
+  dplyr::filter(!is.na(bloom_event)) |>
+  group_by(asv_num, bloom_event, fraction, asv_num_eff) |>
+  dplyr::reframe(neg_interactions = sum(as.numeric(value), na.rm = T)) |>
+  group_by(asv_num, bloom_event, fraction) |>
+  dplyr::mutate(n = n()) |>
+  group_by(asv_num, bloom_event, fraction) |>
+  dplyr::mutate(n_interactions = sum(neg_interactions)) |>
+  dplyr::mutate(rel_interactions = neg_interactions/(n_interactions)) |>
+  dplyr::mutate(type_interaction = 'negative')
+
+rel_interactions_bloo_non_bloom <- mdr_tb_m_rclr_neg_bloo |>
+  bind_rows(mdr_tb_m_rclr_pos_bloo) |>
+  dplyr::mutate(rel_interactions = as.numeric(rel_interactions)) |>
+  left_join(tax_occ_filt_bbmo, by = c('asv_num_eff' = 'asv_num'), suffix = c('', '_tax_eff')) |>
+  left_join(bloo_taxonomy, by = c('asv_num' = 'asv_num_f'), suffix = c('', 'bloo')) |>
+  rename( phylum_bloo = phylum_f, classbloo = class_f, orderbloo = order_f, familybloo = family_f, genusbloo = genus_f) |>
+  dplyr::mutate(fraction_asv_num = paste0(fraction, ' ', asv_num)) |>
+  dplyr::mutate(asv_num_fraction = paste0(asv_num, ' ', fraction, ' ', bloom_event))|>
+  left_join(n_dates_fraction_asv_tb)
+
+rel_interactions_bloo_non_bloom |>
+  colnames()
+
+rel_interactions_bloo_non_bloom$asv_num <- factor(rel_interactions_bloo_non_bloom$asv_num,
+                                                  levels = c('asv31', 'asv1', 'asv7',
+                                                             'asv15', 'asv22', 'asv23', 'asv11', 'asv17'))
+
+rel_interactions_bloo_non_bloom <- rel_interactions_bloo_non_bloom |>
+  dplyr::mutate(phylum_f_eff = as_factor(phylum),
+                family_f_eff = as_factor(family),
+                order_f_eff = as_factor(order),
+                class_f_eff = as_factor(class),
+                asv_num_f_eff = as_factor(asv_num_eff))
+
+rel_interactions_bloo_non_bloom$class_f_eff <-  factor(rel_interactions_bloo_non_bloom$class_f_eff, 
+                                          levels=unique(rel_interactions_bloo_non_bloom$class_f_eff[order(rel_interactions_bloo_non_bloom$phylum_f_eff)]), 
+                                          ordered=TRUE)
+
+rel_interactions_bloo_non_bloom$order_f_eff <-  factor(rel_interactions_bloo_non_bloom$order_f_eff, 
+                                          levels=unique(rel_interactions_bloo_non_bloom$order_f_eff[order(rel_interactions_bloo_non_bloom$phylum_f_eff,
+                                                                                             rel_interactions_bloo_non_bloom$class_f_eff)]), 
+                                          ordered=TRUE)
+
+rel_interactions_bloo_non_bloom$family_f_eff <-  factor(rel_interactions_bloo_non_bloom$family_f_eff, 
+                                           levels=unique(rel_interactions_bloo_non_bloom$family_f_eff[order(rel_interactions_bloo_non_bloom$phylum_f_eff,
+                                                                                               rel_interactions_bloo_non_bloom$class_f_eff,
+                                                                                               rel_interactions_bloo_non_bloom$order_f_eff)]), 
+                                           ordered=TRUE)
+
+rel_interactions_bloo_non_bloom$asv_num_f_eff <-  factor(rel_interactions_bloo_non_bloom$asv_num_f_eff, 
+                                            levels=unique(rel_interactions_bloo_non_bloom$asv_num_f_eff[order(rel_interactions_bloo_non_bloom$phylum_f_eff,
+                                                                                                 rel_interactions_bloo_non_bloom$class_f_eff,
+                                                                                                 rel_interactions_bloo_non_bloom$order_f_eff,
+                                                                                                 rel_interactions_bloo_non_bloom$family_f_eff)]), 
+                                            ordered=TRUE)
+
+custom_labels_bloo <- rel_interactions_bloo_non_bloom |>
+  distinct(asv_num, familybloo, genusbloo, fraction, n_dates) |>    # Ensure one label per `asv_num`
+  dplyr::mutate(
+    label = case_when(
+      !is.na(genusbloo) ~ paste0(familybloo," ", genusbloo, " ", asv_num, " ", fraction, '(', n_dates, ')'),
+      is.na(genusbloo) ~ paste0(familybloo, " ", asv_num, '(', n_dates, ')'),  # Case with missing species
+      !is.na(genusbloo) ~ paste0(familybloo, " ", genusbloo, " ", asv_num," ", fraction, '(', n_dates, ')')
+    )
+  ) |> 
+  dplyr::mutate(asv_num_fraction = paste0(asv_num, ' ', fraction, ' ', bloom_event))|>
+  pull(label, name = asv_num_fraction)
   
-  geom_smooth(method = 'loess', aes(group = fraction, color = fraction))+
-  labs(x = 'Relative Abundance', y = 'Interactions summary', color = '', linetype = '', shape = '')+
+
+labs_bloom_events <- as_labeller(c('bloom' = 'Bloom', 'no-bloom' = 'No-Bloom', 'negative' = 'Negative Interactions', 
+                                   'positive' = 'Positive Interactions'))
+
+rel_interactions_bloo_non_bloom$asv_num_fraction <- factor(rel_interactions_bloo_non_bloom$asv_num_fraction,
+                                                           levels = c('asv1 3 bloom', 'asv1 0.2 bloom', 'asv31 0.2 bloom',
+                                                                      'asv7 3 bloom',
+                                                                      'asv7 0.2 bloom','asv15 3 bloom', 'asv15 0.2 bloom',
+                                                                      'asv17 3 bloom', 'asv22 3 bloom', 'asv23 3 bloom', 'asv11 0.2 bloom',
+                                                                      #no-bloom
+                                                                      'asv1 3 no-bloom', 'asv1 0.2 no-bloom', 'asv31 0.2 no-bloom',
+                                                                      'asv7 3 no-bloom',
+                                                                      'asv7 0.2 no-bloom','asv15 3 no-bloom', 'asv15 0.2 no-bloom',
+                                                                      'asv17 3 no-bloom', 'asv22 3 no-bloom', 'asv23 3 no-bloom', 'asv11 0.2 no-bloom'))
+
+## COMMUNITY INTERACTION WITH BLOOMERS -----
+## edit community labels ----
+custom_labels_community <- rel_interactions_bloo_non_bloom |>
+  distinct(asv_num_eff, family_f_eff, genus) |>    # Ensure one label per `asv_num`
+  dplyr::mutate(
+    label = case_when(
+      !is.na(genus) ~ paste0(family_f_eff, " ", genus, " ", asv_num_eff),
+      TRUE ~ paste0(family_f_eff, " ", asv_num_eff)
+    )
+  ) |> 
+  pull(label, name = asv_num_eff)
+
+setdiff(unique(rel_interactions_bloo_non_bloom$asv_num_fraction), names(custom_labels_bloo))
+
+rel_interactions_bloo_non_bloom_t <- rel_interactions_bloo_non_bloom |>
+  dplyr::filter(!(asv_num == 'asv17' & fraction == '0.2') &
+                  !(asv_num == 'asv31' & fraction == '3')) ## they only have one bloom event!
+
+rel_interactions_mdr_bloo_nonbloo_abund_t_plot <- rel_interactions_bloo_non_bloom_t |>
+  dplyr::filter(!is.na(bloom_event)) |>
+  ggplot(aes(asv_num_fraction, asv_num_f_eff, fill = rel_interactions))+
+  geom_tile()+
+  scale_fill_gradientn(colors = palette_gradient, na.value = ('#ffffff'))+
+  facet_grid(type_interaction~bloom_event, labeller = labs_bloom_events,
+             scales = 'free_x')+
+  labs(fill = 'Relative Interactions', 
+       y = 'ASVs interacting with bloomers', 
+       x = 'Bloomers ASVs')+
+  scale_x_discrete(label = as_labeller(custom_labels_bloo))+
+  scale_y_discrete(labels = as_labeller(custom_labels_community))+
   theme_bw()+
-  theme(#panel.grid = element_blank(), 
-    strip.background = element_blank(), legend.position = 'bottom',
-    panel.grid.minor = element_blank(),
-    axis.title  = element_text(size = 9),
-    strip.text = element_text(size = 5),
-    axis.text = element_text(size = 5),
-    # axis.text.x = element_text(size = 7), 
-    panel.grid.major.y = element_blank(),
-    panel.border = element_blank(),
-    strip.placement = 'outside',
-    axis.ticks.length.y =  unit(0.2, "mm"))
+  theme(strip.background = element_rect(fill = 'transparent'),
+        panel.grid = element_blank(),
+        axis.text.y = element_text( size = 2),
+        axis.text.x = element_text(angle = 90, size = 2))
 
-interactions_binnary_mdr_plot
+rel_interactions_mdr_bloo_nonbloo_abund_t_plot 
 
-# ggsave(plot = interactions_binnary_mdr_plot, filename = 'interactions_binnary_mdr_plot__relabund_norm_shannon.pdf',
-#        path = 'results/figures/',
-#        width = 180, height = 180, units = 'mm')
+# ggsave(
+#   plot = rel_interactions_mdr_bloo_nonbloo_abund_t_plot  , 
+#   filename = 'rel_interactions_mdr_bloo_nonbloo_abund_t_plot.pdf',
+#   path = 'results/figures/MDR/v2/',
+#   width = 180, 
+#   height = 180, 
+#   units = 'mm'
+# )
 
-interactions_binnary_mdr_plot <- data |>
-  left_join(shannon_rar_red) |>
-  #dplyr::filter(fraction == '0.2') |>
-  ggplot(aes(abundance_value, interactions))+
-  geom_vline(xintercept = 0)+
-  geom_hline(yintercept = 0)+
-  geom_point(aes(shape = fraction, color = fraction))+
-  facet_wrap(vars(interaction(asv_num, recurrency)), ncol = 3)+
-  scale_shape_discrete(labels = labs_fraction)+
-  scale_color_manual(values = palette_fraction, labels = labs_fraction)+
-  
-  geom_smooth(method = 'loess', aes(group = fraction, color = fraction))+
-  labs(x = 'Relative Abundance', y = 'Interactions summary', color = '', linetype = '', shape = '')+
+### 1, 0 bloom y no bloom ----
+## heatmap + and - 
+### abundance at t+1
+mdr_tb_m_rclr <- mdr_tb_m |>
+  dplyr::filter(asv_num %in% c('asv17', 'asv22', 'asv23',
+                               'asv11', 'asv1', 'asv31', 
+                               'asv7', 'asv15')) |>
+  pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff)
+
+mdr_tb_m_rclr_pos <- mdr_tb_m_rclr |>
+  dplyr::mutate(value = if_else(as.numeric(value) > 0, 1, NA_real_)) 
+
+mdr_tb_m_rclr_neg <- mdr_tb_m_rclr |>
+  dplyr::mutate(value = if_else(as.numeric(value) < 0, 1, NA_real_)) 
+
+m_sample_num <- m_02 |>
+  dplyr::select(date, sample_id_num) |>
+  dplyr::mutate(sample_id_num = as.numeric(sample_id_num)+1) |>
+  dplyr::mutate(sample_id_num = as.character(sample_id_num))
+
+bloom_event <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(bloom_event = case_when((z_score_ra > 2 &
+                                           abundance_value > 0.1) ~ 'bloom',
+                                        TRUE ~ 'no-bloom')) |>
+  dplyr::select(bloom_event, date, fraction, asv_num, abundance_value) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  left_join(m_sample_num) |> ## add sample_number
+  dplyr::select(-date) |>
+  dplyr::filter(!(asv_num == 'asv22' & fraction == '0.2') &
+                  !(asv_num == 'asv31' & fraction == '0.2') &
+                  !(asv_num == 'asv23' & fraction == '0.2') &
+                  !(asv_num == 'asv11' & fraction == '3')) 
+
+n_dates_fraction_asv_tb <- mdr_tb_m_rclr_pos |>
+  left_join(bloom_event, by = c('asv_num', 'time' = 'sample_id_num', 'fraction')) |>
+  group_by(asv_num, bloom_event, fraction, date) |>
+  distinct(asv_num, bloom_event, fraction, date) |>
+  group_by(asv_num, bloom_event, fraction) |>
+  dplyr::reframe(n_dates = n()) |>
+  dplyr::filter(!is.na(bloom_event))
+
+mdr_tb_m_rclr_pos_bloo <- mdr_tb_m_rclr_pos |>
+  left_join(bloom_event, by = c('asv_num', 'time' = 'sample_id_num', 'fraction')) |>
+  dplyr::filter(!is.na(bloom_event)) |>
+  group_by(asv_num, bloom_event, fraction, asv_num_eff) |>
+  dplyr::reframe(pos_interactions = sum(as.numeric(value), na.rm = T)) |>
+  group_by(asv_num, bloom_event, fraction) |>
+  dplyr::mutate(n = n()) |>
+  group_by(asv_num, bloom_event, fraction) |>
+  dplyr::mutate(n_interactions = sum(pos_interactions)) |>
+  dplyr::mutate(rel_interactions = pos_interactions/(n_interactions)) |>
+  dplyr::mutate(type_interaction = 'positive')
+
+# mdr_tb_m_rclr_pos_bloo <- mdr_tb_m_rclr_pos |>
+#   left_join(bloom_event, by = c('asv_num', 'time' = 'sample_id_num', 'fraction')) |>
+#   group_by(asv_num, bloom_event, fraction, asv_num_eff) |>
+#   dplyr::reframe(pos_interactions = sum(as.numeric(value), na.rm = T)) |>
+#   group_by(asv_num, bloom_event, fraction) |>
+#   dplyr::mutate(n = n()) |>
+#   left_join(n_dates_fraction_asv_tb) |>
+#   dplyr::mutate(rel_interactions = pos_interactions/n) |>
+#   dplyr::mutate(rel_interactions = rel_interactions/n_dates) |>
+#   dplyr::mutate(type_interaction = 'positive')
+
+mdr_tb_m_rclr_pos_bloo |>
+  group_by(asv_num, bloom_event, fraction) |>
+  dplyr::reframe(sum_rel = sum(rel_interactions))
+
+mdr_tb_m_rclr_neg_bloo <- mdr_tb_m_rclr_neg |>
+  left_join(bloom_event, by = c('asv_num', 'time' = 'sample_id_num', 'fraction')) |>
+  dplyr::filter(!is.na(bloom_event)) |>
+  group_by(asv_num, bloom_event, fraction, asv_num_eff) |>
+  dplyr::reframe(pos_interactions = sum(as.numeric(value), na.rm = T)) |>
+  group_by(asv_num, bloom_event, fraction) |>
+  dplyr::mutate(n = n()) |>
+  group_by(asv_num, bloom_event, fraction) |>
+  dplyr::mutate(n_interactions = sum(pos_interactions)) |>
+  dplyr::mutate(rel_interactions = pos_interactions/(n_interactions)) |>
+  dplyr::mutate(type_interaction = 'negative')
+
+rel_interactions_bloo_non_bloom <- mdr_tb_m_rclr_neg_bloo |>
+  bind_rows(mdr_tb_m_rclr_pos_bloo) |>
+  dplyr::mutate(rel_interactions = as.numeric(rel_interactions)) |>
+  left_join(tax_occ_filt_bbmo, by = c('asv_num_eff' = 'asv_num'), suffix = c('', '_tax_eff')) |>
+  left_join(bloo_taxonomy, by = c('asv_num' = 'asv_num_f'), suffix = c('', 'bloo')) |>
+  rename( phylum_bloo = phylum_f, classbloo = class_f, orderbloo = order_f, familybloo = family_f, genusbloo = genus_f) |>
+  dplyr::mutate(fraction_asv_num = paste0(fraction, ' ', asv_num)) |>
+  dplyr::mutate(asv_num_fraction = paste0(asv_num, ' ', fraction, ' ', bloom_event)) |>
+  left_join(n_dates_fraction_asv_tb) 
+
+rel_interactions_bloo_non_bloom$asv_num <- factor(rel_interactions_bloo_non_bloom$asv_num,
+                                                  levels = c('asv31', 'asv1', 'asv7',
+                                                             'asv15', 'asv22', 'asv23', 'asv11', 'asv17'))
+
+rel_interactions_bloo_non_bloom <- rel_interactions_bloo_non_bloom |>
+  dplyr::mutate(phylum_f_eff = as_factor(phylum),
+                family_f_eff = as_factor(family),
+                order_f_eff = as_factor(order),
+                genus_f_eff = as_factor(genus),
+                class_f_eff = as_factor(class),
+                asv_num_f_eff = as_factor(asv_num_eff))
+
+rel_interactions_bloo_non_bloom$class_f_eff <-  factor(rel_interactions_bloo_non_bloom$class_f_eff, 
+                                                       levels=unique(rel_interactions_bloo_non_bloom$class_f_eff[order(rel_interactions_bloo_non_bloom$phylum_f_eff)]), 
+                                                       ordered=TRUE)
+
+rel_interactions_bloo_non_bloom$order_f_eff <-  factor(rel_interactions_bloo_non_bloom$order_f_eff, 
+                                                       levels=unique(rel_interactions_bloo_non_bloom$order_f_eff[order(rel_interactions_bloo_non_bloom$phylum_f_eff,
+                                                                                                                       rel_interactions_bloo_non_bloom$class_f_eff)]), 
+                                                       ordered=TRUE)
+
+rel_interactions_bloo_non_bloom$family_f_eff <-  factor(rel_interactions_bloo_non_bloom$family_f_eff, 
+                                                        levels=unique(rel_interactions_bloo_non_bloom$family_f_eff[order(rel_interactions_bloo_non_bloom$phylum_f_eff,
+                                                                                                                         rel_interactions_bloo_non_bloom$class_f_eff,
+                                                                                                                         rel_interactions_bloo_non_bloom$order_f_eff)]), 
+                                                        ordered=TRUE)
+
+rel_interactions_bloo_non_bloom$genus_f_eff <-  factor(rel_interactions_bloo_non_bloom$family_f_eff, 
+                                                        levels=unique(rel_interactions_bloo_non_bloom$genus_f_eff[order(rel_interactions_bloo_non_bloom$phylum_f_eff,
+                                                                                                                         rel_interactions_bloo_non_bloom$class_f_eff,
+                                                                                                                         rel_interactions_bloo_non_bloom$order_f_eff,
+                                                                                                                         rel_interactions_bloo_non_bloom$family_f_eff)]), 
+                                                        ordered=TRUE)
+
+rel_interactions_bloo_non_bloom$asv_num_f_eff <-  factor(rel_interactions_bloo_non_bloom$asv_num_f_eff, 
+                                                         levels=unique(rel_interactions_bloo_non_bloom$asv_num_f_eff[order(rel_interactions_bloo_non_bloom$phylum_f_eff,
+                                                                                                                           rel_interactions_bloo_non_bloom$class_f_eff,
+                                                                                                                           rel_interactions_bloo_non_bloom$order_f_eff,
+                                                                                                                           rel_interactions_bloo_non_bloom$family_f_eff,
+                                                                                                                           rel_interactions_bloo_non_bloom$genus_f_eff)]), 
+                                                         ordered=TRUE)
+
+custom_labels_bloo <- rel_interactions_bloo_non_bloom |>
+  distinct(asv_num, familybloo, genusbloo, fraction, n_dates, bloom_event ) |>    # Ensure one label per `asv_num`
+  dplyr::mutate(
+    label = case_when(
+      !is.na(genusbloo) ~ paste0(familybloo," ", genusbloo, " ", asv_num, " ", fraction, '(', n_dates, ')'),
+      is.na(genusbloo) ~ paste0(familybloo, " ", asv_num, '(', n_dates, ')'),  # Case with missing species
+      !is.na(genusbloo) ~ paste0(familybloo, " ", genusbloo, " ", asv_num," ", fraction, '(', n_dates, ')')
+    )
+  ) |> 
+  dplyr::mutate(asv_num_fraction = paste0(asv_num, ' ', fraction, ' ', bloom_event))|>
+  pull(label, name = asv_num_fraction)
+
+custom_labels_bloo_inter <- rel_interactions_bloo_non_bloom |> 
+  distinct(asv_num, familybloo, genusbloo, n_dates, bloom_event) |> # Ensure one label per `asv_num`
+  dplyr::mutate(
+    label = case_when(
+      !is.na(genusbloo) ~ paste0(familybloo, " ", genusbloo, " ", asv_num),
+      is.na(genusbloo) ~ paste0(familybloo, " ", asv_num)  # Case with missing genus
+    )
+  ) |> 
+  dplyr::distinct(asv_num, label )
+
+labs_bloom_events <- as_labeller(c('bloom' = 'Bloom', 
+                                   'no-bloom' = 'No-Bloom', 
+                                   'negative' = 'Negative Interactions', 
+                                   'positive' = 'Positive Interactions'))
+
+bloom_events <- tribble(
+  ~asv_num, ~label,
+  "bloom", "Bloom",
+  "no-bloom", "No-Bloom",
+  "negative", "Negative Interactions",
+  "positive", "Positive Interactions"
+) 
+
+custom_labels_bloo_inter <- bloom_events |>
+  bind_rows(custom_labels_bloo_inter) |>
+  pull(label, name = asv_num)
+
+## edit community labels ----
+custom_labels_community <- rel_interactions_bloo_non_bloom |>
+  distinct(asv_num_eff, family_f_eff, genus) |>    # Ensure one label per `asv_num`
+  dplyr::mutate(
+    label = case_when(
+      !is.na(genus) ~ paste0(family_f_eff, " ", genus, " ", asv_num_eff),
+      TRUE ~ paste0(family_f_eff, " ", asv_num_eff)
+    )
+  ) |> 
+  pull(label, name = asv_num_eff)
+
+setdiff(unique(rel_interactions_bloo_non_bloom$asv_num_fraction), names(custom_labels_bloo))
+
+rel_interactions_bloo_non_bloom %$%
+  range(rel_interactions)
+
+rel_interactions_bloo_non_bloom$asv_num_fraction <- factor(rel_interactions_bloo_non_bloom$asv_num_fraction,
+                                                  levels = c('asv1 3 bloom', 'asv1 0.2 bloom', 'asv31 0.2 bloom',
+                                                             'asv7 3 bloom',
+                                                             'asv7 0.2 bloom','asv15 3 bloom', 'asv15 0.2 bloom',
+                                                             'asv17 3 bloom', 'asv22 3 bloom', 'asv23 3 bloom', 'asv11 0.2 bloom',
+                                                             #no-bloom
+                                                             'asv1 3 no-bloom', 'asv1 0.2 no-bloom', 'asv31 0.2 no-bloom',
+                                                             'asv7 3 no-bloom',
+                                                             'asv7 0.2 no-bloom','asv15 3 no-bloom', 'asv15 0.2 no-bloom',
+                                                             'asv17 3 no-bloom', 'asv22 3 no-bloom', 'asv23 3 no-bloom', 'asv11 0.2 no-bloom'))
+
+rel_interactions_mdr_bloo_nonbloo_abund_t1_plot <- rel_interactions_bloo_non_bloom |>
+  dplyr::filter(!is.na(bloom_event)) |>
+  dplyr::filter(!(asv_num == 'asv17' & fraction == '0.2') &
+                  !(asv_num == 'asv31' & fraction == '3')) |> ## they only have one bloom event!
+  ggplot(aes(asv_num_fraction, asv_num_f_eff, fill = rel_interactions))+
+  geom_tile()+
+  scale_fill_gradientn(colors = palette_gradient, na.value = ('#ffffff'))+
+  facet_grid(type_interaction~bloom_event, labeller = labs_bloom_events, scales = 'free_x')+
+  labs(fill = 'Relative\nInteraction\nFrequency', 
+       y = 'ASVs interacting with bloomers', 
+       x = 'Bloomers ASVs')+
+  scale_x_discrete(label =   as_labeller(custom_labels_bloo))+
+  scale_y_discrete(labels = as_labeller(custom_labels_community))+
   theme_bw()+
-  theme(#panel.grid = element_blank(), 
-    strip.background = element_blank(), legend.position = 'bottom',
-    panel.grid.minor = element_blank(),
-    axis.title  = element_text(size = 9),
-    strip.text = element_text(size = 5),
-    axis.text = element_text(size = 5),
-    # axis.text.x = element_text(size = 7), 
-    panel.grid.major.y = element_blank(),
-    panel.border = element_blank(),
-    strip.placement = 'outside',
-    axis.ticks.length.y =  unit(0.2, "mm"))
+  theme(strip.background = element_rect(fill = 'transparent'),
+        panel.grid = element_blank(),
+        axis.text.y = element_text( size = 2),
+        axis.text.x = element_text(angle = 90, size = 2))
 
-interactions_binnary_mdr_plot
+rel_interactions_mdr_bloo_nonbloo_abund_t1_plot 
 
-# ggsave(plot = interactions_binnary_mdr_plot, filename = 'interactions_binnary_mdr_plot__relabund_norm_shannon.pdf',
-#        path = 'results/figures/',
-#        width = 180, height = 180, units = 'mm')
+# ggsave(
+#   plot = rel_interactions_mdr_bloo_nonbloo_abund_t1_plot  , 
+#   filename = 'rel_interactions_mdr_bloo_nonbloo_abund_t1_plot .pdf',
+#   path = 'results/figures/MDR/v2/',
+#   width = 180, 
+#   height = 180, 
+#   units = 'mm'
+# )
+
+## combination plot of t and t+1 -----
+### I need the t without axis y text 
+rel_interactions_mdr_bloo_nonbloo_abund_t_plot <- rel_interactions_bloo_non_bloom_t |>
+  dplyr::filter(!is.na(bloom_event)) |>
+  ggplot(aes(interaction(bloom_event, asv_num_fraction), 
+             asv_num_f_eff, fill = rel_interactions))+
+  geom_tile()+
+  scale_fill_gradientn(colors = palette_gradient, na.value = ('#ffffff'))+
+  facet_grid(type_interaction~asv_num, labeller =  as_labeller(custom_labels_bloo_inter),
+             #labs_bloom_events,
+              # as_labeller(custom_labels_bloo),
+             scales = 'free_x')+
+  # ggplot(aes(asv_num_fraction, asv_num_f_eff, fill = rel_interactions))+
+  # geom_tile()+
+  # scale_fill_gradientn(colors = palette_gradient, limits = c(0,0.2), na.value = '#ffffff')+
+  # facet_grid(type_interaction~bloom_event, labeller = labs_bloom_events,
+  #            scales = 'free_x')+
+  labs(fill = 'Relative\nInteraction\nFrequency', 
+       y = '', 
+       x = 'Bloomers ASVs',
+       title = 'Post Interactions')+
+  #scale_x_discrete(label =   as_labeller(custom_labels_bloo))+
+  scale_y_discrete(labels = as_labeller(custom_labels_community))+
+  theme_bw()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        panel.grid = element_blank(),
+        strip.text = element_text(size = 2),
+        legend.text = element_text(size = 4),
+        legend.title = element_text(size = 5),
+        axis.text.y = element_text( size = 0),
+        axis.text.x = element_text(angle = 90, size = 2),
+        axis.ticks.y = element_blank())
+
+rel_interactions_mdr_bloo_nonbloo_abund_t_plot 
+
+### I need t1 without legend and strip labels y 
+rel_interactions_mdr_bloo_nonbloo_abund_t1_plot <- rel_interactions_bloo_non_bloom |>
+  dplyr::filter(!(asv_num == 'asv17' & fraction == '0.2') &
+                  !(asv_num == 'asv31' & fraction == '3')) |> ## they only have one bloom event!
+  dplyr::filter(!is.na(bloom_event)) |>
+  ggplot(aes(interaction(bloom_event, asv_num_fraction), 
+             asv_num_f_eff, fill = rel_interactions))+
+  geom_tile()+
+  scale_fill_gradientn(colors = palette_gradient, na.value = ('#ffffff'))+
+  facet_grid(type_interaction~asv_num, labeller = as_labeller(custom_labels_bloo_inter),
+             scales = 'free_x')+
+  # ggplot(aes(asv_num_fraction, asv_num_f_eff, fill = rel_interactions))+
+  # geom_tile()+
+  # scale_fill_gradientn(colors = palette_gradient, limits = c(0,0.2),
+  #                      na.value = '#ffffff')+
+  # facet_grid(type_interaction~bloom_event, labeller = labs_bloom_events,
+  #            scales = 'free_x')+
+  labs(fill = 'Relative\nInteraction\nFrequency', 
+       y = 'ASVs interacting with bloomers', 
+       x = 'Bloomers ASVs',
+       title = 'Previous Interactions')+
+  #scale_x_discrete(label =   as_labeller(custom_labels_bloo))+
+  scale_y_discrete(labels = as_labeller(custom_labels_community))+
+  theme_bw()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        panel.grid = element_blank(),
+        strip.text = element_text(size = 2),
+        axis.text.y = element_text( size = 2),
+        strip.text.y = element_blank(),
+        axis.text.x = element_text(angle = 90, size = 2),
+        legend.position = 'none')
+
+rel_interactions_mdr_bloo_nonbloo_abund_t1_plot 
+
+plot_interactions_post_pre_blooms <- plot_grid(
+  rel_interactions_mdr_bloo_nonbloo_abund_t1_plot,
+  rel_interactions_mdr_bloo_nonbloo_abund_t_plot,
+  rel_widths = c(1.2, 1))
+
+plot_interactions_post_pre_blooms
+
+ggsave(
+  plot = plot_interactions_post_pre_blooms, 
+  filename = 'plot_interactions_post_pre_blooms_v6.pdf',
+  path = 'results/figures/MDR/v2/',
+  width = 180, 
+  height = 200, 
+  units = 'mm'
+)
+
+## supplementary table nº bloom events / bloomer and size fraction ----
+n_bloom_events <- bloom_event |>
+  dplyr::group_by(asv_num, fraction, bloom_event) |>
+  dplyr::reframe(n = paste0('n=', n()))
+
+# write.csv(n_bloom_events,
+#           'results/tables/n_bloom_events.csv', 
+#           row.names = F)
+
+# Top 10 interactions ----
+## combination plot of t and t+1 -----
+### I need the t without axis y text 
+rel_interactions_mdr_bloo_nonbloo_abund_t_plot <- rel_interactions_bloo_non_bloom_t |>
+  dplyr::filter(!is.na(bloom_event)) |>
+  dplyr::group_by(asv_num, fraction, bloom_event) |>
+  dplyr::slice_max(n = 10, order_by = rel_interactions) |>
+  ggplot(aes(interaction(bloom_event, asv_num_fraction), 
+             asv_num_f_eff, fill = rel_interactions))+
+  geom_tile()+
+  scale_fill_gradientn(colors = palette_gradient, na.value = ('#ffffff'))+
+  facet_grid(type_interaction~asv_num, labeller =  as_labeller(custom_labels_bloo_inter),
+             #labs_bloom_events,
+             # as_labeller(custom_labels_bloo),
+             scales = 'free_x')+
+  # ggplot(aes(asv_num_fraction, asv_num_f_eff, fill = rel_interactions))+
+  # geom_tile()+
+  # scale_fill_gradientn(colors = palette_gradient, limits = c(0,0.2), na.value = '#ffffff')+
+  # facet_grid(type_interaction~bloom_event, labeller = labs_bloom_events,
+  #            scales = 'free_x')+
+  labs(fill = 'Relative\nInteraction\nFrequency', 
+       y = '', 
+       x = 'Bloomers ASVs',
+       title = 'Post Interactions')+
+  #scale_x_discrete(label =   as_labeller(custom_labels_bloo))+
+  scale_y_discrete(labels = as_labeller(custom_labels_community))+
+  theme_bw()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        panel.grid = element_blank(),
+        strip.text = element_text(size = 2),
+        legend.text = element_text(size = 4),
+        legend.title = element_text(size = 5),
+        axis.text.y = element_text( size = 0),
+        axis.text.x = element_text(angle = 90, size = 2),
+        axis.ticks.y = element_blank())
+
+rel_interactions_mdr_bloo_nonbloo_abund_t_plot 
+
+### I need t1 without legend and strip labels y 
+rel_interactions_mdr_bloo_nonbloo_abund_t1_plot <- rel_interactions_bloo_non_bloom |>
+  dplyr::filter(!(asv_num == 'asv17' & fraction == '0.2') &
+                  !(asv_num == 'asv31' & fraction == '3')) |> ## they only have one bloom event!
+  dplyr::filter(!is.na(bloom_event)) |>
+  dplyr::group_by(asv_num, fraction, bloom_event) |>
+  dplyr::slice_max(n = 10, order_by = rel_interactions) |>
+  ggplot(aes(interaction(bloom_event, asv_num_fraction), 
+             asv_num_f_eff, fill = rel_interactions))+
+  geom_tile()+
+  scale_fill_gradientn(colors = palette_gradient, na.value = ('#ffffff'))+
+  facet_grid(type_interaction~asv_num, labeller = as_labeller(custom_labels_bloo_inter),
+             scales = 'free_x')+
+  # ggplot(aes(asv_num_fraction, asv_num_f_eff, fill = rel_interactions))+
+  # geom_tile()+
+  # scale_fill_gradientn(colors = palette_gradient, limits = c(0,0.2),
+  #                      na.value = '#ffffff')+
+  # facet_grid(type_interaction~bloom_event, labeller = labs_bloom_events,
+  #            scales = 'free_x')+
+  labs(fill = 'Relative\nInteraction\nFrequency', 
+       y = 'ASVs interacting with bloomers', 
+       x = 'Bloomers ASVs',
+       title = 'Previous Interactions')+
+  #scale_x_discrete(label =   as_labeller(custom_labels_bloo))+
+  scale_y_discrete(labels = as_labeller(custom_labels_community))+
+  theme_bw()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        panel.grid = element_blank(),
+        strip.text = element_text(size = 2),
+        axis.text.y = element_text( size = 2),
+        strip.text.y = element_blank(),
+        axis.text.x = element_text(angle = 90, size = 2),
+        legend.position = 'none')
+
+rel_interactions_mdr_bloo_nonbloo_abund_t1_plot 
+
+plot_interactions_post_pre_blooms <- plot_grid(
+  rel_interactions_mdr_bloo_nonbloo_abund_t1_plot,
+  rel_interactions_mdr_bloo_nonbloo_abund_t_plot,
+  rel_widths = c(1.2, 1))
+
+plot_interactions_post_pre_blooms
+
+ggsave(
+  plot = plot_interactions_post_pre_blooms, 
+  filename = 'plot_interactions_post_pre_blooms_top10_v7.pdf',
+  path = 'results/figures/MDR/v2/',
+  width = 180, 
+  height = 200, 
+  units = 'mm'
+)
+
+## only those that are more relevant the others to supplementary -----
+palette_gradient <- colorRampPalette(c("#F2A218", '#ffffff',  #"#545454",
+                                       '#0A6260'))(10)
+
+## combination plot of t and t+1 -----
+rel_interactions_bloo_non_bloom_t |>
+  dplyr::filter(!is.na(bloom_event)) |>
+  dplyr::filter(!asv_num %in% c('asv11', 'asv22')) |>
+  dplyr::group_by(asv_num, fraction, bloom_event) |>
+  dplyr::slice_max(n = 10, order_by = rel_interactions) %$% 
+  range( rel_interactions)
+
+### I need the t without axis y text 
+rel_interactions_mdr_bloo_nonbloo_abund_t_plot <- rel_interactions_bloo_non_bloom_t |>
+  dplyr::filter(!is.na(bloom_event)) |>
+  dplyr::filter(!asv_num %in% c('asv11', 'asv22')) |>
+  # dplyr::group_by(asv_num, fraction, bloom_event) |>
+  # dplyr::slice_max(n = 10, order_by = rel_interactions) |>
+  dplyr::mutate(rel_interactions = case_when(rel_interactions == '0' ~ NA_real_,
+                                             TRUE ~ rel_interactions)) |>
+  dplyr::mutate(rel_interactions = case_when(type_interaction == 'negative' ~ -rel_interactions,
+                                             TRUE ~ rel_interactions)) |>
+  ggplot(aes(interaction(bloom_event, asv_num_fraction), 
+             asv_num_f_eff, fill = rel_interactions))+
+  geom_tile()+
+  scale_fill_gradientn(colors = palette_gradient, na.value = ('#ffffff'),
+                       limits = c(-0.25, 0.25))+
+  facet_grid(type_interaction~asv_num, labeller =  as_labeller(custom_labels_bloo_inter),
+             #labs_bloom_events,
+             # as_labeller(custom_labels_bloo),
+             scales = 'free_x')+
+  # ggplot(aes(asv_num_fraction, asv_num_f_eff, fill = rel_interactions))+
+  # geom_tile()+
+  # scale_fill_gradientn(colors = palette_gradient, limits = c(0,0.2), na.value = '#ffffff')+
+  # facet_grid(type_interaction~bloom_event, labeller = labs_bloom_events,
+  #            scales = 'free_x')+
+  labs(fill = 'Relative\nInteraction\nFrequency', 
+       y = '', 
+       x = 'Bloomers ASVs',
+       title = 'Post Interactions')+
+  #scale_x_discrete(label =   as_labeller(custom_labels_bloo))+
+  scale_y_discrete(labels = as_labeller(custom_labels_community))+
+  theme_bw()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        panel.grid = element_blank(),
+        strip.text = element_text(size = 2),
+        legend.text = element_text(size = 4),
+        legend.title = element_text(size = 5),
+        axis.text.y = element_text( size = 0),
+        axis.ticks.length = unit(0.2, "mm"),
+        axis.text.x = element_text(angle = 90, size = 2),
+        axis.ticks.y = element_blank())
+
+rel_interactions_mdr_bloo_nonbloo_abund_t_plot 
+
+### I need t1 without legend and strip labels y 
+rel_interactions_mdr_bloo_nonbloo_abund_t1_plot <- rel_interactions_bloo_non_bloom |>
+  dplyr::filter(!(asv_num == 'asv17' & fraction == '0.2') &
+                  !(asv_num == 'asv31' & fraction == '3')) |> ## they only have one bloom event!
+  dplyr::filter(!asv_num %in% c('asv11', 'asv22')) |>
+  dplyr::filter(!is.na(bloom_event)) |>
+  # dplyr::group_by(asv_num, fraction, bloom_event) |>
+  # dplyr::slice_max(n = 10, order_by = rel_interactions) |>
+  dplyr::mutate(rel_interactions = case_when(type_interaction == 'negative' ~ -rel_interactions,
+                                             TRUE ~ rel_interactions)) |>
+  dplyr::mutate(rel_interactions = case_when(rel_interactions == '0' ~ NA_real_,
+                                             TRUE ~ rel_interactions)) |>
+  ggplot(aes(interaction(bloom_event, asv_num_fraction), 
+             asv_num_f_eff, fill = rel_interactions))+
+  geom_tile()+
+  scale_fill_gradientn(colors = palette_gradient, na.value = ('#ffffff'),
+                       limits = c(-0.25, 0.25))+
+  facet_grid(type_interaction~asv_num, labeller =  as_labeller(custom_labels_bloo_inter),
+             #labs_bloom_events,
+             # as_labeller(custom_labels_bloo),
+             scales = 'free_x')+
+  # ggplot(aes(asv_num_fraction, asv_num_f_eff, fill = rel_interactions))+
+  # geom_tile()+
+  # scale_fill_gradientn(colors = palette_gradient, limits = c(0,0.2), na.value = '#ffffff')+
+  # facet_grid(type_interaction~bloom_event, labeller = labs_bloom_events,
+  #            scales = 'free_x')+
+  labs(fill = 'Relative\nInteraction\nFrequency', 
+       y = 'ASVs interacting with bloomers', 
+       x = 'Bloomers ASVs',
+       title = 'Previous Interactions')+
+  #scale_x_discrete(label =   as_labeller(custom_labels_bloo))+
+  scale_y_discrete(labels = as_labeller(custom_labels_community))+
+  theme_bw()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        panel.grid  = element_blank(),
+        strip.text = element_text(size = 2),
+        axis.text.y = element_text( size = 2),
+        strip.text.y = element_blank(),
+        axis.ticks.length = unit(0.2, "mm"),
+        axis.text.x = element_text(angle = 90, size = 2),
+        legend.position = 'none')
+
+rel_interactions_mdr_bloo_nonbloo_abund_t1_plot 
+
+plot_interactions_post_pre_blooms <- plot_grid(
+  rel_interactions_mdr_bloo_nonbloo_abund_t1_plot,
+  rel_interactions_mdr_bloo_nonbloo_abund_t_plot,
+  rel_widths = c(1.2, 1))
+
+plot_interactions_post_pre_blooms
+
+ggsave(
+  plot = plot_interactions_post_pre_blooms, 
+  filename = 'plot_interactions_post_pre_blooms_top10_red_v7.pdf',
+  path = 'results/figures/MDR/v2/',
+  width = 180, 
+  height = 200, 
+  units = 'mm'
+)
+
+## supplementary ---
+rel_interactions_mdr_bloo_nonbloo_abund_t_supplot <- rel_interactions_bloo_non_bloom_t |>
+  dplyr::filter(!is.na(bloom_event)) |>
+  dplyr::filter(asv_num %in% c('asv11', 'asv22')) |>
+  dplyr::group_by(asv_num, fraction, bloom_event) |>
+  dplyr::slice_max(n = 10, order_by = rel_interactions) |>
+  dplyr::mutate(rel_interactions = case_when(type_interaction == 'negative' ~ -rel_interactions,
+                                             TRUE ~ rel_interactions)) |>
+  dplyr::mutate(rel_interactions = case_when(rel_interactions == '0' ~ NA_real_,
+                                             TRUE ~ rel_interactions)) |>
+  ggplot(aes(interaction(bloom_event, asv_num_fraction), 
+             asv_num_f_eff, fill = rel_interactions))+
+  geom_tile()+
+  scale_fill_gradientn(colors = palette_gradient, na.value = ('#ffffff'),
+                       limits = c(-0.25, 0.25))+
+  facet_grid(type_interaction~asv_num, labeller =  as_labeller(custom_labels_bloo_inter),
+             #labs_bloom_events,
+             # as_labeller(custom_labels_bloo),
+             scales = 'free_x')+
+  # ggplot(aes(asv_num_fraction, asv_num_f_eff, fill = rel_interactions))+
+  # geom_tile()+
+  # scale_fill_gradientn(colors = palette_gradient, limits = c(0,0.2), na.value = '#ffffff')+
+  # facet_grid(type_interaction~bloom_event, labeller = labs_bloom_events,
+  #            scales = 'free_x')+
+  labs(fill = 'Relative\nInteraction\nFrequency', 
+       y = '', 
+       x = 'Bloomers ASVs',
+       title = 'Post Interactions')+
+  #scale_x_discrete(label =   as_labeller(custom_labels_bloo))+
+  scale_y_discrete(labels = as_labeller(custom_labels_community))+
+  theme_bw()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        panel.grid = element_blank(),
+        strip.text = element_text(size = 2),
+        legend.text = element_text(size = 4),
+        legend.title = element_text(size = 5),
+        axis.text.y = element_text( size = 0),
+        axis.ticks.length = unit(0.2, "mm"),
+        axis.text.x = element_text(angle = 90, size = 2),
+        axis.ticks.y = element_blank())
+
+rel_interactions_mdr_bloo_nonbloo_abund_t_supplot 
+
+### I need t1 without legend and strip labels y 
+rel_interactions_mdr_bloo_nonbloo_abund_t1_supplot <- rel_interactions_bloo_non_bloom |>
+  dplyr::filter(!(asv_num == 'asv17' & fraction == '0.2') &
+                  !(asv_num == 'asv31' & fraction == '3')) |> ## they only have one bloom event!
+  dplyr::filter(asv_num %in% c('asv11', 'asv22')) |>
+  dplyr::filter(!is.na(bloom_event)) |>
+  dplyr::group_by(asv_num, fraction, bloom_event) |>
+  dplyr::slice_max(n = 10, order_by = rel_interactions) |>
+  dplyr::mutate(rel_interactions = case_when(type_interaction == 'negative' ~ -rel_interactions,
+                                             TRUE ~ rel_interactions)) |>
+  dplyr::mutate(rel_interactions = case_when(rel_interactions == '0' ~ NA_real_,
+                                             TRUE ~ rel_interactions)) |>
+  ggplot(aes(interaction(bloom_event, asv_num_fraction), 
+             asv_num_f_eff, fill = rel_interactions))+
+  geom_tile()+
+  scale_fill_gradientn(colors = palette_gradient, na.value = ('#ffffff'),
+                       limits = c(-0.25, 0.25))+
+  facet_grid(type_interaction~asv_num, labeller =  as_labeller(custom_labels_bloo_inter),
+             #labs_bloom_events,
+             # as_labeller(custom_labels_bloo),
+             scales = 'free_x')+
+  # ggplot(aes(asv_num_fraction, asv_num_f_eff, fill = rel_interactions))+
+  # geom_tile()+
+  # scale_fill_gradientn(colors = palette_gradient, limits = c(0,0.2), na.value = '#ffffff')+
+  # facet_grid(type_interaction~bloom_event, labeller = labs_bloom_events,
+  #            scales = 'free_x')+
+  labs(fill = 'Relative\nInteraction\nFrequency', 
+       y = 'ASVs interacting with bloomers', 
+       x = 'Bloomers ASVs',
+       title = 'Previous Interactions')+
+  #scale_x_discrete(label =   as_labeller(custom_labels_bloo))+
+  scale_y_discrete(labels = as_labeller(custom_labels_community))+
+  theme_bw()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        panel.grid  = element_blank(),
+        strip.text = element_text(size = 2),
+        axis.text.y = element_text( size = 2),
+        strip.text.y = element_blank(),
+        axis.ticks.length = unit(0.2, "mm"),
+        axis.text.x = element_text(angle = 90, size = 2),
+        legend.position = 'none')
+
+rel_interactions_mdr_bloo_nonbloo_abund_t1_supplot 
+
+plot_interactions_post_pre_blooms <- plot_grid(
+  rel_interactions_mdr_bloo_nonbloo_abund_t1_supplot,
+  rel_interactions_mdr_bloo_nonbloo_abund_t_supplot,
+  rel_widths = c(1.2, 1))
+
+plot_interactions_post_pre_blooms
+
+ggsave(
+  plot = plot_interactions_post_pre_blooms, 
+  filename = 'plot_interactions_post_pre_blooms_top10_red_supl_v1.pdf',
+  path = 'results/figures/MDR/v2/',
+  width = 180, 
+  height = 200, 
+  units = 'mm'
+)
+
+### 1 when it is always interacting with my ASV and 0 never interacting with the ASV ----
+### abundance at t
+mdr_tb_m_rclr <- mdr_tb_m |>
+  dplyr::filter(asv_num %in% c('asv17', 'asv22', 'asv23',
+                               'asv11', 'asv1', 'asv31', 'asv7', 'asv15')) |>
+  pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff)
+
+mdr_tb_m_rclr_pos <- mdr_tb_m_rclr |>
+  dplyr::mutate(value = if_else(as.numeric(value) > 0, 1, NA_real_)) 
+
+mdr_tb_m_rclr_neg <- mdr_tb_m_rclr |>
+  dplyr::mutate(value = if_else(as.numeric(value) < 0, 1, NA_real_))
+
+m_sample_num <- m_02 |>
+  dplyr::select(date, sample_id_num)
+
+bloom_event <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(bloom_event = case_when((z_score_ra > 2 &
+                                           abundance_value > 0.1) ~ 'bloom',
+                                        TRUE ~ 'no-bloom')) |>
+  dplyr::select(bloom_event, date, fraction, asv_num, abundance_value) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  left_join(m_sample_num) |>## add sample_number
+  dplyr::select(-date) |>
+  dplyr::filter(!(asv_num == 'asv22' & fraction == '0.2') &
+                  !(asv_num == 'asv31' & fraction == '0.2') &
+                  !(asv_num == 'asv23' & fraction == '0.2') &
+                  !(asv_num == 'asv11' & fraction == '3')) 
+
+n_dates_fraction_asv_tb <- mdr_tb_m_rclr_pos |>
+  left_join(bloom_event, by = c('asv_num', 'time' = 'sample_id_num', 'fraction')) |>
+  group_by(asv_num, bloom_event, fraction, date) |>
+  distinct(asv_num, bloom_event, fraction, date) |>
+  group_by(asv_num, bloom_event, fraction) |>
+  dplyr::reframe(n_dates = n()) |>
+  dplyr::filter(!is.na(bloom_event))
+
+mdr_tb_m_rclr_pos_bloo <- mdr_tb_m_rclr_pos |>
+  left_join(bloom_event, by = c('asv_num', 'time' = 'sample_id_num', 'fraction')) |>
+  dplyr::filter(!is.na(bloom_event)) |>
+  group_by(asv_num, bloom_event, fraction, asv_num_eff) |>
+  dplyr::reframe(pos_interactions = sum(as.numeric(value), na.rm = T)) |>
+  left_join(n_dates_fraction_asv_tb ) |>
+  #group_by(asv_num, bloom_event, fraction) |>
+  dplyr::mutate(rel_interactions = pos_interactions/n_dates) |>
+  # group_by(asv_num, bloom_event, fraction) |>
+  # dplyr::mutate(n_interactions = sum(pos_interactions)) |>
+  # dplyr::mutate(rel_interactions = pos_interactions/(n_interactions)) |>
+  dplyr::mutate(type_interaction = 'positive')
+
+mdr_tb_m_rclr_neg_bloo <- mdr_tb_m_rclr_neg |>
+  left_join(bloom_event, by = c('asv_num', 'time' = 'sample_id_num', 'fraction')) |>
+  dplyr::filter(!is.na(bloom_event)) |>
+  group_by(asv_num, bloom_event, fraction, asv_num_eff) |>
+  dplyr::reframe(neg_interactions = sum(as.numeric(value), na.rm = T)) |>
+  left_join(n_dates_fraction_asv_tb ) |>
+  #group_by(asv_num, bloom_event, fraction) |>
+  dplyr::mutate(rel_interactions = neg_interactions/n_dates) |>
+  # group_by(asv_num, bloom_event, fraction) |>
+  # dplyr::mutate(n_interactions = sum(pos_interactions)) |>
+  # dplyr::mutate(rel_interactions = pos_interactions/(n_interactions)) |>
+  dplyr::mutate(type_interaction = 'negative')
+
+rel_interactions_bloo_non_bloom <- mdr_tb_m_rclr_neg_bloo |>
+  bind_rows(mdr_tb_m_rclr_pos_bloo) |>
+  dplyr::mutate(rel_interactions = as.numeric(rel_interactions)) |>
+  left_join(tax_occ_filt_bbmo, by = c('asv_num_eff' = 'asv_num'), suffix = c('', '_tax_eff')) |>
+  left_join(bloo_taxonomy, by = c('asv_num' = 'asv_num_f'), suffix = c('', 'bloo')) |>
+  rename( phylum_bloo = phylum_f, classbloo = class_f, orderbloo = order_f, familybloo = family_f, genusbloo = genus_f) |>
+  dplyr::mutate(fraction_asv_num = paste0(fraction, ' ', asv_num)) |>
+  dplyr::mutate(asv_num_fraction = paste0(asv_num, ' ', fraction, ' ', bloom_event))|>
+  left_join(n_dates_fraction_asv_tb)
+
+rel_interactions_bloo_non_bloom |>
+  colnames()
+
+rel_interactions_bloo_non_bloom$asv_num <- factor(rel_interactions_bloo_non_bloom$asv_num,
+                                                  levels = c('asv31', 'asv1', 'asv7',
+                                                             'asv15', 'asv22', 'asv23', 'asv11', 'asv17'))
+
+rel_interactions_bloo_non_bloom <- rel_interactions_bloo_non_bloom |>
+  dplyr::mutate(phylum_f_eff = as_factor(phylum),
+                family_f_eff = as_factor(family),
+                order_f_eff = as_factor(order),
+                class_f_eff = as_factor(class),
+                asv_num_f_eff = as_factor(asv_num_eff))
+
+rel_interactions_bloo_non_bloom$class_f_eff <-  factor(rel_interactions_bloo_non_bloom$class_f_eff, 
+                                                       levels=unique(rel_interactions_bloo_non_bloom$class_f_eff[order(rel_interactions_bloo_non_bloom$phylum_f_eff)]), 
+                                                       ordered=TRUE)
+
+rel_interactions_bloo_non_bloom$order_f_eff <-  factor(rel_interactions_bloo_non_bloom$order_f_eff, 
+                                                       levels=unique(rel_interactions_bloo_non_bloom$order_f_eff[order(rel_interactions_bloo_non_bloom$phylum_f_eff,
+                                                                                                                       rel_interactions_bloo_non_bloom$class_f_eff)]), 
+                                                       ordered=TRUE)
+
+rel_interactions_bloo_non_bloom$family_f_eff <-  factor(rel_interactions_bloo_non_bloom$family_f_eff, 
+                                                        levels=unique(rel_interactions_bloo_non_bloom$family_f_eff[order(rel_interactions_bloo_non_bloom$phylum_f_eff,
+                                                                                                                         rel_interactions_bloo_non_bloom$class_f_eff,
+                                                                                                                         rel_interactions_bloo_non_bloom$order_f_eff)]), 
+                                                        ordered=TRUE)
+
+rel_interactions_bloo_non_bloom$asv_num_f_eff <-  factor(rel_interactions_bloo_non_bloom$asv_num_f_eff, 
+                                                         levels=unique(rel_interactions_bloo_non_bloom$asv_num_f_eff[order(rel_interactions_bloo_non_bloom$phylum_f_eff,
+                                                                                                                           rel_interactions_bloo_non_bloom$class_f_eff,
+                                                                                                                           rel_interactions_bloo_non_bloom$order_f_eff,
+                                                                                                                           rel_interactions_bloo_non_bloom$family_f_eff)]), 
+                                                         ordered=TRUE)
+
+custom_labels_bloo <- rel_interactions_bloo_non_bloom |>
+  distinct(asv_num, familybloo, genusbloo, fraction, n_dates) |>    # Ensure one label per `asv_num`
+  dplyr::mutate(
+    label = case_when(
+      !is.na(genusbloo) ~ paste0(familybloo," ", genusbloo, " ", asv_num, " ", fraction, '(', n_dates, ')'),
+      is.na(genusbloo) ~ paste0(familybloo, " ", asv_num, '(', n_dates, ')'),  # Case with missing species
+      !is.na(genusbloo) ~ paste0(familybloo, " ", genusbloo, " ", asv_num," ", fraction, '(', n_dates, ')')
+    )
+  ) |> 
+  dplyr::mutate(asv_num_fraction = paste0(asv_num, ' ', fraction, ' ', bloom_event))|>
+  pull(label, name = asv_num_fraction)
+
+
+labs_bloom_events <- as_labeller(c('bloom' = 'Bloom', 'no-bloom' = 'No-Bloom', 'negative' = 'Negative Interactions', 
+                                   'positive' = 'Positive Interactions'))
+
+rel_interactions_bloo_non_bloom$asv_num_fraction <- factor(rel_interactions_bloo_non_bloom$asv_num_fraction,
+                                                           levels = c('asv1 3 bloom', 'asv1 0.2 bloom', 'asv31 0.2 bloom',
+                                                                      'asv7 3 bloom',
+                                                                      'asv7 0.2 bloom','asv15 3 bloom', 'asv15 0.2 bloom',
+                                                                      'asv17 3 bloom', 'asv22 3 bloom', 'asv23 3 bloom', 'asv11 0.2 bloom',
+                                                                      #no-bloom
+                                                                      'asv1 3 no-bloom', 'asv1 0.2 no-bloom', 'asv31 0.2 no-bloom',
+                                                                      'asv7 3 no-bloom',
+                                                                      'asv7 0.2 no-bloom','asv15 3 no-bloom', 'asv15 0.2 no-bloom',
+                                                                      'asv17 3 no-bloom', 'asv22 3 no-bloom', 'asv23 3 no-bloom', 'asv11 0.2 no-bloom'))
+
+## COMMUNITY INTERACTION WITH BLOOMERS -----
+## edit community labels ----
+custom_labels_community <- rel_interactions_bloo_non_bloom |>
+  distinct(asv_num_eff, family_f_eff, genus) |>    # Ensure one label per `asv_num`
+  dplyr::mutate(
+    label = case_when(
+      !is.na(genus) ~ paste0(family_f_eff, " ", genus, " ", asv_num_eff),
+      TRUE ~ paste0(family_f_eff, " ", asv_num_eff)
+    )
+  ) |> 
+  pull(label, name = asv_num_eff)
+
+setdiff(unique(rel_interactions_bloo_non_bloom$asv_num_fraction), names(custom_labels_bloo))
+
+rel_interactions_bloo_non_bloom_t <- rel_interactions_bloo_non_bloom |>
+  dplyr::filter(!(asv_num == 'asv17' & fraction == '0.2') &
+                  !(asv_num == 'asv31' & fraction == '3')) ## they only have one bloom event!
+
+### 1, 0 bloom y no bloom ----
+## heatmap + and - 
+### abundance at t+1
+mdr_tb_m_rclr <- mdr_tb_m |>
+  dplyr::filter(asv_num %in% c('asv17', 'asv22', 'asv23',
+                               'asv11', 'asv1', 'asv31', 
+                               'asv7', 'asv15')) |>
+  pivot_longer(cols = starts_with(c('bp', 'bn'))) |>
+  separate(name, sep = '_', into = c('fraction_eff', 'asv_num_eff')) |>
+  left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
+  dplyr::filter(asv_num != asv_num_eff)
+
+mdr_tb_m_rclr_pos <- mdr_tb_m_rclr |>
+  dplyr::mutate(value = if_else(as.numeric(value) > 0, 1, NA_real_)) 
+
+mdr_tb_m_rclr_neg <- mdr_tb_m_rclr |>
+  dplyr::mutate(value = if_else(as.numeric(value) < 0, 1, NA_real_)) 
+
+m_sample_num <- m_02 |>
+  dplyr::select(date, sample_id_num) |>
+  dplyr::mutate(sample_id_num = as.numeric(sample_id_num)+1) |>
+  dplyr::mutate(sample_id_num = as.character(sample_id_num))
+
+bloom_event <- asv_tab_all_bloo_z_tax_red |>
+  dplyr::mutate(bloom_event = case_when((z_score_ra > 2 &
+                                           abundance_value > 0.1) ~ 'bloom',
+                                        TRUE ~ 'no-bloom')) |>
+  dplyr::select(bloom_event, date, fraction, asv_num, abundance_value) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  left_join(m_sample_num) |> ## add sample_number
+  dplyr::select(-date) |>
+  dplyr::filter(!(asv_num == 'asv22' & fraction == '0.2') &
+                  !(asv_num == 'asv31' & fraction == '0.2') &
+                  !(asv_num == 'asv23' & fraction == '0.2') &
+                  !(asv_num == 'asv11' & fraction == '3')) 
+
+n_dates_fraction_asv_tb <- mdr_tb_m_rclr_pos |>
+  left_join(bloom_event, by = c('asv_num', 'time' = 'sample_id_num', 'fraction')) |>
+  group_by(asv_num, bloom_event, fraction, date) |>
+  distinct(asv_num, bloom_event, fraction, date) |>
+  group_by(asv_num, bloom_event, fraction) |>
+  dplyr::reframe(n_dates = n()) |>
+  dplyr::filter(!is.na(bloom_event))
+
+mdr_tb_m_rclr_pos_bloo <- mdr_tb_m_rclr_pos |>
+  left_join(bloom_event, by = c('asv_num', 'time' = 'sample_id_num', 'fraction')) |>
+  dplyr::filter(!is.na(bloom_event)) |>
+  group_by(asv_num, bloom_event, fraction, asv_num_eff, fraction_eff) |>
+  dplyr::reframe(pos_interactions = sum(as.numeric(value), na.rm = T)) |>
+  left_join(n_dates_fraction_asv_tb ) |>
+  #group_by(asv_num, bloom_event, fraction) |>
+  dplyr::mutate(rel_interactions = pos_interactions/n_dates) |>
+  # group_by(asv_num, bloom_event, fraction) |>
+  # dplyr::mutate(n_interactions = sum(pos_interactions)) |>
+  # dplyr::mutate(rel_interactions = pos_interactions/(n_interactions)) |>
+  dplyr::mutate(type_interaction = 'positive')
+
+mdr_tb_m_rclr_neg_bloo <- mdr_tb_m_rclr_neg |>
+  left_join(bloom_event, by = c('asv_num', 'time' = 'sample_id_num', 'fraction')) |>
+  dplyr::filter(!is.na(bloom_event)) |>
+  group_by(asv_num, bloom_event, fraction, asv_num_eff, fraction_eff) |>
+  dplyr::reframe(neg_interactions = sum(as.numeric(value), na.rm = T)) |>
+  left_join(n_dates_fraction_asv_tb, by = c('asv_num', 'bloom_event', 'fraction') ) |>
+  #group_by(asv_num, bloom_event, fraction) |>
+  dplyr::mutate(rel_interactions = neg_interactions/n_dates) |>
+  # group_by(asv_num, bloom_event, fraction) |>
+  # dplyr::mutate(n_interactions = sum(pos_interactions)) |>
+  # dplyr::mutate(rel_interactions = pos_interactions/(n_interactions)) |>
+  dplyr::mutate(type_interaction = 'negative')
+
+# mdr_tb_m_rclr_neg_bloo <- mdr_tb_m_rclr_neg |>
+#   left_join(bloom_event, by = c('asv_num', 'time' = 'sample_id_num', 'fraction')) |>
+#   dplyr::filter(!is.na(bloom_event)) |>
+#   group_by(asv_num, bloom_event, fraction, asv_num_eff) |>
+#   dplyr::reframe(pos_interactions = sum(as.numeric(value), na.rm = T)) |>
+#   group_by(asv_num, bloom_event, fraction) |>
+#   dplyr::mutate(n = n()) |>
+#   group_by(asv_num, bloom_event, fraction) |>
+#   dplyr::mutate(n_interactions = sum(pos_interactions)) |>
+#   dplyr::mutate(rel_interactions = pos_interactions/(n_interactions)) |>
+#   dplyr::mutate(type_interaction = 'negative')
+
+rel_interactions_bloo_non_bloom <- mdr_tb_m_rclr_neg_bloo |>
+  bind_rows(mdr_tb_m_rclr_pos_bloo) |>
+  dplyr::mutate(rel_interactions = as.numeric(rel_interactions)) |>
+  left_join(tax_occ_filt_bbmo, by = c('asv_num_eff' = 'asv_num'), suffix = c('', '_tax_eff')) |>
+  left_join(bloo_taxonomy, by = c('asv_num' = 'asv_num_f'), suffix = c('', 'bloo')) |>
+  rename( phylum_bloo = phylum_f, classbloo = class_f, orderbloo = order_f, familybloo = family_f, genusbloo = genus_f) |>
+  dplyr::mutate(fraction_asv_num = paste0(fraction, ' ', asv_num)) |>
+  dplyr::mutate(asv_num_fraction = paste0(asv_num, ' ', fraction, ' ', bloom_event)) |>
+  left_join(n_dates_fraction_asv_tb) 
+
+rel_interactions_bloo_non_bloom$asv_num <- factor(rel_interactions_bloo_non_bloom$asv_num,
+                                                  levels = c('asv31', 'asv1', 'asv7',
+                                                             'asv15', 'asv22', 'asv23', 'asv11', 'asv17'))
+
+rel_interactions_bloo_non_bloom <- rel_interactions_bloo_non_bloom |>
+  dplyr::mutate(phylum_f_eff = as_factor(phylum),
+                family_f_eff = as_factor(family),
+                order_f_eff = as_factor(order),
+                genus_f_eff = as_factor(genus),
+                class_f_eff = as_factor(class),
+                asv_num_f_eff = as_factor(asv_num_eff))
+
+rel_interactions_bloo_non_bloom$class_f_eff <-  factor(rel_interactions_bloo_non_bloom$class_f_eff, 
+                                                       levels=unique(rel_interactions_bloo_non_bloom$class_f_eff[order(rel_interactions_bloo_non_bloom$phylum_f_eff)]), 
+                                                       ordered=TRUE)
+
+rel_interactions_bloo_non_bloom$order_f_eff <-  factor(rel_interactions_bloo_non_bloom$order_f_eff, 
+                                                       levels=unique(rel_interactions_bloo_non_bloom$order_f_eff[order(rel_interactions_bloo_non_bloom$phylum_f_eff,
+                                                                                                                       rel_interactions_bloo_non_bloom$class_f_eff)]), 
+                                                       ordered=TRUE)
+
+rel_interactions_bloo_non_bloom$family_f_eff <-  factor(rel_interactions_bloo_non_bloom$family_f_eff, 
+                                                        levels=unique(rel_interactions_bloo_non_bloom$family_f_eff[order(rel_interactions_bloo_non_bloom$phylum_f_eff,
+                                                                                                                         rel_interactions_bloo_non_bloom$class_f_eff,
+                                                                                                                         rel_interactions_bloo_non_bloom$order_f_eff)]), 
+                                                        ordered=TRUE)
+
+rel_interactions_bloo_non_bloom$genus_f_eff <-  factor(rel_interactions_bloo_non_bloom$family_f_eff, 
+                                                       levels=unique(rel_interactions_bloo_non_bloom$genus_f_eff[order(rel_interactions_bloo_non_bloom$phylum_f_eff,
+                                                                                                                       rel_interactions_bloo_non_bloom$class_f_eff,
+                                                                                                                       rel_interactions_bloo_non_bloom$order_f_eff,
+                                                                                                                       rel_interactions_bloo_non_bloom$family_f_eff)]), 
+                                                       ordered=TRUE)
+
+rel_interactions_bloo_non_bloom$asv_num_f_eff <-  factor(rel_interactions_bloo_non_bloom$asv_num_f_eff, 
+                                                         levels=unique(rel_interactions_bloo_non_bloom$asv_num_f_eff[order(rel_interactions_bloo_non_bloom$phylum_f_eff,
+                                                                                                                           rel_interactions_bloo_non_bloom$class_f_eff,
+                                                                                                                           rel_interactions_bloo_non_bloom$order_f_eff,
+                                                                                                                           rel_interactions_bloo_non_bloom$family_f_eff,
+                                                                                                                           rel_interactions_bloo_non_bloom$genus_f_eff)]), 
+                                                         ordered=TRUE)
+
+custom_labels_bloo <- rel_interactions_bloo_non_bloom |>
+  distinct(asv_num, familybloo, genusbloo, fraction, n_dates, bloom_event ) |>    # Ensure one label per `asv_num`
+  dplyr::mutate(
+    label = case_when(
+      !is.na(genusbloo) ~ paste0(familybloo," ", genusbloo, " ", asv_num, " ", fraction, '(', n_dates, ')'),
+      is.na(genusbloo) ~ paste0(familybloo, " ", asv_num, '(', n_dates, ')'),  # Case with missing species
+      !is.na(genusbloo) ~ paste0(familybloo, " ", genusbloo, " ", asv_num," ", fraction, '(', n_dates, ')')
+    )
+  ) |> 
+  dplyr::mutate(asv_num_fraction = paste0(asv_num, ' ', fraction, ' ', bloom_event))|>
+  pull(label, name = asv_num_fraction)
+
+custom_labels_bloo_inter <- rel_interactions_bloo_non_bloom |> 
+  distinct(asv_num, familybloo, genusbloo, n_dates, bloom_event) |> # Ensure one label per `asv_num`
+  dplyr::mutate(
+    label = case_when(
+      !is.na(genusbloo) ~ paste0(familybloo, " ", genusbloo, " ", asv_num),
+      is.na(genusbloo) ~ paste0(familybloo, " ", asv_num)  # Case with missing genus
+    )
+  ) |> 
+  dplyr::distinct(asv_num, label )
+
+labs_bloom_events <- as_labeller(c('bloom' = 'Bloom', 
+                                   'no-bloom' = 'No-Bloom', 
+                                   'negative' = 'Negative Interactions', 
+                                   'positive' = 'Positive Interactions'))
+
+bloom_events <- tribble(
+  ~asv_num, ~label,
+  "bloom", "Bloom",
+  "no-bloom", "No-Bloom",
+  "negative", "Negative Interactions",
+  "positive", "Positive Interactions"
+) 
+
+custom_labels_bloo_inter <- bloom_events |>
+  bind_rows(custom_labels_bloo_inter) |>
+  pull(label, name = asv_num)
+
+## edit community labels ----
+custom_labels_community <- rel_interactions_bloo_non_bloom |>
+  distinct(asv_num_eff, family_f_eff, genus) |>    # Ensure one label per `asv_num`
+  dplyr::mutate(
+    label = case_when(
+      !is.na(genus) ~ paste0(family_f_eff, " ", genus, " ", asv_num_eff),
+      TRUE ~ paste0(family_f_eff, " ", asv_num_eff)
+    )
+  ) |> 
+  pull(label, name = asv_num_eff)
+
+setdiff(unique(rel_interactions_bloo_non_bloom$asv_num_fraction), names(custom_labels_bloo))
+
+rel_interactions_bloo_non_bloom %$%
+  range(rel_interactions)
+
+rel_interactions_bloo_non_bloom$asv_num_fraction <- factor(rel_interactions_bloo_non_bloom$asv_num_fraction,
+                                                           levels = c('asv1 3 bloom', 'asv1 0.2 bloom', 'asv31 0.2 bloom',
+                                                                      'asv7 3 bloom',
+                                                                      'asv7 0.2 bloom','asv15 3 bloom', 'asv15 0.2 bloom',
+                                                                      'asv17 3 bloom', 'asv22 3 bloom', 'asv23 3 bloom', 'asv11 0.2 bloom',
+                                                                      #no-bloom
+                                                                      'asv1 3 no-bloom', 'asv1 0.2 no-bloom', 'asv31 0.2 no-bloom',
+                                                                      'asv7 3 no-bloom',
+                                                                      'asv7 0.2 no-bloom','asv15 3 no-bloom', 'asv15 0.2 no-bloom',
+                                                                      'asv17 3 no-bloom', 'asv22 3 no-bloom', 'asv23 3 no-bloom', 'asv11 0.2 no-bloom'))
+
+rel_interactions_bloo_non_bloom$asv_num_fraction <- factor(rel_interactions_bloo_non_bloom$asv_num_fraction,
+                                                           levels = c( 'asv1 3 no-bloom', 'asv1 3 bloom',  'asv1 0.2 no-bloom', 'asv1 0.2 bloom', 
+                                                                       'asv31 0.2 no-bloom', 'asv31 0.2 bloom',
+                                                                       'asv7 3 no-bloom', 'asv7 3 bloom',
+                                                                       'asv7 0.2 no-bloom', 'asv7 0.2 bloom',
+                                                                       'asv15 3 no-bloom', 'asv15 3 bloom',  'asv15 0.2 no-bloom', 'asv15 0.2 bloom',
+                                                                       'asv17 3 no-bloom', 'asv17 3 bloom', 'asv22 3 no-bloom','asv22 3 bloom', 
+                                                                       'asv23 3 no-bloom', 'asv23 3 bloom',   'asv11 0.2 no-bloom', 'asv11 0.2 bloom'#no-bloom,
+                                                                      ))
+
+rel_interactions_bloo_non_bloom_t$asv_num_fraction <- factor(rel_interactions_bloo_non_bloom_t$asv_num_fraction,
+                                                           levels = c( 'asv1 3 no-bloom', 'asv1 3 bloom',  'asv1 0.2 no-bloom', 'asv1 0.2 bloom', 
+                                                                       'asv31 0.2 no-bloom', 'asv31 0.2 bloom',
+                                                                       'asv7 3 no-bloom', 'asv7 3 bloom',
+                                                                       'asv7 0.2 no-bloom', 'asv7 0.2 bloom',
+                                                                       'asv15 3 no-bloom', 'asv15 3 bloom',  'asv15 0.2 no-bloom', 'asv15 0.2 bloom',
+                                                                       'asv17 3 no-bloom', 'asv17 3 bloom', 'asv22 3 no-bloom','asv22 3 bloom', 
+                                                                       'asv23 3 no-bloom', 'asv23 3 bloom',   'asv11 0.2 no-bloom', 'asv11 0.2 bloom'#no-bloom,
+                                                           ))
+
+## combination plot of t and t+1 -----
+### I need the t without axis y text 
+rel_interactions_mdr_bloo_nonbloo_abund_t_plot <- rel_interactions_bloo_non_bloom_t |>
+  dplyr::filter(!is.na(bloom_event)) |>
+  dplyr::group_by(asv_num, fraction, bloom_event, type_interaction) |>
+  dplyr::slice_max(n = 5, order_by = rel_interactions) |>
+  dplyr::mutate(rel_interactions = case_when(type_interaction == 'negative' ~ -rel_interactions,
+                                             TRUE ~ rel_interactions)) |>
+  dplyr::mutate(rel_interactions = case_when(rel_interactions == '0' ~ NA_real_,
+                                             TRUE ~ rel_interactions)) |>
+  ggplot(aes(interaction(bloom_event, asv_num_fraction), 
+             asv_num_f_eff, fill = rel_interactions))+
+  geom_tile()+
+  #scale_fill_gradientn(colors = palette_gradient, na.value = ('#ffffff'))+
+  scale_fill_gradientn(colors = palette_gradient, na.value = ('#ffffff'),
+                       limits = c(-1, 1))+
+  facet_grid(.~asv_num, labeller =  as_labeller(custom_labels_bloo_inter),
+             #labs_bloom_events,
+             # as_labeller(custom_labels_bloo),
+             scales = 'free')+
+  # ggplot(aes(asv_num_fraction, asv_num_f_eff, fill = rel_interactions))+
+  # geom_tile()+
+  # scale_fill_gradientn(colors = palette_gradient, limits = c(0,0.2), na.value = '#ffffff')+
+  # facet_grid(type_interaction~bloom_event, labeller = labs_bloom_events,
+  #            scales = 'free_x')+
+  labs(fill = 'Relative\nInteraction\nDates', 
+       y = '', 
+       x = 'Bloomers ASVs',
+       title = 'Post Interactions')+
+  #scale_x_discrete(label =   as_labeller(custom_labels_bloo))+
+  scale_y_discrete(labels = as_labeller(custom_labels_community))+
+  theme_bw()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        panel.grid = element_blank(),
+        strip.text = element_text(size = 2),
+        legend.text = element_text(size = 4),
+        legend.title = element_text(size = 5),
+        axis.text.y = element_text( size = 0),
+        axis.ticks.length = unit(0.2, "mm"),
+        axis.text.x = element_text(angle = 90, size = 2),
+        axis.ticks.y = element_blank())
+
+rel_interactions_mdr_bloo_nonbloo_abund_t_plot 
+
+### I need t1 without legend and strip labels y 
+rel_interactions_mdr_bloo_nonbloo_abund_t1_plot <- rel_interactions_bloo_non_bloom |>
+  dplyr::filter(!(asv_num == 'asv17' & fraction == '0.2') &
+                  !(asv_num == 'asv31' & fraction == '3')) |> ## they only have one bloom event!
+  dplyr::filter(!is.na(bloom_event)) |>
+  dplyr::group_by(asv_num, fraction, bloom_event, type_interaction) |>
+  dplyr::slice_max(n = 5, order_by = rel_interactions) |>
+  dplyr::mutate(rel_interactions = case_when(type_interaction == 'negative' ~ -rel_interactions,
+                                             TRUE ~ rel_interactions)) |>
+  dplyr::mutate(rel_interactions = case_when(rel_interactions == '0' ~ NA_real_,
+                                             TRUE ~ rel_interactions)) |>
+  ggplot(aes(interaction(bloom_event, asv_num_fraction), 
+             asv_num_f_eff, fill = rel_interactions))+
+  geom_tile()+
+  #scale_fill_gradientn(colors = palette_gradient, na.value = ('#ffffff'))+
+  scale_fill_gradientn(colors = palette_gradient, na.value = ('#ffffff'),
+                       limits = c(-1, 1))+
+  #geom_tile()+
+  #scale_fill_gradientn(colors = palette_gradient, na.value = ('#ffffff'))+
+  facet_grid(.~asv_num, labeller = as_labeller(custom_labels_bloo_inter),
+             scales = 'free')+
+  # ggplot(aes(asv_num_fraction, asv_num_f_eff, fill = rel_interactions))+
+  # geom_tile()+
+  # scale_fill_gradientn(colors = palette_gradient, limits = c(0,0.2),
+  #                      na.value = '#ffffff')+
+  # facet_grid(type_interaction~bloom_event, labeller = labs_bloom_events,
+  #            scales = 'free_x')+
+  labs(fill = 'Relative\nInteraction\nDates', 
+       y = 'ASVs interacting with bloomers', 
+       x = 'Bloomers ASVs',
+       title = 'Previous Interactions')+
+  #scale_x_discrete(label =   as_labeller(custom_labels_bloo))+
+  scale_y_discrete(labels = as_labeller(custom_labels_community))+
+  theme_bw()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        panel.grid = element_blank(),
+        strip.text = element_text(size = 2),
+        axis.text.y = element_text( size = 2),
+        axis.ticks.length = unit(0.2, "mm"),
+        strip.text.y = element_blank(),
+        axis.text.x = element_text(angle = 90, size = 2),
+        legend.position = 'none')
+
+rel_interactions_mdr_bloo_nonbloo_abund_t1_plot 
+
+plot_interactions_post_pre_blooms <- plot_grid(
+  rel_interactions_mdr_bloo_nonbloo_abund_t1_plot,
+  rel_interactions_mdr_bloo_nonbloo_abund_t_plot,
+  rel_widths = c(1.2, 1))
+
+plot_interactions_post_pre_blooms
+
+ggsave(
+  plot = plot_interactions_post_pre_blooms, 
+  filename = 'plot_interactions_post_pre_blooms_relativeinteractions_top5_events_v2.pdf',
+  path = 'results/figures/MDR/v2/',
+  width = 180, 
+  height = 200, 
+  units = 'mm'
+)
+
+## Plot individual por cada ASV ----
+rel_interactions_bloo_non_bloom  |>
+  colnames()
+
+rel_interactions_bloo_non_bloom_t <- rel_interactions_bloo_non_bloom_t |>
+  dplyr::mutate(interaction_moment = 't')
+
+rel_interactions_bloo_non_bloom_all <- rel_interactions_bloo_non_bloom |>
+  dplyr::mutate(interaction_moment = 't_1') |>
+  bind_rows(rel_interactions_bloo_non_bloom_t)
+
+rel_interactions_bloo_non_bloom_all$interaction_moment <- factor(rel_interactions_bloo_non_bloom_all$interaction_moment,
+                                                                 levels = c('t_1', 't'), labels = c('Community Interactions t-1',
+                                                                                                    'Community Interactions t'))
+
+rel_interactions_bloo_non_bloom_all <- rel_interactions_bloo_non_bloom_all |>
+  dplyr::filter(!(asv_num == 'asv17' & fraction == '0.2') &
+                  !(asv_num == 'asv31' & fraction == '3')) ## they only have one bloom event!
+
+custom_labels_bloo_v2 <- rel_interactions_bloo_non_bloom_all |>
+  distinct(asv_num, familybloo, genusbloo, fraction, n_dates, bloom_event ) |>    # Ensure one label per `asv_num`
+  dplyr::mutate(
+    label = paste0(asv_num," ", fraction, bloom_event, '(', n_dates, ')')
+  ) |> 
+  dplyr::mutate(asv_num_fraction = paste0(asv_num, ' ', fraction, ' ', bloom_event))|>
+  pull(label, name = asv_num_fraction)
+
+title_text <- custom_labels_bloo_inter |>
+  as_tibble()
+
+title_text <- title_text |>
+  dplyr::filter(str_detect(value, 'asv7'))
+
+asv7_interactions_rel_plot <- rel_interactions_bloo_non_bloom_all |>
+  dplyr::filter(asv_num == 'asv7') |>
+  dplyr::filter(!is.na(bloom_event)) |>
+  dplyr::group_by(asv_num, fraction, bloom_event, type_interaction, interaction_moment) |>
+  dplyr::slice_max(n = 5, order_by = rel_interactions) |>
+  dplyr::mutate(rel_interactions = case_when(type_interaction == 'negative' ~ -rel_interactions,
+                                             TRUE ~ rel_interactions)) |>
+  dplyr::mutate(rel_interactions = case_when(rel_interactions == '0' ~ NA_real_,
+                                             TRUE ~ rel_interactions)) |>
+  ggplot(aes(asv_num_fraction, 
+             asv_num_f_eff, fill = rel_interactions))+
+  geom_tile()+
+  scale_fill_gradientn(colors = palette_gradient, na.value = ('#ffffff'),
+                       limits = c(-1, 1))+
+  facet_grid(.~interaction_moment, labeller = ,
+             scales = 'free')+
+  labs(fill = 'Relative\nInteraction\nDates', 
+       y = 'ASVs interacting with bloomers', 
+       x = 'Bloomers ASVs',
+       title = title_text$value)+
+  scale_y_discrete(labels = custom_labels_community)+
+  scale_x_discrete(label = custom_labels_bloo_v2)+
+  theme_bw()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        panel.grid = element_blank(),
+        title = element_text(size = 6),
+        strip.text = element_text(size = 2),
+        axis.text.y = element_text( size = 2),
+        axis.ticks.length = unit(0.2, "mm"),
+        strip.text.y = element_blank(),
+        axis.text.x = element_text(angle = 90, size = 2),
+        legend.position = 'none')
+
+asv7_interactions_rel_plot
+
+title_text <- custom_labels_bloo_inter |>
+  as_tibble()
+
+title_text <- title_text |>
+  dplyr::filter(str_detect(value, 'asv1'))
+
+asv1_interactions_rel_plot <- rel_interactions_bloo_non_bloom_all |>
+  dplyr::filter(asv_num == 'asv1') |>
+  dplyr::filter(!(asv_num == 'asv17' & fraction == '0.2') &
+                  !(asv_num == 'asv31' & fraction == '3')) |> ## they only have one bloom event!
+  dplyr::filter(!is.na(bloom_event)) |>
+  dplyr::group_by(asv_num, fraction, bloom_event, type_interaction, interaction_moment) |>
+  dplyr::slice_max(n = 5, order_by = rel_interactions) |>
+  dplyr::mutate(rel_interactions = case_when(type_interaction == 'negative' ~ -rel_interactions,
+                                             TRUE ~ rel_interactions)) |>
+  dplyr::mutate(rel_interactions = case_when(rel_interactions == '0' ~ NA_real_,
+                                             TRUE ~ rel_interactions)) |>
+  ggplot(aes(asv_num_fraction, 
+             asv_num_f_eff, fill = rel_interactions))+
+  geom_tile()+
+  scale_fill_gradientn(colors = palette_gradient, na.value = ('#ffffff'),
+                       limits = c(-1, 1))+
+  facet_grid(.~interaction_moment, labeller = ,
+             scales = 'free')+
+  labs(fill = 'Relative\nInteraction\nDates', 
+       y = 'ASVs interacting with bloomers', 
+       x = 'Bloomers ASVs',
+       title = title_text$value)+
+  scale_y_discrete(labels = custom_labels_community)+
+  scale_x_discrete(label = custom_labels_bloo_v2)+
+  theme_bw()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        panel.grid = element_blank(),
+        title = element_text(size = 6),
+        strip.text = element_text(size = 2),
+        axis.text.y = element_text( size = 2),
+        axis.ticks.length = unit(0.2, "mm"),
+        strip.text.y = element_blank(),
+        axis.text.x = element_text(angle = 90, size = 2),
+        legend.position = 'none')
+
+asv1_interactions_rel_plot
+
+title_text <- custom_labels_bloo_inter |>
+  as_tibble()
+
+title_text <- title_text |>
+  dplyr::filter(str_detect(value, 'asv15'))
+
+asv15_interactions_rel_plot <- rel_interactions_bloo_non_bloom_all |>
+  dplyr::filter(asv_num == 'asv15') |>
+  dplyr::filter(!is.na(bloom_event)) |>
+  dplyr::group_by(asv_num, fraction, bloom_event, type_interaction, interaction_moment) |>
+  dplyr::slice_max(n = 5, order_by = rel_interactions) |>
+  dplyr::mutate(rel_interactions = case_when(type_interaction == 'negative' ~ -rel_interactions,
+                                             TRUE ~ rel_interactions)) |>
+  dplyr::mutate(rel_interactions = case_when(rel_interactions == '0' ~ NA_real_,
+                                             TRUE ~ rel_interactions)) |>
+  ggplot(aes(asv_num_fraction, 
+             asv_num_f_eff, fill = rel_interactions))+
+  geom_tile()+
+  scale_fill_gradientn(colors = palette_gradient, na.value = ('#ffffff'),
+                       limits = c(-1, 1))+
+  facet_grid(.~interaction_moment, labeller = ,
+             scales = 'free')+
+  labs(fill = 'Relative\nInteraction\nDates', 
+       y = 'ASVs interacting with bloomers', 
+       x = 'Bloomers ASVs',
+       title = title_text$value)+
+  scale_y_discrete(labels = custom_labels_community)+
+  scale_x_discrete(label = custom_labels_bloo_v2)+
+  theme_bw()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        panel.grid = element_blank(),
+        title = element_text(size = 6),
+        strip.text = element_text(size = 2),
+        axis.text.y = element_text( size = 2),
+        axis.ticks.length = unit(0.2, "mm"),
+        strip.text.y = element_blank(),
+        axis.text.x = element_text(angle = 90, size = 2),
+        legend.position = 'none')
+
+asv15_interactions_rel_plot
+
+title_text <- custom_labels_bloo_inter |>
+  as_tibble()
+
+title_text <- title_text |>
+  dplyr::filter(str_detect(value, 'asv17'))
+
+asv17_interactions_rel_plot <- rel_interactions_bloo_non_bloom_all |>
+  dplyr::filter(asv_num == 'asv17') |>
+  dplyr::filter(!(asv_num == 'asv17' & fraction == '0.2')) |>
+  dplyr::filter(!is.na(bloom_event)) |>
+  dplyr::group_by(asv_num, fraction, bloom_event, type_interaction, interaction_moment) |>
+  dplyr::slice_max(n = 5, order_by = rel_interactions) |>
+  dplyr::mutate(rel_interactions = case_when(type_interaction == 'negative' ~ -rel_interactions,
+                                             TRUE ~ rel_interactions)) |>
+  dplyr::mutate(rel_interactions = case_when(rel_interactions == '0' ~ NA_real_,
+                                             TRUE ~ rel_interactions)) |>
+  ggplot(aes(asv_num_fraction, 
+             asv_num_f_eff, fill = rel_interactions))+
+  geom_tile()+
+  scale_fill_gradientn(colors = palette_gradient, na.value = ('#ffffff'),
+                       limits = c(-1, 1))+
+  facet_grid(.~interaction_moment, labeller = ,
+             scales = 'free')+
+  labs(fill = 'Relative\nInteraction\nDates', 
+       y = 'ASVs interacting with bloomers', 
+       x = 'Bloomers ASVs',
+       title = title_text$value)+
+  scale_y_discrete(labels = custom_labels_community)+
+  scale_x_discrete(label = custom_labels_bloo_v2)+
+  theme_bw()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        panel.grid = element_blank(),
+        title = element_text(size = 6),
+        strip.text = element_text(size = 2),
+        axis.text.y = element_text( size = 2),
+        axis.ticks.length = unit(0.2, "mm"),
+        strip.text.y = element_blank(),
+        axis.text.x = element_text(angle = 90, size = 2),
+        legend.position = 'none')
+
+asv17_interactions_rel_plot
+
+title_text <- custom_labels_bloo_inter |>
+  as_tibble()
+
+title_text <- title_text |>
+  dplyr::filter(str_detect(value, 'asv22'))
+
+asv22_interactions_rel_plot <- rel_interactions_bloo_non_bloom_all |>
+  dplyr::filter(asv_num == 'asv22') |>
+  dplyr::filter(!is.na(bloom_event)) |>
+  dplyr::group_by(asv_num, fraction, bloom_event, type_interaction, interaction_moment) |>
+  dplyr::slice_max(n = 5, order_by = rel_interactions) |>
+  dplyr::mutate(rel_interactions = case_when(type_interaction == 'negative' ~ -rel_interactions,
+                                             TRUE ~ rel_interactions)) |>
+  dplyr::mutate(rel_interactions = case_when(rel_interactions == '0' ~ NA_real_,
+                                             TRUE ~ rel_interactions)) |>
+  ggplot(aes(asv_num_fraction, 
+             asv_num_f_eff, fill = rel_interactions))+
+  geom_tile()+
+  scale_fill_gradientn(colors = palette_gradient, na.value = ('#ffffff'),
+                       limits = c(-1, 1))+
+  facet_grid(.~interaction_moment, labeller = ,
+             scales = 'free')+
+  labs(fill = 'Relative\nInteraction\nDates', 
+       y = 'ASVs interacting with bloomers', 
+       x = 'Bloomers ASVs',
+       title = title_text$value)+
+  scale_y_discrete(labels = custom_labels_community)+
+  scale_x_discrete(label = custom_labels_bloo_v2)+
+  theme_bw()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        panel.grid = element_blank(),
+        title = element_text(size = 6),
+        strip.text = element_text(size = 2),
+        axis.text.y = element_text( size = 2),
+        axis.ticks.length = unit(0.2, "mm"),
+        strip.text.y = element_blank(),
+        axis.text.x = element_text(angle = 90, size = 2),
+        legend.position = 'none')
+
+asv22_interactions_rel_plot
+
+title_text <- custom_labels_bloo_inter |>
+  as_tibble()
+
+title_text <- title_text |>
+  dplyr::filter(str_detect(value, 'asv23'))
+
+asv23_interactions_rel_plot <- rel_interactions_bloo_non_bloom_all |>
+  dplyr::filter(asv_num == 'asv23') |>
+  dplyr::filter(!is.na(bloom_event)) |>
+  dplyr::group_by(asv_num, fraction, bloom_event, type_interaction, interaction_moment) |>
+  dplyr::slice_max(n = 5, order_by = rel_interactions) |>
+  dplyr::mutate(rel_interactions = case_when(type_interaction == 'negative' ~ -rel_interactions,
+                                             TRUE ~ rel_interactions)) |>
+  dplyr::mutate(rel_interactions = case_when(rel_interactions == '0' ~ NA_real_,
+                                             TRUE ~ rel_interactions)) |>
+  ggplot(aes(asv_num_fraction, 
+             asv_num_f_eff, fill = rel_interactions))+
+  geom_tile()+
+  scale_fill_gradientn(colors = palette_gradient, na.value = ('#ffffff'),
+                       limits = c(-1, 1))+
+  facet_grid(.~interaction_moment, labeller = ,
+             scales = 'free')+
+  labs(fill = 'Relative\nInteraction\nDates', 
+       y = 'ASVs interacting with bloomers', 
+       x = 'Bloomers ASVs',
+       title = title_text$value)+
+  scale_y_discrete(labels = custom_labels_community)+
+  scale_x_discrete(label = custom_labels_bloo_v2)+
+  theme_bw()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        panel.grid = element_blank(),
+        title = element_text(size = 6),
+        strip.text = element_text(size = 2),
+        axis.text.y = element_text( size = 2),
+        axis.ticks.length = unit(0.2, "mm"),
+        strip.text.y = element_blank(),
+        axis.text.x = element_text(angle = 90, size = 2),
+        legend.position = 'none')
+
+asv23_interactions_rel_plot
+
+title_text <- custom_labels_bloo_inter |>
+  as_tibble()
+
+title_text <- title_text |>
+  dplyr::filter(str_detect(value, 'asv11'))
+
+asv11_interactions_rel_plot <- rel_interactions_bloo_non_bloom_all |>
+  dplyr::filter(asv_num == 'asv11') |>
+  dplyr::filter(!is.na(bloom_event)) |>
+  dplyr::group_by(asv_num, fraction, bloom_event, type_interaction, interaction_moment) |>
+  dplyr::slice_max(n = 5, order_by = rel_interactions) |>
+  dplyr::mutate(rel_interactions = case_when(type_interaction == 'negative' ~ -rel_interactions,
+                                             TRUE ~ rel_interactions)) |>
+  dplyr::mutate(rel_interactions = case_when(rel_interactions == '0' ~ NA_real_,
+                                             TRUE ~ rel_interactions)) |>
+  ggplot(aes(asv_num_fraction, 
+             asv_num_f_eff, fill = rel_interactions))+
+  geom_tile()+
+  scale_fill_gradientn(colors = palette_gradient, na.value = ('#ffffff'),
+                       limits = c(-1, 1))+
+  facet_grid(.~interaction_moment, labeller = ,
+             scales = 'free')+
+  labs(fill = 'Relative\nInteraction\nDates', 
+       y = 'ASVs interacting with bloomers', 
+       x = 'Bloomers ASVs',
+       title = title_text$value)+
+  scale_y_discrete(labels = custom_labels_community)+
+  scale_x_discrete(label = custom_labels_bloo_v2)+
+  theme_bw()+
+  theme(strip.background = element_rect(fill = 'transparent'),
+        panel.grid = element_blank(),
+        title = element_text(size = 6),
+        strip.text = element_text(size = 2),
+        axis.text.y = element_text( size = 2),
+        axis.ticks.length = unit(0.2, "mm"),
+        strip.text.y = element_blank(),
+        axis.text.x = element_text(angle = 90, size = 2),
+        legend.position = 'bottom')
+
+asv11_interactions_rel_plot
+
+plot <- rel_interactions_bloo_non_bloom_all |>
+  ggplot(aes(asv_num_fraction, fill = rel_interactions))+
+  scale_fill_gradientn(colors = palette_gradient,
+                       limits = c(-1, 1))+
+  scale_color_manual(guide = 'none')+
+  theme(
+        panel.grid = element_blank(),
+        title = element_text(size = 6),
+        strip.text = element_text(size = 2),
+        axis.text.y = element_text( size = 2),
+        axis.ticks.length = unit(0.2, "mm"),
+        strip.text.y = element_blank(),
+        axis.text.x = element_text(angle = 90, size = 2))+
+  guides(fill = guide_legend(title = "Relative\nInteraction\nDates"), 
+         color = "none", 
+         shape = 'none')
+
+legend_interactions <- cowplot::get_legend(plot)
+
+interactions_rel_pots <- plot_grid(asv1_interactions_rel_plot, 
+          asv7_interactions_rel_plot,
+          asv15_interactions_rel_plot,
+          asv17_interactions_rel_plot,
+          asv22_interactions_rel_plot,
+          asv23_interactions_rel_plot,
+          asv11_interactions_rel_plot,
+          rel_heights = c(1,1,1.25),
+          labels = c('A', 'B', 'C', 'D', 'E', 'F', 'G'),
+          ncol = 3)
+
+interactions_rel_pots
+
+ggsave(
+  plot = interactions_rel_pots, 
+  filename = 'interactions_rel_pots.pdf',
+  path = 'results/figures/MDR/v2/',
+  width = 180, 
+  height = 180, 
+  units = 'mm'
+)
+
+## BLOOMERS INTERACTION WITH THE COMMUNITY (TO BE PREPARED!) -----
+
