@@ -16,3 +16,7 @@ PLS.R
 bloomers_BBMO.R
 bloomers_BBMO_script_prova.R
 create_env_data.txt
+plot_trees.R
+myscript_phylogeneticDiversity.R
+genes_bbmo
+find_blooms_removed_from_main.txt
