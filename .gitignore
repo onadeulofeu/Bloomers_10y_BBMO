@@ -1,0 +1,8 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+data
+results
+scripts/update_taxonomy.R
+bibliographic_review_bbmo10y.key

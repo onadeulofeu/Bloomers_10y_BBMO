@@ -6,7 +6,7 @@
 # +++++++++++++++++++++++             Code developed by Ona Deulofeu-Capo 2024        ++++++++++++++++++++++
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-# upload packages
+# upload packages ------
 library(tidyverse)
 library(ggtreeExtra)
 library(ggtree)
@@ -51,6 +51,37 @@ library(ggridges)
 # tzdb_0.4.0             foreach_1.5.2          gtable_0.3.4           cachem_1.0.8           broom_1.0.5            rstatix_0.7.2         
 # viridisLite_0.4.2      survival_3.5-7         geometry_0.4.7         iterators_1.0.14       aplot_0.2.2            memoise_2.0.1         
 # IRanges_2.32.0         cluster_2.1.4          timechange_0.2.0  
+
+## Closely related bloomers distance ----
+tax_bbmo_10y_new |>
+  dplyr::filter(asv_num == 'asv7') %$%
+  seq
+
+tax_bbmo_10y_new |>
+  dplyr::filter(asv_num == 'asv1') %$%
+  seq
+
+## 3 different bp
+
+tax_bbmo_10y_new |>
+  dplyr::filter(asv_num == 'asv4') %$%
+  seq
+
+tax_bbmo_10y_new |>
+  dplyr::filter(asv_num == 'asv31') %$%
+  seq
+
+## 1 different bp
+
+tax_bbmo_10y_new |>
+  dplyr::filter(asv_num == 'asv17') %$%
+  seq
+
+tax_bbmo_10y_new |>
+  dplyr::filter(asv_num == 'asv77') %$%
+  seq
+
+## 1 different bp
 
 # Previously I need to create a fasta file with the sequences of my potential bloomers----
 # Aligment
@@ -3318,7 +3349,6 @@ phylogenetic_weighted_tb_bloom <- phylogenetic_weighted_tb |>
   bind_rows(previous_bloom_event_phylodistance)
 
 # Assuming phylogenetic_weighted_tb is your tibble
-
 weigth_phylogenetic_distance_blooms_plot <- phylogenetic_weighted_tb_bloom  |>
   #dplyr::filter(occurrence_perc > 2/3) |>
   #dplyr::filter(asv_num %in% more_blooms$asv_num) |>
@@ -3575,7 +3605,6 @@ phylogenetic_distance_vs_env_distance_plot
 #        path = 'Results/Figures/',
 #        width = 250, height = 250, units = 'mm')
 
-
 ## witn NMDS env variables ----
 nmds_10y_red <- nmds_10y_env |>
   dplyr::select(MDS1, MDS2, decimal_date)
@@ -3692,9 +3721,9 @@ phylogenetic_distance_vs_env_distance_plot <- phylogenetic_weighted_tb |>
 
 phylogenetic_distance_vs_env_distance_plot
 
-ggsave(phylogenetic_distance_vs_env_distance_plot, file = 'phylogenetic_distance_vs_env_distance_plot_nmds.pdf',
-       path = 'Results/Figures/',
-       width = 250, height = 450, units = 'mm')
+# ggsave(phylogenetic_distance_vs_env_distance_plot, file = 'phylogenetic_distance_vs_env_distance_plot_nmds.pdf',
+#        path = 'Results/Figures/',
+#        width = 250, height = 450, units = 'mm')
 
 ## another idea of plot 
 phylogenetic_distance_vs_env_distance_plot <- phylogenetic_weighted_tb |>
@@ -3774,9 +3803,9 @@ box_plot_phylogenetic_distance <- phylogenetic_weighted_tb |>
 
 box_plot_phylogenetic_distance
 
-ggsave(box_plot_phylogenetic_distance, file = 'box_plot_phylogenetic_distance.pdf',
-       path = 'Results/Figures/',
-       width = 188, height = 200, units = 'mm')
+# ggsave(box_plot_phylogenetic_distance, file = 'box_plot_phylogenetic_distance.pdf',
+#        path = 'Results/Figures/',
+#        width = 188, height = 200, units = 'mm')
 
 ## edited to compare with the CCM results ----
 phylogenetic_weighted_tb |>
@@ -4469,7 +4498,8 @@ unifrac_dist <- phyloseq::distance(bbmo_10y,
 unifrac_tibble <- as.matrix(unifrac_dist) |>
   as.data.frame() |>
   rownames_to_column(var = "sample_id_1") %>%
-  pivot_longer(-sample_id_1, names_to = "sample_id_2", values_to = "wunifrac_distance")
+  pivot_longer(-sample_id_1, names_to = "sample_id_2", 
+               values_to = "wunifrac_distance")
 
 # Convert to tibble
 unifrac_tibble <- unifrac_tibble |>
@@ -5090,7 +5120,6 @@ beta_diversity_plot_legend <-
 
 legend_fraction <- get_legend(beta_diversity_plot_legend)
 
-
 ### Composition plot with anomalies ----
 
 beta_diversity_phylo_env_anomalies_plot <- grid.arrange(beta_diversity_plot, 
@@ -5160,7 +5189,6 @@ z_scores_wphy_3 <- phylogenetic_weighted_tb_02 |>
 z_scores_wphy_02_red <- z_scores_wphy_02 |>
   dplyr::select(asv_num, z_score_wphy, fraction, date)
 
-
 z_scores_wphy_all <- z_scores_wphy_3 |>
   dplyr::select(asv_num, z_score_wphy, fraction, date) |>
   bind_rows(z_scores_wphy_02_red)
@@ -5168,8 +5196,6 @@ z_scores_wphy_all <- z_scores_wphy_3 |>
 phylogenetic_weighted_tb_z_scores <- phylogenetic_weighted_tb |>
   left_join(z_scores_wphy_all, by = c('asv_num', 'fraction', 'date')) 
   
-
-
 ## Do bloom events match in anomalies of phylogenetic distance with the community?
 
 box_plot_phylogenetic_distance <- phylogenetic_weighted_tb_z_scores |>
@@ -5612,7 +5638,6 @@ asv_tab_10y_02_rel |>
     axis.title  = element_text(size = 9),
     # axis.text.x = element_text(size = 7), 
     panel.grid.major.y = element_blank())
-
 
 ## I loop to observe how what happens with all my bloomers ----
 # Define the vector of ASV numbers
@@ -6240,19 +6265,28 @@ asv_tab_filtered_02 <- asv_tab_10y_02_rclr |>
 asv_tab_filtered_3 <- asv_tab_10y_3_rclr |>
   dplyr::filter(asv_num %in% close_distances)
 
-# Join the data with the metadata
+## detailed bloomers taxonomy ----
+# detailed_bloo_tax <- tax_bbmo_10y_new |>
+#   dplyr::filter(asv_num %in% bloo_taxonomy$asv_num_f)
+# 
+# detailed_bloo_tax |>
+#   distinct(family)
+
+# write.csv(detailed_bloo_tax,
+#           'results/tables/detailed_bloo_tax.csv', row.names = F)
+
+# Join the data with the metadata 
 asv_tab_joined_02 <- asv_tab_filtered_02 |>
   left_join(m_02) |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::mutate(bloomer = case_when(asv_num %in% bloo_taxonomy$asv_num ~ 'bloomer',
-                                    !asv_num %in% bloo_taxonomy$asv_num ~ 'no-bloomer'))
+  dplyr::mutate(bloomer = case_when(asv_num %in% bloo_taxonomy$asv_num_f ~ 'bloomer',
+                                    !asv_num %in% bloo_taxonomy$asv_num_f ~ 'no-bloomer'))
 
 asv_tab_joined_3 <- asv_tab_filtered_3 |>
   left_join(m_3) |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::mutate(bloomer = case_when(asv_num %in% bloo_taxonomy$asv_num ~ 'bloomer',
-                                    !asv_num %in% bloo_taxonomy$asv_num ~ 'no-bloomer'))
-
+  dplyr::mutate(bloomer = case_when(asv_num %in% bloo_taxonomy$asv_num_f ~ 'bloomer',
+                                    !asv_num %in% bloo_taxonomy$asv_num_f ~ 'no-bloomer'))
 
 asv_tab_filtered <- asv_tab_joined_3 |>
   bind_rows(asv_tab_joined_02)
@@ -6336,15 +6370,14 @@ asv_tab_filtered_3 <- asv_tab_10y_3_rclr |>
 asv_tab_joined_02 <- asv_tab_filtered_02 |>
   left_join(m_02) |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::mutate(bloomer = case_when(asv_num %in% bloo_taxonomy$asv_num ~ 'bloomer',
-                                    !asv_num %in% bloo_taxonomy$asv_num ~ 'no-bloomer'))
+  dplyr::mutate(bloomer = case_when(asv_num %in% bloo_taxonomy$asv_num_f ~ 'bloomer',
+                                    !asv_num %in% bloo_taxonomy$asv_num_f ~ 'no-bloomer'))
 
 asv_tab_joined_3 <- asv_tab_filtered_3 |>
   left_join(m_3) |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::mutate(bloomer = case_when(asv_num %in% bloo_taxonomy$asv_num ~ 'bloomer',
-                                    !asv_num %in% bloo_taxonomy$asv_num ~ 'no-bloomer'))
-
+  dplyr::mutate(bloomer = case_when(asv_num %in% bloo_taxonomy$asv_num_f ~ 'bloomer',
+                                    !asv_num %in% bloo_taxonomy$asv_num_f ~ 'no-bloomer'))
 
 asv_tab_filtered <- asv_tab_joined_3 |>
   bind_rows(asv_tab_joined_02)
@@ -6457,7 +6490,7 @@ tax |>
 #   theme_ridges(center_axis_labels = T)
   
 family.hamm <- tax %>% 
-  dplyr::filter(family %in% unique(bloo_taxonomy$family)) |>
+  dplyr::filter(family %in% unique(bloo_taxonomy$family_f)) |>
   group_by(family) %>% 
   summarise(n = n()) %>% 
   filter( n > 1) %>% 
@@ -6484,7 +6517,7 @@ closely_related_bloomers  <- hammdist.all %>%
   mutate(p_distance = hammdist/length_1) %>%
   left_join(tax, by = c('seq1' = 'seq')) %>%
   left_join(tax, by = c('seq2' = 'seq')) %>%
-  filter(p_distance < 0.012) %>%
+  dplyr::filter(p_distance < 0.012) %>%
   distinct(asv_num.x, p_distance, asv_num.y) |>
   dplyr::select(asv_num = asv_num.x, p_distance, asv_num.y) |>
   left_join(tax_bbmo_10y_new) |>
@@ -6498,12 +6531,12 @@ closely_related_bloomers_vs_bloo  <- hammdist.all %>%
   mutate(p_distance = hammdist/length_1) %>%
   left_join(tax, by = c('seq1' = 'seq')) %>%
   left_join(tax, by = c('seq2' = 'seq')) %>%
-  filter(p_distance < 0.012) %>%
+  dplyr::filter(p_distance < 0.012) %>%
   distinct(asv_num.x, p_distance, asv_num.y) |>
   dplyr::select(asv_num = asv_num.x, p_distance, asv_num.y) |>
   left_join(tax_bbmo_10y_new) |>
-  dplyr::filter(asv_num %in% bloo_taxonomy$asv_num) |> # I remove those that were anlyzed before 
-  dplyr::filter(asv_num.y %in% bloo_taxonomy$asv_num)
+  dplyr::filter(asv_num %in% bloo_taxonomy$asv_num_f) |> # I remove those that were anlyzed before 
+  dplyr::filter(asv_num.y %in% bloo_taxonomy$asv_num_f)
   
 ## 
 closely_related_families <- closely_related_bloomers |>
@@ -6525,7 +6558,7 @@ closely_related_bloomers_and_others  <- hammdist.all %>%
 
 ## now i create the groups and plot it like I did before 
 closely_related_bloomers_and_others |>
-  dplyr::filter(asv_num %in% bloo_taxonomy$asv_num) |>
+  dplyr::filter(asv_num %in% bloo_taxonomy$asv_num_f) |>
   distinct(asv_num)  # n = 11 ASVs 
 # # A tibble: 11 × 1
 # asv_num
@@ -6543,14 +6576,13 @@ closely_related_bloomers_and_others |>
 
 # are they all seasonal??? No
 closely_related_bloomers_and_others |>
-  dplyr::filter(asv_num %in% bloo_taxonomy$asv_num) |>
+  dplyr::filter(asv_num %in% bloo_taxonomy$asv_num_f) |>
   distinct(asv_num) |>
-  left_join(bloo_all_types_summary_tb_v2)
+  left_join(bloo_all_types_summary_tb)
 
 ### PLOT the groups of closely related taxa based on p-distances not the tree ------
 ###  Those clusters that have two bloomers 
-##### Synechococcus has two groups one ASV4-ASV31 and ASV1-ASV7. I will plot them separatedly but construct one only phylogenetic tree -----
-
+##### Synechococcus has two groups one ASV4-ASV31 and ASV1-ASV7. I will plot them separately but construct one only phylogenetic tree -----
 closely_related_bloomers_and_others  <- hammdist.all %>%
   purrr::reduce(bind_rows) %>%
   dplyr::mutate(length_1 = nchar(seq1),
@@ -6622,70 +6654,133 @@ asv_tab_filtered_3 <- asv_tab_10y_3_rclr |>
 asv_tab_joined_02 <- asv_tab_filtered_02 |>
   left_join(m_02) |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::mutate(bloomer = case_when(asv_num %in% bloo_taxonomy$asv_num ~ 'bloomer',
-                                    !asv_num %in% bloo_taxonomy$asv_num ~ 'no-bloomer'))
+  dplyr::mutate(bloomer = case_when(asv_num %in% bloo_taxonomy$asv_num_f ~ 'bloomer',
+                                    !asv_num %in% bloo_taxonomy$asv_num_f ~ 'no-bloomer'))
 
 asv_tab_joined_3 <- asv_tab_filtered_3 |>
   left_join(m_3) |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::mutate(bloomer = case_when(asv_num %in% bloo_taxonomy$asv_num ~ 'bloomer',
-                                    !asv_num %in% bloo_taxonomy$asv_num ~ 'no-bloomer'))
-
+  dplyr::mutate(bloomer = case_when(asv_num %in% bloo_taxonomy$asv_num_f ~ 'bloomer',
+                                    !asv_num %in% bloo_taxonomy$asv_num_f ~ 'no-bloomer'))
 
 asv_tab_filtered <- asv_tab_joined_3 |>
   bind_rows(asv_tab_joined_02)
 
-plot_asv31_asv4 <- ggplot(asv_tab_filtered, aes(date, rclr)) +
-  labs(x = 'Time', y = 'rCLR',color = 'Synechococcus\nCC9902\nASV', fill = 'Synechococcus\nCC9902\nASV') +
-  geom_line(aes(group = asv_num, color = asv_num, alpha = ifelse(bloomer == 'bloomer', 0.8 , 0.3))) +
-  geom_smooth(data = asv_tab_filtered |>
-                dplyr::filter(bloomer == 'bloomer'), aes(group = asv_num, color = asv_num, fill = asv_num), span = 0.09) +
-  geom_smooth(data = asv_tab_filtered |>
-                dplyr::filter(bloomer != 'bloomer'),
-              aes(group = asv_num, color = asv_num, fill = asv_num), span = 0.09, alpha = 0.3, linewidth = 0.5) +
-  scale_color_manual(values = palette_cianobac) +
-  scale_fill_manual(values =palette_cianobac) +
-  facet_wrap(vars(fraction), labeller = labs_fraction, ncol = 1)+
-  theme_bw() +
-  guides(alpha = 'none',
-         color = guide_legend(ncol = 5),
-         fill = guide_legend(ncol = 5))+
-  theme(
-    strip.background = element_blank(),
-    legend.position = 'bottom',
-    panel.grid.minor = element_blank(),
-    legend.title  = element_text(size = 6),
-    legend.text  = element_text(size = 5),
-    panel.grid.major.y = element_blank()
-  )
+asv_tab_filtered |>
+  distinct(asv_num)
+
+asv_tab_filtered$asv_num <- factor(asv_tab_filtered$asv_num, levels = c('asv31', 'asv4', 'asv34', 'asv5834'))
+
+plot_asv31_asv4 <- ggplot(asv_tab_filtered, aes(date, rclr)) + 
+  labs(x = 'Time', y = 'rCLR', color = 'Synechococcus\nCC9902\nASV', fill = 'Synechococcus\nCC9902\nASV') + 
+  geom_line(aes(group = asv_num, color = asv_num, alpha = ifelse(bloomer == 'bloomer', 0.8, 0.6))) + 
+  # Smooth for 'bloomer'
+  geom_smooth(data = asv_tab_filtered |> filter(bloomer == 'bloomer'), 
+              aes(group = asv_num, fill = asv_num), 
+              method = 'loess', color = NA, 
+              alpha = 0.3, span = 0.09) + 
+  # Smooth for non-bloomer
+  geom_smooth(data = asv_tab_filtered |> filter(bloomer != 'bloomer'),
+              aes(group = asv_num, fill = asv_num),
+              method = 'loess', color = NA,
+              alpha = 0.5, span = 0.09) +
+  scale_color_manual(values = c("asv31" = "#2a0000",
+                                "asv4" = "#9c3354",
+                                'asv5934' = '#C2AFB3',
+                                'asv34' = '#C2AFB3'),
+                     labels = c("asv31",
+                                "asv4",
+                                'asv34, asv5934')) +
+  scale_fill_manual(values = c("asv31" = "#2a0000",
+                               "asv4" = "#9c3354",
+                               'asv5934' = '#C2AFB3',
+                               'asv34' = '#C2AFB3'),
+                    labels = c("asv31",
+                               "asv4",
+                               'asv34, asv5934'))+
+  facet_wrap(vars(fraction), labeller = labs_fraction, ncol = 1) + 
+  theme_bw() + 
+  guides(alpha = 'none', 
+         color = guide_legend(ncol = 5), 
+         fill = guide_legend(ncol = 5)) + 
+  theme(strip.background = element_blank(), 
+        legend.position = 'bottom', 
+        panel.grid.minor = element_blank(), 
+        legend.title = element_text(size = 6), 
+        legend.text = element_text(size = 5), 
+        panel.grid.major.y = element_blank())
 
 legend_asv31_asv4 <- get_legend(plot_asv31_asv4)
 
 # Create the plot
-plot_asv31_asv4 <- ggplot(asv_tab_filtered, aes(date, rclr)) +
-  labs(x = 'Date', y = 'rCLR', color = 'ASV', fill = 'ASV') +
-  geom_line(aes(group = asv_num, color = asv_num, alpha = ifelse(bloomer == 'bloomer', 0.8 , 0.3))) +
-  geom_smooth(data = asv_tab_filtered |>
-                dplyr::filter(bloomer != 'bloomer'),
-              aes(group = asv_num, color = asv_num, fill = asv_num), span = 0.09, alpha = 0.3, linewidth = 0.3) +
-  geom_smooth(data = asv_tab_filtered |>
-                dplyr::filter(bloomer == 'bloomer'), aes(group = asv_num, color = asv_num, fill = asv_num),  linewidth = 0.5, span = 0.09) +
+# plot_asv31_asv4 <- ggplot(asv_tab_filtered, aes(date, rclr)) +
+#   labs(x = 'Date', y = 'rCLR', color = 'ASV', fill = 'ASV') +
+#   geom_line(aes(group = asv_num, color = asv_num, alpha = ifelse(bloomer == 'bloomer', 0.8 , 0.3))) +
+#   geom_smooth(data = asv_tab_filtered |>
+#                 dplyr::filter(bloomer != 'bloomer'),
+#               aes(group = asv_num, color = asv_num, fill = asv_num), span = 0.09, alpha = 0.3, linewidth = 0.3) +
+#   geom_smooth(data = asv_tab_filtered |>
+#                 dplyr::filter(bloomer == 'bloomer'), aes(group = asv_num, color = asv_num, fill = asv_num),  linewidth = 0.5, span = 0.09) +
+#   
+#   scale_color_manual(values = palette_cianobac) +
+#   scale_fill_manual(values =palette_cianobac) +
+#   facet_grid(vars(fraction), labeller = labs_fraction)+
+#   theme_bw() +
+#   guides(alpha = 'none')+
+#   theme(
+#     strip.background = element_blank(),
+#     legend.position = 'none',
+#     panel.grid.minor = element_blank(),
+#     axis.text.x = element_text(size = 5),
+#     strip.text = element_text(size = 6),
+#     legend.title  = element_text(size = 6),
+#     legend.text  = element_text(size = 4),
+#     panel.grid.major.y = element_blank()
+#   )
+# 
+# plot_asv31_asv4
+
+# Create the plot highlighting bloomers ----
+plot_asv31_asv4 <- ggplot(asv_tab_filtered, aes(date, rclr)) + 
+  labs(x = 'Date', y = 'rCLR', color = 'Synechococcus\nCC9902\nASV', fill = 'Synechococcus\nCC9902\nASV') + 
   
-  scale_color_manual(values = palette_cianobac) +
-  scale_fill_manual(values =palette_cianobac) +
-  facet_grid(vars(fraction), labeller = labs_fraction)+
-  theme_bw() +
-  guides(alpha = 'none')+
-  theme(
-    strip.background = element_blank(),
-    legend.position = 'none',
-    panel.grid.minor = element_blank(),
-    axis.text.x = element_text(size = 5),
-    strip.text = element_text(size = 6),
-    legend.title  = element_text(size = 6),
-    legend.text  = element_text(size = 4),
-    panel.grid.major.y = element_blank()
-  )
+  geom_line(aes(group = asv_num, color = asv_num, alpha = ifelse(bloomer == 'bloomer', 0.8, 0.5))) + 
+  
+  # Smooth for 'bloomer'
+  geom_smooth(data = asv_tab_filtered |> filter(bloomer == 'bloomer'), 
+              aes(group = asv_num, fill = asv_num), 
+              method = 'loess', color = NA, 
+              alpha = 0.3, span = 0.09) + 
+  # Smooth for non-bloomer
+  geom_smooth(data = asv_tab_filtered |> filter(bloomer != 'bloomer'),
+              aes(group = asv_num, fill = asv_num),
+              method = 'loess', color = NA,
+              alpha = 0.2, span = 0.09) +
+  scale_color_manual(values = c("asv31" = "#2a0000",
+                                "asv4" = "#9c3354",
+                                'asv5934' = '#C2AFB3',
+                                'asv34' = '#C2AFB3'),
+                     labels = c("asv31",
+                                "asv4",
+                                'asv34, asv5934')) +
+  scale_fill_manual(values = c("asv31" = "#2a0000",
+                               "asv4" = "#9c3354",
+                               'asv5934' = '#C2AFB3',
+                               'asv34' = '#C2AFB3'),
+                    labels = c("asv31",
+                               "asv4",
+                               'asv34, asv5934'))+
+  facet_wrap(vars(fraction), labeller = labs_fraction, ncol = 1) + 
+  theme_bw() + 
+  guides(alpha = 'none', 
+         color = guide_legend(ncol = 5), 
+         fill = guide_legend(ncol = 5)) + 
+  theme(strip.background = element_blank(), 
+        legend.position = 'none', 
+        panel.grid.minor = element_blank(), 
+        legend.title = element_text(size = 6), 
+        legend.text = element_text(size = 5), 
+        panel.grid.major.y = element_blank())
 
 plot_asv31_asv4
 
@@ -6715,74 +6810,198 @@ asv_tab_filtered_3 <- asv_tab_10y_3_rclr |>
 asv_tab_joined_02 <- asv_tab_filtered_02 |>
   left_join(m_02) |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::mutate(bloomer = case_when(asv_num %in% bloo_taxonomy$asv_num ~ 'bloomer',
-                                    !asv_num %in% bloo_taxonomy$asv_num ~ 'no-bloomer'))
+  dplyr::mutate(bloomer = case_when(asv_num %in% bloo_taxonomy$asv_num_f ~ 'bloomer',
+                                    !asv_num %in% bloo_taxonomy$asv_num_f ~ 'no-bloomer'))
 
 asv_tab_joined_3 <- asv_tab_filtered_3 |>
   left_join(m_3) |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::mutate(bloomer = case_when(asv_num %in% bloo_taxonomy$asv_num ~ 'bloomer',
-                                    !asv_num %in% bloo_taxonomy$asv_num ~ 'no-bloomer'))
-
+  dplyr::mutate(bloomer = case_when(asv_num %in% bloo_taxonomy$asv_num_f ~ 'bloomer',
+                                    !asv_num %in% bloo_taxonomy$asv_num_f ~ 'no-bloomer'))
 
 asv_tab_filtered <- asv_tab_joined_3 |>
   bind_rows(asv_tab_joined_02)
 
-plot_asv1_asv7 <- ggplot(asv_tab_filtered, aes(date, rclr)) +
-  labs(x = 'Date', y = 'rCLR',color = 'Synechococcus\nCC9902\nASV', fill = 'Synechococcus\nCC9902\nASV') +
-  geom_line(aes(group = asv_num, color = asv_num, alpha = ifelse(bloomer == 'bloomer', 0.8 , 0.3))) +
-  geom_smooth(data = asv_tab_filtered |>
-                dplyr::filter(bloomer != 'bloomer'),
-              aes(group = asv_num, color = asv_num, fill = asv_num), span = 0.09, alpha = 0.3, linewidth = 0.3) +
-  geom_smooth(data = asv_tab_filtered |>
-                dplyr::filter(bloomer == 'bloomer'), aes(group = asv_num, color = asv_num, fill = asv_num), span = 0.09) +
-  scale_color_manual(values = palette_cianobac) +
-  scale_fill_manual(values = palette_cianobac) +
-  facet_wrap(vars(fraction), labeller = labs_fraction, ncol = 1)+
-  theme_bw() +
-  guides(alpha = 'none',
-         color = guide_legend(ncol = 6),
-         fill = guide_legend(ncol = 6))+
-  theme(
-    strip.background = element_blank(),
-    legend.position = 'bottom',
-    panel.grid.minor = element_blank(),
-    axis.text.x = element_text(size = 4),
-    axis.text.y = element_text(size = 4),
-    strip.text = element_text(size = 4),
-    legend.title  = element_text(size = 6),
-    legend.text  = element_text(size = 5),
-    panel.grid.major.y = element_blank()
-  )
+asv_tab_filtered %$%
+  asv_num |>
+  unique()
+
+asv_tab_filtered <- asv_tab_filtered |>
+  dplyr::mutate(new_labs = case_when(asv_num == 'asv1' ~ 'asv1',
+                                     asv_num == 'asv7' ~ 'asv7', 
+                                     asv_num %in% c("asv343", 'asv14', 'asv3533', 'asv3073', 'asv5327', 'asv5283', 
+                                                    'asv4780', 'asv92', 'asv8058', 'asv90', 'asv109', "asv34") ~ 
+                                        "asv343, asv14, asv3533, asv3073, asv5327, asv5283, asv4780, asv92, asv8058, asv90, asv109, asv34"))
+
+asv_tab_filtered$new_labs <- factor(asv_tab_filtered$new_labs, c("asv1", "asv7", 
+                                                                 "asv343, asv14, asv3533, asv3073, asv5327, asv5283, asv4780, asv92, asv8058, asv90, asv109, asv34"))
+
+# Since data are not smooth then I can't add bloom events points because they are in another position than the one in the plot
+# bloom_events_asv1_asv7 <- asv_tab_all_bloo_z_tax |>
+#   dplyr::filter(fraction == '0.2') |>
+#   dplyr::filter(abundance_type == 'rclr') |>
+#   dplyr::filter((
+#     asv_num == 'asv1' &
+#     date %in% (
+#       asv_tab_all_bloo_z_tax |>
+#         dplyr::filter(asv_num %in% c('asv1')) |>
+#         dplyr::filter(
+#           abundance_value > 0.1 &
+#             abundance_type == 'relative_abundance' &
+#             z_score_ra > 1.96
+#         ) |>
+#         dplyr::select(date) |>
+#         dplyr::pull(date))) |
+#       (asv_num == 'asv7' &
+#       date %in% (
+#         asv_tab_all_bloo_z_tax |>
+#           dplyr::filter(asv_num %in% c( 'asv7')) |>
+#           dplyr::filter(
+#             abundance_value > 0.1 &
+#               abundance_type == 'relative_abundance' &
+#               z_score_ra > 1.96
+#           ) |>
+#           dplyr::select(date) |>
+#           dplyr::pull(date))) ) |>
+#         dplyr::filter(asv_num %in% c('asv1', 'asv7')) |>
+#         dplyr::select(date, asv_num, abundance_value) |>
+#   dplyr::mutate(fraction = '0.2')
+# 
+# bloom_events_asv1_asv7_3 <- asv_tab_all_bloo_z_tax |>
+#   dplyr::filter(fraction == '3') |>
+#   dplyr::filter(abundance_type == 'rclr') |>
+#   dplyr::filter((
+#     asv_num == 'asv1' &
+#       date %in% (
+#         asv_tab_all_bloo_z_tax |>
+#           dplyr::filter(asv_num %in% c('asv1')) |>
+#           dplyr::filter(
+#             abundance_value > 0.1 &
+#               abundance_type == 'relative_abundance' &
+#               z_score_ra > 1.96
+#           ) |>
+#           dplyr::select(date) |>
+#           dplyr::pull(date))) |
+#       (asv_num == 'asv7' &
+#          date %in% (
+#            asv_tab_all_bloo_z_tax |>
+#              dplyr::filter(asv_num %in% c( 'asv7')) |>
+#              dplyr::filter(
+#                abundance_value > 0.1 &
+#                  abundance_type == 'relative_abundance' &
+#                  z_score_ra > 1.96
+#              ) |>
+#              dplyr::select(date) |>
+#              dplyr::pull(date))) ) |>
+#   dplyr::filter(asv_num %in% c('asv1', 'asv7')) |>
+#   dplyr::select(date, asv_num, abundance_value) |>
+#   dplyr::mutate(fraction = '3')
+# 
+# bloom_events_asv1_asv7 <- bloom_events_asv1_asv7 |>
+#   bind_rows(bloom_events_asv1_asv7_3)
+
+asv_tab_all_bloo_z_tax |>
+  colnames()
+
+plot_asv1_asv7 <-  ggplot(asv_tab_filtered, aes(date, rclr, fill = new_labs)) + 
+  geom_line(aes(group = new_labs, color = new_labs, alpha = ifelse(bloomer == 'bloomer', 0.9, 0.3))) +  
+  #geom_point(data = bloom_events_asv1_asv7, aes(date, abundance_value), fill = NA, color = 'black', shape = 5)+
+  geom_smooth(data = asv_tab_filtered |> 
+                dplyr::filter(bloomer != 'bloomer'), 
+              aes(group = asv_num, fill = new_labs), 
+              method = 'loess', alpha = 0.1, span = 0.09, color = NA) +   
+  geom_smooth(data = asv_tab_filtered |> 
+                dplyr::filter(bloomer == 'bloomer'), 
+              aes(group = new_labs, fill = new_labs), 
+              method = 'loess', alpha = 0.5, span = 0.09, color = NA) +    
+  scale_color_manual(values = c(
+    "asv1"  = "#E6CF40",
+    "asv7" = "#605991", 
+    "asv343, asv14, asv3533, asv3073, asv5327, asv5283, asv4780, asv92, asv8058, asv90, asv109, asv34" = '#C2AFB3')) +    
+  scale_fill_manual(values = c(
+    "asv1"  = "#E6CF40", 
+    "asv7" = "#605991", 
+    "asv1"  = "#E6CF40",
+    "asv7" = "#605991", 
+    "asv343, asv14, asv3533, asv3073, asv5327, asv5283, asv4780, asv92, asv8058, asv90, asv109, asv34" = '#C2AFB3')) + 
+  
+  facet_wrap(vars(fraction), labeller = labs_fraction, ncol = 1) +   
+  labs(x = 'Date', y = 'rCLR', color = 'Synechococcus\nCC9902\nASV', fill = 'Synechococcus\nCC9902\nASV') +   
+  theme_bw() +   
+  guides(alpha = 'none', 
+         color = guide_legend(ncol = 5), 
+         fill = guide_legend(ncol = 5)) + 
+  theme(strip.background = element_blank(), 
+        legend.position = 'bottom', 
+        panel.grid.minor = element_blank(), 
+        legend.title = element_text(size = 6), 
+        legend.text = element_text(size = 5), 
+        panel.grid.major.y = element_blank())
+
+plot_asv1_asv7
 
 legend_plot_asv1_asv7 <- get_legend(plot_asv1_asv7 )
 
 # Create the plot
 plot_asv1_asv7 <- ggplot(asv_tab_filtered, aes(date, rclr)) +
+  geom_point(data = bloom_events_asv1_asv7, aes(date, abundance_value), fill = NA, color = 'black', shape = 5)+
   labs(x = 'Date', y = 'rCLR', color = 'ASV', fill = 'ASV') +
-  geom_line(aes(group = asv_num, color = asv_num, alpha = ifelse(bloomer == 'bloomer', 0.8 , 0.3))) +
-  geom_smooth(data = asv_tab_filtered |>
-                dplyr::filter(bloomer != 'bloomer'),
-              aes(group = asv_num, color = asv_num, fill = asv_num), span = 0.09, alpha = 0.3, linewidth = 0.25) +
-  geom_smooth(data = asv_tab_filtered |>
-                dplyr::filter(bloomer == 'bloomer'), aes(group = asv_num, color = asv_num, fill = asv_num), linewidth = 0.5, span = 0.09) +
-  scale_color_manual(values = palette_cianobac) +
-  scale_fill_manual(values =palette_cianobac) +
-  facet_grid(vars(fraction), labeller = labs_fraction)+
+  geom_line(aes(group = asv_num, color = asv_num, alpha = ifelse(bloomer == 'bloomer', 0.9, 0.3))) + 
+  # Smooth for non-bloomer
+  geom_smooth(data = asv_tab_filtered |> filter(bloomer != 'bloomer'),
+              aes(group = asv_num, fill = asv_num),
+              method = 'loess', color = NA,
+              alpha = 0.1, span = 0.09) +
+  # Smooth for 'bloomer'
+  geom_smooth(data = asv_tab_filtered |> filter(bloomer == 'bloomer'), 
+              aes(group = asv_num, fill = asv_num), 
+              method = 'loess', color = NA, 
+              alpha = 0.5, span = 0.09) + 
+  scale_color_manual(values = c(
+    "asv1"  = "#E6CF40",
+    "asv7" = "#605991", 
+    "asv343" = '#C2AFB3', 
+    "asv14"  = '#C2AFB3', 
+    'asv3533' = '#C2AFB3', 
+    'asv3073' = '#C2AFB3', 
+    'asv5327'  = '#C2AFB3', 
+    'asv5283' = '#C2AFB3', 
+    'asv4780' = '#C2AFB3', 
+    'asv92' = '#C2AFB3', 
+    'asv8058' = '#C2AFB3', 
+    'asv90' = '#C2AFB3', 
+    'asv109'  = '#C2AFB3', 
+    'asv34'  = '#C2AFB3'),
+    labels = c("asv1", "asv7", "asv343, asv14, asv3533, asv3073, asv5327, asv5283, asv4780, asv92, asv8058, asv90, asv109, asv34")) +    
+  scale_fill_manual(values = c(
+    "asv1"  = "#E6CF40", 
+    "asv7" = "#605991", 
+    "asv343" = '#C2AFB3', 
+    "asv14"  = '#C2AFB3', 
+    'asv3533' = '#C2AFB3', 
+    'asv3073' = '#C2AFB3', 
+    'asv5327'  = '#C2AFB3', 
+    'asv5283' = '#C2AFB3', 
+    'asv4780' = '#C2AFB3', 
+    'asv92' = '#C2AFB3', 
+    'asv8058' = '#C2AFB3', 
+    'asv90' = '#C2AFB3', 
+    'asv109'  = '#C2AFB3', 
+    'asv34'  = '#C2AFB3'), 
+                    labels = c("asv1", "asv7",
+                               "asv343, asv14, asv3533, asv3073, asv5327, asv5283, asv4780, asv92, asv8058, asv90, asv109, asv34")
+  ) + 
+  facet_wrap(vars(fraction), labeller = labs_fraction, ncol = 1) +
   theme_bw() +
-  guides(alpha = 'none')+
-  theme(
-    strip.background = element_blank(),
-    legend.position = 'none',
-    panel.grid.minor = element_blank(),
-    axis.text.x = element_text(size = 5),
-    strip.text = element_text(size = 6),
-    axis.title = element_text(size = 7),
-    legend.title  = element_text(size = 6),
-    legend.text  = element_text(size = 4),
-    panel.grid.major.y = element_blank()
-  )
-
+  guides(alpha = 'none', 
+         color = guide_legend(ncol = 5), 
+         fill = guide_legend(ncol = 5)) + 
+  theme(strip.background = element_blank(), 
+        legend.position = 'none', 
+        panel.grid.minor = element_blank(), 
+        legend.title = element_text(size = 6), 
+        legend.text = element_text(size = 5), 
+        panel.grid.major.y = element_blank())
 plot_asv1_asv7
 
 ## Cyanobacteria tree ----
@@ -6826,14 +7045,15 @@ merged_data <- merge(as_tibble_col(tree$tip.label, column_name = 'asv_num'), tax
   dplyr::mutate(genus_num = paste0(genus,' ', asv_num),
                 asv_num_ed = asv_num)
 
-tree_plot_cianobac <- ggtree(tree, branch.length = 'none') %<+%   
+tree_plot_cianobac <- ggtree(tree, branch.length = T) %<+%   
   merged_data +   
-  geom_tiplab(hjust = -0.2, size = 3.5, align = TRUE) +   
+  geom_tiplab(hjust = -0.2, size = 3.5, align = T) +   
   geom_tippoint(aes(color = genus_num), alpha = 0.8, size = 2) +  # Use color for points
   scale_color_manual(values = palette_cianobac_v2) +   # Corrected to scale color instead of fill
   labs(
     title = paste0(unique(merged_data$family), ' ', unique(merged_data$genus)),
-    color = 'ASV nº'
+    color = 'ASV nº',
+    x = 'Phylogenetic Distance'
   ) + 
   guides(color = guide_legend(ncol = 3))+
   theme_tree2() +   
@@ -6841,15 +7061,15 @@ tree_plot_cianobac <- ggtree(tree, branch.length = 'none') %<+%
     legend.position = "none",  # Show legend
     panel.grid.major = element_blank(),  # Remove grid lines
     panel.grid.minor = element_blank(),  # Remove grid lines
-    axis.text.x = element_blank(),
+    #axis.text.x = element_blank(),
     axis.text.y = element_blank(),
-    axis.line.x = element_blank(),
-    axis.ticks.x = element_blank(),
+    #axis.line.x = element_blank(),
+    #axis.ticks.x = element_blank(),
     legend.text = element_text(size = 5),
     title = element_text(size = 7),
     plot.margin = margin(5, 5, 5, 5)
   )+ 
-  xlim(0, 15)  # Adjust this value to add space
+  xlim(0, 0.25)  # Adjust this value to add space
 
 tree_plot_cianobac
 
@@ -6910,7 +7130,6 @@ sphingo_filter_tree <- x |>
   distinct(asv_num.y)
 
 ## in the tree I will plot all of them
-
 close_distances <- closely_related_bloomers_and_others |>
   dplyr::filter(asv_num == 'asv17') |>
   slice_min(n = 8, order_by = p_distance) |>
@@ -6936,74 +7155,121 @@ asv_tab_filtered_3 <- asv_tab_10y_3_rclr |>
 asv_tab_joined_02 <- asv_tab_filtered_02 |>
   left_join(m_02) |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::mutate(bloomer = case_when(asv_num %in% bloo_taxonomy$asv_num ~ 'bloomer',
-                                    !asv_num %in% bloo_taxonomy$asv_num ~ 'no-bloomer'))
+  dplyr::mutate(bloomer = case_when(asv_num %in% bloo_taxonomy$asv_num_f ~ 'bloomer',
+                                    !asv_num %in% bloo_taxonomy$asv_num_f ~ 'no-bloomer'))
 
 asv_tab_joined_3 <- asv_tab_filtered_3 |>
   left_join(m_3) |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::mutate(bloomer = case_when(asv_num %in% bloo_taxonomy$asv_num ~ 'bloomer',
-                                    !asv_num %in% bloo_taxonomy$asv_num ~ 'no-bloomer'))
+  dplyr::mutate(bloomer = case_when(asv_num %in% bloo_taxonomy$asv_num_f ~ 'bloomer',
+                                    !asv_num %in% bloo_taxonomy$asv_num_f ~ 'no-bloomer'))
 
 asv_tab_filtered <- asv_tab_joined_3 |>
   bind_rows(asv_tab_joined_02)
 
-#create the legend
-plot_asv17_asv77 <- ggplot(asv_tab_filtered, aes(date, rclr)) +
-  labs(x = 'Date', y = 'rCLR', color = 'Sphingomonadaceae\nASV', fill = 'Sphingomonadaceae\nASV') +
-  geom_line(aes(group = asv_num, color = asv_num, alpha = ifelse(bloomer == 'bloomer', 0.8 , 0.3))) +
-  geom_smooth(data = asv_tab_filtered |>
-                dplyr::filter(bloomer != 'bloomer'),
-              aes(group = asv_num, color = asv_num, fill = asv_num), span = 0.09, alpha = 0.3, linewidth = 0.5) +
-  geom_smooth(data = asv_tab_filtered |>
-                dplyr::filter(bloomer == 'bloomer'), aes(group = asv_num, color = asv_num, fill = asv_num), span = 0.09) +
-  scale_color_manual(values =  palette_asv17_asv77) +
-  scale_fill_manual(values = palette_asv17_asv77) +
-  facet_grid(vars(fraction), labeller = labs_fraction)+
-  theme_bw() +
-  guides(alpha = 'none',
-         color = guide_legend(ncol = 6),
-         fill = guide_legend(ncol = 6))+
+asv_tab_filtered$asv_num |>
+  unique()
+
+palette_asv17_asv77
+
+asv_tab_filtered <- asv_tab_filtered |> 
+  dplyr::mutate(new_labs = case_when(
+    asv_num == 'asv17' ~ 'asv17',
+    asv_num == 'asv77' ~ 'asv77',
+    asv_num %in% c('asv2300', 'asv955', 'asv557', 'asv3052', 'asv2929', 'asv1185', 'asv876', 'asv2115', 'asv2017') ~ 
+      "asv2300, asv955, asv557, asv3052, asv2929, asv1185, asv876, asv2115, asv2017"))
+
+asv_tab_filtered$new_labs <- factor(asv_tab_filtered$new_labs, levels = c('asv17', 'asv77', 
+                                                                          "asv2300, asv955, asv557, asv3052, asv2929, asv1185, asv876, asv2115, asv2017"))
+## get the legend ----
+plot_asv17_asv77 <- asv_tab_filtered |> 
+  ggplot(aes(date, rclr)) + 
+  # Smoothed curves for non-bloomer ASVs
+  geom_smooth(data = asv_tab_filtered |> dplyr::filter(bloomer != 'bloomer'),
+              aes(group = asv_num, fill = new_labs, color = new_labs),  # Map both color and fill
+              span = 0.09, alpha = 0.3, linewidth = 0.5) + 
+  # Smoothed curves for bloomer ASVs
+  geom_smooth(data = asv_tab_filtered |> dplyr::filter(bloomer == 'bloomer'), 
+              aes(group = asv_num, fill = new_labs, color = NA),  # Map both color and fill
+              span = 0.09) + 
+  # Line plot with transparency based on 'bloomer' status
+  geom_line(aes(group = asv_num, color = new_labs, alpha = ifelse(bloomer == 'bloomer', 0.8, 0.3))) + 
+  # Scale for fill and color, combined under 'new_labs'
+  scale_color_manual(values = c(
+    'asv17' = "#f29f49", 
+    'asv77' = "#005b00", 
+    "asv2300, asv955, asv557, asv3052, asv2929, asv1185, asv876, asv2115, asv2017" = '#C2AFB3')) + 
+  
+  scale_fill_manual(values = c(
+    'asv17' = "#f29f49", 
+    'asv77' = "#005b00", 
+    "asv2300, asv955, asv557, asv3052, asv2929, asv1185, asv876, asv2115, asv2017" = '#C2AFB3')) + 
+  
+  # Labels
+  labs(x = 'Date', y = 'rCLR', fill = 'Sphingomonadaceae\nASV', color = 'Sphingomonadaceae\nASV') + 
+  
+  # Facet and theme settings
+  facet_grid(vars(fraction), labeller = labs_fraction) + 
+  theme_bw() + 
+  
+  # Combined legend for color and fill, arranged in 3 columns
+  guides(alpha = 'none', 
+         fill = guide_legend(ncol = 3), 
+         color = guide_legend(ncol = 3)) + 
+  
+  # Legend and plot theme
   theme(
-    strip.background = element_blank(),
-    legend.position = 'bottom',
-    panel.grid.minor = element_blank(),
-    axis.text.x = element_text(size = 5),
-    strip.text = element_text(size = 6),
-    legend.title  = element_text(size = 6),
-    legend.text  = element_text(size = 5),
+    strip.background = element_blank(), 
+    legend.position = 'bottom', 
+    panel.grid.minor = element_blank(), 
+    axis.text.x = element_text(size = 5), 
+    strip.text = element_text(size = 6), 
+    legend.title = element_text(size = 6), 
+    legend.text = element_text(size = 5), 
     panel.grid.major.y = element_blank()
   )
 
- legend_asv17_asv77 <- get_legend(plot_asv17_asv77)
+plot_asv17_asv77
 
-# Create the plot
-plot_asv17_asv77 <- ggplot(asv_tab_filtered, aes(date, rclr)) +
-  labs(x = 'Date', y = 'rCLR', color = 'ASV', fill = 'ASV') +
-  geom_line(aes(group = asv_num, color = asv_num, alpha = ifelse(bloomer == 'bloomer', 0.8 , 0.3))) +
-  geom_smooth(data = asv_tab_filtered |>
-                dplyr::filter(bloomer != 'bloomer'),
-              aes(group = asv_num, color = asv_num, fill = asv_num), span = 0.09, alpha = 0.3, linewidth = 0.25) +
-  geom_smooth(data = asv_tab_filtered |>
-                dplyr::filter(bloomer == 'bloomer'), aes(group = asv_num, color = asv_num, fill = asv_num),linewidth = 0.5, span = 0.09) +
-  scale_color_manual(values =  palette_asv17_asv77) +
-  scale_fill_manual(values = palette_asv17_asv77) +
-  facet_grid(vars(fraction), labeller = labs_fraction)+
-  theme_bw() +
-  guides(alpha = 'none')+
-  theme(
-    strip.background = element_blank(),
-    legend.position = 'none',
-    panel.grid.minor = element_blank(),
-    axis.text.x = element_text(size =5),
-    strip.text = element_text(size = 6),
-    axis.title = element_text(size = 7),
-    legend.title  = element_text(size = 6),
-    legend.text  = element_text(size = 4),
-    panel.grid.major.y = element_blank()
-  )
+legend_asv17_asv77 <- get_legend(plot_asv17_asv77)
 
-plot_asv17_asv77 
+# Create the plot ---
+plot_asv17_asv77 <- asv_tab_filtered |> 
+  ggplot(aes(date, rclr)) + 
+  geom_line(aes(group = asv_num, color = asv_num, alpha = ifelse(bloomer == 'bloomer', 0.9, 0.3))) + 
+  # Smooth for non-bloomer
+  geom_smooth(data = asv_tab_filtered |> filter(bloomer != 'bloomer'),
+              aes(group = asv_num, fill = asv_num),
+              method = 'loess', color = NA,
+              alpha = 0.1, span = 0.09) +
+  # Smooth for 'bloomer'
+  geom_smooth(data = asv_tab_filtered |> filter(bloomer == 'bloomer'), 
+              aes(group = asv_num, fill = asv_num), 
+              method = 'loess', color = NA, 
+              alpha = 0.5, span = 0.09) + 
+  # Scale for fill, used for both fill and color mapping in legend
+  scale_color_manual(values = c(
+    'asv17' = "#f29f49", 
+    'asv77' = "#005b00", 
+    "asv2300, asv955, asv557, asv3052, asv2929, asv1185, asv876, asv2115, asv2017" = '#C2AFB3')) + 
+  scale_fill_manual(values = c(
+    'asv17' = "#f29f49", 
+    'asv77' = "#005b00", 
+    "asv2300, asv955, asv557, asv3052, asv2929, asv1185, asv876, asv2115, asv2017" = '#C2AFB3')) + 
+  labs(x = 'Date', y = 'rCLR', fill = 'Sphingomonadaceae\nASV', color = 'Sphingomonadaceae\nASV') + 
+  facet_wrap(vars(fraction), labeller = labs_fraction, ncol = 1) +
+  theme_bw() + 
+  guides(alpha = 'none', 
+         color = guide_legend(ncol = 5), 
+         fill = guide_legend(ncol = 5)) + 
+  theme(strip.background = element_blank(), 
+        legend.position = 'none', 
+        panel.grid.minor = element_blank(), 
+        legend.title = element_text(size = 6), 
+        legend.text = element_text(size = 5), 
+        panel.grid.major.y = element_blank())
+
+plot_asv17_asv77
 
 ## plot the phylogenetic tree between those closely related taxa ----
 palette_asv17_asv77_v2 <- c('Erythrobacter asv17' = "#6a62b3",
@@ -7034,14 +7300,15 @@ merged_data <- merge(as_tibble_col(tree$tip.label, column_name = 'asv_num'), tax
   dplyr::mutate(genus_num = paste0(genus,' ', asv_num),
                 asv_num_ed = asv_num)
 
-tree_plot_asv17_asv77 <- ggtree(tree, branch.length = 'none') %<+%   
+tree_plot_asv17_asv77 <- ggtree(tree, branch.length = T) %<+%   
   merged_data +   
   geom_tiplab(hjust = -0.2, size = 3.5, align = TRUE) +   
   geom_tippoint(aes(color = genus_num), alpha = 0.8, size = 4) +  # Use color for points
   scale_color_manual(values = palette_asv17_asv77_v2) +   # Corrected to scale color instead of fill
   labs(
     title = paste0(unique(merged_data$family), ' ', unique(merged_data$genus)),
-    color = 'ASV nº'
+    color = 'ASV nº',
+    x = 'Phylogenetic Distance'
   ) + 
   guides(color = guide_legend(ncol = 4))+
   theme_tree2() +   
@@ -7049,14 +7316,14 @@ tree_plot_asv17_asv77 <- ggtree(tree, branch.length = 'none') %<+%
     legend.position = "none",  # Show legend
     panel.grid.major = element_blank(),  # Remove grid lines
     panel.grid.minor = element_blank(),  # Remove grid lines
-    axis.text.x = element_blank(),
+    #axis.text.x = element_blank(),
     axis.text.y = element_blank(),
-    axis.line.x = element_blank(),
+    #axis.line.x = element_blank(),
     axis.ticks.x = element_blank(),
     title = element_text(size = 8),
     plot.margin = margin(5, 5, 5, 5)
   )+
-  xlim(0, 10)
+  xlim(0, 0.25)
   
 tree_plot_asv17_asv77
 
@@ -7092,7 +7359,7 @@ closely_related_bloomers_plot_v3  <- plot_grid(
   plot_asv17_asv77,
   legend_asv17_asv77,
   ncol = 1,                # One column layout for the main grid
-  rel_heights = c(2, 0.5, 2, 0.25, 2, 0.4),
+  rel_heights = c(2, 0.25, 2, 0.25, 2, 0.25),
   labels = c('A','', 'B', '', 'C'), label_fontface = 'plain',
   label_size = 10,
   align = "hv",           # Align plots horizontally and vertically
@@ -7104,7 +7371,7 @@ closely_related_bloomers_plot_v3  <- plot_grid(
 print(closely_related_bloomers_plot_v3)
 
 # ggsave( plot = closely_related_bloomers_plot_v3,
-#         filename = 'closely_related_bloomers_plot_v3.pdf',
+#         filename = 'closely_related_bloomers_plot_v5.pdf',
 #         path = 'results/figures/',
 #         width = 180, height = 230, units = 'mm')
 
@@ -7124,28 +7391,44 @@ closely_related_bloomers_trees  <- plot_grid(
 print(closely_related_bloomers_trees)
 
 # ggsave( plot = closely_related_bloomers_trees,
-#         filename = 'closely_related_bloomers_trees.pdf',
+#         filename = 'closely_related_bloomers_trees_v2.pdf',
 #         path = 'results/figures/',
 #         width = 180, height = 150, units = 'mm')
 
 # Supplementary examples of other closely related bloomers -----
 #### Group ASV15, ASV200 and ASV264 #### ----
 ### beautiful palette for Spingomonadaceae family phylogenetically closely related ----
-palette_asv15_asv2XX <- c(  "asv5"= "#4965f2",    "asv3368" = "#384eba",
-                            "asv86"  = "#3245a6",  
-                            "asv4160" = "#1f2c69",  "asv406" =  "#192354",
-                            "asv9"  = "#9d646c",  
-                            "asv3" = "#649d6f",    "asv1877" = "#5c6073",
-                            "asv1340"  = "#f2c949", "asv1103" = "#7a4e54",
-                            "asv200"  = "#e0909a",  "asv169"  = "#664146",
-                            "asv12" = "#90e0a0",  
-                            "asv1683" = "#416649", "asv2820" = "#83cc91", 
-                            "asv2"  = "#cfaa3e",   
-                            "asv272"  ="#9787f5","asv12265"="#b3626e",
-                            "asv3455"  ="#6e62b3","asv2159" ="#64607f",
-                            "asv529" ="#9db362",  "asv593"="#b3628e",   "asv4053" ="#777f60", 
-                            "asv1770" ="#2a3312", "asv4840" ="#b36d62", "asv15" ="#b3a09e",
-                            "asv264" = "#3f3866",  "asv472" = '#332C26')
+# palette_asv15_asv2XX <- c(  "asv5"= "#4965f2",    "asv3368" = "#384eba",
+#                             "asv86"  = "#3245a6",  
+#                             "asv4160" = "#1f2c69",  "asv406" =  "#192354",
+#                             "asv9"  = "#9d646c",  
+#                             "asv3" = "#649d6f",    "asv1877" = "#5c6073",
+#                             "asv1340"  = "#f2c949", "asv1103" = "#7a4e54",
+#                             "asv200"  = "#e0909a",  "asv169"  = "#664146",
+#                             "asv12" = "#90e0a0",  
+#                             "asv1683" = "#416649", "asv2820" = "#83cc91", 
+#                             "asv2"  = "#cfaa3e",   
+#                             "asv272"  ="#9787f5","asv12265"="#b3626e",
+#                             "asv3455"  ="#6e62b3","asv2159" ="#64607f",
+#                             "asv529" ="#9db362",  "asv593"="#b3628e",   "asv4053" ="#777f60", 
+#                             "asv1770" ="#2a3312", "asv4840" ="#b36d62", "asv15" ="#b3a09e",
+#                             "asv264" = "#3f3866",  "asv472" = '#332C26')
+
+palette_asv15_asv2XX <- c(  "asv5"= "#C2AFB3",    "asv3368" = "#C2AFB3", # I will only highlight those blooming taxa
+                            "asv86"  = "#C2AFB3",  
+                            "asv4160" = "#C2AFB3",  "asv406" =  "#C2AFB3",
+                            "asv9"  = "#C2AFB3",  
+                            "asv3" = "#C2AFB3",    "asv1877" = "#C2AFB3",
+                            "asv1340"  = "#C2AFB3", "asv1103" = "#C2AFB3",
+                            "asv200"  = "#e0909a",  "asv169"  = "#C2AFB3",
+                            "asv12" = "#C2AFB3",  
+                            "asv1683" = "#C2AFB3", "asv2820" = "#C2AFB3", 
+                            "asv2"  = "#C2AFB3",   
+                            "asv272"  ="#C2AFB3","asv12265"="#C2AFB3",
+                            "asv3455"  ="#C2AFB3","asv2159" ="#C2AFB3",
+                            "asv529" ="#C2AFB3",  "asv593"="#C2AFB3",   "asv4053" ="#C2AFB3", 
+                            "asv1770" ="#C2AFB3", "asv4840" ="#C2AFB3", "asv15" ="#2a3312",
+                            "asv264" = "#3f3866",  "asv472" = '#C2AFB3')
 
 ### prepare the data to plot ----
 closely_related_bloomers_and_others  <- hammdist.all %>%
@@ -7216,14 +7499,14 @@ asv_tab_filtered_3 <- asv_tab_10y_3_rclr |>
 asv_tab_joined_02 <- asv_tab_filtered_02 |>
   left_join(m_02) |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::mutate(bloomer = case_when(asv_num %in% bloo_taxonomy$asv_num ~ 'bloomer',
-                                    !asv_num %in% bloo_taxonomy$asv_num ~ 'no-bloomer'))
+  dplyr::mutate(bloomer = case_when(asv_num %in% bloo_taxonomy$asv_num_f ~ 'bloomer',
+                                    !asv_num %in% bloo_taxonomy$asv_num_f ~ 'no-bloomer'))
 
 asv_tab_joined_3 <- asv_tab_filtered_3 |>
   left_join(m_3) |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-  dplyr::mutate(bloomer = case_when(asv_num %in% bloo_taxonomy$asv_num ~ 'bloomer',
-                                    !asv_num %in% bloo_taxonomy$asv_num ~ 'no-bloomer'))
+  dplyr::mutate(bloomer = case_when(asv_num %in% bloo_taxonomy$asv_num_f ~ 'bloomer',
+                                    !asv_num %in% bloo_taxonomy$asv_num_f ~ 'no-bloomer'))
 
 asv_tab_filtered <- asv_tab_joined_3 |>
   bind_rows(asv_tab_joined_02)
@@ -7260,12 +7543,14 @@ legend_asv15_asv2XX <- get_legend(plot_asv15_asv2XX)
 # Create the plot
 plot_asv15_asv2XX <- ggplot(asv_tab_filtered, aes(date, rclr)) +
   labs(x = 'Date', y = 'rCLR', color = 'ASV', fill = 'ASV') +
-  geom_line(aes(group = asv_num, color = asv_num, alpha = ifelse(bloomer == 'bloomer', 0.8 , 0.3))) +
   geom_smooth(data = asv_tab_filtered |>
                 dplyr::filter(bloomer != 'bloomer'),
-              aes(group = asv_num, color = asv_num, fill = asv_num), span = 0.09, alpha = 0.3, linewidth = 0.25) +
+              aes(group = asv_num, color = NA, fill = asv_num), span = 0.09, alpha = 0.3, linewidth = 0) +
+  geom_line(aes(group = asv_num, color = asv_num, alpha = ifelse(bloomer == 'bloomer', 0. , 0.003))) +
+  geom_line(aes(group = asv_num, color = asv_num, alpha = ifelse(bloomer == 'bloomer', 0.9 , 0.0001))) +
   geom_smooth(data = asv_tab_filtered |>
-                dplyr::filter(bloomer == 'bloomer'), aes(group = asv_num, color = asv_num, fill = asv_num),linewidth = 0.75, span = 0.09) +
+                dplyr::filter(bloomer == 'bloomer'), aes(group = asv_num, color = NA, fill = asv_num),linewidth = 0, 
+              span = 0.09, alpha = 0.5) +
   scale_color_manual(values =  palette_asv15_asv2XX) +
   scale_fill_manual(values = palette_asv15_asv2XX) +
   facet_grid(vars(fraction), labeller = labs_fraction)+
@@ -7286,21 +7571,37 @@ plot_asv15_asv2XX <- ggplot(asv_tab_filtered, aes(date, rclr)) +
 plot_asv15_asv2XX 
 
 ## plot the phylogenetic tree between those closely related taxa ----
-palette_asv15_asv2XX_v2 <- c(  "Clade Ia asv5"= "#4965f2",    "asv3368" = "#384eba",
-                               "Clade Ia asv86"  = "#3245a6",  
-                               "Clade Ia asv4160" = "#1f2c69",  "Clade Ia asv406" =  "#192354",
-                               "Clade Ia asv9"  = "#9d646c",  
-                               "Clade Ia asv3" = "#649d6f",    "Clade Ia asv1877" = "#5c6073",
-                               "Clade Ia asv1340"  = "#f2c949", "Clade Ia asv1103" = "#7a4e54",
-                               "Clade Ia asv200"  = "#e0909a",  "Clade Ia asv169"  = "#664146",
-                               "Clade Ia asv12" = "#90e0a0",  
-                               "Clade Ia asv1683" = "#416649", "Clade Ia asv2820" = "#83cc91", 
-                               "Clade Ia asv2"  = "#cfaa3e",   
-                               "Clade Ia asv272"  ="#9787f5","Clade Ia asv12265"="#b3626e",
-                               "NA asv3455"  ="#6e62b3","Clade Ia asv2159" ="#64607f",
-                               "Clade Ia asv529" ="#9db362",  "Clade Ia asv593"="#b3628e",   "Clade Ia asv4053" ="#777f60", 
-                               "Clade Ia asv1770" ="#2a3312", "Clade Ia asv4840" ="#b36d62", "Clade Ia asv15" ="#b3a09e",
-                               "Clade Ia asv264" = "#3f3866",  "Clade Ia asv472" = '#332C26')
+# palette_asv15_asv2XX_v2 <- c(  "Clade Ia asv5"= "#4965f2",    "asv3368" = "#384eba",
+#                                "Clade Ia asv86"  = "#3245a6",  
+#                                "Clade Ia asv4160" = "#1f2c69",  "Clade Ia asv406" =  "#192354",
+#                                "Clade Ia asv9"  = "#9d646c",  
+#                                "Clade Ia asv3" = "#649d6f",    "Clade Ia asv1877" = "#5c6073",
+#                                "Clade Ia asv1340"  = "#f2c949", "Clade Ia asv1103" = "#7a4e54",
+#                                "Clade Ia asv200"  = "#e0909a",  "Clade Ia asv169"  = "#664146",
+#                                "Clade Ia asv12" = "#90e0a0",  
+#                                "Clade Ia asv1683" = "#416649", "Clade Ia asv2820" = "#83cc91", 
+#                                "Clade Ia asv2"  = "#cfaa3e",   
+#                                "Clade Ia asv272"  ="#9787f5","Clade Ia asv12265"="#b3626e",
+#                                "NA asv3455"  ="#6e62b3","Clade Ia asv2159" ="#64607f",
+#                                "Clade Ia asv529" ="#9db362",  "Clade Ia asv593"="#b3628e",   "Clade Ia asv4053" ="#777f60", 
+#                                "Clade Ia asv1770" ="#2a3312", "Clade Ia asv4840" ="#b36d62", "Clade Ia asv15" ="#b3a09e",
+#                                "Clade Ia asv264" = "#3f3866",  "Clade Ia asv472" = '#332C26')
+
+palette_asv15_asv2XX_v2 <- c(  "Clade Ia asv5"= "#C2AFB3",    "Clade Ia asv3368" = "#C2AFB3", # I will only highlight those blooming taxa
+    "Clade Ia asv86"  = "#C2AFB3",  
+    "Clade Ia asv4160" = "#C2AFB3",  "Clade Ia asv406" =  "#C2AFB3",
+    "Clade Ia asv9"  = "#C2AFB3",  
+    "Clade Ia asv3" = "#C2AFB3",    "Clade Ia asv1877" = "#C2AFB3",
+    "Clade Ia asv1340"  = "#C2AFB3", "Clade Ia asv1103" = "#C2AFB3",
+    "Clade Ia asv200"  = "#e0909a",  "Clade Ia asv169"  = "#C2AFB3",
+    "Clade Ia asv12" = "#C2AFB3",  
+    "Clade Ia asv1683" = "#C2AFB3", "Clade Ia asv2820" = "#C2AFB3", 
+    "Clade Ia asv2"  = "#C2AFB3",   
+    "Clade Ia asv272"  ="#C2AFB3","Clade Ia asv12265"="#C2AFB3",
+    "Clade Ia asv3455"  ="#C2AFB3","Clade Ia asv2159" ="#C2AFB3",
+    "Clade Ia asv529" ="#C2AFB3",  "Clade Ia asv593"="#C2AFB3",   "Clade Ia asv4053" ="#C2AFB3", 
+    "Clade Ia asv1770" ="#C2AFB3", "Clade Ia asv4840" ="#C2AFB3", "Clade Ia asv15" ="#2a3312",
+    "Clade Ia asv264" = "#3f3866",  "Clade Ia asv472" = '#C2AFB3')
 
 tips_to_keep <- sar11_filter_tree$asv_num.y %in% tree_complete$tip.label
 
@@ -7315,7 +7616,7 @@ merged_data <- merge(as_tibble_col(tree$tip.label, column_name = 'asv_num'), tax
   dplyr::mutate(genus_num = paste0(genus,' ', asv_num),
                 asv_num_ed = asv_num)
 
-tree_plot_asv15_asv2XX <- ggtree(tree, branch.length = 'none') %<+%   
+tree_plot_asv15_asv2XX <- ggtree(tree, branch.length = T) %<+%   
   merged_data +   
   geom_tiplab(hjust = -0.25, size = 2.5, align = TRUE) +   
   geom_tippoint(aes(color = genus_num), alpha = 0.8, size = 3) +  # Use color for points
@@ -7331,14 +7632,14 @@ tree_plot_asv15_asv2XX <- ggtree(tree, branch.length = 'none') %<+%
     legend.position = "none",  # Show legend
     panel.grid.major = element_blank(),  # Remove grid lines
     panel.grid.minor = element_blank(),  # Remove grid lines
-    axis.text.x = element_blank(),
+    #axis.text.x = element_blank(),
     axis.text.y = element_blank(),
-    axis.line.x = element_blank(),
+    #axis.line.x = element_blank(),
     axis.ticks.x = element_blank(),
     title = element_text(size = 6),
     plot.margin = margin(2.5, 5, 5, 2.5)
   )+
-  xlim(0, 20)
+  xlim(0, 0.25)
 
 tree_plot_asv15_asv2XX
 
@@ -7357,30 +7658,547 @@ closely_related_bloomers_sar11cladea_plot  <- plot_grid(
 )
 
 # ggsave( plot = closely_related_bloomers_sar11cladea_plot,
-#         filename = 'closely_related_bloomers_sar11cladea_plot.pdf',
+#         filename = 'closely_related_bloomers_sar11cladea_plot_v2.pdf',
 #         path = 'results/figures/',
 #         width = 180, height = 150, units = 'mm')
 
 #### Group ASV42 and ASV49 #### -----
 ### beautiful palette for Spingomonadaceae family phylogenetically closely related ----
-palette_asv42_asv49 <- c(  "asv1271"= "#4965f2",    "asv87"   = "#384eba",
-                           "asv49"   = "#3245a6",  
-                           "asv1819" = "#1f2c69",   "asv1942"   =  "#192354",
-                           "asv5485"  = "#9d646c",  
-                           "asv477" = "#649d6f",    "asv679"  = "#5c6073",
-                           "asv1051" = "#f2c949",  "asv1021"   = "#7a4e54",
-                           "asv329"  = "#e0909a", "asv531"   = "#664146",
-                           "asv10095" = "#90e0a0",  
-                           "asv1294"  = "#416649", "asv808"    = "#83cc91", 
-                            "asv258"  = '#A7A4C4',   
-                           "asv1004"  ="#9787f5", "asv520"="#b3626e",
-                           "asv414"   ="#6e62b3","asv4588"  ="#64607f",
-                           "asv132" ="#9db362",  "asv124" ="#b3628e",   "asv2516" ="#777f60", 
-                           "asv670" ="#2a3312", "asv6017"  ="#b36d62", "asv1061" ="#b3a09e",
-                           "asv281" = "#3f3866",   "asv1822" = '#332C26',
-                           "asv500" = '#B2211B',   
-                             "asv42" = "#cfaa3e",
-                             "asv2077" =  '#7A1612')
+# palette_asv42_asv49 <- c(  "asv1271"= "#4965f2",    "asv87"   = "#384eba",
+#                            "asv49"   = "#3245a6",  
+#                            "asv1819" = "#1f2c69",   "asv1942"   =  "#192354",
+#                            "asv5485"  = "#9d646c",  
+#                            "asv477" = "#649d6f",    "asv679"  = "#5c6073",
+#                            "asv1051" = "#f2c949",  "asv1021"   = "#7a4e54",
+#                            "asv329"  = "#e0909a", "asv531"   = "#664146",
+#                            "asv10095" = "#90e0a0",  
+#                            "asv1294"  = "#416649", "asv808"    = "#83cc91", 
+#                             "asv258"  = '#A7A4C4',   
+#                            "asv1004"  ="#9787f5", "asv520"="#b3626e",
+#                            "asv414"   ="#6e62b3","asv4588"  ="#64607f",
+#                            "asv132" ="#9db362",  "asv124" ="#b3628e",   "asv2516" ="#777f60", 
+#                            "asv670" ="#2a3312", "asv6017"  ="#b36d62", "asv1061" ="#b3a09e",
+#                            "asv281" = "#3f3866",   "asv1822" = '#332C26',
+#                            "asv500" = '#B2211B',   
+#                              "asv42" = "#cfaa3e",
+#                              "asv2077" =  '#7A1612')
+
+palette_asv42_asv49 <- c(  "asv1271"= "#C2AFB3",    "asv87"   = "#C2AFB3",
+                           "asv49"   = "#3245a6",  "asv42" = "#cfaa3e",
+                           "asv1819" = "#C2AFB3",   "asv1942"   =  "#C2AFB3",
+                           "asv5485"  = "#C2AFB3",  
+                           "asv477" = "#C2AFB3",    "asv679"  = "#C2AFB3",
+                           "asv1051" = "#C2AFB3",  "asv1021"   = "#C2AFB3",
+                           "asv329"  = "#C2AFB3", "asv531"   = "#C2AFB3",
+                           "asv10095" = "#C2AFB3",  
+                           "asv1294"  = "#C2AFB3", "asv808"    = "#C2AFB3", 
+                           "asv258"  = '#C2AFB3',   
+                           "asv1004"  ="#C2AFB3", "asv520"= "#C2AFB3",
+                           "asv414"   ="#C2AFB3","asv4588"  ="#C2AFB3",
+                           "asv132" = "#C2AFB3",  "asv124" ="#C2AFB3",   "asv2516" ="#C2AFB3", 
+                           "asv670" = "#C2AFB3", "asv6017"  ="#C2AFB3", "asv1061" ="#b3a09e",
+                           "asv281" = "#C2AFB3",   "asv1822" = '#C2AFB3',
+                           "asv500" = '#C2AFB3',   "asv2077" =  '#C2AFB3')
+
+### prepare the data to plot ----
+closely_related_bloomers_and_others  <- hammdist.all %>%
+  purrr::reduce(bind_rows) %>%
+  dplyr::mutate(length_1 = nchar(seq1),
+                length_2 = nchar(seq2)) %>%
+  dplyr::mutate(p_distance = hammdist/length_1) %>%
+  left_join(tax_bbmo_10y_new, by = c('seq1' = 'seq')) %>%
+  left_join(tax_bbmo_10y_new, by = c('seq2' = 'seq')) %>%
+  filter(p_distance < 0.012) %>%
+  distinct(asv_num.x, asv_num.y, p_distance) |>
+  dplyr::select(asv_num = asv_num.x, asv_num.y, p_distance) |>
+  left_join(tax_bbmo_10y_new) |>
+  dplyr::filter(asv_num %in% c('asv42', 'asv49')) 
+
+closely_related_bloomers_and_others |>
+  arrange(p_distance) |>
+  distinct(asv_num.y) |>
+  as_vector() ## they are 29 but i will only plot until distance 0.002331002
+
+closely_related_bloomers_and_others |>
+  dplyr::filter(asv_num == 'asv42') |>
+  arrange(p_distance) ## it's too far from the others it is at 0.009. Therefore I will only plot it in the tree.
+
+closely_related_bloomers_and_others |>
+  dplyr::filter(asv_num == 'asv49') |>
+  arrange(p_distance) ## they are 20 but i will only plot 11 until distance  0.002331002
+
+x <- closely_related_bloomers_and_others |>
+  dplyr::filter(asv_num == 'asv42') |>
+  arrange(p_distance)
+
+y <- closely_related_bloomers_and_others |>
+  dplyr::filter(asv_num == 'asv49') |>
+  arrange(p_distance) ## they are 13 but i will only plot 8 until distance  0.002331002
+
+sar86_filter_tree <- x |>
+  bind_rows(y) |>
+  distinct(asv_num.y)
+
+## in the tree I will plot all of them
+close_distances <- closely_related_bloomers_and_others |>
+  dplyr::filter(asv_num == 'asv42') |>
+  slice_min(n = 3, order_by = p_distance) |>
+  pivot_longer(cols = starts_with('asv_num')) %$%
+  unique(value)
+
+close_distances_asv49 <- closely_related_bloomers_and_others |>
+  dplyr::filter(asv_num == 'asv49') |>
+  slice_min(n = 3, order_by = p_distance) |>
+  pivot_longer(cols = starts_with('asv_num')) %$%
+  unique(value)
+
+close_distances <- c(close_distances, close_distances_asv49)
+
+# Filter the data for the current ASV number
+asv_tab_filtered_02 <- asv_tab_10y_02_rclr |>
+  dplyr::filter(asv_num %in% close_distances)
+
+asv_tab_filtered_3 <- asv_tab_10y_3_rclr |>
+  dplyr::filter(asv_num %in% close_distances)
+
+# Join the data with the metadata
+asv_tab_joined_02 <- asv_tab_filtered_02 |>
+  left_join(m_02) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::mutate(bloomer = case_when(asv_num %in% bloo_taxonomy$asv_num_f ~ 'bloomer',
+                                    !asv_num %in% bloo_taxonomy$asv_num_f ~ 'no-bloomer'))
+
+asv_tab_joined_3 <- asv_tab_filtered_3 |>
+  left_join(m_3) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::mutate(bloomer = case_when(asv_num %in% bloo_taxonomy$asv_num_f ~ 'bloomer',
+                                    !asv_num %in% bloo_taxonomy$asv_num_f ~ 'no-bloomer'))
+
+asv_tab_filtered <- asv_tab_joined_3 |>
+  bind_rows(asv_tab_joined_02)
+
+#create the legend
+plot_asv42_asv49 <- ggplot(asv_tab_filtered, aes(date, rclr)) +
+  labs(x = 'Date', y = 'rCLR', color = 'Sphingomonadaceae\nASV', fill = 'Sphingomonadaceae\nASV') +
+  geom_line(aes(group = asv_num, color = asv_num, alpha = ifelse(bloomer == 'bloomer', 0.8 , 0.3))) +
+  geom_smooth(data = asv_tab_filtered |>
+                dplyr::filter(bloomer != 'bloomer'),
+              aes(group = asv_num, color = asv_num, fill = asv_num), span = 0.09, alpha = 0.3, linewidth = 0.5) +
+  geom_smooth(data = asv_tab_filtered |>
+                dplyr::filter(bloomer == 'bloomer'), aes(group = asv_num, color = asv_num, fill = asv_num), span = 0.09) +
+  scale_color_manual(values =  palette_asv42_asv49) +
+  scale_fill_manual(values = palette_asv42_asv49) +
+  facet_grid(vars(fraction), labeller = labs_fraction)+
+  theme_bw() +
+  guides(alpha = 'none',
+         color = guide_legend(ncol = 6),
+         fill = guide_legend(ncol = 6))+
+  theme(
+    strip.background = element_blank(),
+    legend.position = 'bottom',
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(size = 5),
+    strip.text = element_text(size = 6),
+    legend.title  = element_text(size = 6),
+    legend.text  = element_text(size = 5),
+    panel.grid.major.y = element_blank()
+  )
+
+legend_asv42_asv49 <- get_legend(plot_asv42_asv49)
+
+# Create the plot
+plot_asv42_asv49 <- ggplot(asv_tab_filtered, aes(date, rclr)) +
+  labs(x = 'Date', y = 'rCLR', color = 'ASV', fill = 'ASV') +
+  geom_line(aes(group = asv_num, color = asv_num, alpha = ifelse(bloomer == 'bloomer', 0.8 , 0.3))) +
+  geom_smooth(data = asv_tab_filtered |>
+                dplyr::filter(bloomer != 'bloomer'),
+              aes(group = asv_num, color = NA, fill = asv_num), span = 0.09, alpha = 0.3, linewidth = 0.0) +
+  geom_smooth(data = asv_tab_filtered |>
+                dplyr::filter(bloomer == 'bloomer'), aes(group = asv_num, color = NA, fill = asv_num),linewidth = 0.0, span = 0.09) +
+  scale_color_manual(values =  palette_asv42_asv49) +
+  scale_fill_manual(values = palette_asv42_asv49) +
+  facet_grid(vars(fraction), labeller = labs_fraction)+
+  theme_bw() +
+  guides(alpha = 'none')+
+  theme(
+    strip.background = element_blank(),
+    legend.position = 'none',
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(size =5),
+    strip.text = element_text(size = 6),
+    axis.title = element_text(size = 7),
+    legend.title  = element_text(size = 6),
+    legend.text  = element_text(size = 4),
+    panel.grid.major.y = element_blank()
+  )
+
+plot_asv42_asv49 
+
+## plot the phylogenetic tree between those closely related taxa ----
+# palette_asv42_asv49_v2 <- c(  "SAR86 clade asv1271"= "#4965f2",    "SAR86 clade asv87"   = "#384eba",
+#                               "SAR86 clade asv49"   = "#3245a6",  
+#                               "SAR86 clade asv1819" = "#1f2c69",   "SAR86 clade asv1942"   =  "#192354",
+#                               "SAR86 clade asv5485"  = "#9d646c",  
+#                               "SAR86 clade asv477" = "#649d6f",    "SAR86 clade asv679"  = "#5c6073",
+#                               "SAR86 clade asv1051" = "#f2c949",  "SAR86 clade asv1021"   = "#7a4e54",
+#                               "SAR86 clade asv329"  = "#e0909a", "SAR86 clade asv531"   = "#664146",
+#                               "SAR86 clade asv10095" = "#90e0a0",  
+#                               "SAR86 clade asv1294"  = "#416649", "SAR86 clade asv808"    = "#83cc91", 
+#                               "SAR86 clade asv258"  = '#A7A4C4',   
+#                               "SAR86 clade asv1004"  ="#9787f5", "SAR86 clade asv520"="#b3626e",
+#                               "SAR86 clade asv414"   ="#6e62b3","SAR86 clade asv4588"  ="#64607f",
+#                               "SAR86 clade asv132" ="#9db362",  "SAR86 clade asv124" ="#b3628e",   "SAR86 clade asv2516" ="#777f60", 
+#                               "SAR86 clade asv670" ="#2a3312", "SAR86 clade asv6017"  ="#b36d62", "SAR86 clade asv1061" ="#b3a09e",
+#                               "SAR86 clade asv281" = "#3f3866",   "SAR86 clade asv1822" = '#332C26',
+#                               "SAR86 clade asv500" = '#B2211B',   
+#                               "SAR86 clade asv42" = "#cfaa3e",
+#                               "SAR86 clade asv2077" =  '#7A1612')
+
+palette_asv42_asv49_v2 <- c(  "SAR86 clade asv1271"= "#C2AFB3",    "SAR86 clade asv87"   = "#C2AFB3",
+                           "SAR86 clade asv49"   = "#3245a6",  "SAR86 clade asv42" = "#cfaa3e",
+                           "SAR86 clade asv1819" = "#C2AFB3",   "SAR86 clade asv1942"   =  "#C2AFB3",
+                           "SAR86 clade asv5485"  = "#C2AFB3",  
+                           "SAR86 clade asv477" = "#C2AFB3",    "SAR86 clade asv679"  = "#C2AFB3",
+                           "SAR86 clade asv1051" = "#C2AFB3",  "SAR86 clade asv1021"   = "#C2AFB3",
+                           "SAR86 clade asv329"  = "#C2AFB3", "SAR86 clade asv531"   = "#C2AFB3",
+                           "SAR86 clade asv10095" = "#C2AFB3",  
+                           "SAR86 clade asv1294"  = "#C2AFB3", "SAR86 clade asv808"    = "#C2AFB3", 
+                           "SAR86 clade asv258"  = '#C2AFB3',   
+                           "SAR86 clade asv1004"  ="#C2AFB3", "SAR86 clade asv520"= "#C2AFB3",
+                           "SAR86 clade asv414"   ="#C2AFB3","SAR86 clade asv4588"  ="#C2AFB3",
+                           "SAR86 clade asv132" = "#C2AFB3",  "SAR86 clade asv124" ="#C2AFB3",   "SAR86 clade asv2516" ="#C2AFB3", 
+                           "SAR86 clade asv670" = "#C2AFB3", "SAR86 clade asv6017"  ="#C2AFB3", "SAR86 clade asv1061" ="#b3a09e",
+                           "SAR86 clade asv281" = "#C2AFB3",   "SAR86 clade asv1822" = '#C2AFB3',
+                           "SAR86 clade asv500" = '#C2AFB3',   "SAR86 clade asv2077" =  '#C2AFB3')
+
+tips_to_keep <- sar86_filter_tree$asv_num.y %in% tree_complete$tip.label
+
+tree <- keep.tip(tree_complete, sar86_filter_tree$asv_num.y)
+
+merged_data$genus_num
+
+# Plot the modified tree
+tree |>
+  str()
+
+merged_data <- merge(as_tibble_col(tree$tip.label, column_name = 'asv_num'), tax_bbmo_10y_new, by = "asv_num") |>
+  as_tibble() |>
+  dplyr::mutate(genus_num = paste0(family,' ', asv_num),
+                asv_num_ed = asv_num)
+
+tree_plot_asv42_asv49 <- ggtree(tree, branch.length = T) %<+%   
+  merged_data +   
+  geom_tiplab(hjust = -0.25, size = 2.5, align = TRUE) +   
+  geom_tippoint(aes(color = genus_num), alpha = 0.8, size = 3) +  # Use color for points
+  scale_color_manual(values = palette_asv42_asv49_v2) +   # Corrected to scale color instead of fill
+  labs(
+    title = paste0(unique(merged_data$order),' ',
+                   unique(merged_data$family)),
+    color = 'ASV nº'
+  ) + 
+  guides(color = guide_legend(ncol = 4))+
+  theme_tree2() +   
+  theme(
+    legend.position = "none",  # Show legend
+    panel.grid.major = element_blank(),  # Remove grid lines
+    panel.grid.minor = element_blank(),  # Remove grid lines
+    #axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    #axis.line.x = element_blank(),
+    #axis.ticks.x = element_blank(),
+    title = element_text(size = 6),
+    plot.margin = margin(2.5, 5, 5, 2.5)
+  )+
+  xlim(0, 0.25)
+
+tree_plot_asv42_asv49
+
+## create a composition with the time series and ----
+closely_related_bloomers_sar86clade_plot  <- plot_grid(
+  plot_asv42_asv49,
+  tree_plot_asv42_asv49,
+  ncol = 2,                # One column layout for the main grid
+  rel_heights = c(1),
+  labels = c('C', 'D'), label_fontface = 'plain',
+  label_size = 10,
+  align = "hv",           # Align plots horizontally and vertically
+  axis = "tblr",          # Display axis labels on all sides
+  rel_widths = c(2, 1)    # Set relative widths of columns
+)
+
+# ggsave( plot = closely_related_bloomers_sar86clade_plot,
+#         filename = 'closely_related_bloomers_sar86clade_plot_V2.pdf',
+#         path = 'results/figures/',
+#         width = 180, height = 150, units = 'mm')
+
+
+## I will add another example ASV11 -----
+### beautiful palette for Glaciecolas ----
+palette_asv11 <- c('asv11' = "#f2c949",  'asv1368' = '#C2AFB3',  'asv2977' = '#C2AFB3',  'asv18888' = '#C2AFB3',
+                   'asv764'= '#C2AFB3',  'asv10327' = '#C2AFB3', 'asv7413' = '#C2AFB3')
+
+### prepare the data to plot ----
+closely_related_bloomers_and_others  <- hammdist.all %>%
+  purrr::reduce(bind_rows) %>%
+  dplyr::mutate(length_1 = nchar(seq1),
+                length_2 = nchar(seq2)) %>%
+  dplyr::mutate(p_distance = hammdist/length_1) %>%
+  left_join(tax_bbmo_10y_new, by = c('seq1' = 'seq')) %>%
+  left_join(tax_bbmo_10y_new, by = c('seq2' = 'seq')) %>%
+  filter(p_distance < 0.012) %>%
+  distinct(asv_num.x, asv_num.y, p_distance) |>
+  dplyr::select(asv_num = asv_num.x, asv_num.y, p_distance) |>
+  left_join(tax_bbmo_10y_new) |>
+  dplyr::filter(asv_num %in% c('asv11'))
+
+# asv11 asv1368 asv2977 asv18888 asv764 asv10327 asv7413
+closely_related_bloomers_and_others |>
+  arrange(p_distance) |>
+  distinct(asv_num.y) |>
+  as_vector() ## they are 32 but i will only plot 8 until distance 0.004950495
+
+closely_related_bloomers_and_others |>
+  dplyr::filter(asv_num == 'asv11') |>
+  arrange(p_distance) ## it's too far from the others it is at 0.009. Therefore I will only plot it in the tree.
+
+x <- closely_related_bloomers_and_others |>
+  dplyr::filter(asv_num == 'asv11') |>
+  arrange(p_distance) |>
+  dplyr::select(asv_num = asv_num.y, asv_num.y = asv_num, p_distance, seq, domain, phylum, class, order, family , genus)
+
+y <- closely_related_bloomers_and_others |>
+  dplyr::filter(asv_num == 'asv11') |>
+  arrange(p_distance) ## they are 13 but i will only plot 8 until distance  0.007425743
+
+asv11_filter_tree <- x |>
+  bind_rows(y) |>
+  distinct(asv_num.y)
+
+## in the tree I will plot all of them
+close_distances <- closely_related_bloomers_and_others |>
+  dplyr::filter(asv_num == 'asv11') |>
+  slice_min(n = 11, order_by = p_distance) |>
+  pivot_longer(cols = starts_with('asv_num'))
+
+close_distances |>
+  distinct(family, genus)
+
+close_distances <- closely_related_bloomers_and_others |>
+  dplyr::filter(asv_num == 'asv11') |>
+  slice_min(n = 11, order_by = p_distance) |>
+  pivot_longer(cols = starts_with('asv_num')) %$%
+  unique(value)
+
+close_distances <- c(close_distances)
+
+# Filter the data for the current ASV number
+asv_tab_filtered_02 <- asv_tab_10y_02_rclr |>
+  dplyr::filter(asv_num %in% close_distances)
+
+asv_tab_filtered_3 <- asv_tab_10y_3_rclr |>
+  dplyr::filter(asv_num %in% close_distances)
+
+# Join the data with the metadata
+asv_tab_joined_02 <- asv_tab_filtered_02 |>
+  left_join(m_02) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::mutate(bloomer = case_when(asv_num %in% bloo_taxonomy$asv_num_f ~ 'bloomer',
+                                    !asv_num %in% bloo_taxonomy$asv_num_f ~ 'no-bloomer'))
+
+asv_tab_joined_3 <- asv_tab_filtered_3 |>
+  left_join(m_3) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::mutate(bloomer = case_when(asv_num %in% bloo_taxonomy$asv_num_f ~ 'bloomer',
+                                    !asv_num %in% bloo_taxonomy$asv_num_f ~ 'no-bloomer'))
+
+asv_tab_filtered <- asv_tab_joined_3 |>
+  bind_rows(asv_tab_joined_02)
+
+#create the legend
+plot_asv11 <- ggplot(asv_tab_filtered, aes(date, rclr)) +
+  labs(x = 'Date', y = 'rCLR', color = 'Sphingomonadaceae\nASV', fill = 'Sphingomonadaceae\nASV') +
+  geom_line(aes(group = asv_num, color = asv_num, alpha = ifelse(bloomer == 'bloomer', 0.8 , 0.3))) +
+  geom_smooth(data = asv_tab_filtered |>
+                dplyr::filter(bloomer != 'bloomer'),
+              aes(group = asv_num, color = asv_num, fill = asv_num), span = 0.09, alpha = 0.3, linewidth = 0.5) +
+  geom_smooth(data = asv_tab_filtered |>
+                dplyr::filter(bloomer == 'bloomer'), aes(group = asv_num, color = asv_num, fill = asv_num), span = 0.09) +
+  scale_color_manual(values =  palette_asv15_asv2XX) +
+  scale_fill_manual(values = palette_asv15_asv2XX) +
+  facet_grid(vars(fraction), labeller = labs_fraction)+
+  theme_bw() +
+  guides(alpha = 'none',
+         color = guide_legend(ncol = 6),
+         fill = guide_legend(ncol = 6))+
+  theme(
+    strip.background = element_blank(),
+    legend.position = 'bottom',
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(size = 5),
+    strip.text = element_text(size = 6),
+    legend.title  = element_text(size = 6),
+    legend.text  = element_text(size = 5),
+    panel.grid.major.y = element_blank()
+  )
+
+legend_asv11 <- get_legend(plot_asv11)
+
+# Create the plot
+plot_asv11 <- ggplot(asv_tab_filtered, aes(date, rclr)) +
+  labs(x = 'Date', y = 'rCLR', color = 'ASV', fill = 'ASV') +
+  geom_smooth(data = asv_tab_filtered |>
+                dplyr::filter(bloomer != 'bloomer'),
+              aes(group = asv_num, color = NA, fill = asv_num), span = 0.09, alpha = 0.3, linewidth = 0) +
+  geom_line(aes(group = asv_num, color = asv_num, alpha = ifelse(bloomer == 'bloomer', 0. , 0.003))) +
+  geom_line(aes(group = asv_num, color = asv_num, alpha = ifelse(bloomer == 'bloomer', 0.9 , 0.0001))) +
+  geom_smooth(data = asv_tab_filtered |>
+                dplyr::filter(bloomer == 'bloomer'), aes(group = asv_num, color = NA, fill = asv_num),linewidth = 0, 
+              span = 0.09, alpha = 0.5) +
+  scale_color_manual(values =  palette_asv11) +
+  scale_fill_manual(values = palette_asv11) +
+  facet_grid(vars(fraction), labeller = labs_fraction)+
+  theme_bw() +
+  guides(alpha = 'none')+
+  theme(
+    strip.background = element_blank(),
+    legend.position = 'none',
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(size =5),
+    strip.text = element_text(size = 6),
+    axis.title = element_text(size = 7),
+    legend.title  = element_text(size = 6),
+    legend.text  = element_text(size = 4),
+    panel.grid.major.y = element_blank()
+  )
+
+plot_asv11
+
+## plot the phylogenetic tree between those closely related taxa ----
+asv_tab_filtered |>
+  unique(family, genus)
+
+asv_tab_filtered |>
+  colnames()
+
+palette_asv11_V2 <- c('Glaciecola asv11' = "#f2c949",  "Glaciecola asv1368" = '#C2AFB3',  
+                      "Glaciecola asv2977" = '#C2AFB3',  "Glaciecola asv1888" = '#C2AFB3',
+                                                "Glaciecola asv764" = '#C2AFB3',  "Glaciecola asv10327" = '#C2AFB3', 
+                      "Glaciecola asv7413" = '#C2AFB3')
+
+tips_to_keep <- asv11_filter_tree$asv_num.y %in% tree_complete$tip.label
+
+tree <- keep.tip(tree_complete, asv11_filter_tree$asv_num.y)
+
+# Plot the modified tree
+tree |>
+  str()
+
+merged_data <- merge(as_tibble_col(tree$tip.label, column_name = 'asv_num'), tax_bbmo_10y_new, by = "asv_num") |>
+  as_tibble() |>
+  dplyr::mutate(genus_num = paste0(genus,' ', asv_num),
+                asv_num_ed = asv_num)
+
+tree_plot_asv11 <- ggtree(tree, branch.length = T) %<+%   
+  merged_data +   
+  geom_tiplab(hjust = -0.25, size = 2.5, align = TRUE) +   
+  geom_tippoint(aes(color = genus_num), alpha = 0.8, size = 3) +  # Use color for points
+  scale_color_manual(values = palette_asv11_V2) +   # Corrected to scale color instead of fill
+  labs(
+    title = paste0(unique(merged_data$order),' ',
+                   unique(merged_data$family), ' ', unique(merged_data$genus)),
+    color = 'ASV nº'
+  ) + 
+  guides(color = guide_legend(ncol = 4))+
+  theme_tree2() +   
+  theme(
+    legend.position = "none",  # Show legend
+    panel.grid.major = element_blank(),  # Remove grid lines
+    panel.grid.minor = element_blank(),  # Remove grid lines
+    #axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    #axis.line.x = element_blank(),
+    #axis.ticks.x = element_blank(),
+    title = element_text(size = 6),
+    plot.margin = margin(2.5, 5, 5, 2.5)
+  )+
+  xlim(0, 0.25)
+
+tree_plot_asv11
+
+## create a composition with the time series and ----
+
+closely_related_bloomers_glaciecola11_plot  <- plot_grid(
+  plot_asv11,
+  tree_plot_asv11,
+  ncol = 2,                # One column layout for the main grid
+  rel_heights = c(1),
+  labels = c('E', 'F'), label_fontface = 'plain',
+  label_size = 10,
+  align = "hv",           # Align plots horizontally and vertically
+  axis = "tblr",          # Display axis labels on all sides
+  rel_widths = c(2, 1)    # Set relative widths of columns
+)
+
+# ggsave( plot = closely_related_bloomers_glaciecola11_plot,
+#         filename = 'closely_related_bloomers_glaciecola11_plot_v2.pdf',
+#         path = 'results/figures/',
+#         width = 180, height = 150, units = 'mm')
+
+closely_related_bloomers_supplementary  <- plot_grid(
+  closely_related_bloomers_sar11cladea_plot,
+  closely_related_bloomers_sar86clade_plot ,
+  closely_related_bloomers_glaciecola11_plot,
+  ncol = 1,                # One column layout for the main grid
+  rel_heights = c(1),
+  #labels = c('C', 'D'), label_fontface = 'plain',
+  label_size = 10,
+  align = "hv",           # Align plots horizontally and vertically
+  axis = "tblr",          # Display axis labels on all sides
+  rel_widths = c(2, 1)    # Set relative widths of columns
+)
+
+# ggsave( plot = closely_related_bloomers_supplementary,
+#         filename = 'closely_related_bloomers_supplementary_v1.pdf',
+#         path = 'results/figures/',
+#         width = 180, height = 250, units = 'mm')
+
+#### Group ASV42 and ASV49 #### -----
+### beautiful palette for Spingomonadaceae family phylogenetically closely related ----
+# palette_asv42_asv49 <- c(  "asv1271"= "#4965f2",    "asv87"   = "#384eba",
+#                            "asv49"   = "#3245a6",  
+#                            "asv1819" = "#1f2c69",   "asv1942"   =  "#192354",
+#                            "asv5485"  = "#9d646c",  
+#                            "asv477" = "#649d6f",    "asv679"  = "#5c6073",
+#                            "asv1051" = "#f2c949",  "asv1021"   = "#7a4e54",
+#                            "asv329"  = "#e0909a", "asv531"   = "#664146",
+#                            "asv10095" = "#90e0a0",  
+#                            "asv1294"  = "#416649", "asv808"    = "#83cc91", 
+#                             "asv258"  = '#A7A4C4',   
+#                            "asv1004"  ="#9787f5", "asv520"="#b3626e",
+#                            "asv414"   ="#6e62b3","asv4588"  ="#64607f",
+#                            "asv132" ="#9db362",  "asv124" ="#b3628e",   "asv2516" ="#777f60", 
+#                            "asv670" ="#2a3312", "asv6017"  ="#b36d62", "asv1061" ="#b3a09e",
+#                            "asv281" = "#3f3866",   "asv1822" = '#332C26',
+#                            "asv500" = '#B2211B',   
+#                              "asv42" = "#cfaa3e",
+#                              "asv2077" =  '#7A1612')
+
+palette_asv42_asv49 <- c(  "asv1271"= "#C2AFB3",    "asv87"   = "#C2AFB3",
+                           "asv49"   = "#3245a6",  "asv42" = "#cfaa3e",
+                           "asv1819" = "#C2AFB3",   "asv1942"   =  "#C2AFB3",
+                           "asv5485"  = "#C2AFB3",  
+                           "asv477" = "#C2AFB3",    "asv679"  = "#C2AFB3",
+                           "asv1051" = "#C2AFB3",  "asv1021"   = "#C2AFB3",
+                           "asv329"  = "#C2AFB3", "asv531"   = "#C2AFB3",
+                           "asv10095" = "#C2AFB3",  
+                           "asv1294"  = "#C2AFB3", "asv808"    = "#C2AFB3", 
+                           "asv258"  = '#C2AFB3',   
+                           "asv1004"  ="#C2AFB3", "asv520"= "#C2AFB3",
+                           "asv414"   ="#C2AFB3","asv4588"  ="#C2AFB3",
+                           "asv132" = "#C2AFB3",  "asv124" ="#C2AFB3",   "asv2516" ="#C2AFB3", 
+                           "asv670" = "#C2AFB3", "asv6017"  ="#C2AFB3", "asv1061" ="#b3a09e",
+                           "asv281" = "#C2AFB3",   "asv1822" = '#C2AFB3',
+                           "asv500" = '#C2AFB3',   "asv2077" =  '#C2AFB3')
 
 ### prepare the data to plot ----
 closely_related_bloomers_and_others  <- hammdist.all %>%
@@ -7494,9 +8312,9 @@ plot_asv42_asv49 <- ggplot(asv_tab_filtered, aes(date, rclr)) +
   geom_line(aes(group = asv_num, color = asv_num, alpha = ifelse(bloomer == 'bloomer', 0.8 , 0.3))) +
   geom_smooth(data = asv_tab_filtered |>
                 dplyr::filter(bloomer != 'bloomer'),
-              aes(group = asv_num, color = asv_num, fill = asv_num), span = 0.09, alpha = 0.3, linewidth = 0.25) +
+              aes(group = asv_num, color = NA, fill = asv_num), span = 0.09, alpha = 0.3, linewidth = 0.0) +
   geom_smooth(data = asv_tab_filtered |>
-                dplyr::filter(bloomer == 'bloomer'), aes(group = asv_num, color = asv_num, fill = asv_num),linewidth = 0.1, span = 0.09) +
+                dplyr::filter(bloomer == 'bloomer'), aes(group = asv_num, color = NA, fill = asv_num),linewidth = 0.0, span = 0.09) +
   scale_color_manual(values =  palette_asv42_asv49) +
   scale_fill_manual(values = palette_asv42_asv49) +
   facet_grid(vars(fraction), labeller = labs_fraction)+
@@ -7517,24 +8335,41 @@ plot_asv42_asv49 <- ggplot(asv_tab_filtered, aes(date, rclr)) +
 plot_asv42_asv49 
 
 ## plot the phylogenetic tree between those closely related taxa ----
-palette_asv42_asv49_v2 <- c(  "SAR86 clade asv1271"= "#4965f2",    "SAR86 clade asv87"   = "#384eba",
-                              "SAR86 clade asv49"   = "#3245a6",  
-                              "SAR86 clade asv1819" = "#1f2c69",   "SAR86 clade asv1942"   =  "#192354",
-                              "SAR86 clade asv5485"  = "#9d646c",  
-                              "SAR86 clade asv477" = "#649d6f",    "SAR86 clade asv679"  = "#5c6073",
-                              "SAR86 clade asv1051" = "#f2c949",  "SAR86 clade asv1021"   = "#7a4e54",
-                              "SAR86 clade asv329"  = "#e0909a", "SAR86 clade asv531"   = "#664146",
-                              "SAR86 clade asv10095" = "#90e0a0",  
-                              "SAR86 clade asv1294"  = "#416649", "SAR86 clade asv808"    = "#83cc91", 
-                              "SAR86 clade asv258"  = '#A7A4C4',   
-                              "SAR86 clade asv1004"  ="#9787f5", "SAR86 clade asv520"="#b3626e",
-                              "SAR86 clade asv414"   ="#6e62b3","SAR86 clade asv4588"  ="#64607f",
-                              "SAR86 clade asv132" ="#9db362",  "SAR86 clade asv124" ="#b3628e",   "SAR86 clade asv2516" ="#777f60", 
-                              "SAR86 clade asv670" ="#2a3312", "SAR86 clade asv6017"  ="#b36d62", "SAR86 clade asv1061" ="#b3a09e",
-                              "SAR86 clade asv281" = "#3f3866",   "SAR86 clade asv1822" = '#332C26',
-                              "SAR86 clade asv500" = '#B2211B',   
-                              "SAR86 clade asv42" = "#cfaa3e",
-                              "SAR86 clade asv2077" =  '#7A1612')
+# palette_asv42_asv49_v2 <- c(  "SAR86 clade asv1271"= "#4965f2",    "SAR86 clade asv87"   = "#384eba",
+#                               "SAR86 clade asv49"   = "#3245a6",  
+#                               "SAR86 clade asv1819" = "#1f2c69",   "SAR86 clade asv1942"   =  "#192354",
+#                               "SAR86 clade asv5485"  = "#9d646c",  
+#                               "SAR86 clade asv477" = "#649d6f",    "SAR86 clade asv679"  = "#5c6073",
+#                               "SAR86 clade asv1051" = "#f2c949",  "SAR86 clade asv1021"   = "#7a4e54",
+#                               "SAR86 clade asv329"  = "#e0909a", "SAR86 clade asv531"   = "#664146",
+#                               "SAR86 clade asv10095" = "#90e0a0",  
+#                               "SAR86 clade asv1294"  = "#416649", "SAR86 clade asv808"    = "#83cc91", 
+#                               "SAR86 clade asv258"  = '#A7A4C4',   
+#                               "SAR86 clade asv1004"  ="#9787f5", "SAR86 clade asv520"="#b3626e",
+#                               "SAR86 clade asv414"   ="#6e62b3","SAR86 clade asv4588"  ="#64607f",
+#                               "SAR86 clade asv132" ="#9db362",  "SAR86 clade asv124" ="#b3628e",   "SAR86 clade asv2516" ="#777f60", 
+#                               "SAR86 clade asv670" ="#2a3312", "SAR86 clade asv6017"  ="#b36d62", "SAR86 clade asv1061" ="#b3a09e",
+#                               "SAR86 clade asv281" = "#3f3866",   "SAR86 clade asv1822" = '#332C26',
+#                               "SAR86 clade asv500" = '#B2211B',   
+#                               "SAR86 clade asv42" = "#cfaa3e",
+#                               "SAR86 clade asv2077" =  '#7A1612')
+
+palette_asv42_asv49_v2 <- c(  "SAR86 clade asv1271"= "#C2AFB3",    "SAR86 clade asv87"   = "#C2AFB3",
+                              "SAR86 clade asv49"   = "#3245a6",  "SAR86 clade asv42" = "#cfaa3e",
+                              "SAR86 clade asv1819" = "#C2AFB3",   "SAR86 clade asv1942"   =  "#C2AFB3",
+                              "SAR86 clade asv5485"  = "#C2AFB3",  
+                              "SAR86 clade asv477" = "#C2AFB3",    "SAR86 clade asv679"  = "#C2AFB3",
+                              "SAR86 clade asv1051" = "#C2AFB3",  "SAR86 clade asv1021"   = "#C2AFB3",
+                              "SAR86 clade asv329"  = "#C2AFB3", "SAR86 clade asv531"   = "#C2AFB3",
+                              "SAR86 clade asv10095" = "#C2AFB3",  
+                              "SAR86 clade asv1294"  = "#C2AFB3", "SAR86 clade asv808"    = "#C2AFB3", 
+                              "SAR86 clade asv258"  = '#C2AFB3',   
+                              "SAR86 clade asv1004"  ="#C2AFB3", "SAR86 clade asv520"= "#C2AFB3",
+                              "SAR86 clade asv414"   ="#C2AFB3","SAR86 clade asv4588"  ="#C2AFB3",
+                              "SAR86 clade asv132" = "#C2AFB3",  "SAR86 clade asv124" ="#C2AFB3",   "SAR86 clade asv2516" ="#C2AFB3", 
+                              "SAR86 clade asv670" = "#C2AFB3", "SAR86 clade asv6017"  ="#C2AFB3", "SAR86 clade asv1061" ="#b3a09e",
+                              "SAR86 clade asv281" = "#C2AFB3",   "SAR86 clade asv1822" = '#C2AFB3',
+                              "SAR86 clade asv500" = '#C2AFB3',   "SAR86 clade asv2077" =  '#C2AFB3')
 
 tips_to_keep <- sar86_filter_tree$asv_num.y %in% tree_complete$tip.label
 
@@ -7593,18 +8428,16 @@ closely_related_bloomers_sar86clade_plot  <- plot_grid(
 )
 
 # ggsave( plot = closely_related_bloomers_sar86clade_plot,
-#         filename = 'closely_related_bloomers_sar86clade_plot.pdf',
+#         filename = 'closely_related_bloomers_sar86clade_plot_V2.pdf',
 #         path = 'results/figures/',
 #         width = 180, height = 150, units = 'mm')
+
 
 ## what happens with those ASVs that do not have any closely related taxa? Are they driven by different factors? ----
 
 bloo_taxonomy |>
   dplyr::filter(!asv_num %in% unique(closely_related_bloomers_and_others$asv_num)) |>
   left_join(bloo_all_types_summary_tb_v2) ## 45
-
-
-
 
 ## transform the previous plots to heatmaps -----
 ### i need to create a new variable to facet_wrap which is colse taxa

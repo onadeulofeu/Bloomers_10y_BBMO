@@ -6,7 +6,7 @@
 # +++++++++++++++++++++++             Code developed by Ona Deulofeu-Capo 2024        ++++++++++++++++++++++
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-# packages
+# packages ---- 
 #library(fdrtool)
 #library(GeneCycle)
 library(patchwork)
@@ -385,7 +385,7 @@ wavelet_3_df <-  zclr_df_inter_deconstand |>
   left_join(m_02, by = c('date')) |>
   dplyr::select(decimal_date, asv_num, rclr)
 
-### admissibility average around 0-----
+### admissibility average around 0 -----
 wavelet_3_df |>
   dplyr::group_by(asv_num) |>
   dplyr::mutate(rclr = as.numeric(rclr)) |>
@@ -2952,15 +2952,28 @@ wavelets_variance <-  wavelets_result_ed_tibble_tax_3_biased_red |>
  #        width = 188, height = 150, units = 'mm')
  
  
- # APPLY CONTINUOUS WAVELET TRANSFORMATION #### ------
- library(WaveletComp)
  
- ## we need dates in date format not decimal date 
+ 
+ # -------------------------- #### APPLY CONTINUOUS WAVELET TRANSFORMATION #### ------------------------------------
+ library(WaveletComp) ## Periodic phenomena of a single time series can be analyzed with function analyze.wavelet.
+ 
+ ## upload data
+ ### we work with two different datasets one for FL and the other for PA
+ wavelet_3_df <- read.csv2('data/wavelet_3_df_deconstand.csv', sep = ',') |>
+   as_tibble() |>
+   dplyr::select(-X)
+ 
+ wavelet_02_df <- read.csv2('data/wavelet_02_df_deconstand.csv') |>
+   as_tibble() |>
+   dplyr::select(-X) |>
+   dplyr::filter(!asv_num %in% c('asv2', 'asv3', 'asv5', 'asv8'))
+
+ ##we need dates in date format not decimal date 
  m_02_dates <- m_02 |>
    dplyr::select(date, decimal_date) |>
    dplyr::mutate(date = as.POSIXct(date, "%Y-%M-%D"))
 
- wavelet_02_df_date <- wavelet_02_df |>
+wavelet_02_df_date <- wavelet_02_df |>
    left_join( m_02_dates) |>
    dplyr::select(date = date, abundance_value, asv_num )
  
@@ -2969,6 +2982,43 @@ wavelets_variance <-  wavelets_result_ed_tibble_tax_3_biased_red |>
    left_join( m_02_dates) |>
    dplyr::select(date = date, abundance_value = rclr, asv_num ) |>
    dplyr::mutate(abundance_value = as.numeric(abundance_value))
+ 
+ ## test to define the parammeters 
+ asv_data <- wavelet_02_df_date |>
+   dplyr::filter(asv_num == 'asv27')
+ 
+ asv_data <- wavelet_3_df_date |>
+   dplyr::filter(asv_num == 'asv27')
+ 
+ # Compute the continuous wavelet transform
+ cwt_chirp <- analyze.wavelet(asv_data, ## this function uses a Morlet wavelet.
+                              my.series = 2, 
+                              loess.span = 0, 
+                              dt = 1, # number of observations per time unit
+                              dj = 1/8, 
+                              lowerPeriod = 2, 
+                              upperPeriod = 32, 
+                              make.pval = TRUE, method = "white.noise", params = NULL,
+                              n.sim = 100, 
+                              date.format = '%Y-%M-%d', date.tz = NULL, 
+                              verbose = TRUE)
+ 
+ # Plot the wavelet power spectrum
+ wt.image(cwt_chirp, color.key = "interval", 
+          main = paste0("Wavelet Power Spectrum - ", asv_num), 
+          #legend.params = list(lab = "wavelet power levels"),
+          periodlab = "Period (Months)",
+          legend.params = list(width = 4, shrink = 0.9, mar = 5.1,
+                               n.ticks = 6,
+                               label.digits = 1, label.format = "f",
+                               lab = "Coherence levels", lab.line = 2.5),
+          show.date = TRUE,
+          date.format = '%Y-%M-%d', date.tz = NULL, 
+          verbose = TRUE)
+ 
+ # observe the reconstruction of the signal over the years ----
+ reconstruct(cwt_chirp, plot.waves = F,
+             legend.coords = "bottomleft")
  
  # asv38_test <- wavelet_02_df |>
  #   left_join( m_02_dates) |>
@@ -3040,12 +3090,9 @@ wavelets_variance <-  wavelets_result_ed_tibble_tax_3_biased_red |>
 # wt.avg(cwt_chirp, siglvl = 0.05, sigcol = "red", 
 #         periodlab = "period (months)")
  
- 
- 
  #### do it at the same time for all my asvs 
-# Define a function to perform wavelet analysis and plot the results
+# Define a function to perform wavelet analysis and plot the results in independent files ----
  
-
 wavelet_analysis <- function(asv_num, data, fraction) {
   # Filter the data for the current ASV
   asv_data <- data |>
@@ -3054,9 +3101,10 @@ wavelet_analysis <- function(asv_num, data, fraction) {
   
   # Compute the continuous wavelet transform
   cwt_chirp <- analyze.wavelet(asv_data, ## this function uses a Morlet wavelet.
-                               my.series = 2, loess.span = 0, 
+                               my.series = 2, 
+                               loess.span = 0, 
                                dt = 1, # number of observations per time unit
-                               dj = 1/12, 
+                               dj = 1/8, 
                                lowerPeriod = 2, 
                                upperPeriod = 32, 
                                make.pval = TRUE, method = "white.noise", params = NULL,
@@ -3066,35 +3114,47 @@ wavelet_analysis <- function(asv_num, data, fraction) {
   
   # Plot the wavelet power spectrum
   wt.image(cwt_chirp, color.key = "interval", 
-           main = paste0("Wavelet Power Spectrum - ASV", asv_num), 
-           legend.params = list(lab = "wavelet power levels"),
-           periodlab = "period (months)")
+           main = paste0("Wavelet Power Spectrum - ", asv_num), 
+           #legend.params = list(lab = "wavelet power levels"),
+           periodlab = "Period (Months)",
+           legend.params = list(width = 4, shrink = 0.9, mar = 5.1,
+                                n.ticks = 6,
+                                label.digits = 1, label.format = "f",
+                                lab = "Coherence levels", lab.line = 2.5),
+           show.date = TRUE,
+           date.format = '%Y-%M-%d', date.tz = NULL, 
+           verbose = TRUE)
+  # Add the wavelet average to the plot
+  # avg_period <- wt.avg(cwt_chirp, siglvl = 0.05, sigcol = "red", 
+  #                      periodlab = "Period (months)")
+  # lines(avg_period, col = "red", lwd = 2)
   
-  # Plot the wavelet average
-  wt.avg(cwt_chirp, siglvl = 0.05, sigcol = "red", 
-         periodlab = "period (months)")
-  
+  # # Plot the wavelet average
+  # wt.avg(cwt_chirp, siglvl = 0.05, sigcol = "red", 
+  #        periodlab = "Period (months)")
+  # 
   # Create the directory if it doesn't exist
-  dir.create(paste0("results/figures/wavelets_continuous_", fraction, "_ed/"), recursive = TRUE)
-  
+  dir.create(paste0("results/figures/wavelets_continuous_", fraction, "_ed5/"), recursive = TRUE)
+
   # Save the wavelet power spectrum plot
-  pdf(file = paste0("results/figures/wavelets_continuous_", fraction, "_ed/", asv_num, "_wavelet_power_spectrum.pdf"), 
+  pdf(file = paste0("results/figures/wavelets_continuous_", fraction, "_ed5/", asv_num, "_wavelet_power_spectrum.pdf"),
       width = 40, height = 34
       # , units = "in"
   )
-  wt.image(cwt_chirp, color.key = "interval", 
-           main = paste0("Wavelet Power Spectrum - ASV", asv_num), 
-           legend.params = list(lab = "wavelet power levels"),
-           periodlab = "period (months)")
+   wt.image(cwt_chirp, color.key = "interval",
+           main = paste0("Wavelet Power Spectrum - ", asv_num),
+           #legend.params = list(lab = "wavelet power levels"),
+           periodlab = "Period (Months)",
+           legend.params = list(width = 4, shrink = 0.9, mar = 5.1,
+                                n.ticks = 6,
+                                label.digits = 1, label.format = "f",
+                                lab = "Coherence levels", lab.line = 2.5),
+
+           show.date = TRUE,
+           date.format = '%Y-%M-%d', date.tz = NULL,
+           verbose = TRUE)
   dev.off()
-  
-  # Save the wavelet average plot
-  pdf(file = paste0("results/figures/wavelets_continuous_", fraction, "_ed/", asv_num, "_wavelet_average.pdf"), 
-      width = 40, height = 34#, units = "in"
-  )
-  wt.avg(cwt_chirp, siglvl = 0.05, sigcol = "red", 
-         periodlab = "period (months)")
-  dev.off()
+
 }
 
 # Apply the function to all unique ASV numbers
@@ -3108,8 +3168,545 @@ for (asv_num in asv_nums) {
   wavelet_analysis(asv_num, wavelet_3_df_date, fraction = 3)
 }
 
+## Create a unique pdf with all my plots for the supplementary data ----
+### shared ASVs between FL and PA fraction
+
+# Identify the common columns between the two tibbles
+common_columns <- intersect(bloo_02$value, bloo_3$value)
+
+## seasonal and chaotic blooms
+bloo_all_types_summary_tb_tax_v2 |>
+  dplyr::filter(asv_num %in% common_columns)
+
+### FL -----
+# Ensure the data is sorted by date
+wavelet_02_df_date <- wavelet_02_df_date[order(wavelet_02_df_date$date), ]
+
+asv_nums <- unique(wavelet_02_df_date$asv_num)
+
+wavelet_results <- list()
+
+for (asv_num in asv_nums) {
+  wavelet_results <- c(wavelet_results, list(wavelet_analysis_to_plot(asv_num, wavelet_02_df_date, fraction = '0.2')))
+}
+
+asv_nums <- unique(wavelet_02_df_date$asv_num)
+
+wavelet_02_df_date_tax <- wavelet_02_df_date |>
+  left_join(bloo_taxonomy) |>
+  distinct(asv_num, order)
+
+#wavelet_02_df_date_tax <- wavelet_02_df_date_tax[order(asv_nums), ]
+
+# Open a PDF device with A4 dimensions
+pdf("wavelet_spectra_02_multi_page.pdf", width = 8.27, height = 11.69)  # A4 size in inches
+
+# Define the layout matrix for 4 rows and 2 columns
+layout(matrix(1:8, nrow = 4, ncol = 2))  # 8 plots per page
+
+# Loop over each wavelet result to plot
+for (i in 1:length(wavelet_results)) {
+  
+  # Plot the wavelet spectrum
+  wt.image(wavelet_results[[i]], 
+           color.key = "interval", 
+           main = paste0("Wavelet Power Spectrum - ",wavelet_02_df_date_tax$order[[i]],'.', asv_nums[[i]]), 
+           periodlab = "Period (Months)",
+           legend.params = list(width = 4, shrink = 0.9, mar = 5.1,
+                                n.ticks = 6,
+                                label.digits = 1, label.format = "f",
+                                lab = "", lab.line = 2.5),
+           show.date = TRUE,
+           date.format = '%Y-%M-%d', date.tz = NULL, 
+           verbose = TRUE)
+  
+  # Check if we've reached the 8th plot on the current page
+  if (i %% 8 == 0 && i != length(wavelet_results)) {
+    # Move to the next page
+    layout(matrix(1:8, nrow = 4, ncol = 2))  # Reset the layout for the new page
+  }
+}
+
+# Close the PDF device
+dev.off()
+
+### PA ----- 
+# Ensure the data is sorted by date
+wavelet_3_df_date <- wavelet_3_df_date[order(wavelet_3_df_date$date), ]
+
+asv_nums <- unique(wavelet_3_df_date$asv_num)
+
+wavelet_results <- list()
+
+for (asv_num in asv_nums) {
+ wavelet_results <- c(wavelet_results, list(wavelet_analysis_to_plot(asv_num, wavelet_3_df_date, fraction = 3)))
+}
+
+asv_nums <- unique(wavelet_3_df_date$asv_num)
+
+wavelet_3_df_date_tax <- wavelet_3_df_date |>
+  left_join(bloo_taxonomy) |>
+  distinct(asv_num, order)
+
+#wavelet_3_df_date_tax <- wavelet_3_df_date_tax[order(asv_nums), ]
+
+
+ # Open a PDF device with A4 dimensions
+ pdf("wavelet_spectra_3_multi_page.pdf", width = 8.27, height = 11.69)  # A4 size in inches
+ 
+ # Set the layout to 4 rows and 2 columns (8 plots per page)
+ par(mfrow = c(4, 2))
+ 
+ # # Loop over each wavelet result to plot
+ # for (i in 1:length(wavelet_results)) {
+ #   
+ #   # Plot the wavelet spectrum
+ #   wt.image(wavelet_results[[i]], 
+ #            color.key = "interval", 
+ #            main = paste0("Wavelet Power Spectrum - ", asv_nums[[i]]), 
+ #            periodlab = "Period (Months)",
+ #            legend.params = list(width = 4, shrink = 0.9, mar = 5.1,
+ #                                 n.ticks = 6,
+ #                                 label.digits = 1, label.format = "f",
+ #                                 lab = "", lab.line = 2.5),
+ #            show.date = TRUE,
+ #            date.format = '%Y-%M-%d', date.tz = NULL, 
+ #            verbose = TRUE)
+ #   
+ #   # Check if we've reached the 8th plot on the current page
+ #   if (i %% 8 == 0) {
+ #     # Start a new page
+ #     par(mfrow = c(4, 2))  # Reset the layout for the new page
+ #   }
+ # }
+ # 
+ # # Close the PDF device
+ # dev.off()
+ 
+ # Define the layout matrix for 4 rows and 2 columns
+ layout(matrix(1:8, nrow = 4, ncol = 2))  # 8 plots per page
+ 
+ # Loop over each wavelet result to plot
+ for (i in 1:length(wavelet_results)) {
+   
+   # Plot the wavelet spectrum
+   wt.image(wavelet_results[[i]], 
+            color.key = "interval", 
+            main = paste0("Wavelet Power Spectrum - ",wavelet_3_df_date_tax$order[[i]],'.', asv_nums[[i]]), 
+            periodlab = "Period (Months)",
+            legend.params = list(width = 4, shrink = 0.9, mar = 5.1,
+                                 n.ticks = 6,
+                                 label.digits = 1, label.format = "f",
+                                 lab = "", lab.line = 2.5),
+            show.date = TRUE,
+            date.format = '%Y-%M-%d', date.tz = NULL, 
+            verbose = TRUE)
+   
+   # Check if we've reached the 8th plot on the current page
+   if (i %% 8 == 0 && i != length(wavelet_results)) {
+     # Move to the next page
+     layout(matrix(1:8, nrow = 4, ncol = 2))  # Reset the layout for the new page
+   }
+ }
+ 
+ # Close the PDF device
+ dev.off()
+
+## I will need to arrange them manually because I get each one separated in a different pdf file.
+ 
+
+
+## plot all average wavelet power at the same time for all the 0.2 and 3 ASVs ------
+wavelet_analysis_tb <- function(asv_num, data) {
+  # Filter the data for the current ASV
+  asv_data <- data |>
+    dplyr::filter(asv_num == !!asv_num) |>
+    dplyr::select(date, abundance_value)
+  
+  # Compute the continuous wavelet transform
+  cwt_chirp <- analyze.wavelet(asv_data, ## this function uses a Morlet wavelet.
+                               my.series = 2, 
+                               loess.span = 0, 
+                               dt = 1, # number of observations per time unit
+                               dj = 1/8, 
+                               lowerPeriod = 2, 
+                               upperPeriod = 32, 
+                               make.pval = TRUE, method = "white.noise", params = NULL,
+                               n.sim = 100, 
+                               date.format = '%Y-%M-%d', date.tz = NULL, 
+                               verbose = TRUE)
+  
+  # Return a list containing the wavelet power average and significance values
+  list(power_average = cwt_chirp$Power.avg, pvalue_power_average = cwt_chirp$Power.avg.pval)
+}
+
+asv_nums <- unique(wavelet_02_df_date$asv_num)
+wavelet_results <- list()
+
+for (asv_num in asv_nums) {
+  wavelet_results[[asv_num]] <- wavelet_analysis_tb(asv_num, wavelet_02_df_date)
+}
+
+## convert it to a tibble ----
+wavelet_results_02 <- wavelet_results
+period_row <- tibble(
+ period_rows := 1:33
+)
+
+ wavelet_results_tibble_02 <- wavelet_results_02 %>% 
+  enframe(name = "asv_num", value = "results") %>% 
+  mutate(results = map(results, ~tibble(power_average = .x$power_average, pvalue_power_average = .x$pvalue_power_average))) %>% 
+  unnest(results) %>% 
+  group_by(asv_num) |>
+  mutate(period = rev(1:nrow(period_row))) |>
+   dplyr::mutate(fraction = '0.2')
+ 
+plot <-  wavelet_results_tibble_02 |>
+  left_join(bloo_taxonomy) |>
+  ggplot(aes( period, power_average, group = asv_num, color = order))+
+  geom_vline(xintercept = 4,  alpha = 0.1)+
+  geom_vline(xintercept = 8,  alpha = 0.1)+
+  geom_vline(xintercept = 16,  alpha = 0.1)+
+  geom_vline(xintercept = 32,  alpha = 0.1)+
+  geom_point(aes(alpha = ifelse(pvalue_power_average < 0.05, 1, 0), color = order))+
+  geom_line(aes(group = asv_num), alpha = 0.5)+
+
+  scale_x_continuous(limits = c(2, 33),
+    breaks = c(3, 6, 12 , 24 , 33),
+    labels = c("Short\n(<4 months)", "Half-yearly\n(4-8 months)", "Seasonal\n(8-16 months)", 
+               "Year-to-year\n(>16 months)", 'Inter-Annual(>32)'))+
+  scale_y_continuous(limits = c(0, 0.95))+
+  coord_flip()+
+  scale_color_manual(values = palette_order_assigned_bloo)+
+  labs(y = 'Wavelet Power Average', x = 'Period (Months)', color = 'Order')+
+  theme_bw()+
+  theme(legend.position = 'none', panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.border = element_blank(),
+        axis.ticks = element_blank())+
+  guides(alpha = 'none')
+
+plot
+
+# ggsave(plot, file = paste0("results/figures/", "power_average_12_ed.pdf"),
+# width = 180, height = 180, units = "mm")
+
+## pa ----
+asv_nums <- unique(wavelet_3_df_date$asv_num)
+wavelet_results_3 <- list()
+
+for (asv_num in asv_nums) {
+  wavelet_results_3[[asv_num]] <- wavelet_analysis_tb(asv_num, wavelet_3_df_date)
+}
+
+## convert it to a tibble ----
+period_row <- tibble(
+  period_rows := 1:33
+)
+
+wavelet_results_tibble_3 <- wavelet_results_3 %>% 
+  enframe(name = "asv_num", value = "results") %>% 
+  mutate(results = map(results, ~tibble(power_average = .x$power_average, pvalue_power_average = .x$pvalue_power_average))) %>% 
+  unnest(results) %>% 
+  group_by(asv_num) |>
+  mutate(period = rev(1:nrow(period_row))) |>
+  dplyr::mutate(fraction = '3')
+
+plot_3 <-  wavelet_results_tibble_3 |>
+  left_join(bloo_taxonomy) |>
+  ggplot(aes( period, power_average, group = asv_num, color = order))+
+  geom_vline(xintercept = 4,  alpha = 0.1)+
+  geom_vline(xintercept = 8,  alpha = 0.1)+
+  geom_vline(xintercept = 16,  alpha = 0.1)+
+  geom_vline(xintercept = 32,  alpha = 0.1)+
+  geom_point(aes(alpha = ifelse(pvalue_power_average < 0.05, 1, 0), color = order))+
+  geom_line(aes(group = asv_num), alpha = 0.5)+
+  
+  scale_x_continuous(limits = c(2, 33),
+                     breaks = c(3, 6, 12 , 24 , 33),
+                     labels = c("Short\n(<4 months)", "Half-yearly\n(4-8 months)", "Seasonal\n(8-16 months)", 
+                                "Year-to-year\n(>16 months)", 'Inter-Annual(>32)'))+
+  scale_y_continuous(limits = c(0, 0.95))+
+  coord_flip()+
+  scale_color_manual(values = palette_order_assigned_bloo)+
+  labs(y = 'Wavelet Power Average', x = 'Period (Months)', color = 'Order')+
+  theme_bw()+
+  theme(legend.position = 'none', panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.border = element_blank(),
+        axis.ticks = element_blank())+
+  guides(alpha = 'none')
+
+plot_3
+
+wavelets_comtinuous_power_spectrum_plot <- grid.arrange(plot, plot_3)
+
+# ggsave(wavelets_comtinuous_power_spectrum_plot, path = "results/figures/",
+#        file = "wavelets_comtinuous_power_spectrum_plot_12_white_noise.pdf",
+#        width = 180, height = 180, units = "mm")
+
+## for the types of bloomers figure ----
+occurrence_bloo_bbmo_wav <- occurrence_bloo_bbmo |>
+  dplyr::select(fraction, asv_num, occurrence_category) |>
+  distinct(fraction, asv_num, occurrence_category)
+
+bloo_taxonomy <- bloo_02 |>
+  dplyr::filter(!value %in% c('asv2', 'asv3', 'asv5', 'asv8')) |>
+  bind_rows(bloo_3) |>
+  distinct(value) |>
+  left_join(tax_bbmo_10y_new, by = c('value' = 'asv_num')) |>
+  dplyr::select(-seq) |>
+  dplyr::select(asv_num = value, domain, phylum, class, order, family, genus)
+
+wavelet_results_all <- wavelet_results_tibble_3 |>
+  bind_rows(wavelet_results_tibble_02) |>
+  left_join(occurrence_bloo_bbmo_wav) |>
+  left_join(bloo_taxonomy)
+
+## we will base their category on their significant power average
+mean_power_sig <- wavelet_results_all |>
+  dplyr::filter(pvalue_power_average < 0.05) |>
+  ungroup() |>
+  reframe(mean = mean(power_average))
+
+wavelet_results_category <- wavelet_results_all |>
+  dplyr::filter(pvalue_power_average < 0.05 & 
+                  power_average > mean_power_sig$mean) |>
+  dplyr::group_by(asv_num, fraction) |>
+  slice_max(order_by = power_average, n = 1 ) |>
+  dplyr::mutate(type_of_bloomer = case_when(pvalue_power_average < 0.05 #& power_average > 0.25
+                                            & period <= 4 ~ 'short',
+                                            pvalue_power_average < 0.05 & # power_average > 0.25 &
+                                              period > 4 &
+                                              period < 8 ~ 'half-yearly',
+                                            pvalue_power_average < 0.05 &# power_average > 0.25 &
+                                              period > 8  &
+                                              period == 8 |
+                                              period <= 16 ~ 'seasonal',
+                                            pvalue_power_average < 0.05 #& power_average > 0.25 
+                                            & period > 16 
+                                            & period < 32 ~ 'year-to-year', 
+                                            pvalue_power_average < 0.05 #& power_average > 0.25 
+                                            & period == 32 |
+                                              period >32 ~ 'Inter-annual'
+                )) |>
+  distinct(type_of_bloomer, fraction, asv_num) 
+# |>
+#   group_by( fraction, asv_num) |>
+#   dplyr::mutate(n = n()) |>
+#   dplyr::filter(n >= 2 & type_of_bloomer != 'no-significant') |>
+#   dplyr::group_by(fraction, asv_num, type_of_bloomer) |>
+#   distinct() |>
+#   ungroup() |>
+#   dplyr::select(-n)
+
+# wavelet_results_all |>
+#   dplyr::filter(pvalue_power_average < 0.05) |>
+#   ggplot(aes(power_average, y = fraction))+
+#   geom_density_ridges()+
+#   theme_ridges()
+
+wavelet_results_all  <- wavelet_results_all |>
+  left_join(wavelet_results_category, relationship = 'many-to-many', by = c('asv_num', 'fraction')) |>
+  dplyr::mutate(type_of_bloomer = case_when(is.na(type_of_bloomer) ~ 'no-significant periodicity',
+                                            !is.na(type_of_bloomer) ~ type_of_bloomer)) 
+ 
+wavelet_results_all$type_of_bloomer <- factor(wavelet_results_all$type_of_bloomer,
+                                              levels = c('short', 'half-yearly', 'seasonal', 'year-to-year',
+                                                         'Inter-annual', 'no-significant periodicity'),
+                                              labels = c('Fine Scale', 'Half-Yearly', 'Seasonal',
+                                                         'Year-to-Year', 'Inter-Annual', 'No-significant Periodicity'))
+
+wavelet_results_all$occurrence_category <- factor(wavelet_results_all$occurrence_category,
+                                                  levels = c('broad', 'intermediate', 'narrow'),
+                                                  labels = c('Broad', 'Intermediate', 'Narrow'))
+text_data <- wavelet_results_all |>
+  distinct(type_of_bloomer, occurrence_category, asv_num) |> 
+  group_by(type_of_bloomer, occurrence_category) |>
+  dplyr::summarise(n = paste0('n = ', ' ', n())) 
+
+ types_of_bloomers_summary_plot <- wavelet_results_all  |>
+   dplyr::filter(!is.na(type_of_bloomer)) |>
+   left_join(text_data) |>
+  dplyr::mutate(asv_fraction = paste0(asv_num, '.', fraction)) |>
+   #dplyr::filter(type_of_bloomer == 'Year-to-Year') |>
+  ggplot(aes(period, power_average, group = asv_num, color = order))+
+   geom_vline(xintercept = 4,  alpha = 0.1)+
+   geom_vline(xintercept = 8,  alpha = 0.1)+
+   geom_vline(xintercept = 16,  alpha = 0.1)+
+   geom_vline(xintercept = 32,  alpha = 0.1)+
+   geom_text( aes(label =  n, x = 30, y = 0.75), color = 'black', 
+             check_overlap = TRUE, size = 3) + 
+  geom_point(data = wavelet_results_all |>
+                    dplyr::filter(pvalue_power_average < 0.05 &
+                                                                   power_average > mean_power_sig$mean))+
+    # alpha = ifelse(pvalue_power_average < 0.05 &
+    #                               power_average > mean_power_sig$mean, 1, 0), color = order))+
+  geom_line(aes(group = asv_fraction, linetype = fraction), alpha = 1)+
+  #scale_linetype_discrete(values = c('dashed' = '0.2', 'solid' = '3'))+
+   # geom_line(aes( group = fraction,  linetype = fraction))+
+   scale_linetype_discrete(labels = labs_fraction)+
+   scale_y_continuous(limits = c(0, 0.95))+
+   coord_flip()+
+   #facet_wrap(vars(asv_num))+
+   facet_grid(type_of_bloomer~occurrence_category, switch = 'y')+
+   scale_x_continuous(limits = c(2, 33),
+                      breaks = c(3, 6, 12 , 24 , 33),
+                      labels = c("Short\n(<4 months)", "Half-yearly\n(4-8 months)", "Seasonal\n(8-16 months)", 
+                                 "Year-to-year\n(>16 months)", 'Inter-Annual(>32)'))+
+   scale_color_manual(values = palette_order_assigned_bloo)+
+   labs(y = 'Wavelet Power Average', x = 'Period (Months)', color = 'Order', linetype = 'Fraction')+
+   theme_bw()+
+   theme(legend.position = 'bottom', panel.grid.minor = element_blank(),
+         panel.grid.major.y = element_blank(),
+         panel.border = element_blank(),
+         axis.ticks = element_blank(),
+         axis.text.y = element_blank(),
+         strip.background = element_rect('transparent'),
+         strip.text = element_text(size = 6),
+         panel.spacing.x = unit(2, "lines"),  # adjust the spacing between panels in the x direction
+         panel.spacing.y = unit(1, "lines"))+  # adjust the spacing between panels in the y direction)+
+   guides(alpha = 'none',
+          color = 'none')
+ 
+ types_of_bloomers_summary_plot
+ 
+ # ggsave( types_of_bloomers_summary_plot, path = "results/figures/",
+ #        file = " types_of_bloomers_summary_plot.pdf",
+ #        width = 180, height = 200, units = "mm")
+
+## only recurrent vs. non recurrent ----
+ types_of_bloomers_summary_plot <- wavelet_results_all  |>
+   dplyr::filter(!is.na(type_of_bloomer)) |>
+   left_join(text_data) |>
+   dplyr::filter(type_of_bloomer %in% c('Seasonal', 'No-significant Periodicity')) |>
+   dplyr::mutate(asv_fraction = paste0(asv_num, '.', fraction)) |>
+   #dplyr::filter(type_of_bloomer == 'Year-to-Year') |>
+   ggplot(aes(period, power_average, group = asv_num, color = order))+
+   geom_vline(xintercept = 4,  alpha = 0.1)+
+   geom_vline(xintercept = 8,  alpha = 0.1)+
+   geom_vline(xintercept = 16,  alpha = 0.1)+
+   geom_vline(xintercept = 32,  alpha = 0.1)+
+   geom_text( aes(label =  n, x = 30, y = 0.75), color = 'black', 
+              check_overlap = TRUE, size = 3) + 
+   geom_point(data = wavelet_results_all |>
+                dplyr::filter(pvalue_power_average < 0.05 &
+                                power_average > mean_power_sig$mean &
+                                type_of_bloomer %in% c('Seasonal', 'No-significant Periodicity')))+
+   # alpha = ifelse(pvalue_power_average < 0.05 &
+   #                               power_average > mean_power_sig$mean, 1, 0), color = order))+
+   geom_line(aes(group = asv_fraction, linetype = fraction), alpha = 1)+
+   #scale_linetype_discrete(values = c('dashed' = '0.2', 'solid' = '3'))+
+   # geom_line(aes( group = fraction,  linetype = fraction))+
+   scale_linetype_discrete(labels = labs_fraction)+
+   scale_y_continuous(limits = c(0, 0.95))+
+   coord_flip()+
+   #facet_wrap(vars(asv_num))+
+   facet_grid(type_of_bloomer~occurrence_category, switch = 'y')+
+   scale_x_continuous(limits = c(2, 33),
+                      breaks = c(3, 6, 12 , 24 , 33),
+                      labels = c("Short\n(<4 months)", "Half-yearly\n(4-8 months)", "Seasonal\n(8-16 months)", 
+                                 "Year-to-year\n(>16 months)", 'Inter-Annual(>32)'))+
+   scale_color_manual(values = palette_order_assigned_bloo)+
+   labs(y = 'Wavelet Power Average', x = 'Period (Months)', color = 'Order', linetype = 'Fraction')+
+   theme_bw()+
+   theme(legend.position = 'bottom', panel.grid.minor = element_blank(),
+         panel.grid.major.y = element_blank(),
+         panel.border = element_blank(),
+         axis.ticks = element_blank(),
+         axis.text.y = element_blank(),
+         strip.background = element_rect('transparent'),
+         strip.text = element_text(size = 6),
+         text = element_text(size = 6),
+         panel.spacing.x = unit(2, "lines"),  # adjust the spacing between panels in the x direction
+         panel.spacing.y = unit(1, "lines"))+  # adjust the spacing between panels in the y direction)+
+   guides(alpha = 'none',
+          color = 'none',
+          linetype = 'none')
+ 
+ types_of_bloomers_summary_plot
+ 
+ legend_order <- wavelet_results_all  |>
+   dplyr::filter(!is.na(type_of_bloomer)) |>
+   left_join(text_data) |>
+   dplyr::filter(type_of_bloomer %in% c('Seasonal', 'No-significant Periodicity')) |>
+   dplyr::mutate(asv_fraction = paste0(asv_num, '.', fraction)) |>
+   #dplyr::filter(type_of_bloomer == 'Year-to-Year') |>
+   ggplot(aes(period, power_average, group = asv_num, color = order))+
+   geom_vline(xintercept = 4,  alpha = 0.1)+
+   geom_vline(xintercept = 8,  alpha = 0.1)+
+   geom_vline(xintercept = 16,  alpha = 0.1)+
+   geom_vline(xintercept = 32,  alpha = 0.1)+
+   geom_text( aes(label =  n, x = 30, y = 0.75), color = 'black', 
+              check_overlap = TRUE, size = 3) + 
+   geom_point(data = wavelet_results_all |>
+                dplyr::filter(pvalue_power_average < 0.05 &
+                                power_average > mean_power_sig$mean &
+                                type_of_bloomer %in% c('Seasonal', 'No-significant Periodicity')))+
+   # alpha = ifelse(pvalue_power_average < 0.05 &
+   #                               power_average > mean_power_sig$mean, 1, 0), color = order))+
+   geom_line(aes(group = asv_fraction, linetype = fraction), alpha = 1)+
+   #scale_linetype_discrete(values = c('dashed' = '0.2', 'solid' = '3'))+
+   # geom_line(aes( group = fraction,  linetype = fraction))+
+   scale_linetype_discrete(labels = labs_fraction)+
+   scale_y_continuous(limits = c(0, 0.95))+
+   coord_flip()+
+   #facet_wrap(vars(asv_num))+
+   facet_grid(type_of_bloomer~occurrence_category, switch = 'y')+
+   scale_x_continuous(limits = c(2, 33),
+                      breaks = c(3, 6, 12 , 24 , 33),
+                      labels = c("Short\n(<4 months)", "Half-yearly\n(4-8 months)", "Seasonal\n(8-16 months)", 
+                                 "Year-to-year\n(>16 months)", 'Inter-Annual(>32)'))+
+   scale_color_manual(values = palette_order_assigned_bloo)+
+   labs(y = 'Wavelet Power Average', x = 'Period (Months)', color = 'Order', linetype = 'Fraction')+
+   theme_bw()+
+   theme(legend.position = 'bottom', panel.grid.minor = element_blank(),
+         panel.grid.major.y = element_blank(),
+         panel.border = element_blank(),
+         axis.ticks = element_blank(),
+         axis.text.y = element_blank(),
+         strip.background = element_rect('transparent'),
+         strip.text = element_text(size = 6),
+         text = element_text(size = 6),
+         panel.spacing.x = unit(2, "lines"),  # adjust the spacing between panels in the x direction
+         panel.spacing.y = unit(1, "lines"))+  # adjust the spacing between panels in the y direction)+
+   guides(alpha = 'none',
+          linetype = guide_legend(ncol = 1),
+          color = guide_legend(ncol = 5))
+ 
+ legend_order <- get_legend( legend_order )
+ 
+ ggarrange(types_of_bloomers_summary_plot, legend_order, heights = c(3, 1), ncol = 1)
+   
+ # ggsave(types_of_bloomers_summary_plot, path = "results/figures/",
+ #         file = " types_of_bloomers_summary_plot_red.pdf",
+ #         width = 180, height = 100, units = "mm")
+ 
+## create a table with the new version of the analysis of the recurrency of my potential bloomers ----
+ bloo_all_types_summary_tb_tax
+ 
+ bloo_all_types_summary_tb_tax_v2 <- wavelet_results_all |>
+   dplyr::distinct(asv_num, fraction, type_of_bloomer, occurrence_category) |>
+   dplyr::mutate(recurrency = case_when(type_of_bloomer %in% c('Inter-Annual', 'Year-to-Year', 'No-significant Periodicity') ~ 'non-recurrent',
+                                        !type_of_bloomer %in% c('Inter-Annual', 'Year-to-Year', 'No-significant Periodicity') ~ 'recurrent')) |>
+   left_join(bloo_taxonomy)
+ 
+# write.csv(bloo_all_types_summary_tb_tax_v2, 'results/tables/bloo_all_types_summary_tb_tax_v2.csv')
+ 
+### I compare the results found with the MODWT wavelets and the continuous. Are they consistent? - ---
+ bloo_all_types_summary_tb_tax_v2_ed <- bloo_all_types_summary_tb_tax_v2 |>
+   dplyr::mutate(recurrency = case_when(recurrency == 'recurrent' ~ 'seasonal',
+                                        recurrency == 'non-recurrent' ~ 'stochastic'))
+ 
+comparison_between_both_wavelets <-  bloo_all_types_summary_tb_tax |>
+   dplyr::mutate(fraction = as.character(fraction)) |>
+   left_join( bloo_all_types_summary_tb_tax_v2_ed, by = c('asv_num', 'fraction', 'class', 'order', 'family')) |>
+  dplyr::filter(frequency != recurrency.y) ## only 4 taxa have different classifications: ASV15, ASV23, ASV31, ASV38.
+
+ 
 ## apply the function to all env data ----
-env_data_interpolated_values_all_z_score <- read.csv2('data/env_data/env_data_interpolated_values_all_z_score.csv', sep = ';')
+env_data_interpolated_values_all_z_score <- read.csv2('data/env_data/env_data_interpolated_values_all_z_score.csv', 
+                                                      sep = ';')
 
 env_data_interpolated_values_all_z_score  <- env_data_interpolated_values_all_z_score  |>
   dplyr::select(-'X')
@@ -3131,39 +3728,56 @@ for (asv_num in asv_nums) {
 
  cwt(chirp, sj = 1:128, dj = 1/4, mother = "morlet") 
  
- ## Barplot with seasonality and the taxonomy ----
+## Barplot with seasonality and the taxonomy ----
+ ### i update it with the new taxonomy 
+ 
+ bloo_all_types_summary_tb_tax <- bloo_all_types_summary_tb_tax_v2
  
  ### recurrency
  labs_fraction_rec_freq <-  as_labeller(c('0.2' = 'Free living (0.2-3 um)',
                                           '3' = 'Particle attached (3-20 um)',
                                           no = 'Recurrent',
-                                          yes = 'Non-recurrent',
+                                          yes = 'Non-Recurrent',
+                                          "non-recurrent" = 'Chaotic',
+                                          recurrent = 'Seasonal',
                                           seasonal = 'Seasonal',
                                           stochastic = 'Chaotic'))
- summary_types_of_blooms |>
-   colnames()
-
- bloo_all_types_summary_tb_tax
+ 
+data_text <- bloo_all_types_summary_tb_tax |>
+  group_by(recurrency, fraction, asv_num) |>
+  dplyr::reframe(n = n()) |>
+  group_by(fraction, recurrency) |>
+  dplyr::reframe(n_general = paste0( 'n = ', n())) 
 
  tax_seasonality_plot <- bloo_all_types_summary_tb_tax |>
-   group_by(frequency, fraction, order) |>
+   group_by(recurrency, fraction, order) |>
    dplyr::reframe(n = n()) |>
-   group_by(frequency, fraction) |>
+   group_by( fraction, recurrency) |>
    dplyr::mutate(n_total = sum(n)) |>
    dplyr::mutate(perc = n/n_total) |>
+   left_join(data_text) |>
    ggplot(aes(perc,as.factor(fraction), fill = order))+
    scale_y_discrete(labels = labs_fraction)+
    scale_x_continuous(labels = percent_format())+
    geom_col()+
+   geom_text(aes(label = n_general), check_overlap = TRUE, size = 2, vjust = 2, hjust = 0.65) +
    labs(x='', y = '')+
    scale_fill_manual(values = palette_order_assigned_bloo)+
-   facet_wrap(vars(frequency), labeller = labs_fraction_rec_freq)+
+   facet_wrap(vars(recurrency), labeller = labs_fraction_rec_freq)+
    theme_bw()+
    theme(legend.position = 'none',
          panel.grid = element_blank(),
          panel.border = element_blank(),
          strip.background = element_blank(),
-         text = element_text(size = 14))
+         text = element_text(size = 8))
+
+ tax_seasonality_plot 
+ 
+ # ggsave('tax_seasonality.pdf',  tax_seasonality_plot,
+ #        path = "results/figures/",
+ #        width = 88,
+ #        height = 50,
+ #        units = 'mm')
 
  # ggsave('tax_seasonality.svg',  tax_seasonality_plot,
  #        path = "results/figures/poster_svg_format/",
@@ -3172,4 +3786,11 @@ for (asv_num in asv_nums) {
  #        units = 'mm')
 
  
+ 
+ 
+## I want to select those taxa that have a year a Inter-annual or year-to-year significant change and this change appears during the harbor restoration period.
+ wavelet_results_category |>
+   dplyr::filter(fraction == '3') |>
+   dplyr::filter(type_of_bloomer %in% c('year-to-year', 'Inter-annual')) |>
+   distinct(asv_num)
  

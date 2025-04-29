@@ -35,7 +35,7 @@ plot_residuals <- function(data_anom_abund, data_mean_abund_asv, asv_num, commun
     
   plot_residuals <- data_anom_abund |>
     left_join(data_mean_abund_asv, by = c('asv_num', 'fraction')) |>
-    dplyr::mutate(residual = abundance_value - mean_abund) |>
+    dplyr::mutate(residual = (abundance_value*100) - mean_abund) |>
     dplyr::filter(asv_num == {{asv_num}} & 
                     fraction == {{community_fraction}}) |>
     ggplot(aes(date, residual))+
