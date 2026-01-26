@@ -10,6 +10,7 @@
 library(cowplot)
 library(tidyverse)
 library(ggpmisc)
+library(data.table)
 
 # ------------------ ## --------- Blooming events and their functional implications ------------------ ## ---
 ## upload palettes ----
@@ -33,8 +34,6 @@ palette_order_assigned_bloo <-  c("SAR11 clade" =      "#ca6094",
                                   'env' = "#4A785C") 
 
 
-
-
 # ------------------ ## --------- Community level ----------------------- ## ----------------------- ## -----
 ## upload data correlations datasets genes and community
 bray_unifrac_eucl_tb_02 <- read.csv('data/bray_unifrac_eucl_tb_02.csv') 
@@ -46,7 +45,7 @@ corr_bray_genes_communty_tb_scg <- read.csv2('data/genes_sergio/bray_curtis_gene
   add_row(.before = 1)
 
 ## i computed the bc of genes in three subsets 
-corr_bray_genes_communty_tb |>
+corr_bray_genes_community_tb |>
   dim()
   
   bray_unifrac_eucl_tb_02_subset <- bray_unifrac_eucl_tb_02[c(1:60),]
@@ -395,7 +394,6 @@ kos_genes_relation_tb |>
 kos_genes_relation_tb |>
   colnames() <- c('gene', 'KO')
 
-
 genes_bloo_tb <- read.csv('data/genes_sergio/BBMO-GC_250bp_gene.lengthNorm.SingleCopyGeneNorm.counts_bloo_genes_bloo.tbl',
                           sep = '\t')
 
@@ -488,7 +486,7 @@ top_25_kos_names_info <- top_25_kos_names |>
   left_join(modules_info, by = c('KO' = 'ko')) |>
   left_join(modules_brite_filt, by = c('KO' = 'ko_id'))
 
-write.table(top_25_kos_names_info, 'data/genes_sergio/top_25_kos_names_info.txt', sep = '\t') 
+#write.table(top_25_kos_names_info, 'data/genes_sergio/top_25_kos_names_info.txt', sep = '\t') 
 
 ## upload KEGGs counts SCG
 kos_tb_t <- kos_tb_t |>
@@ -531,7 +529,7 @@ relative_contribution_gla_plot <- relative_contribution_gla |>
 
 relative_contribution_gla_plot
 
-# counts_contribution_gla_plot
+# counts_contribution_amy_plot
 relative_contribution_amy <- genes_bloo_ko_0904_tb |>
   left_join(kos_tb_t_l_bl0904, by = c('KO' = 'asv_num', 'sample_id' = 'annot')) |>
   dplyr::mutate(relative_contribution = as.numeric(contribution_to_ko)/as.numeric(scg_kos_counts)) |>
@@ -587,7 +585,6 @@ composition_plot
 #         filename = 'genes_kos_bloomers_v3.pdf',
 #         path = 'results/figures/',
 #         width = 180, height = 160, units = 'mm')
-
 
 ## Supplementary comprobation: pre-bloom  -----
 ### Glaciecola
@@ -670,8 +667,6 @@ relative_contribution_amy_plot <- relative_contribution_amy |>
 
 relative_contribution_amy_plot
 
-
-
 ## Which were the most abundant KOs during bloom events, were they shared with the ones the bloomers where contributing the most? -------
 kos_tb_t |>
   head()
@@ -711,3 +706,111 @@ kos_tb_t |>
   dplyr::filter(name %in% top25_kos_amy)
 
 25/6886*100
+
+## Community Euclidean 
+dissimilarity_matrix <- function(data, sample_id_col, values_cols_prefix) {
+  
+  # Extract rownames to mantain them at the output table
+  sample_id_unique <- data %>%
+    group_by({{sample_id_col}}) %>% ##sample id that identifies uniquely each sample
+    #dplyr::arrange(.by_group = TRUE)  %>% ## reorder so that it is ordered equally
+    dplyr::distinct({{sample_id_col}})
+  
+  # Index samples to filter for only consecutive comparisons
+  # check name of the columns
+  #if ({{sample_id_col}} %in% colnames(data)==FALSE) {stop("There is no sample_id_col column in your data tibble")}
+  
+  samples_index <- data %>%
+    dplyr::group_by({{sample_id_col}}) %>%
+    #dplyr::arrange(.by_group = TRUE) %>%
+    dplyr::select({{sample_id_col}}) %>%
+    dplyr::distinct({{sample_id_col}}) %>%
+    as_tibble() %>%
+    dplyr::mutate('row_index_2' := dplyr::row_number()) %>%
+    dplyr::select({{sample_id_col}}, row_index_2)
+  
+  # Compute pairwise Bray-Curtis distances between all rows of data
+  
+  dissim_mat <- data %>%
+    pivot_wider(id_cols = {{sample_id_col}},  names_from = asv_num, values_from = relative_abundance) %>%
+    group_by({{sample_id_col}}) %>%
+    #dplyr::arrange(.by_group = TRUE) %>%
+    tibble::column_to_rownames('sample_id') %>%
+    vegan::vegdist(method = 'euclidean', upper = T) %>%
+    as.matrix() %>%
+    as_data_frame() %>%
+    cbind(sample_id_unique) %>%
+    dplyr::mutate(row_index := row_number()) %>%
+    rowid_to_column() %>%
+    as_tibble() %>%
+    pivot_longer(cols = starts_with({{values_cols_prefix}}), values_to = 'bray_curtis_result', names_to = 'samples') %>%
+    left_join(samples_index, by = c('samples' = 'sample_id')) %>%
+    dplyr::filter(row_index == (row_index_2-1)) %>%
+    dplyr::select(samples, row_index_2, bray_curtis_result) %>%
+    add_row(.before = 1)
+  
+  # # Chech that diagonal elements to zero (i.e., each sample is identical to itself)
+  # diag(dissim_mat) <- 0
+  
+  # Return the dissimilarity matrix
+  return(dissim_mat)
+}
+
+rclr_df <- decostand(asv_tab_bbmo_10y_w, method = 'clr', pseudocount = 1 ) # The decostand function will standardize the rows (samples) by default
+
+##we create two datasets one for FL and one for PA
+asv_tab_10y_02_rclr <- rclr_df |>
+  rownames_to_column(var = 'sample_id') |>
+  pivot_longer(cols = starts_with('asv'), names_to = 'asv_num', values_to = 'rclr') |>
+  dplyr::filter(str_detect(sample_id, '_0.2_')) 
+
+asv_tab_10y_02_rclr <- asv_tab_10y_02_rclr |>
+  dplyr::select(sample_id, asv_num, relative_abundance = rclr)
+  
+  euclidean_02 <- dissimilarity_matrix(data = asv_tab_10y_02_rclr, 
+                                             sample_id_col = sample_id,
+                                             values_cols_prefix = 'BL')
+  
+  euclidean_02 <- euclidean_02[61:120,]
+  
+  euclidean_02 <- euclidean_02 |>
+    rename(euclidean_02 = bray_curtis_result)
+  
+  bray_unifrac_eucl_tb_02_subset <- bray_unifrac_eucl_tb_02[c(1:60),]
+  
+  corr_euclidean_genes_communty_tb_scg <- read.csv2('data/genes_sergio/euclidean_genes_SCG_0003.csv', sep = '\t') |>
+    rename(euclidean_result_genes_scg = euclidean) |>
+    dplyr::select(-sample_id1, -sample_id2) |>
+    add_row(.before = 1)
+  
+  bray_unifrac_eucl_tb_02 <- euclidean_02 |>
+    bind_cols(corr_euclidean_genes_communty_tb_scg) |>
+    bind_cols(corr_bray_genes_community_tb)
+  
+  #### first correlation: Bray-Curtis genes vs Bray-Curtis community, and Bray-Curtis genes vs. weighted UNIFRAC distance ----
+  corr_bray_02_plot <- bray_unifrac_eucl_tb_02 |>
+    ggplot(aes(as.numeric(euclidean_02), as.numeric(euclidean_result_genes_scg)))+
+    # scale_x_continuous(limits = c(0.05, 0.85))+
+    # scale_y_continuous(limits = c(0.05, 0.85))+
+    geom_point(color = "#00808F", alpha = 0.8)+
+    stat_cor(aes(
+      label =   paste(..p.label..)), label.x = 0.35,
+      label.y = 0.25,
+      p.digits = 0.01, digits = 2, p.accuracy = 0.01, method = 'spearman', color = "#00808F"#,
+    )+
+    stat_cor(aes( label = paste0(..r.label..)),label.x = 0.35, label.y = 0.2, 
+             p.digits = 0.01, digits = 2, 
+             p.accuracy = 0.01, method = 'spearman',
+             color = "#00808F")+
+    geom_smooth(method = 'lm', color = "#00808F", fill = "#00808F")+
+    labs(x = 'Euclidean Distance Community-Based', y = 'Euclidean Distance Genes-Based')+
+    theme_bw()+
+    theme(
+      panel.grid.minor = element_blank(),
+      legend.position = 'bottom', axis.text.y = element_text(size = 10),
+      axis.title = element_text(size = 10), strip.background = element_blank(), 
+      legend.text = element_text(size = 6), legend.title = element_text(size = 8), 
+      strip.placement = 'outside', aspect.ratio = 12/12)
+  
+  corr_bray_02_plot
+  
