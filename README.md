@@ -2,7 +2,7 @@
 
 Studying blooming events on a 10years timeseries [Blanes Bay Microbial Observatory](http://bbmo.icm.csic.es/) which corresponds to the following manuscript:
 
-The natural history of bacterial bloomers in a decade long time-series
+The natural history of bacterial bloomers in a decade-long time series
 
 ## Authors:
 
