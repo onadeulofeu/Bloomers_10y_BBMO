@@ -2,7 +2,7 @@
 
 Studying blooming events on a 10years timeseries [Blanes Bay Microbial Observatory](http://bbmo.icm.csic.es/) which corresponds to the following manuscript:
 
-The natural history of bacterial bloomers in the coastal Northwestern Mediterranean Sea<img width="442" height="46" alt="image" src="https://github.com/user-attachments/assets/53a8b65a-2ac9-447d-a51c-4009dd317d89" />
+The natural history of bacterial bloomers in a decade long time-series <img width="442" height="46" alt="image" src="https://github.com/user-attachments/assets/53a8b65a-2ac9-447d-a51c-4009dd317d89" />
 
 ## Authors:
 
