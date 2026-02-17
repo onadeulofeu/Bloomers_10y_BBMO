@@ -42,10 +42,6 @@ library(scales)
 library(zCompositions)
 library(grateful) ## To cite the packages used.
 
-palette_gradient <- c('#DBDBDB', "#BDBEBE","#545454",
-                      "#070607")
-palette_gradient <- colorRampPalette(c('#DBDBDB', '#BDBEBE', '#545454', '#070607'))
-
 # labels ----
 labs_fraction <- as_labeller(c('0.2' = '0.2-3 µm',
                                '3' = '3-20 µm'))
@@ -62,6 +58,11 @@ harbour_restoration <- tibble(xmin = '2010-03-24', xmax = '2012-06-09') |> ### T
 palette_seasons_4 <- c("winter" = "#002562", 'spring' = "#519741", 'summer' = "#ffb900",'autumn' =  "#96220a")
 
 palette_fraction <- c('0.2' = '#00808F', '3' = '#454545')
+
+
+palette_gradient <- c('#DBDBDB', "#BDBEBE","#545454",
+                      "#070607")
+palette_gradient <- colorRampPalette(c('#DBDBDB', '#BDBEBE', '#545454', '#070607'))
 
 ## palettes taxonomy assigned ----
 palette_phylums_assigned <- c('Proteobacteria' = "#ffb900","Bacteroidota" = "#0051BF" , 'Actinobacteriota' = "#b0413e",
@@ -118,6 +119,17 @@ palette_family_assigned_bloo <- c(##gammaproteobacteria
   "Phycisphaeraceae"   = '#e3a6ce',    
   "Bacteriovoracaceae" =  '#8C789D' 
 )  # NA == "#000000" ## add genus color 
+
+palette_years <- c("#efd9ce",
+                   "#d7b7c9",
+                   "#be95c4",
+                   "#af8ec2",
+                   "#9f86c0",
+                   "#7f6da7",
+                   "#5e548e",
+                   "#231942",
+                   "#20173c",
+                   "#1d1537")
 
 # functions----
 source('../../Bloomers/R/get_anomalies.R') 

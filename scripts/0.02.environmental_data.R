@@ -15,6 +15,7 @@ library(magrittr)
 library(multipanelfigure) #merge plots with different sizes
 library(forcats) 
 library(scales)
+library(ggpmisc)
 
 ## upload functions ----
 source('src/calculate_z_scores.R')
@@ -61,7 +62,7 @@ library(readxl) ##I upload the general metadata from the whole BBMO 20Y
 bbmo_20y <- read_xlsx('data/main_databaseMOSTREIGBLANES_March23_od.xlsx', skip = 0 ) |>
   as_tibble()
 
-##I would like to add viruses to the analysis----
+##I would like to add viruses to the analysis ----
 bbmo_20y_v <- bbmo_20y |>
   dplyr::select(`NOM MOSTRA`, "Low VLP", "Med VLP" ,                           
                 "High VLP" ,"total VLP")
@@ -73,7 +74,6 @@ bbmo_20y_v <- bbmo_20y_v |>
          high_vlp = "High VLP" ,
          total_vlp = "total VLP") 
   
-# bbmo_20y_v$sample_id
 bbmo_20y_v_red <-  bbmo_20y_v |>
   dplyr::mutate(sample_id_ed = str_remove(sample_id, '_'),
                 sample_id_ed2 = substr(sample_id_ed, 1, 8)) |>
@@ -119,10 +119,6 @@ plot_HNF_abund <- m_vir_tb |>
   #                                                   ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
   geom_line(colour = '#182533')+
   labs(y = 'cells/mL', x = 'Date')+
-  #geom_smooth (method = 'loess', span = 0.1)+
-  #geom_line(aes(date, HNF2_5um_Micro), color = '#69BFAE')+
-  #geom_line(aes(date, HNF_5um_Micro), color = '#4E8AC7')+
-  # geom_line(aes(date, high_vlp), color = '#988B99')+
   scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0)
   )+
   theme_bw()+
@@ -159,7 +155,7 @@ m_vir_tb |>
   geom_point()
 
 m_vir_tb |> 
-  ggplot(aes(total_vlp, HNF_Micro)) +
+  ggplot(aes(log10(total_vlp), log10(HNF_Micro))) +
   geom_point() +
   geom_smooth(method = 'lm', se = TRUE) +
   stat_poly_eq(
@@ -171,7 +167,9 @@ m_vir_tb |>
 
 ## we also have some data for the radiometer even though it has been broken for a period -----
 ### radiometer units llum (µE m-2 s-1)
-library(readxl)
+m_bbmo_10y_ed <- m_bbmo_10y |>
+  separate(sample_id, into = c('sample_id_sim', 'fraction', 'code'), sep = '_') |>
+  dplyr::filter(fraction == '0.2') 
 
 radiometer_data <- read_xlsx('data/raw/llum_Blanes_2005-14_ed.xlsx') |>
   mutate_all(~str_replace_all(., '/', 'NA')) |>
@@ -182,33 +180,21 @@ radiometer_data <- read_xlsx('data/raw/llum_Blanes_2005-14_ed.xlsx') |>
 
 radiometer_data$sample_id
 
-m_bbmo_10y_ed <- m_bbmo_10y |>
- separate(sample_id, into = c('sample_id_sim', 'fraction', 'code'), sep = '_') |>
-  dplyr::filter(fraction == '0.2')
-
 m_bbmo_10y_ed$samname
 
 radiometer_data |>
   dplyr::filter(prof == '0') |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
   ggplot(aes(date, light))+
-  geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
-                                                    ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
-  geom_point(alpha = 0.6, 1/2)+
+  geom_col(alpha = 0.6)+
   geom_line()+
   labs(x = 'Time', y = 'Light')+
-  facet_grid(vars(environmental_variable), scales = 'free_y', cols = vars(type_of_env), drop = T)+
-  scale_y_continuous(labels = function(x) sprintf("%.1f", x),
-                     expand = c(0,0))+
   scale_x_datetime(expand = c(0,0))+
   theme_bw()+
   theme(panel.grid.minor.y = element_blank(), 
         strip.background = element_blank(), 
         axis.text.y = element_text(size = 5),
         panel.grid.major.y = element_blank())
-
-radiometer_data |>
-  colnames()
 
 radiometer_data |>
   dplyr::mutate(date = as.POSIXct(date, format = "%Y-%m-%d"),
@@ -219,11 +205,10 @@ radiometer_data |>
   geom_tile(aes(fill = light))+
   scale_y_reverse()+
   labs(x = 'Month', y = 'Depth (m)', fill = 'Light')+
-  facet_wrap(vars(year))+
+  facet_wrap(vars(year), ncol = 1)+
   scale_fill_viridis_c(option = "magma")+
   theme_light()+
   theme(panel.grid.major.y = element_blank())
-harbour_restoration
 
 radiometer_data_mean <- radiometer_data |>
   dplyr::mutate(prof = as.numeric(prof)) |>
@@ -361,7 +346,6 @@ bbmo_env_02_seas |>
   scale_x_discrete(labels = labs_season)+
   theme_light()+
   theme(text = element_text(size = 12), strip.text.x = element_blank())
-
 
 ### The restoration of the Blanes harbor strated on 24th March 2010 and finished on the 9th of june 2012----
 harbour_restoration <- tibble(xmin = '2010-03-24', xmax = '2012-06-09') |>

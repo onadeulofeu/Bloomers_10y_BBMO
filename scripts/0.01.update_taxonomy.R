@@ -121,7 +121,7 @@ differences_new_tax_dada2_decipher <- new_tax_assign |>
                 genus_dif = (Genus == genus)) |>
   summary()
 
-## Conclusions: after phylum there's FALSE assignation between both strategies and appear NAs. Let's explore the unclassifieds at the different taxonomic
+## Conclusions: after phylum there's FALSE assignation between both strategies and appear NAs. Let's explore the unclassified at the different taxonomic
 ## levels.
 tax_bbmo_10y_new_assign <- tax_bbmo_10y_old |>
   dplyr::select(asv_num, seq) |>
