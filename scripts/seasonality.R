@@ -2951,8 +2951,7 @@ wavelets_variance <-  wavelets_result_ed_tibble_tax_3_biased_red |>
  #        path = 'results/figures/',
  #        width = 188, height = 150, units = 'mm')
  
- 
- 
+
  
  # -------------------------- #### APPLY CONTINUOUS WAVELET TRANSFORMATION #### ------------------------------------
  library(WaveletComp) ## Periodic phenomena of a single time series can be analyzed with function analyze.wavelet.

@@ -822,8 +822,7 @@ bloo_all_types_summary_ed_02 |>
 # # Print a message indicating the file has been written
 # cat("FASTA file '", output_file, "' has been created.\n")
 
-## Is being a bloomer a phylogenetic related trait? ----
-
+## ---- Is being a bloomer a phylogenetic related trait? --------------------------------
 ## we compute a phylogenetic tree with all taxa present in the BBMO during those 10-Y
 
 ### upload data 
@@ -855,22 +854,39 @@ metadata <- bloo_02 |>
   bind_rows(bloo_3) |>
   dplyr::mutate(fraction = case_when(is.na(fraction)~ '3',
                                      !is.na(fraction) ~ fraction)) |>
-  group_by(value) |>
+  group_by(asv_num) |>
   dplyr::mutate(detect = n()) |>
   dplyr::mutate(detect_both = case_when(detect == '2' ~ 'both',
                                         detect == '1' ~ fraction)) |>
-  group_by( value) |>
-  dplyr::select(detect_both, value) |>
+  group_by(asv_num) |>
+  dplyr::select(detect_both, asv_num) |>
   distinct() |>
-  rename(asv_num = value) |>
   left_join(tax)
 
 metadata <- tax_bbmo_10y_new
+
+bloo_taxonomy <- bloo_all_types_summary_tax |>
+  dplyr::distinct(asv_num, phylum, class, order, family, fraction)
 
 merged_data <- merge(as_tibble_col(tree_complete$tip.label, column_name = 'asv_num'), metadata, by = "asv_num") |>
   dplyr::mutate(family_num = paste0(family,' ', asv_num)) |>
   dplyr::mutate(bloomer = case_when(asv_num %in% bloo_taxonomy$asv_num ~ 'bloomer',
                 !asv_num %in% bloo_taxonomy$asv_num ~ 'no_bloomer'))
+
+# llista de tips a eliminar
+tips_to_drop <- merged_data %>%
+  dplyr::filter(is.na(domain) |
+                  is.na(order)) %>%
+  pull(asv_num)
+
+# arbre filtrat
+tree_filtered <- drop.tip(tree_complete, tips_to_drop)
+
+tree_filtered <- drop.tip(tree_filtered,
+                          setdiff(tree_filtered$tip.label, merged_data_filtered$asv_num))
+# també filtrar la taula
+merged_data_filtered <- merged_data %>%
+  dplyr::filter(!(asv_num %in% tips_to_drop))
 
  ## prepare the data if they are blooming on the FL or the PA fraction
  detect_both <- merged_data |>
@@ -902,6 +918,17 @@ merged_data <- merge(as_tibble_col(tree_complete$tip.label, column_name = 'asv_n
               0.3, 0.4, 0.3)
  labdf <- data.frame(node=nodeids, label=nodelab, pos=poslist)
  
+ ##filtered tree
+ nodeids <- nodeid(tree_filtered, tree_filtered$node.label[nchar(tree_filtered$node.label)>4])
+ nodedf <- data.frame(node=nodeids)
+ nodelab <- gsub("[\\.0-9]", "", tree_filtered$node.label[nchar(tree_filtered$node.label)>4])
+ 
+ # The layers of clade and hightlight
+ poslist <- c(1.6, 1.4, 1.6, 0.8, 0.1, 0.25, 1.6, 1.6, 1.2, 0.4,
+              1.2, 1.8, 0.3, 0.8, 0.4, 0.3, 0.4, 0.4, 0.4, 0.6,
+              0.3, 0.4, 0.3)
+ labdf <- data.frame(node=nodeids, label=nodelab, pos=poslist)
+ 
  palette_order_assigned_bloo <-  c("SAR11 clade" =      "#ca6094",
                                    "Rhodospirillales"  = '#FFA180', 
                                    "Sphingomonadales"  = '#8C000A', 
@@ -919,24 +946,60 @@ merged_data <- merge(as_tibble_col(tree_complete$tip.label, column_name = 'asv_n
                                    "Enterobacterales" = "#f1c510",
                                    'Thiotrichales' =  "#000000")
  
- palette_bloomer <- c('bloomer' =  '#e3a6ce',
-                      'no_bloomer' = '#ffffff')
+ merged_data_filtered$bloomer <- ifelse(
+   is.na(merged_data_filtered$bloomer),
+   "no_bloomer",
+   merged_data_filtered$bloomer
+ )
  
- ggtree(tree_complete, layout="fan", size=0.05, open.angle=1) %<+% 
-   merged_data +
-   geom_tree(aes(color = order)) + #aes(color=class)
-   scale_color_manual(values = palette_order_assigned_bloo) +
+ palette_bloomer <- c('bloomer' =  '#e3a6ce',
+                      'no_bloomer' = '#ffffff',
+                      'NA' = '#ffffff')
+ 
+ palette_bloomer_points <- c(
+   "bloomer" = "#e3a6ce"
+ )
+ 
+ merged_data_filtered |>
+   group_by(bloomer) |>
+   dplyr::reframe(n = n())
+ 
+ tree_data <- ggtree::fortify(tree_filtered)
+ tips <- tree_data[tree_data$isTip, c("label","node","x","y","angle")]
+ 
+ merged_data_filtered2 <- merged_data_filtered |>
+   dplyr::left_join(tips, by = c("asv_num" = "label", 'node'))
+ 
+ bloom_trait_tree <-  ggtree(tree_filtered, layout="fan", size=0.08, open.angle=1) %<+% 
+   merged_data_filtered +
+   #geom_tree(aes(color = order)) + #aes(color=class)
+   #scale_color_manual(values = palette_order_assigned_bloo) +
+   #scale_fill_manual(values = palette_order_assigned_bloo) +
    #geom_tiplab(aes(), size=2.5, align=T) + 
-   #geom_tippoint(aes(color=bloomer), alpha = 1, size = 1 )+
-   labs(color = 'Order') +
+   #geom_tippoint(aes(color=bloomer), alpha = 1, size = 1)+
+   labs(color = 'Bloom', color = 'Order') +
+   geom_tiplab(
+     aes(label = ifelse(bloomer == "bloomer", asv_num, "")),
+     size = 2.5,
+     align = TRUE,
+     offset = 0.4
+   )+
+  geom_fruit(
+    geom = geom_point,
+    mapping = aes(color = bloomer),
+    size = 1,          # bigger if needed
+    offset = 0.05,      # distance away from tips (increase to push further)
+    pwidth = 0.1       # width of the external panel
+  ) +
    geom_fruit(
      geom = geom_tile,
-     aes(fill = bloomer),
+     aes(fill = order),
      color = NA,
-     offset = 0.01,
-     width = 1
+     offset = 0.02,
+     width = 0.1
    ) +
-   scale_fill_manual(values = palette_bloomer) +
+   scale_fill_manual(values =  palette_order_assigned_bloo, na.value = NA) +
+   scale_color_manual(values = palette_bloomer_points, na.value = NA) +
    #theme_tree2()+
    theme(
      legend.position = "right",
@@ -952,6 +1015,10 @@ merged_data <- merge(as_tibble_col(tree_complete$tip.label, column_name = 'asv_n
      legend.text = element_text(size = 5)
    ) +
    scale_alpha_continuous(range = c(0, 0.7), guide = 'none')
+
+bloom_trait_tree
+
+ggsave(bloom_trait_tree, path='../../Thesis/figures_presentation/chapter_I/' , file = 'bloom_trait_tree.pdf', width = 220, height = 188, units = 'mm')
  
  # Assume merged_data has a column named 'order' which contains the order information
  unique(bloo_taxonomy$order_f) 
@@ -971,6 +1038,12 @@ merged_data <- merge(as_tibble_col(tree_complete$tip.label, column_name = 'asv_n
    subset_data +
    geom_tree() +  # Color branches by 'bloomer'
    scale_color_manual(values = palette_bloomer) +
+   geom_tiplab(
+     aes(label = ifelse(bloomer == "bloomer", asv_num, ""), angle = angle),
+     size = 2.5,
+     align = TRUE,
+     offset = 0.4
+   )+
    geom_fruit(
      geom = geom_tile,
      aes(fill = bloomer),
@@ -995,27 +1068,32 @@ merged_data <- merge(as_tibble_col(tree_complete$tip.label, column_name = 'asv_n
    ) +
    scale_alpha_continuous(range = c(0, 0.7), guide = 'none')  # Make points transparent where family_num is NA
  
- ## i try to loop
- unique_orders <- unique(bloo_taxonomy$order_f)  
- 
- palette_bloomer <- c('bloomer' =  '#e3a6ce',
-                      'no_bloomer' = '#ffffff')
- 
- # Loop over each unique order
+## loop
+
  for (desired_order in unique_orders) {
-   # Subset the data to include only the desired order
-   subset_data <- merged_data |>
+   # Subset metadata
+   subset_data <- merged_data %>%
      filter(order == desired_order & !is.na(order))
    
-   # Subset the tree based on the tips that belong to the desired order
-   subset_tree <- keep.tip(tree_complete, subset_data$asv_num)
+   # Only keep tips that exist in the tree
+   subset_tips <- intersect(subset_data$asv_num, tree_complete$tip.label)
+   subset_data <- subset_data %>% filter(asv_num %in% subset_tips)
+   subset_data$tip_name <- subset_data$asv_num
    
+   # Subset the tree
+   subset_tree <- keep.tip(tree_complete, subset_tips)
    
-   # Plot the subsetted tree
-   plot <-  ggtree(subset_tree, layout="fan", size=0.05, open.angle=1) %<+%
+   # Plot
+   plot <- ggtree(subset_tree, layout="fan", size=0.05, open.angle=1) %<+%
      subset_data +
-     geom_tree() +  # Color branches by 'bloomer'
+     geom_tree() +
      scale_color_manual(values = palette_bloomer) +
+     geom_tiplab(
+       aes(label = ifelse(bloomer == "bloomer", tip_name, "")),
+       size = 2.5,
+       align = TRUE,
+       offset = 0.4
+     ) +
      geom_fruit(
        geom = geom_tile,
        aes(fill = bloomer),
@@ -1027,8 +1105,8 @@ merged_data <- merge(as_tibble_col(tree_complete$tip.label, column_name = 'asv_n
      labs(color = 'Order', fill = 'Bloomer Status') +
      theme(
        legend.position = "right",
-       panel.grid.major = element_blank(),  # Remove major grid lines
-       panel.grid.minor = element_blank(),  # Remove minor grid lines
+       panel.grid.major = element_blank(),
+       panel.grid.minor = element_blank(),
        axis.text.x = element_blank(),
        axis.text.y = element_blank(),
        axis.line.x = element_blank(),
@@ -1040,10 +1118,12 @@ merged_data <- merge(as_tibble_col(tree_complete$tip.label, column_name = 'asv_n
      ) +
      scale_alpha_continuous(range = c(0, 0.7), guide = 'none')
    
-   # Save or print the plot
-   ggsave(paste0(desired_order, "_tree_plot.png"), plot, width = 10, height = 8)
+   ggsave(paste0(desired_order, "_tree_plot_v2.png"), plot, width = 10, height = 8)
  }
-
+ 
+ subset_data |>
+   head()
+ 
 ## There are too much taxa in the tree I will filter to plot only those orders that have the potential to bloom in our dataset-----
  library(ggtreeExtra)
  library(ggtree)
@@ -1144,7 +1224,7 @@ ggsave(paste0(tree_plot_complete, "_tree_plot.png"), tree_plot_complete, width =
  
 ### Hypothesis 2: more close phylogenetic taxa in the community leads to less blooms (for each taxa) -----
 
-#### calculate phylogenetic distance form a tree----
+#### calculate phylogenetic distance form a tree ----
 # Example of calculating distances between taxa in a phylogenetic tree
 # Replace 'tree' with your actual phylogenetic tree object
 
@@ -1190,7 +1270,7 @@ asv_num_close <- phylogenetic_distances_tb |>
   dplyr::select(asv_num_2)
 
 closely_phylogenetically_related_example1 <- asv_tab_all_bloo_z_tax |>
-  dplyr::filter(asv_num_f %in% asv_num_close$asv_num_2) |>
+  dplyr::filter(asv_num %in% asv_num_close$asv_num_2) |>
   dplyr::filter(abundance_type == 'relative_abundance') |>
   ggplot(aes(date, abundance_value))+
   #geom_point(aes(shape = asv_num_f))+
@@ -1272,8 +1352,8 @@ close_groups <- phylogenetic_distances_tb |>
   dplyr::filter(!asv_num_1 %in% c('asv2', 'asv3', 'asv5', 'asv8')) |>
   dplyr::filter(!asv_num_2 %in% c('asv2', 'asv3', 'asv5', 'asv8')) |>
   dplyr::filter(phylogenetic_distance < 0.012) |>
-  dplyr::filter(asv_num_1 %in% bloo_all_types_summary_tb_tax$asv_num &
-                  asv_num_2 %in% bloo_all_types_summary_tb_tax$asv_num) |>
+  dplyr::filter(asv_num_1 %in% bloo_all_types_summary_tax$asv_num &
+                  asv_num_2 %in% bloo_all_types_summary_tax$asv_num) |>
   dplyr::filter(asv_num_1 != asv_num_2) |>
   dplyr::mutate(close_group = paste0(asv_num_1, '.', asv_num_2)) |>
   dplyr::filter(asv_num_1 %in% c('asv17', 'asv264', 'asv49', 'asv7', 'asv4')) |>
@@ -6490,7 +6570,7 @@ tax |>
 #   theme_ridges(center_axis_labels = T)
   
 family.hamm <- tax %>% 
-  dplyr::filter(family %in% unique(bloo_taxonomy$family_f)) |>
+  dplyr::filter(family %in% unique(bloo_taxonomy$family)) |>
   group_by(family) %>% 
   summarise(n = n()) %>% 
   filter( n > 1) %>% 
@@ -6506,7 +6586,6 @@ hammdist.all |>
   names() ## 13
  
 ## calculate p-distance and filter for those that have a closely related bloomer ----
-
 tax <- asv_tab_all_bloo_z_tax |>
   dplyr::distinct(asv_num, order_f, family_f, class_f, seq)
 
@@ -6535,8 +6614,9 @@ closely_related_bloomers_vs_bloo  <- hammdist.all %>%
   distinct(asv_num.x, p_distance, asv_num.y) |>
   dplyr::select(asv_num = asv_num.x, p_distance, asv_num.y) |>
   left_join(tax_bbmo_10y_new) |>
-  dplyr::filter(asv_num %in% bloo_taxonomy$asv_num_f) |> # I remove those that were anlyzed before 
-  dplyr::filter(asv_num.y %in% bloo_taxonomy$asv_num_f)
+  dplyr::filter(asv_num %in% bloo_taxonomy$asv_num) |> # I remove those that were anlyzed before 
+  left_join(tax_bbmo_10y_new, by = c('asv_num.y' = 'asv_num')) |>
+  dplyr::filter(asv_num.y %in% bloo_taxonomy$asv_num)
   
 ## 
 closely_related_families <- closely_related_bloomers |>
@@ -9238,3 +9318,329 @@ closely_related_groups_plot
 # ggsave('closely_related_groups_plot_ed1.pdf', plot = closely_related_groups_plot,
 #        path = 'Results/Figures/',
 #        width = 180, height = 380, units = 'mm')
+
+
+### ----- # ----- CARMEN ANALYSIS COMPARE BLOOMERS PHYLOGENETIC RELATIONSHIP AND NON-BLOOMERS BOXPLOT -----
+
+### upload data 
+tree_complete <- ggtree::read.tree('data/raxml/complete_tree_cesga/bbmo.raxml.support')
+
+## plot the tree
+tree_complete |>
+  ggplot() + 
+  geom_tree(layout = 'circular')+
+  theme_tree2() +
+  # #geom_treescale()+
+  geom_tiplab(align = T)
+#geom_tippoint()
+
+ggtree(tree_complete, layout="circular")
+
+#prepare the information
+tax <- tax_bbmo_10y_new |>
+  dplyr::select(asv_num, phylum, class, order, family, genus) |>
+  distinct()
+
+metadata <- bloo_02 |>
+  dplyr::mutate(fraction = '0.2') |>
+  bind_rows(bloo_3) |>
+  dplyr::mutate(fraction = case_when(is.na(fraction)~ '3',
+                                     !is.na(fraction) ~ fraction)) |>
+  group_by(asv_num) |>
+  dplyr::mutate(detect = n()) |>
+  dplyr::mutate(detect_both = case_when(detect == '2' ~ 'both',
+                                        detect == '1' ~ fraction)) |>
+  group_by(asv_num) |>
+  dplyr::select(detect_both, asv_num) |>
+  distinct() |>
+  left_join(tax)
+
+metadata <- tax_bbmo_10y_new
+
+bloo_taxonomy <- bloo_all_types_summary_tax |>
+  dplyr::distinct(asv_num, phylum, class, order, family, fraction)
+
+merged_data <- merge(as_tibble_col(tree_complete$tip.label, column_name = 'asv_num'), metadata, by = "asv_num") |>
+  dplyr::mutate(family_num = paste0(family,' ', asv_num)) |>
+  dplyr::mutate(bloomer = case_when(asv_num %in% bloo_taxonomy$asv_num ~ 'bloomer',
+                                    !asv_num %in% bloo_taxonomy$asv_num ~ 'no_bloomer'))
+
+# llista de tips a eliminar
+tips_to_drop <- merged_data %>%
+  dplyr::filter(is.na(domain) |
+                  is.na(order)) %>%
+  pull(asv_num)
+
+# arbre filtrat
+tree_filtered <- drop.tip(tree_complete, tips_to_drop)
+
+tree_filtered <- drop.tip(tree_filtered,
+                          setdiff(tree_filtered$tip.label, merged_data_filtered$asv_num))
+# també filtrar la taula
+merged_data_filtered <- merged_data %>%
+  dplyr::filter(!(asv_num %in% tips_to_drop))
+
+### select those families with closely phylogenetically related bloomers -----
+morethan2 <- bloo_taxonomy |>
+  distinct(asv_num, family) |>  
+ dplyr::group_by(family) |>
+  dplyr::reframe(n = n()) |>
+  dplyr::filter(n>2)
+
+tips_to_drop <- merged_data %>%
+  dplyr::filter(!family %in% morethan2$family) %>%
+  pull(asv_num)
+
+tree_filtered_c <- drop.tip(tree_filtered, tips_to_drop)
+
+tree_filtered_c <- drop.tip(tree_filtered_c,
+                          setdiff(tree_filtered_c$tip.label, merged_data_filtered$asv_num))
+
+setdiff(tree_filtered$tip.label, merged_data_filtered$asv_num)
+
+# també filtrar la taula
+merged_data_filtered_c <- merged_data_filtered %>%
+  dplyr::filter(!(asv_num %in% tips_to_drop))
+
+### calculate distances between bloomers and non-blooomers -----
+pairwise_dist_f_c <- cophenetic(tree_filtered_c)
+
+row_names_tb <- pairwise_dist_f_c |>
+  rownames() |>
+  as_tibble_col(column_name = 'asv_num_1')
+
+phylogenetic_distances_tb_com <- pairwise_dist_f_c |>
+  as_tibble() |>
+  bind_cols(row_names_tb) |>
+  #rownames_to_column(var = 'rows_asv_num') |>
+  pivot_longer(cols = -c('asv_num_1'), values_to = 'phylogenetic_distance', names_to = 'asv_num_2')
+
+phylogenetic_distances_tb_com_bloo <- phylogenetic_distances_tb_com |>
+  dplyr::filter(asv_num_1 != asv_num_2) |>
+  left_join(tax, by = c('asv_num_1' = 'asv_num')) |>
+  left_join(tax, by = c('asv_num_2' = 'asv_num'), suffix = c('_1', '_2')) |>
+  dplyr::mutate(bloomer_1 = case_when(
+                                    asv_num_1 %in% c(bloo_taxonomy$asv_num) ~ 'bloomer',
+                                    !asv_num_1 %in% c(bloo_taxonomy$asv_num) ~ 'no-bloomer')) |>
+  dplyr::mutate(bloomer_2 = case_when(
+                                      asv_num_2 %in% c(bloo_taxonomy$asv_num) ~ 'bloomer',
+                                      !asv_num_2 %in% c(bloo_taxonomy$asv_num) ~ 'no-bloomer'))
+
+distance_bloomers_phylo <- phylogenetic_distances_tb_com_bloo |>
+  dplyr::filter(asv_num_1 != asv_num_2) |>
+  dplyr::filter(bloomer_1 == 'bloomer' & bloomer_2 == 'bloomer' & family_1 == family_2 ) |>
+  dplyr::mutate(relationship = 'bloomers')
+
+distance_nobloomers_phylo <- phylogenetic_distances_tb_com_bloo |>
+  dplyr::filter(asv_num_1 != asv_num_2) |>
+  dplyr::filter(!bloomer_1 == 'bloomer' & bloomer_2 == 'bloomer' & family_1 == family_2 ) |>
+  dplyr::mutate(relationship = 'nobloomers-bloomers')
+
+distance_family_phylo <- phylogenetic_distances_tb_com_bloo |>
+  dplyr::filter(asv_num_1 != asv_num_2) |>
+  dplyr::filter( family_1 == family_2 ) |>
+  dplyr::mutate(relationship = 'family')
+
+distances_bloomers <- distance_bloomers_phylo |>
+  bind_rows(distance_nobloomers_phylo) #|>
+  #bind_rows(distance_family_phylo) 
+
+distances_bloomers$relationship <- distances_bloomers$relationship |>
+  factor( levels = c('family', 'nobloomers-bloomers', 'bloomers'), 
+                             labels = c('Family', 'No Bloomers\nBloomers', 'Bloomers'))
+
+distances_bloomers <- distances_bloomers |>
+  dplyr::mutate(phylum_f = as_factor(phylum_1),
+                family_f = as_factor(family_1),
+                order_f = as_factor(order_1),
+                class_f = as_factor(class_1),
+                asv_num_f = as_factor(asv_num_1))
+
+distances_bloomers$class_f <-  factor(distances_bloomers$class_f, 
+                        levels=unique(distances_bloomers$class_f[order(distances_bloomers$phylum_f)]), 
+                        ordered=TRUE)
+
+distances_bloomers$order_f <-  factor(distances_bloomers$order_f, 
+                        levels=unique(distances_bloomers$order_f[order(distances_bloomers$phylum_f,
+                                                         distances_bloomers$class_f)]), 
+                        ordered=TRUE)
+
+distances_bloomers$family_f <-  factor(distances_bloomers$family_f, 
+                         levels=unique(distances_bloomers$family_f[order(distances_bloomers$phylum_f,
+                                                           distances_bloomers$class_f,
+                                                           distances_bloomers$order_f)]), 
+                         ordered=TRUE)
+
+
+distance_phylo_bloomers_plot <- distances_bloomers |>
+  dplyr::filter(asv_num_1 != asv_num_2) |>
+  ggplot(aes(relationship, phylogenetic_distance))+
+  geom_point(position = position_jitter(width = 0.05), size = 0.01, alpha = 0.1)+
+  facet_wrap(vars(interaction(order_f,family_f)), scales = 'free')+
+  #geom_violin(alpha = 0.0, draw_quantiles = c(0.25, 0.75), aes(fill = order_1))+
+  geom_boxplot(alpha = 0.8, notch = T, aes(fill = order_1), outliers = F)+
+  # stat_summary(fun = "mean", geom = "crossbar", 
+  #              width = 0.2, colour = "black")+
+  scale_fill_manual(values = palette_order_assigned_bloo)+
+  labs(y = 'Pairwise Phylogenetic Distance', x = 'Groups', fill = 'Order')+
+  theme_bw()+
+  theme(strip.background = element_rect(fill = 'white'), 
+        panel.grid.minor =  element_blank(),
+        aspect.ratio = 6/10,
+        axis.ticks.length.y =  unit(0.2, "mm"),
+        legend.text = element_text(size = 5))
+
+distance_phylo_bloomers_plot
+
+# ggsave(
+#   plot = distance_phylo_bloomers_plot ,
+#   filename = 'distance_phylo_bloomers_plot_v3.pdf',
+#   path = 'results/figures/main_sup_df7/',
+#   width = 140,
+#   height = 140,
+#   units = 'mm'
+# )
+
+## add stats -----
+distances_bloomers$relationship
+kruskal.test(phylogenetic_distance ~ relationship,
+             data = distances_bloomers)
+
+pairwise.wilcox.test(distances_bloomers$phylogenetic_distance,
+                     distances_bloomers$relationship,
+                     p.adjust.method = "BH")
+
+library(rstatix)
+
+pairwise_by_family <- distances_bloomers %>%
+  group_by(family_1) %>%
+  pairwise_wilcox_test(
+    phylogenetic_distance ~ relationship,
+    p.adjust.method = "BH"
+  )
+
+## phylogenetic distance at the phyla level ---------
+
+### select those families with closely phylogenetically related bloomers -----
+morethan2 <- bloo_taxonomy |>
+  distinct(asv_num, phylum) |>  
+  dplyr::group_by(phylum) |>
+  dplyr::reframe(n = n()) |>
+  dplyr::filter(n>2)
+
+tips_to_drop <- merged_data %>%
+  dplyr::filter(!phylum %in% morethan2$phylum) %>%
+  pull(asv_num)
+
+tree_filtered_c <- drop.tip(tree_filtered, tips_to_drop)
+
+tree_filtered_c <- drop.tip(tree_filtered_c,
+                            setdiff(tree_filtered_c$tip.label, merged_data_filtered$asv_num))
+
+setdiff(tree_filtered$tip.label, merged_data_filtered$asv_num)
+
+# també filtrar la taula
+merged_data_filtered_c <- merged_data_filtered %>%
+  dplyr::filter(!(asv_num %in% tips_to_drop))
+
+### calculate distances between bloomers and non-blooomers -----
+pairwise_dist_f_c <- cophenetic(tree_filtered_c)
+
+row_names_tb <- pairwise_dist_f_c |>
+  rownames() |>
+  as_tibble_col(column_name = 'asv_num_1')
+
+phylogenetic_distances_tb_com <- pairwise_dist_f_c |>
+  as_tibble() |>
+  bind_cols(row_names_tb) |>
+  #rownames_to_column(var = 'rows_asv_num') |>
+  pivot_longer(cols = -c('asv_num_1'), values_to = 'phylogenetic_distance', names_to = 'asv_num_2')
+
+phylogenetic_distances_tb_com_bloo <- phylogenetic_distances_tb_com |>
+  dplyr::filter(asv_num_1 != asv_num_2) |>
+  left_join(tax, by = c('asv_num_1' = 'asv_num')) |>
+  left_join(tax, by = c('asv_num_2' = 'asv_num'), suffix = c('_1', '_2')) |>
+  dplyr::mutate(bloomer_1 = case_when(
+    asv_num_1 %in% c(bloo_taxonomy$asv_num) ~ 'bloomer',
+    !asv_num_1 %in% c(bloo_taxonomy$asv_num) ~ 'no-bloomer')) |>
+  dplyr::mutate(bloomer_2 = case_when(
+    asv_num_2 %in% c(bloo_taxonomy$asv_num) ~ 'bloomer',
+    !asv_num_2 %in% c(bloo_taxonomy$asv_num) ~ 'no-bloomer'))
+
+distance_bloomers_phylo <- phylogenetic_distances_tb_com_bloo |>
+  dplyr::filter(asv_num_1 != asv_num_2) |>
+  dplyr::filter(bloomer_1 == 'bloomer' & bloomer_2 == 'bloomer' & phylum_1 == phylum_2 ) |>
+  dplyr::mutate(relationship = 'bloomers')
+
+distance_nobloomers_phylo <- phylogenetic_distances_tb_com_bloo |>
+  dplyr::filter(asv_num_1 != asv_num_2) |>
+  dplyr::filter(!bloomer_1 == 'bloomer' & bloomer_2 == 'bloomer' & phylum_1 == phylum_2 ) |>
+  dplyr::mutate(relationship = 'nobloomers-bloomers')
+
+distance_phylum_phylo <- phylogenetic_distances_tb_com_bloo |>
+  dplyr::filter(asv_num_1 != asv_num_2) |>
+  dplyr::filter( phylum_1 == phylum_2 ) |>
+  dplyr::mutate(relationship = 'phylum')
+
+distances_bloomers <- distance_bloomers_phylo |>
+  bind_rows(distance_nobloomers_phylo) |>
+  bind_rows(distance_phylum_phylo) 
+
+distances_bloomers$relationship <- distances_bloomers$relationship |>
+  factor( levels = c('phylum', 'nobloomers-bloomers', 'bloomers'), 
+          labels = c('Phylum', 'No Bloomers\nBloomers', 'Bloomers'))
+
+distances_bloomers <- distances_bloomers |>
+  dplyr::mutate(phylum_f = as_factor(phylum_1),
+                family_f = as_factor(family_1),
+                order_f = as_factor(order_1),
+                class_f = as_factor(class_1),
+                asv_num_f = as_factor(asv_num_1))
+
+distances_bloomers$class_f <-  factor(distances_bloomers$class_f, 
+                                      levels=unique(distances_bloomers$class_f[order(distances_bloomers$phylum_f)]), 
+                                      ordered=TRUE)
+
+distances_bloomers |>
+  dplyr::filter(asv_num_1 != asv_num_2) |>
+  ggplot(aes(relationship, phylogenetic_distance))+
+  #geom_point(position = position_jitter(width = 0.05), size = 0.01)+
+  facet_wrap(vars(phylum_f))+
+  geom_boxplot(alpha = 0.8, notch = T, aes(fill = phylum_1), outliers = F)+
+  scale_fill_manual(values = palette_phylums_assigned_bloo)+
+  labs(y = 'Phylogenetic Distance', x = 'Distance Between', fill = 'phylum')+
+  theme_bw()+
+  theme(strip.background = element_rect(fill = 'white'), 
+        panel.grid.minor =  element_blank(),
+        aspect.ratio = 4/4,
+        axis.ticks.length.y =  unit(0.2, "mm"))
+
+distances_bloomers |>
+  dplyr::filter(asv_num_1 != asv_num_2) |>
+  ggplot(aes(relationship, phylogenetic_distance))+
+  #geom_point(position = position_jitter(width = 0.05), size = 0.01)+
+  #facet_wrap(vars(phylum_f))+
+  geom_boxplot(alpha = 0.8, notch = T,  outliers = F)+
+  scale_fill_manual(values = palette_phylums_assigned_bloo)+
+  labs(y = 'Phylogenetic Distance', x = 'Distance Between', fill = 'phylum')+
+  theme_bw()+
+  theme(strip.background = element_rect(fill = 'white'), 
+        panel.grid.minor =  element_blank(),
+        aspect.ratio = 4/4,
+        axis.ticks.length.y =  unit(0.2, "mm"))
+
+## add stats -----
+distances_bloomers$relationship
+kruskal.test(phylogenetic_distance ~ relationship,
+             data = distances_bloomers)
+
+pairwise.wilcox.test(distances_bloomers$phylogenetic_distance,
+                     distances_bloomers$relationship,
+                     p.adjust.method = "BH")
+
+pairwise_by_phylum <- distances_bloomers %>%
+  group_by(phylum_1) %>%
+  pairwise_wilcox_test(
+    phylogenetic_distance ~ relationship,
+    p.adjust.method = "BH"
+  )

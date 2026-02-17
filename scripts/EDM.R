@@ -512,7 +512,7 @@ asv_tab_bbmo_10y_rel_occ_filt_inter_noseas <- asv_tab_bbmo_10y_rel_occ_filt_inte
 
 #write.csv(asv_tab_bbmo_10y_rel_occ_filt_inter_noseas, file = '../EDM_carmen/asv_tab_bbmo_10y_rel_occ_filt_inter_noseas.csv')
 
-# Create a table with presence absence of each ASV to not infiere relationships when an ASV is not there -----
+# Create a table with presence absence of each ASV to not interfiere relationships when an ASV is not there -----
 ## In this table 0 will indicate presence of an ASV and 1 absence!
 
 asv_tab_bbmo_10y_rclr_occ_filt_inter |>

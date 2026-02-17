@@ -47,8 +47,8 @@ palette_gradient <- c('#DBDBDB', "#BDBEBE","#545454",
 palette_gradient <- colorRampPalette(c('#DBDBDB', '#BDBEBE', '#545454', '#070607'))
 
 # labels ----
-labs_fraction <- as_labeller(c('0.2' = 'Free living (0.2-3 um)',
-                               '3' = 'Particle attached (3-20 um)'))
+labs_fraction <- as_labeller(c('0.2' = '0.2-3 µm',
+                               '3' = '3-20 µm'))
 
 labs_diversity <- as_labeller(c('community_eveness_rar' = 'Community Eveness', 
                                 'bray_curtis_result' = 'Bray-Curtis dissimilarity'))
@@ -467,7 +467,7 @@ bray_curtis_02_rar |>
                                                     ymin = -Inf, ymax = Inf), fill = '#94969E', alpha = 0.6)+
   geom_point(aes(shape = fraction, color = fraction))+
   geom_line(aes(date, bray_curtis_result, group = fraction, color = fraction))+
-  scale_color_manual(values= palette_fraction, labels = labs_fraction)+
+  #scale_color_manual(values= palette_fraction, labels = labs_fraction)+
   scale_x_datetime()+
   labs(x = 'Time', y = 'Bray Curtis Dissimilarity', color = 'Fraction')+
   guides(shape = 'none')+
@@ -497,7 +497,7 @@ community_eveness_all |>
   geom_point(aes(shape = fraction, color = fraction))+
   geom_line(aes(date, value, group = fraction, color = fraction))+
   facet_grid(vars(diversity_index), labeller = labs_diversity)+
-  scale_color_manual(values= palette_fraction, labels = labs_fraction)+
+  #scale_color_manual(values= palette_fraction, labels = labs_fraction)+
   scale_x_datetime(date_breaks = 'year', date_labels = '%Y')+
   geom_vline(xintercept = as.numeric(as.Date("2005-01-01")), color = '#000000')+
   labs(x = 'Time', y = 'Community diversity', color = 'Fraction')+
@@ -555,16 +555,16 @@ asv_anom_3 <- find_asv_with_anomalies(anomalies_result = z_3,
 ### I want to highlight anomalies for each ASV to do so I recover z-scores for those ASVs that that have high z-scores
 ### at some point of the dataset. Easy to observe if those ASVs are having random anomalies or all of them happen at the same time
 z_scores_02 <- asv_tab_10y_02_pseudo_rclr |>
-  group_by(asv_num) |>
+  dplyr::group_by(asv_num) |>
   dplyr::mutate(num_0 = sum(relative_abundance == 0)) |>
-  group_by(asv_num) |>
+  dplyr::group_by(asv_num) |>
   dplyr::reframe(z_score_ra = get_anomalies(time_lag = time_lag_value, negative = FALSE, 
                                             cutoff = cut_off_value_ra, 
                                             na_rm = TRUE, values = relative_abundance, 
-                                            plotting = FALSE)[c(3)]) |>
+                                            plotting = FALSE)[c(2)]) |>
   as_tibble() |>
   unnest(cols = z_score_ra) |>
-  group_by(asv_num) |>
+  dplyr::group_by(asv_num) |>
   dplyr::mutate(sample_id_num = str_c(1:nrow(m_02))) |>
   left_join(m_02, by = 'sample_id_num') 
 
@@ -575,7 +575,7 @@ z_scores_3 <- asv_tab_10y_3_pseudo_rclr |>
   dplyr::reframe(z_score_ra = get_anomalies(time_lag = time_lag_value, negative = FALSE, 
                                             cutoff = cut_off_value_ra, 
                                             na_rm = TRUE, values = relative_abundance, 
-                                            plotting = FALSE)[c(3)]) |>
+                                            plotting = FALSE)[c(2)]) |>
   as_tibble() |>
   unnest(cols = z_score_ra) |>
   dplyr::group_by(asv_num) |>
@@ -593,7 +593,7 @@ z_scores_02_rclr <- asv_tab_10y_02_pseudo_rclr |>
   dplyr::reframe(z_score_rclr = get_anomalies(time_lag = time_lag_value, negative = FALSE, 
                                               cutoff = cut_off_value_rclr, 
                                               na_rm = TRUE, values = rclr, 
-                                              plotting = FALSE)[c(3)]) |>
+                                              plotting = F)[c(2)]) |>
   as_tibble() |>
   unnest(cols = z_score_rclr) |>
   dplyr::group_by(asv_num) |>
@@ -606,7 +606,7 @@ z_scores_3_rclr <- asv_tab_10y_3_pseudo_rclr |>
   dplyr::group_by(asv_num) |>
   dplyr::reframe(z_score_rclr = get_anomalies(time_lag = time_lag_value, negative = FALSE, cutoff = cut_off_value_rclr, 
                                               na_rm = TRUE, values = rclr, 
-                                              plotting = FALSE)[c(3)]) |>
+                                              plotting = FALSE)[c(2)]) |>
   as_tibble() |>
   unnest(cols = z_score_rclr) |>
   dplyr::group_by(asv_num) |>
@@ -1092,7 +1092,7 @@ bray_curtis_3_rar <- dissimilarity_matrix(data = asv_tab_10y_3_rel_rar,
                                           sample_id_col = sample_id,
                                           values_cols_prefix = 'BL')
 
-### plot Bray-Curtis dissimilarity and Community Eveness together----
+### plot Bray-Curtis dissimilarity and Community Evenness together----
 community_eveness_all <- community_eveness_02 |>
   bind_rows(community_eveness_3)
 
@@ -2017,4 +2017,10 @@ residuals_3 <- grid.arrange(grobs = plots_list_3_2, ncol = 3)
 
 ggsave("results/figures/residuals_3.2_plot_geo_mean_v2.pdf", plot = residuals_3, width = 188, height = 240, units = "mm")
 
+
+# 
+bloo_02_tax <- bloo_02 |>
+  left_join(tax_bbmo_10y_new)
+
+write.csv(bloo_02_tax, '../../Thesis/data/bloo_02_10y.csv', row.names = F)
 

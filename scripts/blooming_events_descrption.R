@@ -155,14 +155,6 @@ labs_fraction <- as_labeller(c('0.2' = 'Free living (0.2-3 um)',
 labs_diversity <- as_labeller(c('community_eveness_rar' = 'Community Eveness', 
                                 'bray_curtis_result' = 'Bray-Curtis dissimilarity'))
 
-## Taxonomic differences between whole community and the blooming community-----
-
-
-
-
-
-
-
 ## Relationship blooming events and community evenness----
 ### Rarefied dataset to calculate Community Evenness----
 community_eveness_02 <- asv_tab_bbmo_10y_w_rar |>
@@ -1508,19 +1500,13 @@ m_02$date |>
   class()
 
 chla_plot <- m_02 |>
-  #dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d")))|>
-  #dplyr::filter(date %in% as.POSIXct(c("2004-01-01", "2014-01-01")) |>
-  # left_join(bloom_events) |>
-  # left_join(bloom_events_asvs) |>
   ggplot(aes(as.Date(date), chla_total))+
-  #geom_vline(xintercept = bloom_events$date, color = 'grey')+
   scale_y_continuous()+
   geom_smooth(method = 'loess', span = 0.1, color = 'black')+
   scale_x_date(
     date_breaks = 'year',
     date_labels = '%Y'
   )+
- #geom_line()+
  geom_smooth(data = m_02,
            aes(as.Date(date), chla_3um ), linetype = 2, method = 'loess', span = 0.09, color = 'black')+
   labs(x = 'Date', y = 'Chla-a')+

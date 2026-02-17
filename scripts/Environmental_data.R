@@ -159,7 +159,6 @@ plot_HNF_abund <- m_vir_tb |>
 
 plot_HNF_abund
 
-
 plot_grid(plot_virus_abund,
           plot_HNF_abund,
           cols = 1)
@@ -193,7 +192,6 @@ m_vir_tb |>
     method = "lm",
     parse = TRUE
   )
-
 
 ## we also have some data for the radiometer even though it has been broken for a period -----
 ### radiometer units llum (µE m-2 s-1)
@@ -387,7 +385,6 @@ bbmo_env_02_seas |>
   scale_x_discrete(labels = labs_season)+
   theme_light()+
   theme(text = element_text(size = 12), strip.text.x = element_blank())
-
 
 
 ### The restoration of the Blanes harbor strated on 24th March 2010 and finished on the 9th of june 2012----
@@ -3156,11 +3153,11 @@ wavelets_result_env_tibble_red_coeff_plot <- wavelets_result_env_tibble_red_coef
   
 wavelets_result_env_tibble_red_coeff_plot
 
-ggsave('wavelets_result_env_tibble_red_coeff.pdf', wavelets_result_env_tibble_red_coeff_plot,
-     path = "~/Documentos/Doctorat/BBMO/BBMO_bloomers/Results/Figures/wavelets_plots/",
-     width = 88,
-     height = 100,
-     units = 'mm')
+# ggsave('wavelets_result_env_tibble_red_coeff.pdf', wavelets_result_env_tibble_red_coeff_plot,
+#      path = "~/Documentos/Doctorat/BBMO/BBMO_bloomers/Results/Figures/wavelets_plots/",
+#      width = 88,
+#      height = 100,
+#      units = 'mm')
 
 ### environmental distance between samples ----
 ## Upload environmental to model with interpolated missing variables----
@@ -3264,7 +3261,6 @@ euclidean_distance_tb_bio |>
   geom_line()
 
 # plot euclidean distance phyiscochemical and biological ----
-
 euclidean_distance_tb_bio |>
   colnames()
 
@@ -3310,7 +3306,6 @@ eucl_plot <- euclidean_distance_tb_bio_phch |>
     axis.text = element_text(size = 5),
     # axis.text.x = element_text(size = 7), 
     panel.grid.major.y = element_blank(),
-    panel.border = element_blank(),
     strip.placement = 'outside', 
     plot.margin = margin(t = 5, l = 20, r = 20))
 
@@ -3597,7 +3592,181 @@ m_bbmo_10y |>
   distinct(date, bacteria_joint) |>
   dplyr::mutate(timeseries = 'BBMO') |>
   dplyr::group_by(timeseries) |>
-  dplyr::reframe(mean = mean(bacteria_joint), sd = sd(bacteria_joint)) |>
+  dplyr::reframe(mean = mean(bacteria_joint), sd = sd(bacteria_joint), se = sd(bacteria_joint)/sqrt(length(bacteria_joint))) |>
   dplyr::mutate(mean = scientific(mean), 
-                sd = scientific(sd))
+                sd = scientific(sd),
+                se = scientific(se),
+                cv = as.numeric(mean)/as.numeric(sd)*100)
 
+### euclidean distances community -------
+### we need env data in wider format
+asv_tab_10y_02_pseudo_rclr |>
+  colnames()
+
+tb_w <- asv_tab_10y_02_pseudo_rclr  |>
+  dplyr::ungroup() |>
+  dplyr::select(rclr, asv_num, sample_id) |>
+  dplyr::filter( str_detect(sample_id, '_0.2_')) |>
+  pivot_wider(values_from = rclr, names_from = asv_num)
+
+tb_w |>
+  dim()
+
+sample_num <- tb_w  |>
+  dplyr::mutate(sample_id_num = 1:nrow(tb_w))%$%
+  sample_id_num |>
+  as_tibble_col(column_name = 'sample_id_num')
+
+# Dissimilarity matrix
+distances_comm <- tb_w |>
+  dplyr::select(-sample_id) |>
+  stats::dist( method = "euclidean")
+
+distances_comm_tb <- distances_comm |>
+  as.matrix() |>
+  as_tibble() 
+
+euclidean_distance <- distances_comm_tb |>
+  bind_cols(sample_num) |>
+  pivot_longer(cols = -c('sample_id_num'), values_to = 'euclidean_distance', names_to = 'sample_num_2')
+
+m <- m_02 |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%d/%m/%y")))
+
+euclidean_distance_tb_02 <- euclidean_distance |>
+  dplyr::mutate(sample_distance = (as.numeric(sample_num_2) - as.numeric(sample_id_num))) |>
+  dplyr::filter(sample_distance == 1) |>
+  right_join(m, by = c( 'sample_num_2' = 'sample_id_num'))   |>
+  dplyr::mutate(fraction == '0.2')
+
+euclidean_distance_tb$season <- factor(euclidean_distance_tb$season, levels = c('winter', 'spring',
+                                                                                'summer', 'autumn'))
+
+euclidean_distance_plot <- euclidean_distance_tb |>  
+  ggplot(aes(date, euclidean_distance))+
+  geom_line()+
+  scale_y_continuous(expand = c(0,0))+
+  theme_bw()+
+  labs(y = 'Euclidean distance', x = 'Date')+
+  theme(legend.position = "right", panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 7), 
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 7),
+        axis.text.y = element_text(size = 8),
+        axis.title = element_text(size = 8), strip.background = element_blank(), 
+        legend.text = element_text(size = 7), legend.title = element_text(size = 8), strip.placement = 'outside',
+        aspect.ratio = 5/6.5)+
+  guides(shape = 'none',
+         color = guide_legend(ncol =1, size = 10,
+                              override.aes = aes(label = ''))) 
+
+euclidean_distance_plot
+
+#### 3-20 µm
+tb_w <- asv_tab_10y_3_pseudo_rclr  |>
+  dplyr::ungroup() |>
+  dplyr::select(rclr, asv_num, sample_id) |>
+  dplyr::filter( str_detect(sample_id, '_3_')) |>
+  pivot_wider(values_from = rclr, names_from = asv_num)
+
+tb_w |>
+  dim()
+
+sample_num <- tb_w  |>
+  dplyr::mutate(sample_id_num = 1:nrow(tb_w))%$%
+  sample_id_num |>
+  as_tibble_col(column_name = 'sample_id_num')
+
+# Dissimilarity matrix
+distances_comm <- tb_w |>
+  dplyr::select(-sample_id) |>
+  stats::dist( method = "euclidean")
+
+distances_comm_tb <- distances_comm |>
+  as.matrix() |>
+  as_tibble() 
+
+euclidean_distance <- distances_comm_tb |>
+  bind_cols(sample_num) |>
+  pivot_longer(cols = -c('sample_id_num'), values_to = 'euclidean_distance', names_to = 'sample_num_2')
+
+m <- m_3 |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%d/%m/%y")))
+
+euclidean_distance_tb_all <- euclidean_distance |>
+  dplyr::mutate(sample_distance = (as.numeric(sample_num_2) - as.numeric(sample_id_num))) |>
+  dplyr::filter(sample_distance == 1) |>
+  right_join(m, by = c( 'sample_num_2' = 'sample_id_num'))  |>
+  dplyr::mutate(fraction == '3') |>
+  bind_rows(euclidean_distance_tb_02)
+
+euclidean_distance_tb_all$season <- factor(euclidean_distance_tb_all$season, levels = c('winter', 'spring',
+                                                                                'summer', 'autumn'))
+
+euclidean_distance_plot <- euclidean_distance_tb_all |>  
+  ggplot(aes(date, euclidean_distance))+
+  geom_line(aes(date, group = fraction, color = fraction, linetype = fraction), linewidth = 0.75, alpha = 1)+ #, linetype = bray_curtis_type
+  scale_color_manual(values= palette_fraction_env, labels = labs_fraction_env)+ #, labels = labs_fraction
+  scale_linetype_manual( labels = labs_fraction_env, values = c('0.2' = 1, '3' = 2, 'env' = 1))+
+  scale_x_datetime(date_breaks = 'year', date_labels = '%Y')+
+  geom_line(data = euclidean_distance_tb_all |>
+              dplyr::filter(fraction == '3'), aes(date, euclidean_distance), alpha = 0.3)+
+  scale_y_continuous(expand = c(0,0))+
+  theme_bw()+
+  labs(y = 'Euclidean distance', x = 'Date')+
+  theme(legend.position = "right", panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 7), 
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 7),
+        axis.text.y = element_text(size = 8),
+        axis.title = element_text(size = 8), strip.background = element_blank(), 
+        legend.text = element_text(size = 7), legend.title = element_text(size = 8), strip.placement = 'outside',
+        aspect.ratio = 5/6.5)+
+  guides(shape = 'none',
+         color = guide_legend(ncol =1, size = 10,
+                              override.aes = aes(label = ''))) 
+
+euclidean_distance_plot
+
+euclidean_distance_tb_bio_phch |>
+  pivot_wider(values_from = euclidean_distance, names_from = type) |>
+  dplyr::select(euclidean_distance_env_bio = bio, euclidean_distance_env_phch = phch, date) |>
+  left_join(euclidean_distance_tb_all) |>
+  ggplot(aes(euclidean_distance_env_bio, euclidean_distance))+
+  geom_point(aes(shape = fraction))+
+  facet_wrap(vars(fraction))+
+  geom_smooth(method = 'lm')+
+  stat_cor( aes(
+                                               label =   paste(..p.label..)), 
+            label.x = 5,  
+           label.y = 15,
+           p.digits = 0.01, digits = 2, p.accuracy = 0.01, method = 'spearman', color = "black"#,
+           #position = position_jitter(0.0)
+  )+
+  stat_cor(aes(
+                                               label =   paste(..r.label..)),
+           label.x = 5, label.y = 10,  color = "black" ,
+           p.digits = 0.01, digits = 2, 
+           p.accuracy = 0.01, method = 'spearman')+
+  theme_bw()
+
+euclidean_distance_tb_bio_phch |>
+  pivot_wider(values_from = euclidean_distance, names_from = type) |>
+  dplyr::select(euclidean_distance_env_bio = bio, euclidean_distance_env_phch = phch, date) |>
+  left_join(euclidean_distance_tb_all) |>
+  ggplot(aes(euclidean_distance_env_phch, euclidean_distance))+
+  geom_point(aes(shape = fraction))+
+  facet_wrap(vars(fraction))+
+  geom_smooth(method = 'lm')+
+  stat_cor( aes(
+    label =   paste(..p.label..)), 
+    label.x = 5,  
+    label.y = 15,
+    p.digits = 0.01, digits = 2, p.accuracy = 0.01, method = 'spearman', color = "black"#,
+    #position = position_jitter(0.0)
+  )+
+  stat_cor(aes(
+    label =   paste(..r.label..)),
+    label.x = 5, label.y = 10,  color = "black" ,
+    p.digits = 0.01, digits = 2, 
+    p.accuracy = 0.01, method = 'spearman')+
+  theme_bw()
+  

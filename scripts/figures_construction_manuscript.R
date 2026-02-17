@@ -22,6 +22,7 @@ library(speedyseq)
 library(car)  ## homocedasticity 
 library(dunn.test) ## significant groups in Kruskal Test
 library(ggpubr) ## ggqqplot
+library(scales)
 
 source('../../Bloomers/R/find_asv_with_anomalies.R')
 source('../../Bloomers/R/compute_bray_curtis_dissimilariy.R')
@@ -46,7 +47,7 @@ harbour_restoration_dec <- tibble(xmin = '2010.24', xmax = '2010.52') |>
 
 bloo_02 <- read.csv('data/detect_bloo/bloo_02.csv') |>
   as_tibble() |>
-  dplyr::filter(!value %in% c('asv2', 'asv3', 'asv5', 'asv8'))
+  dplyr::filter(!asv_num %in% c( 'asv8'))
 
 bloo_3 <- read.csv('data/detect_bloo/bloo_3.csv') |>
   as_tibble()
@@ -83,6 +84,12 @@ colnames(m_bbmo_10y) <- c('sample_id', "project", "location", "code",
                           "year", "month", "day", "season",            
                           "bacteria_joint", "synechococcus", "depth", "name_complete")
 
+m_bbmo_10y |>
+  colnames()
+
+##supplementary table physicochemical data and other biologial variables
+#write.csv2(m_bbmo_10y, 'results/tables/physicochemical_bio_variables_bbmo10y.csv', row.names = F) 
+
 m_02 <- m_bbmo_10y  |>
   dplyr::filter(fraction == 0.2) 
 
@@ -98,6 +105,10 @@ m_3 <- m_3 |>
 tree_complete <- ggtree::read.tree('data/raxml/complete_tree_cesga/bbmo.raxml.support')
 
 ## add blooming events or not 
+time_lag_value <- 3 #define time lag number of samples before the bloom event considered
+cut_off_value_ra <- 2.14 #define z-score cutoff 
+cut_off_value_rclr <- 1 #define z-score cutoff 
+
 bloom_event <- asv_tab_all_bloo_z_tax |>
   dplyr::mutate(bloom_event = case_when(abundance_type == 'relative_abundance' &
                                           abundance_value >= 0.1 &
@@ -130,6 +141,10 @@ corr_bray_genes_community_tb <- read.csv('data/corr_bray_genes_community_tb_scg.
 
 ## MDR - S map results
 mdr_tb <- read.csv2('../EDM_carmen/MDR/Bl_nin120_cvunit0.025_aenet_jcof_Nmvx_Rallx_demo_v2.csv',
+                    header = T ) |>
+  as_tibble() ## new data
+
+mdr_tb <- read.csv2('../EDM_carmen/MDR/Bl_nin120_cvunit0.025_aenet_jcof_Nmvx_Rallx_demo_seas.csv',
                     header = T ) |>
   as_tibble() ## new data
 
@@ -305,8 +320,8 @@ labs_occurrence <- as_labeller(c(narrow = "Narrow\n(<1/3)",
                                  intermediate = "Intermediate\n(1/3 < x < 2/3)",
                                  broad = "Broad\n(>2/3)"))
 
-labs_fraction_rec_freq <-  as_labeller(c('0.2' = 'Free living (0.2-3 um)',
-                                         '3' = 'Particle attached (3-20 um)',
+labs_fraction_rec_freq <-  as_labeller(c('0.2' = '0.2-3 µm',
+                                         '3' = '3-20 µm',
                                          no = 'Recurrent',
                                          yes = 'Non-Recurrent',
                                          "non-recurrent" = 'Chaotic',
@@ -323,8 +338,8 @@ labs_season <- as_labeller(c( 'winter' = 'Winter' ,
                               'summer' = 'Summer',
                               'autumn' = 'Autumn')) 
 
-labs_fraction <- as_labeller(c('0.2' = 'Free living\n(0.2-3 um)',
-                                   '3' = 'Particle attached\n(3-20 um)',
+labs_fraction <- as_labeller(c('0.2' = '0.2-3 µm',
+                                   '3' = '3-20 µm',
                                'bloomer' = 'Bloomer',
                                'no-bloomer' = 'No Bloomer'))
 
@@ -334,8 +349,8 @@ labs_diversity <- as_labeller(c('genes' = 'Bray Curtis Genes',
                                 "bray_curtis_community" = 'Bray Curtis\nCommunity Composition',
                                 'bray_curtis_kmers' = 'Bray Curtis k-mers'))
 
-labs_fraction_env <- as_labeller(c('0.2' = 'Free living\n(0.2-3 um)',
-                                   '3' = 'Particle attached\n(3-20 um)',
+labs_fraction_env <- as_labeller(c('0.2' = '0.2-3 µm',
+                                   '3' = '3-20 µm',
                                    'env' = 'Environmental\nvariables',
                                    'bio' =  'Biological variables',
                                    'phch' = 'Pysicochemical variables'
@@ -348,6 +363,8 @@ harbour_restoration <- tibble(xmin = '2010-03-24', xmax = '2012-06-09') |>
 
 # ---------------------- METHODS ----------------------  ########## ------
 # ------ ########## Figure define bloomers threshold ------  ########## ------
+##### run code: find_blooms_BBMO10Y.R before 
+
 ## Calculate relative abundance ----
 asv_tab_10y_l_rel <- asv_tab_bbmo_10y_l |>
   calculate_rel_abund(group_cols = sample_id)
@@ -418,29 +435,28 @@ blooming_threshold <- bind_rows(result_dataset_02,
                                 result_dataset_3) |>
   ggplot(aes(threshold, num))+
   geom_point(size = 1)+
+  scale_y_continuous(breaks = c(0,  100, 500, 1000, 1500, 2000))+
   scale_x_continuous(#expand = c(0,0),
     breaks = c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6), labels = percent_format())+
-  #scale_y_continuous(expand = c(0,0))+
-  #scale_y_log10()+
   facet_grid(vars(fraction), labeller = labs_fraction)+
   geom_vline(xintercept = 0.1, linetype = 'dashed')+
+  geom_vline(xintercept = 0.03, linetype = 'longdash')+
   labs(x = 'Relative abundance (%) threshold of the potential blooming event', y = 'Number of potential bloomers detected')+
   geom_line()+
   theme_bw()+
   theme(strip.background = element_blank(),
-        panel.border = element_blank(),
         panel.grid.minor = element_blank(),
         text = element_text(size = 14),
         axis.ticks = element_blank())
 
 blooming_threshold
 
-# ggsave(blooming_threshold,  filename = 'blooming_threshold_ed2.pdf',
-#        path = 'Results/Figures/',
+# ggsave(blooming_threshold,  filename = 'blooming_threshold_ed3.pdf',
+#        path = 'Results/Figures/main_sup_df7/',
 #        width = 188, height = 188, units = 'mm')
 
 # ---------------------- RESULTS ----------------------  ########## ------
-# ------ ########## Figure recurrency in Blanes vs. changes over the years ------ #########
+# ------ ########## Figure recurrence in Blanes vs. changes over the years ------ #########
 bray_unifrac_eucl_tb$bray_curtis_type |>
   unique()
 
@@ -521,7 +537,6 @@ bray_unifrac_eucl_plot <- data |>
     axis.title  = element_text(size = 9),
     strip.text = element_text(size = 5),
     axis.text = element_text(size = 5),
-    # axis.text.x = element_text(size = 7), 
     panel.grid.major.y = element_blank(),
     panel.border = element_blank(),
     strip.placement = 'outside',
@@ -530,66 +545,124 @@ bray_unifrac_eucl_plot <- data |>
 
 bray_unifrac_eucl_plot
 
-# eucl_plot <- data |>
-#   dplyr::filter(fraction == 'env',
-#                 bray_curtis_type == 'euclidean_distance') |>
-#   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
-#   dplyr::filter(!str_detect(date, '2003-')) |>
-#   ggplot(aes(date, bray_curtis_result))+
-#   facet_wrap(fraction ~ bray_curtis_type, scales = "free_x", ncol = 1, 
-#              labeller = labeller(fraction = function(x) ifelse(x == "env", "", x), 
-#                                  bray_curtis_type = labs_diversity), 
-#              strip.position = 'left') + 
-#   geom_line(aes(date, group = fraction, color = fraction, linetype = fraction), linewidth = 0.75, alpha = 1)+ #, linetype = bray_curtis_type
-#   scale_color_manual(values= palette_fraction_env, labels = labs_fraction_env)+ #, labels = labs_fraction
-#   scale_linetype_manual( labels = labs_fraction_env, values = c('0.2' = 1, '3' = 2, 'env' = 1))+
-#   scale_x_datetime(date_breaks = 'year', date_labels = '%Y')+
-#   labs(x = 'Date', y = '', color = '', linetype = '')+
-#   scale_shape_discrete(labels = labs_fraction)+
-#   guides(shape = 'none',
-#          color = guide_legend(ncol = 3, keywidth = unit(1, "cm")))+
-#   theme_bw()+
-#   theme(#panel.grid = element_blank(), 
-#     strip.background = element_blank(), legend.position = 'none',
-#     panel.grid.minor = element_blank(),
-#     axis.title  = element_text(size = 7),
-#     strip.text = element_text(size = 5),
-#     axis.text = element_text(size = 5),
-#     # axis.text.x = element_text(size = 7), 
-#     panel.grid.major.y = element_blank(),
-#     panel.border = element_blank(),
-#     strip.placement = 'outside', 
-#     plot.margin = margin(t = 5, l = 10))
-# 
-# eucl_plot
+## Environmental Distance between consecutive samples -----
+env_data_interpolated_values_all <- read.csv2('data/env_data/env_data_interpolated_values_all.csv') |>
+  rename(sample_id_num = X) ## Upload environmental to model with interpolated missing variables
 
+env_data_interpolated_values_all |>
+  colnames()
+
+env_data_interpolated_values_all |>
+  dim()
+
+env_data_interpolated_values_all_scaled <- env_data_interpolated_values_all |>
+  arrange(decimal_date) |>
+  dplyr::select(-decimal_date) |>
+  dplyr::mutate_if(is.numeric, scale)
+
+decimal_date_tb_unique <- env_data_interpolated_values_all |>
+  arrange(decimal_date) |>
+  dplyr::select(decimal_date, sample_id_num) 
+
+distances_env <- env_data_interpolated_values_all_scaled  |>
+  dplyr::select(-BP_FC1.55_no_nas, -sample_id_num) |>
+  stats::dist( method = "euclidean") # Dissimilarity matrix
+
+euclidean_distance <- distances_env |>
+  as.matrix() |>
+  as_tibble() |>
+  bind_cols(decimal_date_tb_unique) |>
+  pivot_longer(cols = -c('decimal_date', 'sample_id_num'), values_to = 'euclidean_distance', names_to = 'sample_id_num_2')
+
+decimal_date_tb_unique <- decimal_date_tb_unique |>
+  dplyr::mutate(sample_id_num = as.character(sample_id_num))
+
+# Dissimilarity matrix physicochemical
+env_data_interpolated_values_all_scaled |>
+  colnames()
+
+distances_env <- env_data_interpolated_values_all_scaled  |>
+  dplyr::select("temperature_no_nas"  ,  "day_length_no_nas"   ,  "chla_total_no_nas"    ,
+                "PO4_no_nas"    ,        "NH4_no_nas"       ,     "NO2_no_nas"    ,        "NO3_no_nas"     ,       "Si_no_nas" ) |>
+  stats::dist( method = "euclidean")
+
+euclidean_distance <- distances_env |>
+  as.matrix() |>
+  as_tibble() |>
+  bind_cols(decimal_date_tb_unique) |>
+  pivot_longer(cols = -c('decimal_date', 'sample_id_num'), values_to = 'euclidean_distance', names_to = 'sample_id_num_2')
+
+decimal_date_tb_unique <- decimal_date_tb_unique |>
+  dplyr::mutate(sample_id_num = as.character(sample_id_num))
+
+euclidean_distance_tb_phch <- euclidean_distance |>
+  dplyr::mutate(sample_distance = (as.numeric(sample_id_num_2) - as.numeric(sample_id_num))) |>
+  dplyr::filter(sample_distance == 1) |>
+  dplyr::select(-decimal_date) |>
+  left_join(decimal_date_tb_unique, by = c('sample_id_num_2' = 'sample_id_num'))
+
+distances_env <- env_data_interpolated_values_all_scaled  |>
+  dplyr::select(!c("temperature_no_nas"  ,  "day_length_no_nas"   ,  "chla_total_no_nas"    ,
+                   "PO4_no_nas"    ,        "NH4_no_nas"       ,     "NO2_no_nas"    ,        "NO3_no_nas"     ,       "Si_no_nas", sample_id_num)) |>
+  stats::dist( method = "euclidean")
+
+euclidean_distance <- distances_env |>
+  as.matrix() |>
+  as_tibble() |>
+  bind_cols(decimal_date_tb_unique) |>
+  pivot_longer(cols = -c('decimal_date', 'sample_id_num'), values_to = 'euclidean_distance', names_to = 'sample_id_num_2')
+
+decimal_date_tb_unique <- decimal_date_tb_unique |>
+  dplyr::mutate(sample_id_num = as.character(sample_id_num))
+
+euclidean_distance_tb_bio <- euclidean_distance |>
+  dplyr::mutate(sample_distance = (as.numeric(sample_id_num_2) - as.numeric(sample_id_num))) |>
+  dplyr::filter(sample_distance == 1) |>
+  dplyr::select(-decimal_date) |>
+  left_join(decimal_date_tb_unique, by = c('sample_id_num_2' = 'sample_id_num'))
+
+## Plot Euclidean distance physicochemical and biological ----
+euclidean_distance_tb_phch <- euclidean_distance_tb_phch |>
+  dplyr::mutate(type = 'phch')
+
+euclidean_distance_tb_bio |>
+  dplyr::mutate(type = 'bio') |>
+  bind_rows(euclidean_distance_tb_phch) |>
+  ggplot(aes(decimal_date, euclidean_distance))+
+  geom_line(aes(group = type))
+
+euclidean_distance_tb_bio_phch <- euclidean_distance_tb_bio |>
+  dplyr::mutate(type = 'bio') |>
+  bind_rows(euclidean_distance_tb_phch) |>
+  left_join(m_02_red2, by = c('sample_id_num_2' = 'sample_id_num')) |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::select(date, euclidean_distance, type)
+
+###
 eucl_plot <- euclidean_distance_tb_bio_phch |>
   ggplot(aes(date, euclidean_distance))+
   geom_line(data = euclidean_distance_tb_bio_phch |>
               dplyr::filter(type == 'phch'), aes(date, group = type, color = type), linewidth = 0.75, alpha = 0.3)+
   geom_line(aes(date, group = type, color = type, linetype = type), linewidth = 0.75, alpha = 1)+ #, linetype = bray_curtis_type
   scale_color_manual(values= palette_fraction_env, labels = labs_fraction_env)+ #, labels = labs_fraction
-  #scale_linetype_manual( labels = labs_fraction_env, values = c('0.2' = 1, '3' = 2, 'env' = 1))+
   scale_x_datetime(date_breaks = 'year', date_labels = '%Y')+
   labs(x = 'Date', y = 'Euclidean Distance', color = '', linetype = '')+
-  #scale_shape_discrete(labels = labs_fraction)+
   guides(shape = 'none',
          color = guide_legend(ncol = 3, keywidth = unit(1, "cm")))+
   theme_bw()+
-  theme(#panel.grid = element_blank(), 
+  theme(
     strip.background = element_blank(), legend.position = 'none',
     panel.grid.minor = element_blank(),
     axis.title  = element_text(size = 7),
     strip.text = element_text(size = 5),
     axis.text = element_text(size = 5),
-    # axis.text.x = element_text(size = 7), 
     panel.grid.major.y = element_blank(),
-    panel.border = element_blank(),
     strip.placement = 'outside', 
     plot.margin = margin(t = 20, l = 46, r = 20))
 
 eucl_plot
 
+## run first recurrency_blanes.R
 bray_curtis_lag_plot <- bray_curtis_lag_all |>
   ggplot(aes(lag, bray_curtis_result))+
   scale_x_continuous(breaks = c(12, 24, 36, 48, 12*5, 12*6, 12*7, 12*8, 12*9, 120), labels = c(1, 2, 3,4, 5, 6, 7, 8,  9, 10))+
@@ -606,7 +679,6 @@ bray_curtis_lag_plot <- bray_curtis_lag_all |>
   guides(shape = guide_legend(ncol = 2))+
   theme_bw()+
   theme(panel.grid.minor = element_blank(),
-        panel.border = element_blank(),
         panel.grid.major.y = element_blank(),
         axis.title.y = element_text(size = 5),
         axis.text.y = element_text(size = 4),
@@ -635,7 +707,7 @@ print(BBMO_community_diversity_presentation_plot)
 #         path = 'results/figures/',
 #         width = 180, height = 150, units = 'mm')
 
-# ------ ########## Figure bloomers community timeseries ------ ########## ----------
+# ------ ########## Figure bloomers community time series ------ ########## ----------
 
 ## Rarefied dataset to calculate Community Evenness----
 source('../../Bloomers/R/community_evenness.R')
@@ -723,7 +795,7 @@ asv_tab_all_bloo_z_tax$asv_num_f <-  factor(asv_tab_all_bloo_z_tax$asv_num_f,
                                                                                                  asv_tab_all_bloo_z_tax$family_f)]), 
                                             ordered=TRUE)
 
-## FIG 2
+## FIGURE 2
 bbmo_bloo_ev_order_plot <- asv_tab_all_bloo_z_tax |>
   dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
   dplyr::filter(abundance_type == 'relative_abundance') |>
@@ -1298,9 +1370,6 @@ legend_plot <- asv_tab_all_bloo_z_tax_examples |>
 #### I decide to keep only 6 blooming examples ------
 legend_only  <- cowplot::get_legend(legend_plot)
 
-#library(cowplot)
-#library(gridExtra)
-
 # Define the layout matrix
 layout_mat <- rbind(c(1, 2, 3),
                     c(4, 5, 6),
@@ -1326,9 +1395,9 @@ examples_bloomers_types_titles_observed <- grid.arrange(plot1, plot2, plot3,
 #grid.lines(x = unit(c(0, 1), "npc"), y = unit(1, "npc") - unit(heights[1], "npc"), gp = gpar(col = "black", lwd = 1))
 
 #Save the combined plot (trobar la manera de guardar-ho amb el text!!)
-ggsave(filename = 'examples_bloomers_types_titles_observed.pdf', plot = examples_bloomers_types_titles_observed,
-       path = 'results/figures/',
-       width = 188, height = 230, units = 'mm')
+# ggsave(filename = 'examples_bloomers_types_titles_observed.pdf', plot = examples_bloomers_types_titles_observed,
+#        path = 'results/figures/',
+#        width = 188, height = 230, units = 'mm')
 
 # ggsave(filename = 'examples_bloomers_types_red.svg', 
 #        plot = examples_bloomers_types_titles,
@@ -1458,10 +1527,7 @@ examples_bloomers_types_titles_observed <- grid.arrange(plot1, plot2, plot3,
 #        path = 'results/figures/',
 #        width = 188, height = 230, units = 'mm')
 
-
-
 #  ------ ########## Figure seasonal bloomers do not bloom every year ------ ########## ------ 
-
 bloo_all_types_summary_tb <- bloo_all_types_summary_tb_tax_v2 |>
   dplyr::mutate(fraction = as.factor(fraction))
 
@@ -1700,7 +1766,6 @@ differential_abundance_harbor_plot <- data |>
         legend.position = 'bottom',
         panel.grid = element_blank(), text = element_text(size = 8),
         strip.text = element_text(margin = margin(2, 2, 2, 2)),
-        #plot.margin = unit(c(0.2, 5, 0.5, 0.5), "cm"),
         legend.key.size = unit(3, 'mm'))
 
 differential_abundance_harbor_plot
@@ -1876,12 +1941,22 @@ shannon_harbor_rar_plot
 ## CCM convergent cross mapping results computed in MARBITS (it's a bit computationally expensive) ----
 ### 1. DATASET: We removed seasonality & data is in the format of rCLR -------
 ## new results with the updated code 
-asv_tab_bbmo_10y_rclr_occ_filt_inter <- read.csv( '../EDM_carmen/otu_table067_deseasmonthPep.csv',
+asv_tab_bbmo_10y_rclr_occ_filt_inter <- read.csv( '../EDM_carmen/input_for_carmen/otu_table067_deseasmonthPep.csv',
                                                   sep = ',')
 ccm_rho <- read.csv( '../EDM_carmen/results_from_carmen_V2/ccm_rho_Bl_nin120_demo.csv',
                      sep = ',')  # jacobians matrix
 ccm_sig <- read.csv( '../EDM_carmen/results_from_carmen_V2/ccm_sig_Bl_nin120_demo.csv',
                      sep = ',')
+
+embedding <- read.csv('../EDM_carmen/results_from_carmen_V2/Ed_Bl.csv')
+
+ccm_rho_names <- ccm_rho |>
+  row.names() |>
+  as_tibble()
+  
+embedding |>
+  bind_cols(ccm_rho_names) |>
+  dplyr::filter(str_detect(value, 'asv15|asv7'))
 
 # number of ASVs included in this analysis
 num_asv_included <- asv_tab_bbmo_10y_rclr_occ_filt_inter |>
@@ -2228,7 +2303,6 @@ causal_effects_on_community_plot
 #                 path = 'results/figures/',
 #                 width = 180, height = 180, units = 'mm')
 
-
 # ------ Figure ASV7 and ASV15 co-ocurrence and interaction ------ ########## ------
 ## ------ A panel -----
 asv7_asv15_cluster <- asv_tab_all_bloo_z_tax |>
@@ -2260,6 +2334,56 @@ asv7_asv15_cluster
 # ggsave(filename = 'asv7_asv15_cluster_rclr_v1.pdf', plot = asv7_asv15_cluster,
 #        path = 'results/figures/',
 #        width = 188, height = 80, units = 'mm')
+
+## are they linearly correlated?
+asv_tab_all_bloo_z_tax |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num %in% c('asv7', 'asv15')) |>
+  dplyr::filter(abundance_value != 0) |>
+  dplyr::filter(abundance_type == 'rclr') |>
+  dplyr::select(asv_num, abundance_value, fraction, date) |>
+  pivot_wider(values_from = 'abundance_value', names_from = c('asv_num')) |>
+  ggplot(aes(asv15, asv7))+
+  geom_point(aes(shape = fraction))+
+  labs(x = 'ASV15 rCLR', y = 'ASV7 rCLR', shape = 'Fraction')+
+  stat_cor(aes( #color = 'black', 
+    
+    label =   paste(..p.label..)), label.x = 2,
+    label.y = 0.25,
+    p.digits = 0.01, digits = 2, p.accuracy = 0.01, method = 'spearman', color = "black"#,
+    #position = position_jitter(0.0)
+  )+
+  stat_cor(aes( label = paste0(..r.label..)),label.x = 3, label.y = 0.2, 
+           p.digits = 0.01, digits = 2, 
+           p.accuracy = 0.01, method = 'spearman',
+           color = "black")+
+  geom_smooth(method = 'lm', color = 'black')+
+  theme_bw()
+
+asv_tab_all_bloo_z_tax |>
+  dplyr::mutate(date = (as.POSIXct(date, format = "%Y-%m-%d"))) |>
+  dplyr::filter(asv_num %in% c('asv7', 'asv15')) |>
+  dplyr::filter(abundance_type == 'rclr') |>
+  ungroup() |>
+  ggplot(aes(date, abundance_value))+
+  scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0))+
+  scale_y_continuous( expand = c(0,0))+
+  geom_area(aes(date, abundance_value, fill = family_f, group = asv_num_f), alpha = 1,  position='stack')+
+  scale_color_manual(values = palette_family_assigned_bloo)+
+  scale_fill_manual(values = palette_family_assigned_bloo)+
+  facet_wrap(vars(fraction), labeller = labs_fraction)+
+  labs(x = 'Time', y = 'rCLR', fill = 'Family')+
+  guides(fill = guide_legend(ncol = 6, size = 10,
+                             override.aes = aes(label = '')),
+         alpha = 'none')+
+  theme_bw()+
+  theme(axis.text.x = element_text(size = 7), panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(), strip.text = element_text(size = 7),
+        legend.position = 'bottom', axis.text.y = element_text(size = 8),
+        axis.title = element_text(size = 8), strip.background = element_blank(), 
+        legend.text = element_text(size = 7), 
+        legend.title = element_text(size = 8), strip.placement = 'outside',
+        plot.margin = margin(5,15,5,15)) 
 
 ## ------ B panel -----
 ### The tibble is structured such that each row corresponds to a variable that receives an interaction, and each column corresponds to a variable that performs (or realizes) the interaction.
@@ -2299,12 +2423,15 @@ time_num_3 <- mdr_tb %$%
 time_num <- time_num_02 |>
   bind_rows(time_num_3)
 
+bloo_all_types_summary_tax <- bloo_all_types_summary_tax |>
+  dplyr::mutate(fraction = as.character(fraction))
+
 mdr_tb_m <- mdr_tb |>
   left_join(variable_num_tb , by = c('variable' = 'variable_num')) |>
   dplyr::mutate(fraction = case_when(str_detect(variable_name, 'bp') ~ '0.2',
                                      str_detect(variable_name, 'bn') ~ '3')) |>
   separate(variable_name, sep = '_', into = c('fraction_b', 'asv_num')) |>
-  left_join(bloo_all_types_summary_tb, by = c('asv_num', 'fraction')) |>
+  left_join(bloo_all_types_summary_tax, by = c('asv_num', 'fraction')) |>
   dplyr::mutate(recurrency = case_when(
     recurrency == 'non.recurrent' ~ 'Chaotic',
     recurrency == 'recurrent' ~ 'Seasonal',
@@ -2323,7 +2450,7 @@ mdr_tb_m_rclr <- mdr_tb_m |>
   left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
   dplyr::filter(asv_num != asv_num_eff) 
 
-asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
+asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax |>
   dplyr::mutate(abundance_value_scaled = scale(abundance_value))|>
   dplyr::filter(asv_num == 'asv15')
 
@@ -2375,14 +2502,16 @@ asv7_asv15_cluster_interaction_plot <- plot_grid( asv7_asv15_cluster,
                                                   label_fontface = 'plain',
                                                   ncol = 1)
 
-ggsave(
-  # plot = asv7_asv15_cluster_interaction_plot, 
-  # filename = 'asv7_asv15_cluster_interaction_plot.pdf',
-  # path = 'results/figures/main_df3/',
-  # width = 180, 
-  # height = 150, 
+asv7_asv15_cluster_interaction_plot
+
+#ggsave(
+  # plot = asv7_asv15_cluster_interaction_plot,
+  # filename = 'asv7_asv15_cluster_interaction_plot_v2.pdf',
+  # path = 'results/figures/main_sup_df7/',
+  # width = 180,
+  # height = 150,
   # units = 'mm'
-)
+#)
 
 ###------ ASV7 is affected by ASV15 supplementary --------
 mdr_tb_m_rclr <- mdr_tb_m |>
@@ -2394,7 +2523,7 @@ mdr_tb_m_rclr <- mdr_tb_m |>
   left_join(tax_bbmo_10y_new, by = c('asv_num_eff' = 'asv_num')) |>
   dplyr::filter(asv_num != asv_num_eff) 
 
-asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax_red |>
+asv_tab_all_bloo_z_tax_red_asv <- asv_tab_all_bloo_z_tax |>
   dplyr::mutate(abundance_value_scaled = scale(abundance_value))|>
   dplyr::filter(asv_num == 'asv7')
 
@@ -2421,6 +2550,7 @@ asv7_affectedby_asv15_plot <- data |>
   scale_color_identity()+
   scale_x_datetime(date_breaks = '1 year', date_labels = '%Y', expand = c(0,0)
   )+
+  scale_y_continuous(limits = c(-0.2, 0.2))+
   scale_shape_discrete(labels = labs_fraction)+
   theme_bw() + 
   labs(x = 'Date', 
@@ -2438,11 +2568,11 @@ asv7_affectedby_asv15_plot <- data |>
 asv7_affectedby_asv15_plot 
 
 # ggsave(
-#   plot = asv7_affectedby_asv15_plot , 
-#   filename = 'asv7_affectedby_asv15_plot.pdf',
-#   path = 'results/figures/MDR/v2/',
-#   width = 180, 
-#   height = 100, 
+#   plot = asv7_affectedby_asv15_plot ,
+#   filename = 'asv7_affectedby_asv15_plot_V2.pdf',
+#   path = 'results/figures/main_sup_df7/',
+#   width = 180,
+#   height = 100,
 #   units = 'mm'
 # )
 
@@ -2452,14 +2582,12 @@ corr_bray_02_plot <- bray_unifrac_eucl_tb_02 |>
   ggplot(aes(bray_curtis_community, genes))+
   scale_x_continuous(limits = c(0.05, 0.85))+
   scale_y_continuous(limits = c(0.05, 0.85))+
-  #geom_abline(slope = 1, intercept = 0, color = 'black', linetype = 1, alpha = 0.5)+
   geom_point(color = "#00808F", alpha = 0.8)+
   stat_cor(aes( #color = 'black', 
     
     label =   paste(..p.label..)), label.x = 0.35,
     label.y = 0.25,
     p.digits = 0.01, digits = 2, p.accuracy = 0.01, method = 'spearman', color = "#00808F"#,
-    #position = position_jitter(0.0)
   )+
   stat_cor(aes( label = paste0(..r.label..)),label.x = 0.35, label.y = 0.2, 
            p.digits = 0.01, digits = 2, 
@@ -2472,19 +2600,15 @@ corr_bray_02_plot <- bray_unifrac_eucl_tb_02 |>
   theme_bw()+
   theme(#axis.text.x = element_text(size = 6), 
     panel.grid.minor = element_blank(),
-    #panel.grid.major.y = element_blank(), strip.text = element_text(size = 12),
     legend.position = 'bottom', axis.text.y = element_text(size = 10),
     axis.title = element_text(size = 10), strip.background = element_blank(), 
     legend.text = element_text(size = 6), legend.title = element_text(size = 8), 
-    #panel.border = element_blank(),
     strip.placement = 'outside', aspect.ratio = 12/12)
 
 corr_bray_02_plot
 
 corr_unifrac_02_plot <- bray_unifrac_eucl_tb_02 |>
   ggplot(aes(bray_curtis_community, genes))+
-  #geom_abline(slope = 1, intercept = 0, color = 'black', linetype = 1, alpha = 0.5)+
-  #geom_smooth(method = 'loess', color = 'grey')+
   geom_point(data = bray_unifrac_eucl_tb_02, aes(wunifrac_distance, genes), #shape = 2, 
              alpha = 0.8,  color = "#00808F")+
   scale_x_continuous(limits = c(0.05, 0.45))+
@@ -2493,7 +2617,6 @@ corr_unifrac_02_plot <- bray_unifrac_eucl_tb_02 |>
                                                label =   paste(..p.label..)), label.x = 0.05,  
            label.y = 0.3,
            p.digits = 0.01, digits = 2, p.accuracy = 0.01, method = 'spearman', color = "#00808F"#,
-           #position = position_jitter(0.0)
   )+
   stat_cor(data = bray_unifrac_eucl_tb_02, aes(wunifrac_distance, genes, 
                                                label =   paste(..r.label..)),
@@ -2505,7 +2628,6 @@ corr_unifrac_02_plot <- bray_unifrac_eucl_tb_02 |>
   theme_bw()+
   theme(#axis.text.x = element_text(size = 6), 
     panel.grid.minor = element_blank(),
-    #panel.grid.major.y = element_blank(), strip.text = element_text(size = 12),
     legend.position = 'bottom', axis.text.y = element_text(size = 10),
     axis.title = element_text(size = 10), strip.background = element_blank(), 
     legend.text = element_text(size = 6), legend.title = element_text(size = 8), 
@@ -2519,38 +2641,31 @@ corr_bray_02_kos_plot <- corr_bray_genes_community_tb |>
   ggplot(aes(bray_curtis_community, KEGG_sgc))+
   scale_x_continuous(limits = c(0.05, 0.85))+
   scale_y_continuous(limits = c(0.05, 0.25))+
-  #geom_abline(slope = 1, intercept = 0, color = 'black', linetype = 1, alpha = 0.5)+
   geom_point( #shape = 2, 
     alpha = 0.8,  color = "#00808F")+
   stat_cor(aes( #color = 'black', 
     label =   paste(..p.label..)), label.x = 0.6,
     label.y = 0.25,
     p.digits = 0.01, digits = 2, p.accuracy = 0.01, method = 'spearman', color = "#00808F"#,
-    #position = position_jitter(0.0)
   )+
   stat_cor(aes( label = paste0(..r.label..)),label.x = 0.6, label.y = 0.2, 
            p.digits = 0.01, digits = 2, 
            p.accuracy = 0.01, method = 'spearman',
            color = "#00808F")+
-  #geom_smooth(method = 'loess', color = 'grey')+
   geom_smooth(method = 'lm', color = "#00808F", fill = "#00808F")+
   labs(x = 'Bray-Curtis Community-Based', y = 'Bray-Curtis KOs-Based')+
   theme_bw()+
   theme(#axis.text.x = element_text(size = 6), 
     panel.grid.minor = element_blank(),
-    #panel.grid.major.y = element_blank(), strip.text = element_text(size = 12),
     legend.position = 'bottom', axis.text.y = element_text(size = 10),
     axis.title = element_text(size = 10), strip.background = element_blank(), 
     legend.text = element_text(size = 6), legend.title = element_text(size = 8), 
-    #panel.border = element_blank(),
     strip.placement = 'outside', aspect.ratio = 12/12)
 
 corr_bray_02_kos_plot
 
 corr_unifrac_02_ko_plot <- corr_bray_genes_community_tb |>
   ggplot(aes(wunifrac_distance,KEGG_sgc))+
-  #geom_abline(slope = 1, intercept = 0, color = 'black', linetype = 1, alpha = 0.5)+
-  #geom_smooth(method = 'loess', color = 'grey')+
   geom_point(data = corr_bray_genes_community_tb, aes(wunifrac_distance ,KEGG), #shape = 2, 
              alpha = 0.8,  color = "#00808F")+
   scale_x_continuous(limits = c(0.05, 0.45))+
@@ -2560,7 +2675,6 @@ corr_unifrac_02_ko_plot <- corr_bray_genes_community_tb |>
            label.x = 0.3,  
            label.y = 0.25,
            p.digits = 0.01, digits = 2, p.accuracy = 0.01, method = 'spearman', color = "#00808F"#,
-           #position = position_jitter(0.0)
   )+
   stat_cor(data = corr_bray_genes_community_tb, aes(wunifrac_distance, KEGG, 
                                                     label =   paste(..r.label..)),
@@ -2572,7 +2686,6 @@ corr_unifrac_02_ko_plot <- corr_bray_genes_community_tb |>
   theme_bw()+
   theme(#axis.text.x = element_text(size = 6), 
     panel.grid.minor = element_blank(),
-    #panel.grid.major.y = element_blank(), strip.text = element_text(size = 12),
     legend.position = 'bottom', axis.text.y = element_text(size = 10),
     axis.title = element_text(size = 10), strip.background = element_blank(), 
     legend.text = element_text(size = 6), legend.title = element_text(size = 8), 
@@ -2601,5 +2714,12 @@ print(corr_bray_unifrac_kos_plot)
 #         width = 88, height = 120, units = 'mm')
 
 
+table_bloom_events <-  asv_tab_all_bloo_z_tax |>
+   dplyr::filter(abundance_type == 'relative_abundance') |>
+   dplyr::filter(abundance_value > 0.1) |>
+   dplyr::filter(z_score_ra > cut_off_value_ra) |>
+   dplyr::filter(z_score_rclr > cut_off_value_rclr) |>
+   dplyr::select(abundance_value, asv_num, fraction, date, family, genus) 
 
-
+#write.csv(table_bloom_events, 'results/tables/table_bloom_events.csv', row.names = F)
+ 
