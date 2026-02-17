@@ -6,31 +6,6 @@
 # +++++++++++++++++++++++             Code developed by Ona Deulofeu-Capo 2024        ++++++++++++++++++++++++++++++++++++++++++++
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-# Analyse if blooming events respond to changes in environmental conditions
-## Mantel tests are correlation tests that determine the correlation between
-## two matrices (rather than two variables). When using the test for microbial
-## ecology, the matrices are often distance/dissimilarity matrices
-## with corresponding positions. In order to calculate the correlation, the matrix
-## values of both matrices are 'unfolded' into long column vectors, which are then
-## used to determine correlation. Permutations of one matrix are used to determine
-## significance.
-
-## Mantel's test is a regression in which the variables are themselves distance or
-## dissimilarity matrices summarizing pairwise similarities among sample locations.
-
-## A significant Mantel test will tell you that the distances between samples
-## in one matrix are correlated with the distances between samples in the other
-## matrix. 
-
-## r falls in the range of -1 to +1, where being close to -1 indicates strong 
-## negative correlation and +1 indicates strong positive correlation. 
-## iouiAn r value of 0 indicates no correlation.
-
-## We need species abundance dissimilairy matrix and environmental parameter
-## distance matrix: created using Euclidean Distance.
-
-## Unless using the ranked Mantel statistic, the Mantel approach is suited to 
-## detect linear relationships between (dis)similarity matrices.
 
 ## upload packages ----
 library(vegan)
@@ -39,6 +14,7 @@ library(ggplot2)
 library(magrittr)
 library(multipanelfigure) #merge plots with different sizes
 library(forcats) 
+library(scales)
 
 ## upload functions ----
 source('src/calculate_z_scores.R')
@@ -118,8 +94,8 @@ m_vir_tb <- bbmo_20y_v_red |>
 
 plot_virus_abund <- m_vir_tb |>
   ggplot(aes(date, total_vlp))+
-  geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
-                                                    ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
+  # geom_rect(data = harbour_restoration_dec, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
+  #                                                   ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
   geom_area(colour = '#182533')+
   labs(y = 'Virus/mL', x = 'Date')+
   geom_line(aes(date, low_vlp), color = '#69BFAE')+
@@ -139,8 +115,8 @@ plot_virus_abund
 
 plot_HNF_abund <- m_vir_tb |>
   ggplot(aes(date, HNF_Micro))+
-  geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
-                                                    ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
+  # geom_rect(data = harbour_restoration, mapping=aes(xmin = date_min, xmax = date_max, x=NULL, y=NULL,
+  #                                                   ymin = -Inf, ymax = Inf), fill = '#C7C7C7', alpha = 0.5)+
   geom_line(colour = '#182533')+
   labs(y = 'cells/mL', x = 'Date')+
   #geom_smooth (method = 'loess', span = 0.1)+
