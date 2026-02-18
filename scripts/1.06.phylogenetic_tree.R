@@ -15,43 +15,6 @@ library(tidytree)
 library(ggpubr)
 library(ggridges)
 
-# packages version ----
-# R version 4.2.3 (2023-03-15)
-# Platform: x86_64-apple-darwin17.0 (64-bit)
-# Running under: macOS 14.5
-# 
-# Matrix products: default
-# LAPACK: /Library/Frameworks/R.framework/Versions/4.2/Resources/lib/libRlapack.dylib
-# 
-# locale:
-#   [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
-# 
-# attached base packages:
-#   [1] stats     graphics  grDevices utils     datasets  methods   base     
-# 
-# other attached packages:
-# dendextend_1.17.1 ggridges_0.5.4    ggpubr_0.6.0      tidytree_0.4.6    ggtree_3.11.0     ggtreeExtra_1.8.1 ape_5.7-1        
-# lubridate_1.9.3   forcats_1.0.0     stringr_1.5.1     dplyr_1.1.4       purrr_1.0.2       readr_2.1.4       tidyr_1.3.1      
-# tibble_3.2.1      ggplot2_3.4.4     tidyverse_2.0.0   phyloseq_1.42.0  
-# 
-# loaded via a namespace (and not attached):
-# nlme_3.1-163           bitops_1.0-7           fs_1.6.3               GenomeInfoDb_1.34.9    backports_1.4.1        tools_4.2.3           
-# utf8_1.2.4             R6_2.5.1               vegan_2.6-4            lazyeval_0.2.2         BiocGenerics_0.44.0    mgcv_1.9-0            
-# colorspace_2.1-0       permute_0.9-7          rhdf5filters_1.10.1    ade4_1.7-22            withr_3.0.0            tidyselect_1.2.0      
-# gridExtra_2.3          compiler_4.2.3         cli_3.6.2              Biobase_2.58.0         FD_1.0-12.3            scales_1.3.0          
-# digest_0.6.34          yulab.utils_0.1.4      XVector_0.38.0         pkgconfig_2.0.3        fastmap_1.1.1          rlang_1.1.3           
-# rstudioapi_0.15.0      gridGraphics_0.5-1     generics_0.1.3         jsonlite_1.8.8         car_3.1-2              RCurl_1.98-1.12       
-# magrittr_2.0.3         ggplotify_0.1.2        GenomeInfoDbData_1.2.9 biomformat_1.26.0      patchwork_1.2.0        Matrix_1.6-1.1        
-# Rcpp_1.0.12            munsell_0.5.0          S4Vectors_0.36.2       Rhdf5lib_1.20.0        fansi_1.0.6            viridis_0.6.4         
-# abind_1.4-5            ggnewscale_0.4.10      lifecycle_1.0.4        stringi_1.8.3          carData_3.0-5          MASS_7.3-60           
-# zlibbioc_1.44.0        rhdf5_2.42.1           plyr_1.8.9             grid_4.2.3             parallel_4.2.3         crayon_1.5.2          
-# lattice_0.22-5         Biostrings_2.66.0      cowplot_1.1.1          splines_4.2.3          multtest_2.54.0        hms_1.1.3             
-# pillar_1.9.0           igraph_1.5.1           ggsignif_0.6.4         reshape2_1.4.4         codetools_0.2-19       stats4_4.2.3          
-# magic_1.6-1            glue_1.7.0             ggfun_0.1.4            data.table_1.14.8      vctrs_0.6.5            treeio_1.27.0.002     
-# tzdb_0.4.0             foreach_1.5.2          gtable_0.3.4           cachem_1.0.8           broom_1.0.5            rstatix_0.7.2         
-# viridisLite_0.4.2      survival_3.5-7         geometry_0.4.7         iterators_1.0.14       aplot_0.2.2            memoise_2.0.1         
-# IRanges_2.32.0         cluster_2.1.4          timechange_0.2.0  
-
 ## Closely related bloomers distance ----
 tax_bbmo_10y_new |>
   dplyr::filter(asv_num == 'asv7') %$%

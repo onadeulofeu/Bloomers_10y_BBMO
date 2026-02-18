@@ -54,7 +54,7 @@ labs_env <- as_labeller(c("day_length" = 'Day length' ,
                           'high_vlp' = 'High viruses',
                           'total_vlp' = 'Total viruses'))
 
-##upload data ----
+## upload data ----
 asv_tab_all_bloo_z_tax <- read.csv2('data/detect_bloo/asv_tab_all_bloo_z_tax_new_assign_checked.csv')
 asv_tab_rar <- read.csv2('data/asv_tab_bbmo_10y_w_rar.csv') |>
   as_tibble()

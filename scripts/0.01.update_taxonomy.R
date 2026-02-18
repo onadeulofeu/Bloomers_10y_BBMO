@@ -6,12 +6,12 @@
 # +++++++++++++++++++++++             Code developed by Ona Deulofeu-Capo 2024        ++++++++++++++++++++++++++++++++++++++++++++
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-# upload packages 
+# upload packages ------
 library(tidyverse)
 library(phyloseq)
 library(speedyseq)
 
-##update taxonomy with database 138.1 silva
+# update taxonomy with database 138.1 silva ----- 
 # if (!requireNamespace("BiocManager", quietly=TRUE))
 #   install.packages("BiocManager")
 # BiocManager::install("DECIPHER")
@@ -38,7 +38,7 @@ tax_bbmo_10y_new <- tax_bbmo_10y_old |>
   dplyr::select(asv_num, seq) |>
   left_join(new_tax, by = c('seq' = 'sequence'))
 # 
-# ##UPLOAD BLOOMERS DATA-----
+# UPLOAD BLOOMERS DATA-----
 # asv_tab_all_bloo_z_tax_old <- read.csv2('data/asv_tab_all_bloo_z_tax.csv')
 # asv_tab_all_bloo_z_tax <- read.csv2('data/asv_tab_all_bloo_z_tax_new.csv')
 # 

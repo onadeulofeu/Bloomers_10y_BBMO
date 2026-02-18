@@ -6,26 +6,6 @@
 # +++++++++++++++++++++++             Code developed by Ona Deulofeu-Capo 2024        ++++++++++++++++++++++++++++++++++++++++++++
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-# Packages version information -------
-# sessionInfo()
-# R version 4.2.3 (2023-03-15)
-# Platform: x86_64-apple-darwin17.0 (64-bit)
-# Running under: macOS 15.3.2
-# 
-# Matrix products: default
-# LAPACK: /Library/Frameworks/R.framework/Versions/4.2/Resources/lib/libRlapack.dylib
-# 
-# locale:
-#   [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
-# 
-# attached base packages:
-#   [1] stats     graphics  grDevices utils     datasets  methods   base     
-# 
-# other attached packages:
-#   [1] grateful_0.2.11      zCompositions_1.4.1  truncnorm_1.0-9      NADA_1.6-1.1         survival_3.5-7       MASS_7.3-60          EcolUtils_0.1        vegan_2.6-4          lattice_0.22-5      
-# [10] permute_0.9-7        speedyseq_0.5.3.9018 scales_1.3.0         magrittr_2.0.3       Bloomers_0.0.0.9000  janitor_2.2.0        lubridate_1.9.3      forcats_1.0.0        stringr_1.5.1       
-# [19] dplyr_1.1.4          purrr_1.0.2          readr_2.1.4          tidyr_1.3.1          tibble_3.2.1         ggplot2_3.5.1        tidyverse_2.0.0      readxl_1.4.3         phyloseq_1.42.0   
-
 # upload packages----
 library(readxl)
 library(tidyverse)
